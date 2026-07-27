@@ -2,9 +2,12 @@
 node_modules/
 **/node_modules/
 
-# Builds
+# Builds / artefatos do TypeScript
 dist/
 **/dist/
+*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
 
 # Variáveis de ambiente (NUNCA commitar segredos)
 .env
