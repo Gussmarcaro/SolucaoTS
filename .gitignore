@@ -1,0 +1,21 @@
+# Dependências
+node_modules/
+**/node_modules/
+
+# Builds
+dist/
+**/dist/
+
+# Variáveis de ambiente (NUNCA commitar segredos)
+.env
+**/.env
+!**/.env.example
+
+# Uploads gerados em runtime
+backend/uploads/
+
+# Logs / SO / editor
+*.log
+.DS_Store
+.vscode/*
+!.vscode/extensions.json

@@ -1,0 +1,723 @@
+// ============================================================================
+// Solução TS — Schema Prisma (PostgreSQL)
+// Modelo de dados alinhado ao domínio real da Audesp Fase V (TCESP).
+// Ver: Documentação/REGRAS_NEGOCIO_FASE_V.md
+// Convenções: PKs UUID, dinheiro em Decimal(15,2), datas em @db.Date,
+// nomes de campos em português (aderentes ao domínio/JSON do TCESP).
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ENUMS DE DOMÍNIO
+// ============================================================================
+
+enum TipoOrgao {
+  PREFEITURA_MUNICIPAL
+  CAMARA
+  AUTARQUIA_MUNICIPAL
+  CONSORCIO_MUNICIPAL
+  FUNDACAO_MUNICIPAL
+  FUNDO_PREVIDENCIA_MUNICIPAL
+  EMPRESA_PUBLICA
+  UNIDADE_SECRETARIA
+}
+
+enum Periodicidade {
+  ANUAL
+  QUADRIMESTRAL
+}
+
+enum TipoAjuste {
+  CONTRATO_GESTAO
+  CONVENIO
+  TERMO_COLABORACAO
+  TERMO_FOMENTO
+  TERMO_PARCERIA
+}
+
+// Situação do cadastro do Ajuste (módulo Ajustes)
+enum StatusAjuste {
+  EM_ELABORACAO
+  ENVIADO
+}
+
+// Estado do envio da Prestação de Contas (retorno da API do TCESP)
+enum StatusPrestacao {
+  EM_ELABORACAO // rascunho local, ainda não transmitido
+  ENVIADO       // transmitido, aguardando processamento
+  ARMAZENADO    // aceito
+  REJEITADO     // com inconformidades
+  SUBSTITUIDO   // por uma retificação posterior
+  EXCLUIDO
+}
+
+enum AcaoPermissao {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  APPROVE
+}
+
+enum PrioridadeTarefa {
+  BAIXA
+  MEDIA
+  ALTA
+  URGENTE
+}
+
+enum StatusTarefa {
+  PENDENTE
+  EM_ANDAMENTO
+  CONCLUIDA
+  CANCELADA
+}
+
+// 1=CPF, 2=CNPJ, 3=RNE (estrangeiro)
+enum TipoDocumento {
+  CPF
+  CNPJ
+  RNE
+}
+
+enum TipoVigencia {
+  PRE_ESTABELECIDA // 1
+  INDETERMINADA    // 2
+}
+
+enum MeioPagamento {
+  BANCO      // 1
+  FUNDO_FIXO // 2
+}
+
+enum ResultadoAnaliseGlosa {
+  APROVADO             // 1
+  APROVADO_PARCIALMENTE // 2  -> exige valor_glosa
+  REPROVADO            // 3
+}
+
+enum ConclusaoRelatorio {
+  FAVORAVEL_SEM_RESSALVAS  // 1
+  FAVORAVEL_COM_RESSALVAS  // 2
+  DESFAVORAVEL             // 3  -> exige justificativa
+}
+
+enum ResultadoMeta {
+  CUMPRIDA             // 1
+  NAO_CUMPRIDA         // 2
+  CUMPRIDA_PARCIALMENTE // 3
+}
+
+// ============================================================================
+// DOMÍNIO: CADASTROS E SEGURANÇA
+// ============================================================================
+
+model Cliente {
+  id              String        @id @default(uuid()) @db.Uuid
+  nome            String        // ex: PREFEITURA MUNICIPAL DE ADAMANTINA
+  codigoMunicipio Int           // código do município no TCESP (1-9999)
+  codigoEntidade  Int           // código da entidade no TCESP (1-99999)
+  tipoOrgao       TipoOrgao
+  periodicidade   Periodicidade
+  cnpj            String        @unique @db.VarChar(14)
+  ativo           Boolean       @default(true)
+  criadoEm        DateTime      @default(now())
+  atualizadoEm    DateTime      @updatedAt
+
+  usuarios              Usuario[]
+  grupos                GrupoUsuario[]
+  entidadesBeneficiaria EntidadeBeneficiaria[]
+  certidoes             Certidao[]
+  ajustes               Ajuste[]
+  projetos              Projeto[]
+
+  @@unique([codigoMunicipio, codigoEntidade])
+  @@index([tipoOrgao])
+}
+
+model Usuario {
+  id            String        @id @default(uuid()) @db.Uuid
+  clienteId     String?       @db.Uuid // opcional até o multi-tenant/auth (Fase 1)
+  nome          String        // Nome Completo / Razão Social
+  documento     String        @unique @db.VarChar(14) // CPF (11) ou CNPJ (14) — só dígitos. Chave de duplicidade.
+  documentoTipo TipoDocumento // CPF | CNPJ
+  cep           String        @db.VarChar(8)
+  logradouro    String
+  bairro        String
+  cidade        String
+  uf            String        @db.VarChar(2)
+  email         String        @unique
+  celular       String        @db.VarChar(11)
+  senhaHash           String? // hash bcrypt da senha de login
+  resetTokenHash      String?   @db.VarChar(64) // SHA-256 do token de recuperação (nunca o token puro)
+  resetTokenExpiresAt DateTime? // validade do token de recuperação
+  ativo               Boolean   @default(true)
+  criadoEm            DateTime  @default(now())
+  atualizadoEm        DateTime  @updatedAt
+
+  cliente    Cliente?          @relation(fields: [clienteId], references: [id])
+  grupos     UsuarioGrupo[]
+  tarefas    Tarefa[]
+  prestacoes PrestacaoContas[] @relation("PrestacaoResponsavel")
+
+  @@index([clienteId])
+  @@index([cidade])
+  @@index([uf])
+  @@index([resetTokenHash])
+}
+
+// Dados da Empresa / Contratante (suporta multi-empresa / filiais)
+model Empresa {
+  id                 String   @id @default(uuid()) @db.Uuid
+  razaoSocial        String
+  nomeFantasia       String?
+  cnpj               String   @unique @db.VarChar(14) // só dígitos — trava de duplicidade
+  inscricaoEstadual  String?  @db.VarChar(20)
+  inscricaoMunicipal String?  @db.VarChar(20)
+  cep                String   @db.VarChar(8)
+  logradouro         String
+  numero             String?  @db.VarChar(20)
+  complemento        String?
+  bairro             String
+  cidade             String
+  uf                 String   @db.VarChar(2)
+  email              String
+  telefoneFixo       String?  @db.VarChar(11)
+  whatsapp           String?  @db.VarChar(11)
+  logoUrl            String? // caminho/URL do logotipo
+  ativo              Boolean  @default(true) // soft delete
+  criadoEm           DateTime @default(now())
+  atualizadoEm       DateTime @updatedAt
+
+  @@index([cidade])
+  @@index([uf])
+  @@index([ativo])
+}
+
+model GrupoUsuario {
+  id        String   @id @default(uuid()) @db.Uuid
+  clienteId String   @db.Uuid
+  nome      String   // ex: "Controladoria", "Gestores de Parceria"
+
+  cliente     Cliente                 @relation(fields: [clienteId], references: [id])
+  usuarios    UsuarioGrupo[]
+  permissoes  GrupoUsuarioPermissao[]
+
+  @@unique([clienteId, nome])
+}
+
+model UsuarioGrupo {
+  usuarioId String       @db.Uuid
+  grupoId   String       @db.Uuid
+  usuario   Usuario      @relation(fields: [usuarioId], references: [id])
+  grupo     GrupoUsuario @relation(fields: [grupoId], references: [id])
+
+  @@id([usuarioId, grupoId])
+}
+
+model Permissao {
+  id        String        @id @default(uuid()) @db.Uuid
+  modulo    String        // ex: "AUDESP_AJUSTES", "AUDESP_PRESTACAO", "WORKFLOW_TAREFAS"
+  acao      AcaoPermissao
+  descricao String
+
+  grupos GrupoUsuarioPermissao[]
+
+  @@unique([modulo, acao])
+}
+
+model GrupoUsuarioPermissao {
+  grupoId     String       @db.Uuid
+  permissaoId String       @db.Uuid
+  grupo       GrupoUsuario @relation(fields: [grupoId], references: [id])
+  permissao   Permissao    @relation(fields: [permissaoId], references: [id])
+
+  @@id([grupoId, permissaoId])
+}
+
+// ============================================================================
+// DOMÍNIO: AUDESP FASE V — MÓDULO CADASTRO (Ajuste, Certidão, Plano de Trabalho)
+// ============================================================================
+
+model EntidadeBeneficiaria {
+  id              String   @id @default(uuid()) @db.Uuid
+  clienteId       String   @db.Uuid
+  razaoSocial     String
+  cnpj            String   @db.VarChar(14)
+  dataConstituicao DateTime? @db.Date
+  endereco        String?
+
+  cliente   Cliente    @relation(fields: [clienteId], references: [id])
+  ajustes   Ajuste[]
+  certidoes Certidao[]
+
+  @@unique([clienteId, cnpj])
+}
+
+// Documento eletrônico que cadastra responsáveis e beneficiária no momento da assinatura.
+model Certidao {
+  id                     String    @id @default(uuid()) @db.Uuid
+  clienteId              String    @db.Uuid
+  entidadeBeneficiariaId String?   @db.Uuid
+  tipo                   String    // ex: "Dados Gerais - OSC", "Corpo Diretivo", "Conselho"...
+  descricao              String
+  vigenciaInicial        DateTime? @db.Date
+  vigenciaFinal          DateTime? @db.Date
+  concluida              Boolean   @default(false)
+
+  cliente              Cliente               @relation(fields: [clienteId], references: [id])
+  entidadeBeneficiaria EntidadeBeneficiaria? @relation(fields: [entidadeBeneficiariaId], references: [id])
+
+  @@index([clienteId])
+}
+
+// Entidade CENTRAL do domínio (substitui o antigo "Convenio").
+model Ajuste {
+  id                     String        @id @default(uuid()) @db.Uuid
+  clienteId              String        @db.Uuid
+  entidadeBeneficiariaId String        @db.Uuid
+  tipoAjuste             TipoAjuste
+  codigoAjuste           String        @db.VarChar(30) // código único do TCESP
+  numero                 String?
+  objeto                 String
+  valorGlobal            Decimal       @db.Decimal(15, 2)
+  dataAssinatura         DateTime      @db.Date
+  vigenciaInicial        DateTime?     @db.Date
+  vigenciaFinal          DateTime?     @db.Date
+  periodicidade          Periodicidade
+  status                 StatusAjuste  @default(EM_ELABORACAO)
+  criadoEm               DateTime      @default(now())
+  atualizadoEm           DateTime      @updatedAt
+
+  cliente              Cliente              @relation(fields: [clienteId], references: [id])
+  entidadeBeneficiaria EntidadeBeneficiaria @relation(fields: [entidadeBeneficiariaId], references: [id])
+
+  termosAditivos    TermoAditivo[]
+  programas         Programa[]
+  planoAplicacao    PlanoAplicacaoItem[]
+  cronograma        CronogramaDesembolsoItem[]
+  bensCedidos       BemCedidoCadastro[]
+  empenhosCadastro  EmpenhoCadastro[]
+  prestacoesContas  PrestacaoContas[]
+  projetos          Projeto[]
+
+  @@unique([clienteId, codigoAjuste])
+  @@index([tipoAjuste])
+}
+
+model TermoAditivo {
+  id             String    @id @default(uuid()) @db.Uuid
+  ajusteId       String    @db.Uuid
+  numero         String
+  dataAssinatura DateTime  @db.Date
+  valorAcrescido Decimal?  @db.Decimal(15, 2)
+  valorSuprimido Decimal?  @db.Decimal(15, 2)
+
+  ajuste Ajuste @relation(fields: [ajusteId], references: [id])
+
+  @@index([ajusteId])
+}
+
+// Plano de Metas: Programa -> Meta (com periodicidade de aferição)
+model Programa {
+  id       String @id @default(uuid()) @db.Uuid
+  ajusteId String @db.Uuid
+  nome     String
+
+  ajuste Ajuste @relation(fields: [ajusteId], references: [id])
+  metas  Meta[]
+
+  @@unique([ajusteId, nome])
+}
+
+model Meta {
+  id           String  @id @default(uuid()) @db.Uuid
+  programaId   String  @db.Uuid
+  codigoMeta   String
+  descricao    String?
+  quantificavel Boolean @default(true) // define se usa quantidade_realizada ou resultado_meta
+
+  programa Programa @relation(fields: [programaId], references: [id])
+
+  @@unique([programaId, codigoMeta])
+}
+
+// Importado via CSV (PlanoAplicacaoExemplo.csv)
+model PlanoAplicacaoItem {
+  id           String  @id @default(uuid()) @db.Uuid
+  ajusteId     String  @db.Uuid
+  categoria    String  // ex: RECURSOS HUMANOS
+  subcategoria String  // ex: SALÁRIOS E ORDENADOS
+  ano          Int
+  mes          Int     // normalizado 1-12
+  valor        Decimal @db.Decimal(15, 2)
+  descricao    String?
+
+  ajuste Ajuste @relation(fields: [ajusteId], references: [id])
+
+  @@index([ajusteId])
+}
+
+// Importado via CSV (CronogramaDesembolsoExemplo.csv)
+model CronogramaDesembolsoItem {
+  id       String  @id @default(uuid()) @db.Uuid
+  ajusteId String  @db.Uuid
+  ano      Int
+  mes      Int     // normalizado 1-12
+  valor    Decimal @db.Decimal(15, 2)
+
+  ajuste Ajuste @relation(fields: [ajusteId], references: [id])
+
+  @@index([ajusteId])
+}
+
+// Importado via CSV (BensCedidosExemplo.csv)
+model BemCedidoCadastro {
+  id           String   @id @default(uuid()) @db.Uuid
+  ajusteId     String   @db.Uuid
+  identificador String  // "ID" do CSV
+  data         DateTime @db.Date
+  valor        Decimal  @db.Decimal(15, 2)
+  codigo       String
+
+  ajuste Ajuste @relation(fields: [ajusteId], references: [id])
+
+  @@index([ajusteId])
+}
+
+// Empenho do cadastro do Ajuste (base para o empenho_schema.json)
+model EmpenhoCadastro {
+  id                 String   @id @default(uuid()) @db.Uuid
+  ajusteId           String   @db.Uuid
+  numeroEmpenho      String   @db.VarChar(35)
+  anoEmpenho         Int
+  retificacao        Boolean  @default(false)
+  dataEmissaoEmpenho DateTime @db.Date
+
+  ajuste Ajuste @relation(fields: [ajusteId], references: [id])
+
+  @@unique([ajusteId, numeroEmpenho, anoEmpenho])
+}
+
+// ============================================================================
+// DOMÍNIO: AUDESP FASE V — MÓDULO PRESTAÇÃO DE CONTAS (documento JSON via API)
+// ============================================================================
+
+model PrestacaoContas {
+  id            String          @id @default(uuid()) @db.Uuid
+  ajusteId      String          @db.Uuid
+  responsavelId String?         @db.Uuid
+  tipoDocumento String          // corresponde ao tipo do ajuste
+  ano           Int             // >= 2025
+  mes           Int
+  status        StatusPrestacao @default(EM_ELABORACAO)
+  protocolo     String?         // retornado pela API do TCESP
+  ehRetificacao Boolean         @default(false)
+  dataEnvio     DateTime?
+  inconformidades Json?         // lista de erros quando REJEITADO
+  criadoEm      DateTime        @default(now())
+  atualizadoEm  DateTime        @updatedAt
+
+  ajuste      Ajuste   @relation(fields: [ajusteId], references: [id])
+  responsavel Usuario? @relation("PrestacaoResponsavel", fields: [responsavelId], references: [id])
+
+  empregados      RelacaoEmpregado[]
+  bens            BemPrestacao[]
+  contratos       Contrato[]
+  documentosFiscais DocumentoFiscal[]
+  pagamentos      Pagamento[]
+  disponibilidades Disponibilidade[]
+  receitas        Receita[]
+  servidoresCedidos ServidorCedido[]
+  descontos       Desconto[]
+  devolucoes      Devolucao[]
+  glosas          Glosa[]
+  empenhos        EmpenhoPrestacao[]
+  repasses        RepassePrestacao[]
+  metasReportadas RelatorioAtividadeMeta[]
+
+  @@index([ajusteId])
+  @@index([status])
+}
+
+model RelacaoEmpregado {
+  id                String    @id @default(uuid()) @db.Uuid
+  prestacaoId       String    @db.Uuid
+  cpf               String    @db.VarChar(11)
+  dataAdmissao      DateTime  @db.Date
+  dataDemissao      DateTime? @db.Date
+  cbo               String    @db.VarChar(6)
+  cns               String?   @db.VarChar(15) // obrigatório p/ médicos (CBO subgrupo 225)
+  salarioContratual Decimal   @db.Decimal(15, 2)
+  periodos          Json      // [{ mes, carga_horaria, remuneracao_bruta }]
+
+  prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id])
+
+  @@unique([prestacaoId, cpf, dataAdmissao])
+}
+
+model BemPrestacao {
+  id             String   @id @default(uuid()) @db.Uuid
+  prestacaoId    String   @db.Uuid
+  categoria      String   // MOVEL_ADQUIRIDO, MOVEL_CEDIDO, MOVEL_BAIXADO, IMOVEL_*...
+  numeroPatrimonio String?
+  descricao      String
+  data           DateTime @db.Date // aquisição/cessão/baixa conforme categoria
+  valor          Decimal? @db.Decimal(15, 2) // valor_cessao obrigatório p/ móvel cedido
+
+  prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id])
+
+  @@index([prestacaoId])
+}
+
+model Contrato {
+  id                 String       @id @default(uuid()) @db.Uuid
+  prestacaoId        String       @db.Uuid
+  numero             String
+  credorTipoDoc      TipoDocumento
+  credorNumeroDoc    String
+  credorNome         String?
+  dataAssinatura     DateTime     @db.Date
+  vigenciaTipo       TipoVigencia
+  vigenciaDataInicial DateTime    @db.Date
+  vigenciaDataFinal  DateTime?    @db.Date
+  objeto             String
+  naturezaContratacao Int[]
+  naturezaOutro      String?
+  criterioSelecao    Int?
+  criterioSelecaoOutro String?
+  artigoRegulamentoCompras String?
+  valorMontante      Decimal      @db.Decimal(15, 2)
+  valorTipo          Int?
+
+  prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id])
+
+  @@unique([prestacaoId, numero, dataAssinatura, credorTipoDoc, credorNumeroDoc])
+}
+
+model DocumentoFiscal {
+  id               String       @id @default(uuid()) @db.Uuid
+  prestacaoId      String       @db.Uuid
+  numero           String
+  credorTipoDoc    TipoDocumento
+  credorNumeroDoc  String
+  credorNome       String?
+  contratoNumero   String?
+  descricao        String
+  dataEmissao      DateTime     @db.Date
+  estadoEmissor    Int?
+  valorBruto       Decimal      @db.Decimal(15, 2)
+  valorEncargos    Decimal      @db.Decimal(15, 2) @default(0) // >=0 e < valorBruto
+  categoriaDespesaTipo Int
+  rateioProveniente Boolean     @default(false)
+  rateioPercentual Decimal?     @db.Decimal(5, 2)
+
+  prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id])
+  pagamentos Pagamento[]
+  glosas     Glosa[]
+
+  @@unique([prestacaoId, numero, credorTipoDoc, credorNumeroDoc])
+}
+
+model Pagamento {
+  id               String        @id @default(uuid()) @db.Uuid
+  prestacaoId      String        @db.Uuid
+  documentoFiscalId String?      @db.Uuid // null p/ Folha Ordinária (nº 9999)
+  dataPagamento    DateTime      @db.Date
+  valor            Decimal       @db.Decimal(15, 2)
+  fonteRecursoTipo Int
+  meioPagamento    MeioPagamento
+  banco            Int?
+  agencia          Int?
+  contaCorrente    String?
+  numeroTransacao  String?       @db.VarChar(40)
+
+  prestacao       PrestacaoContas  @relation(fields: [prestacaoId], references: [id])
+  documentoFiscal DocumentoFiscal? @relation(fields: [documentoFiscalId], references: [id])
+
+  @@index([prestacaoId])
+}
+
+model Disponibilidade {
+  id            String  @id @default(uuid()) @db.Uuid
+  prestacaoId   String  @db.Uuid
+  banco         Int
+  agencia       Int
+  conta         String
+  contaTipo     Int
+  saldoBancario Decimal @db.Decimal(15, 2)
+  saldoContabil Decimal @db.Decimal(15, 2)
+
+  prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id])
+
+  @@unique([prestacaoId, banco, agencia, conta, contaTipo])
+}
+
+model Receita {
+  id               String   @id @default(uuid()) @db.Uuid
+  prestacaoId      String   @db.Uuid
+  tipo             String   // REPASSE_RECEBIDO, APLIC_FINANC_*, OUTRA, RECURSO_PROPRIO
+  descricao        String?
+  dataPrevista     DateTime? @db.Date
+  dataRepasse      DateTime? @db.Date
+  fonteRecursoTipo Int?
+  valor            Decimal  @db.Decimal(15, 2)
+
+  prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id])
+
+  @@index([prestacaoId])
+}
+
+model ServidorCedido {
+  id               String    @id @default(uuid()) @db.Uuid
+  prestacaoId      String    @db.Uuid
+  cpf              String    @db.VarChar(11)
+  dataInicialCessao DateTime @db.Date
+  dataFinalCessao  DateTime? @db.Date
+  cargoPublico     String
+  funcaoEntidade   String
+  onusPagamento    Int
+  periodos         Json      // [{ mes, carga_horaria, remuneracao_bruta }]
+
+  prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id])
+
+  @@unique([prestacaoId, cpf, dataInicialCessao])
+}
+
+model Desconto {
+  id          String   @id @default(uuid()) @db.Uuid
+  prestacaoId String   @db.Uuid
+  data        DateTime @db.Date
+  descricao   String
+  valor       Decimal  @db.Decimal(15, 2)
+
+  prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id])
+
+  @@index([prestacaoId])
+}
+
+model Devolucao {
+  id                  String   @id @default(uuid()) @db.Uuid
+  prestacaoId         String   @db.Uuid
+  data                DateTime @db.Date
+  naturezaDevolucaoTipo Int
+  valor               Decimal  @db.Decimal(15, 2)
+
+  prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id])
+
+  @@index([prestacaoId])
+}
+
+model Glosa {
+  id               String                @id @default(uuid()) @db.Uuid
+  prestacaoId      String                @db.Uuid
+  documentoFiscalId String?              @db.Uuid
+  pagamentoData    DateTime?             @db.Date // exclusivo p/ Folha Ordinária
+  resultadoAnalise ResultadoAnaliseGlosa
+  valorGlosa       Decimal?              @db.Decimal(15, 2) // obrigatório se APROVADO_PARCIALMENTE
+
+  prestacao       PrestacaoContas  @relation(fields: [prestacaoId], references: [id])
+  documentoFiscal DocumentoFiscal? @relation(fields: [documentoFiscalId], references: [id])
+
+  @@index([prestacaoId])
+}
+
+model EmpenhoPrestacao {
+  id                   String   @id @default(uuid()) @db.Uuid
+  prestacaoId          String   @db.Uuid
+  numero               String
+  dataEmissao          DateTime @db.Date
+  classificacaoEconomica String
+  fonteRecursoTipo     Int
+  valor                Decimal  @db.Decimal(15, 2)
+  historico            String?
+  cpfOrdenadorDespesa  String   @db.VarChar(11)
+
+  prestacao PrestacaoContas    @relation(fields: [prestacaoId], references: [id])
+  repasses  RepassePrestacao[]
+
+  @@unique([prestacaoId, numero, dataEmissao])
+}
+
+model RepassePrestacao {
+  id                 String    @id @default(uuid()) @db.Uuid
+  prestacaoId        String    @db.Uuid
+  empenhoId          String?   @db.Uuid
+  dataPrevista       DateTime  @db.Date
+  dataRepasse        DateTime  @db.Date
+  valorPrevisto      Decimal   @db.Decimal(15, 2)
+  valorRepasse       Decimal   @db.Decimal(15, 2)
+  justificativaDiferenca String?
+  tipoDocumentoBancario Int?
+  descricaoOutros    String?
+  numeroDocumento    String?
+  banco              Int?
+  agencia            Int?
+  conta              String?
+
+  prestacao PrestacaoContas   @relation(fields: [prestacaoId], references: [id])
+  empenho   EmpenhoPrestacao? @relation(fields: [empenhoId], references: [id])
+
+  @@index([prestacaoId])
+}
+
+// Metas reportadas no Relatório de Atividades (achatado por período)
+model RelatorioAtividadeMeta {
+  id               String         @id @default(uuid()) @db.Uuid
+  prestacaoId      String         @db.Uuid
+  nomePrograma     String
+  codigoMeta       String
+  periodo          Int            // 1..15 conforme periodicidade
+  quantidadeRealizada Decimal?    @db.Decimal(15, 2)
+  resultadoMeta    ResultadoMeta?
+  justificativaPeriodo String?
+  metaAtendida     Boolean?
+  justificativaMeta String?
+
+  prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id])
+
+  @@index([prestacaoId])
+}
+
+// ============================================================================
+// DOMÍNIO: WORKFLOW (Gestão de Projetos e Tarefas / prazos legais)
+// ============================================================================
+
+model Projeto {
+  id        String  @id @default(uuid()) @db.Uuid
+  clienteId String  @db.Uuid
+  ajusteId  String? @db.Uuid
+  nome      String
+
+  cliente Cliente  @relation(fields: [clienteId], references: [id])
+  ajuste  Ajuste?  @relation(fields: [ajusteId], references: [id])
+  tarefas Tarefa[]
+
+  @@index([clienteId])
+}
+
+model Tarefa {
+  id            String           @id @default(uuid()) @db.Uuid
+  projetoId     String           @db.Uuid
+  responsavelId String?          @db.Uuid
+  titulo        String
+  descricao     String?
+  prioridade    PrioridadeTarefa @default(MEDIA)
+  prazoLegal    DateTime         @db.Date
+  status        StatusTarefa     @default(PENDENTE)
+  criadoEm      DateTime         @default(now())
+
+  projeto     Projeto  @relation(fields: [projetoId], references: [id])
+  responsavel Usuario? @relation(fields: [responsavelId], references: [id])
+
+  @@index([projetoId])
+  @@index([prazoLegal])
+}
