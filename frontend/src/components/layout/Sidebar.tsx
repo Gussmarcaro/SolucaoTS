@@ -1,14 +1,16 @@
 import { NavLink } from 'react-router-dom';
-import { X } from 'lucide-react';
+import { X, Menu } from 'lucide-react';
 import { navigation } from '@/lib/navigation';
 import { cn } from '@/lib/cn';
 
 interface SidebarProps {
   open: boolean;
   onClose: () => void;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
 }
 
-export function Sidebar({ open, onClose }: SidebarProps) {
+export function Sidebar({ open, onClose, collapsed, onToggleCollapse }: SidebarProps) {
   return (
     <>
       {/* Overlay no mobile */}
@@ -24,39 +26,64 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       <aside
         className={cn(
           // Claro: gradiente azul da marca. Escuro: fundo grafite (ink-900).
-          'fixed inset-y-0 left-0 z-40 flex w-[264px] flex-col bg-gradient-to-b from-brand-500 to-brand-700 text-white transition-transform duration-300',
+          'fixed inset-y-0 left-0 z-40 flex w-[264px] flex-col bg-gradient-to-b from-brand-500 to-brand-700 text-white transition-[width,transform] duration-300',
           'dark:bg-none dark:bg-ink-900 dark:text-ink-100 dark:border-r dark:border-ink-800/70',
           'lg:translate-x-0',
+          collapsed && 'lg:w-[76px]', // recolhido (apenas desktop)
           open ? 'translate-x-0' : '-translate-x-full',
         )}
       >
-        {/* Marca */}
-        <div className="relative flex h-24 items-center justify-center px-5">
-          {/* Claro: grafite original. Escuro: grafite vira branco. */}
-          <img
-            src="/logo-branca-azulescuro.png"
-            alt="Solução TS"
-            className="mt-2 h-16 w-auto object-contain dark:hidden"
-          />
-          <img
-            src="/logo-branca-azulescuro-dark.png"
-            alt="Solução TS"
-            className="mt-2 hidden h-16 w-auto object-contain dark:block"
-          />
+        {/* Cabeçalho: logo + botão de recolher/expandir */}
+        <div
+          className={cn(
+            'relative flex h-24 items-center justify-between px-4',
+            collapsed && 'lg:justify-center lg:px-2',
+          )}
+        >
+          {/* Logo (oculta no desktop quando recolhido) */}
+          <div className={cn('flex items-center', collapsed && 'lg:hidden')}>
+            <img
+              src="/logo-branca-azulescuro.png"
+              alt="Solução TS"
+              className="mt-1 h-14 w-auto object-contain dark:hidden"
+            />
+            <img
+              src="/logo-branca-azulescuro-dark.png"
+              alt="Solução TS"
+              className="mt-1 hidden h-14 w-auto object-contain dark:block"
+            />
+          </div>
+
+          {/* Botão hambúrguer: recolher/expandir (somente desktop) */}
+          <button
+            onClick={onToggleCollapse}
+            aria-label={collapsed ? 'Expandir menu' : 'Recolher menu'}
+            title={collapsed ? 'Expandir menu' : 'Recolher menu'}
+            className="focus-ring hidden rounded-lg p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white dark:text-ink-400 dark:hover:bg-ink-800 dark:hover:text-ink-100 lg:inline-flex"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+
+          {/* Botão fechar (somente mobile) */}
           <button
             onClick={onClose}
-            className="focus-ring absolute right-4 top-1/2 -translate-y-1/2 rounded-lg p-1 text-white/80 hover:bg-white/10 hover:text-white dark:text-ink-400 dark:hover:bg-ink-800 dark:hover:text-ink-100 lg:hidden"
             aria-label="Fechar menu"
+            className="focus-ring rounded-lg p-1 text-white/80 hover:bg-white/10 hover:text-white dark:text-ink-400 dark:hover:bg-ink-800 dark:hover:text-ink-100 lg:hidden"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Navegação */}
-        <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-4">
+        <nav className={cn('flex-1 space-y-6 overflow-y-auto px-3 py-4', collapsed && 'lg:px-2')}>
           {navigation.map((group) => (
             <div key={group.title}>
-              <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-white/50 dark:text-ink-400">
+              <p
+                className={cn(
+                  'px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-white/50 dark:text-ink-400',
+                  collapsed && 'lg:hidden',
+                )}
+              >
                 {group.title}
               </p>
               <ul className="space-y-1">
@@ -66,9 +93,11 @@ export function Sidebar({ open, onClose }: SidebarProps) {
                       to={item.to}
                       end={item.to === '/'}
                       onClick={onClose}
+                      title={collapsed ? item.label : undefined}
                       className={({ isActive }) =>
                         cn(
                           'focus-ring group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
+                          collapsed && 'lg:justify-center lg:gap-0 lg:px-0',
                           isActive
                             ? 'bg-white/20 text-white shadow-soft dark:bg-brand-500/15 dark:text-brand-200 dark:shadow-none'
                             : 'text-white/80 hover:bg-white/10 hover:text-white dark:text-ink-300 dark:hover:bg-ink-800 dark:hover:text-ink-50',
@@ -85,9 +114,14 @@ export function Sidebar({ open, onClose }: SidebarProps) {
                                 : 'text-white/70 group-hover:text-white dark:text-ink-400 dark:group-hover:text-ink-200',
                             )}
                           />
-                          <span className="flex-1">{item.label}</span>
+                          <span className={cn('flex-1', collapsed && 'lg:hidden')}>{item.label}</span>
                           {item.badge && (
-                            <span className="inline-flex items-center rounded-full bg-white/20 px-2 py-0.5 text-xs font-semibold text-white dark:bg-ink-700/60 dark:text-ink-200">
+                            <span
+                              className={cn(
+                                'inline-flex items-center rounded-full bg-white/20 px-2 py-0.5 text-xs font-semibold text-white dark:bg-ink-700/60 dark:text-ink-200',
+                                collapsed && 'lg:hidden',
+                              )}
+                            >
                               {item.badge}
                             </span>
                           )}
