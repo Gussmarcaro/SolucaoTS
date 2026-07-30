@@ -43,14 +43,14 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse }: SidebarP
           {/* Logo (oculta no desktop quando recolhido) */}
           <div className={cn('flex items-center', collapsed && 'lg:hidden')}>
             <img
-              src="/logo-branca-azulescuro.png"
+              src="/logo-menu.png"
               alt="Solução TS"
-              className="mt-1 h-14 w-auto object-contain dark:hidden"
+              className="h-11 w-auto object-contain dark:hidden"
             />
             <img
-              src="/logo-branca-azulescuro-dark.png"
+              src="/logo-menu-dark.png"
               alt="Solução TS"
-              className="mt-1 hidden h-14 w-auto object-contain dark:block"
+              className="hidden h-11 w-auto object-contain dark:block"
             />
           </div>
 
