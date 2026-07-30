@@ -45,12 +45,12 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse }: SidebarP
             <img
               src="/logo-menu.png"
               alt="Solução TS"
-              className="h-11 w-auto object-contain dark:hidden"
+              className="h-14 w-auto object-contain dark:hidden"
             />
             <img
               src="/logo-menu-dark.png"
               alt="Solução TS"
-              className="hidden h-11 w-auto object-contain dark:block"
+              className="hidden h-14 w-auto object-contain dark:block"
             />
           </div>
 
