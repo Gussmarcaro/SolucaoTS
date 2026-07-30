@@ -151,6 +151,8 @@ model Usuario {
   documentoTipo TipoDocumento // CPF | CNPJ
   cep           String        @db.VarChar(8)
   logradouro    String
+  numero        String?       @db.VarChar(20)
+  complemento   String?
   bairro        String
   cidade        String
   uf            String        @db.VarChar(2)

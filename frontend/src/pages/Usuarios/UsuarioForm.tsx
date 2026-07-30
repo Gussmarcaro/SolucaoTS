@@ -29,6 +29,8 @@ type Campos = {
   documento: string;
   cep: string;
   logradouro: string;
+  numero: string;
+  complemento: string;
   bairro: string;
   cidade: string;
   uf: string;
@@ -39,8 +41,8 @@ type Campos = {
 };
 
 const inicial: Campos = {
-  nome: '', documento: '', cep: '', logradouro: '', bairro: '', cidade: '', uf: '', email: '', celular: '',
-  senha: '', confirmarSenha: '',
+  nome: '', documento: '', cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '',
+  email: '', celular: '', senha: '', confirmarSenha: '',
 };
 
 export function UsuarioForm({ onSuccess, onCancel }: UsuarioFormProps) {
@@ -108,6 +110,8 @@ export function UsuarioForm({ onSuccess, onCancel }: UsuarioFormProps) {
       documentoTipo: tipoDocumento(form.documento),
       cep: apenasDigitos(form.cep),
       logradouro: form.logradouro.trim(),
+      numero: form.numero.trim() || null,
+      complemento: form.complemento.trim() || null,
       bairro: form.bairro.trim(),
       cidade: form.cidade.trim(),
       uf: form.uf,
@@ -181,14 +185,33 @@ export function UsuarioForm({ onSuccess, onCancel }: UsuarioFormProps) {
           }
         />
 
+        <div className="grid grid-cols-1 gap-4 sm:col-span-2 sm:grid-cols-3">
+          <div className="sm:col-span-2">
+            <Input
+              label="Endereço (Logradouro)"
+              name="logradouro"
+              value={form.logradouro}
+              onChange={(e) => set('logradouro', e.target.value)}
+              error={erros.logradouro}
+              placeholder="Rua, Avenida..."
+            />
+          </div>
+          <Input
+            label="Número"
+            name="numero"
+            value={form.numero}
+            onChange={(e) => set('numero', e.target.value)}
+            placeholder="nº"
+          />
+        </div>
+
         <div className="sm:col-span-2">
           <Input
-            label="Endereço (Logradouro)"
-            name="logradouro"
-            value={form.logradouro}
-            onChange={(e) => set('logradouro', e.target.value)}
-            error={erros.logradouro}
-            placeholder="Rua, Avenida, nº..."
+            label="Complemento"
+            name="complemento"
+            value={form.complemento}
+            onChange={(e) => set('complemento', e.target.value)}
+            placeholder="Apartamento, bloco, sala... (opcional)"
           />
         </div>
 

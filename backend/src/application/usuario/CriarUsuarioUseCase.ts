@@ -72,6 +72,8 @@ export class CriarUsuarioUseCase {
       documentoTipo,
       cep,
       logradouro,
+      numero: input.numero?.trim() || null,
+      complemento: input.complemento?.trim() || null,
       bairro,
       cidade,
       uf,

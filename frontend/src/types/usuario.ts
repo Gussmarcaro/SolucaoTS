@@ -8,6 +8,8 @@ export interface Usuario {
   documentoTipo: TipoDocumento;
   cep: string;
   logradouro: string;
+  numero: string | null;
+  complemento: string | null;
   bairro: string;
   cidade: string;
   uf: string;
@@ -24,6 +26,8 @@ export interface CriarUsuarioPayload {
   documentoTipo: TipoDocumento;
   cep: string;
   logradouro: string;
+  numero?: string | null;
+  complemento?: string | null;
   bairro: string;
   cidade: string;
   uf: string;
