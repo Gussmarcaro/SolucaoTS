@@ -46,7 +46,7 @@ export function EmpresaView({ empresa }: { empresa: Empresa }) {
         <Campo label="Inscrição Municipal" valor={empresa.inscricaoMunicipal} />
         <Campo label="E-mail" valor={empresa.email} />
         <Campo label="Telefone Fixo" valor={empresa.telefoneFixo ? mascaraTelefoneFixo(empresa.telefoneFixo) : null} />
-        <Campo label="WhatsApp" valor={empresa.whatsapp ? mascaraCelular(empresa.whatsapp) : null} />
+        <Campo label="Celular" valor={empresa.whatsapp ? mascaraCelular(empresa.whatsapp) : null} />
         <div className="col-span-2 sm:col-span-3">
           <Campo label="Endereço" valor={endereco} />
         </div>

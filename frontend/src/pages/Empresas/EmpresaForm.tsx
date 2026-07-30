@@ -351,7 +351,7 @@ export function EmpresaForm({ empresa, onSuccess, onCancel }: EmpresaFormProps) 
           inputMode="numeric"
         />
         <Input
-          label="WhatsApp"
+          label="Celular"
           name="whatsapp"
           value={mascaraCelular(form.whatsapp)}
           onChange={(e) => set('whatsapp', e.target.value)}
