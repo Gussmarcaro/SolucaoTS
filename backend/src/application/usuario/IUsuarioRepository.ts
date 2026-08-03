@@ -5,15 +5,20 @@ import type {
   Paginado,
   UsuarioAuth,
 } from './dtos';
+import type { DadosUsuario } from './validarUsuario';
 
 /** Port de persistência de Usuário (implementado na camada de infraestrutura). */
 export interface IUsuarioRepository {
+  /** Busca por id. */
+  buscarPorId(id: string): Promise<Usuario | null>;
   /** Busca por documento (CPF/CNPJ, apenas dígitos) — usado na trava de duplicidade. */
   buscarPorDocumento(documento: string): Promise<Usuario | null>;
   /** Busca por e-mail. */
   buscarPorEmail(email: string): Promise<Usuario | null>;
   /** Cria um novo usuário (documento normalizado; senha já em hash). */
   criar(dados: NovoUsuarioDTO): Promise<Usuario>;
+  /** Atualiza os dados; se `senhaHash` vier, também troca a senha. */
+  atualizar(id: string, dados: DadosUsuario, senhaHash?: string): Promise<Usuario>;
   /** Lista paginada e filtrada por qualquer campo. */
   listar(params: ListarUsuariosParams): Promise<Paginado<Usuario>>;
 

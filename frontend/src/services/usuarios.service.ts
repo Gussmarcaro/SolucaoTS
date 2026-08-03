@@ -1,5 +1,6 @@
 import { http } from './http';
 import type {
+  AtualizarUsuarioPayload,
   CriarUsuarioPayload,
   FiltrosUsuario,
   Paginado,
@@ -8,6 +9,14 @@ import type {
 
 export async function criarUsuario(payload: CriarUsuarioPayload): Promise<Usuario> {
   const { data } = await http.post<Usuario>('/usuarios', payload);
+  return data;
+}
+
+export async function atualizarUsuario(
+  id: string,
+  payload: AtualizarUsuarioPayload,
+): Promise<Usuario> {
+  const { data } = await http.put<Usuario>(`/usuarios/${id}`, payload);
   return data;
 }
 

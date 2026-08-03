@@ -37,6 +37,11 @@ export interface CriarUsuarioPayload {
   confirmarSenha: string;
 }
 
+export type AtualizarUsuarioPayload = Omit<CriarUsuarioPayload, 'senha' | 'confirmarSenha'> & {
+  senha?: string;
+  confirmarSenha?: string;
+};
+
 export interface FiltrosUsuario {
   nome?: string;
   documento?: string;

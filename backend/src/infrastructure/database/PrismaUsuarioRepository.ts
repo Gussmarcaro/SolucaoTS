@@ -11,6 +11,7 @@ import type { Usuario } from '@/core/usuario/Usuario';
 import { apenasDigitos } from '@/shared/validators/documento';
 import { normalizarTexto } from '@/shared/normalizar';
 import { buscaUsuario } from './buscaTexto';
+import type { DadosUsuario } from '@/application/usuario/validarUsuario';
 
 /** Colunas do Prisma que retornamos ao domínio (sem senhaHash). */
 const selecao = {
@@ -40,6 +41,11 @@ function toDomain(row: UsuarioRow): Usuario {
 }
 
 export class PrismaUsuarioRepository implements IUsuarioRepository {
+  async buscarPorId(id: string): Promise<Usuario | null> {
+    const row = await prisma.usuario.findUnique({ where: { id }, select: selecao });
+    return row ? toDomain(row) : null;
+  }
+
   async buscarPorDocumento(documento: string): Promise<Usuario | null> {
     const row = await prisma.usuario.findUnique({
       where: { documento: apenasDigitos(documento) },
@@ -73,6 +79,30 @@ export class PrismaUsuarioRepository implements IUsuarioRepository {
         celular: dados.celular,
         senhaHash: dados.senhaHash,
         buscaTexto: buscaUsuario(dados),
+      },
+      select: selecao,
+    });
+    return toDomain(row);
+  }
+
+  async atualizar(id: string, dados: DadosUsuario, senhaHash?: string): Promise<Usuario> {
+    const row = await prisma.usuario.update({
+      where: { id },
+      data: {
+        nome: dados.nome,
+        documento: dados.documento,
+        documentoTipo: dados.documentoTipo,
+        cep: dados.cep,
+        logradouro: dados.logradouro,
+        numero: dados.numero,
+        complemento: dados.complemento,
+        bairro: dados.bairro,
+        cidade: dados.cidade,
+        uf: dados.uf,
+        email: dados.email,
+        celular: dados.celular,
+        buscaTexto: buscaUsuario(dados),
+        ...(senhaHash ? { senhaHash } : {}),
       },
       select: selecao,
     });

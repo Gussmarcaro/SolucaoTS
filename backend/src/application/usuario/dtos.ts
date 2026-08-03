@@ -18,6 +18,24 @@ export interface CriarUsuarioDTO {
   confirmarSenha: string;
 }
 
+/** Entrada da edição — senha é opcional (só troca se informada). */
+export interface AtualizarUsuarioDTO {
+  nome: string;
+  documento: string;
+  documentoTipo: TipoDocumento;
+  cep: string;
+  logradouro: string;
+  numero?: string | null;
+  complemento?: string | null;
+  bairro: string;
+  cidade: string;
+  uf: string;
+  email: string;
+  celular: string;
+  senha?: string;
+  confirmarSenha?: string;
+}
+
 /** Dados já prontos para persistência (senha convertida em hash). */
 export interface NovoUsuarioDTO {
   nome: string;

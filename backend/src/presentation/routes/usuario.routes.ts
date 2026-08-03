@@ -6,5 +6,7 @@ const controller = new UsuarioController();
 
 usuarioRoutes.post('/', (req, res, next) => controller.criar(req, res, next));
 usuarioRoutes.get('/', (req, res, next) => controller.listar(req, res, next));
+usuarioRoutes.get('/:id', (req, res, next) => controller.buscar(req, res, next));
+usuarioRoutes.put('/:id', (req, res, next) => controller.atualizar(req, res, next));
 
 export { usuarioRoutes };

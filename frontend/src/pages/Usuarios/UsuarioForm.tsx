@@ -15,11 +15,12 @@ import {
 } from '@/lib/masks';
 import { isDocumentoValido, isEmailValido, isSenhaForte } from '@/lib/validators';
 import { consultarCep } from '@/services/viacep.service';
-import { criarUsuario } from '@/services/usuarios.service';
+import { atualizarUsuario, criarUsuario } from '@/services/usuarios.service';
 import { extrairCodigoErro, extrairMensagemErro } from '@/services/http';
-import type { CriarUsuarioPayload } from '@/types/usuario';
+import type { AtualizarUsuarioPayload, CriarUsuarioPayload, Usuario } from '@/types/usuario';
 
 interface UsuarioFormProps {
+  usuario?: Usuario | null;
   onSuccess: () => void;
   onCancel: () => void;
 }
@@ -40,13 +41,27 @@ type Campos = {
   confirmarSenha: string;
 };
 
-const inicial: Campos = {
-  nome: '', documento: '', cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '',
-  email: '', celular: '', senha: '', confirmarSenha: '',
-};
+function estadoInicial(u?: Usuario | null): Campos {
+  return {
+    nome: u?.nome ?? '',
+    documento: u?.documento ?? '',
+    cep: u?.cep ?? '',
+    logradouro: u?.logradouro ?? '',
+    numero: u?.numero ?? '',
+    complemento: u?.complemento ?? '',
+    bairro: u?.bairro ?? '',
+    cidade: u?.cidade ?? '',
+    uf: u?.uf ?? '',
+    email: u?.email ?? '',
+    celular: u?.celular ?? '',
+    senha: '',
+    confirmarSenha: '',
+  };
+}
 
-export function UsuarioForm({ onSuccess, onCancel }: UsuarioFormProps) {
-  const [form, setForm] = useState<Campos>(inicial);
+export function UsuarioForm({ usuario, onSuccess, onCancel }: UsuarioFormProps) {
+  const editando = !!usuario;
+  const [form, setForm] = useState<Campos>(() => estadoInicial(usuario));
   const [erros, setErros] = useState<Partial<Record<keyof Campos, string>>>({});
   const [alerta, setAlerta] = useState<string | null>(null);
   const [buscandoCep, setBuscandoCep] = useState(false);
@@ -93,8 +108,11 @@ export function UsuarioForm({ onSuccess, onCancel }: UsuarioFormProps) {
     if (!form.uf) novos.uf = 'Selecione a UF.';
     if (!isEmailValido(form.email)) novos.email = 'E-mail inválido.';
     if (apenasDigitos(form.celular).length < 10) novos.celular = 'Celular inválido.';
-    if (!isSenhaForte(form.senha)) novos.senha = 'A senha não atende aos requisitos.';
-    if (form.senha !== form.confirmarSenha) novos.confirmarSenha = 'As senhas não conferem.';
+    // Senha: obrigatória no cadastro; na edição só valida se preenchida.
+    if (!editando || form.senha || form.confirmarSenha) {
+      if (!isSenhaForte(form.senha)) novos.senha = 'A senha não atende aos requisitos.';
+      if (form.senha !== form.confirmarSenha) novos.confirmarSenha = 'As senhas não conferem.';
+    }
     setErros(novos);
     return Object.keys(novos).length === 0;
   }
@@ -104,7 +122,7 @@ export function UsuarioForm({ onSuccess, onCancel }: UsuarioFormProps) {
     setAlerta(null);
     if (!validar()) return;
 
-    const payload: CriarUsuarioPayload = {
+    const base = {
       nome: form.nome.trim(),
       documento: apenasDigitos(form.documento),
       documentoTipo: tipoDocumento(form.documento),
@@ -117,13 +135,25 @@ export function UsuarioForm({ onSuccess, onCancel }: UsuarioFormProps) {
       uf: form.uf,
       email: form.email.trim().toLowerCase(),
       celular: apenasDigitos(form.celular),
-      senha: form.senha,
-      confirmarSenha: form.confirmarSenha,
     };
 
     setSalvando(true);
     try {
-      await criarUsuario(payload);
+      if (editando) {
+        const payload: AtualizarUsuarioPayload = { ...base };
+        if (form.senha) {
+          payload.senha = form.senha;
+          payload.confirmarSenha = form.confirmarSenha;
+        }
+        await atualizarUsuario(usuario!.id, payload);
+      } else {
+        const payload: CriarUsuarioPayload = {
+          ...base,
+          senha: form.senha,
+          confirmarSenha: form.confirmarSenha,
+        };
+        await criarUsuario(payload);
+      }
       onSuccess();
     } catch (error) {
       const codigo = extrairCodigoErro(error);
@@ -269,6 +299,11 @@ export function UsuarioForm({ onSuccess, onCancel }: UsuarioFormProps) {
       <div className="rounded-xl border border-ink-100 bg-ink-50/50 p-4 dark:border-ink-800 dark:bg-ink-800/30">
         <p className="mb-3 text-sm font-medium text-ink-700 dark:text-ink-200">
           Credenciais de acesso
+          {editando && (
+            <span className="ml-1 font-normal text-ink-400">
+              — deixe em branco para manter a senha atual
+            </span>
+          )}
         </p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
@@ -299,7 +334,7 @@ export function UsuarioForm({ onSuccess, onCancel }: UsuarioFormProps) {
         </Button>
         <Button type="submit" disabled={salvando}>
           {salvando && <Loader2 className="h-4 w-4 animate-spin" />}
-          {salvando ? 'Salvando...' : 'Salvar Cadastro'}
+          {salvando ? 'Salvando...' : editando ? 'Salvar Alterações' : 'Salvar Cadastro'}
         </Button>
       </div>
     </form>

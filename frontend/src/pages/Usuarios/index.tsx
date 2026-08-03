@@ -5,13 +5,18 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { UsuarioForm } from './UsuarioForm';
 import { UsuariosList } from './UsuariosList';
+import type { Usuario } from '@/types/usuario';
+
+type ModalState = { tipo: 'fechado' } | { tipo: 'novo' } | { tipo: 'editar'; usuario: Usuario };
 
 export function Usuarios() {
-  const [modalAberto, setModalAberto] = useState(false);
+  const [modal, setModal] = useState<ModalState>({ tipo: 'fechado' });
   const [refreshKey, setRefreshKey] = useState(0);
 
+  const fechar = () => setModal({ tipo: 'fechado' });
+
   function handleSuccess() {
-    setModalAberto(false);
+    fechar();
     setRefreshKey((k) => k + 1); // recarrega a listagem
   }
 
@@ -21,23 +26,29 @@ export function Usuarios() {
         title="Usuários"
         subtitle="Cadastro de pessoas e entidades, com consulta automática de CEP e trava de duplicidade de CPF/CNPJ."
         actions={
-          <Button onClick={() => setModalAberto(true)}>
+          <Button onClick={() => setModal({ tipo: 'novo' })}>
             <Plus className="h-4 w-4" />
             Novo Usuário
           </Button>
         }
       />
 
-      <UsuariosList refreshKey={refreshKey} />
+      <UsuariosList refreshKey={refreshKey} onEditar={(usuario) => setModal({ tipo: 'editar', usuario })} />
 
       <Modal
-        open={modalAberto}
-        onClose={() => setModalAberto(false)}
-        title="Novo Usuário"
-        subtitle="Preencha os dados abaixo. O endereço é preenchido automaticamente pelo CEP."
+        open={modal.tipo === 'novo' || modal.tipo === 'editar'}
+        onClose={fechar}
+        title={modal.tipo === 'editar' ? 'Editar Usuário' : 'Novo Usuário'}
+        subtitle="O endereço é preenchido automaticamente pelo CEP."
         size="xl"
       >
-        <UsuarioForm onSuccess={handleSuccess} onCancel={() => setModalAberto(false)} />
+        {(modal.tipo === 'novo' || modal.tipo === 'editar') && (
+          <UsuarioForm
+            usuario={modal.tipo === 'editar' ? modal.usuario : null}
+            onSuccess={handleSuccess}
+            onCancel={fechar}
+          />
+        )}
       </Modal>
     </>
   );

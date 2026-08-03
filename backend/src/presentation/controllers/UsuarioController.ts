@@ -1,11 +1,14 @@
 import type { Request, Response, NextFunction } from 'express';
 import { CriarUsuarioUseCase } from '@/application/usuario/CriarUsuarioUseCase';
+import { AtualizarUsuarioUseCase } from '@/application/usuario/AtualizarUsuarioUseCase';
 import { ListarUsuariosUseCase } from '@/application/usuario/ListarUsuariosUseCase';
 import { PrismaUsuarioRepository } from '@/infrastructure/database/PrismaUsuarioRepository';
+import { NotFoundError } from '@/shared/errors';
 import type { FiltrosUsuario } from '@/application/usuario/dtos';
 
 const repo = new PrismaUsuarioRepository();
 const criarUsuario = new CriarUsuarioUseCase(repo);
+const atualizarUsuario = new AtualizarUsuarioUseCase(repo);
 const listarUsuarios = new ListarUsuariosUseCase(repo);
 
 export class UsuarioController {
@@ -13,6 +16,25 @@ export class UsuarioController {
     try {
       const usuario = await criarUsuario.execute(req.body);
       return res.status(201).json(usuario);
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  async buscar(req: Request, res: Response, next: NextFunction) {
+    try {
+      const usuario = await repo.buscarPorId(req.params.id);
+      if (!usuario) throw new NotFoundError('Usuário não encontrado.');
+      return res.json(usuario);
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  async atualizar(req: Request, res: Response, next: NextFunction) {
+    try {
+      const usuario = await atualizarUsuario.execute(req.params.id, req.body);
+      return res.json(usuario);
     } catch (error) {
       return next(error);
     }
