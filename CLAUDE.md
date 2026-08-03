@@ -62,7 +62,13 @@ Três importações (`PlanoAplicacaoItem`, `CronogramaDesembolsoItem`, `BemCedid
 
 ## Prazos legais (regra que dirige o Workflow)
 
-Derivam da `periodicidade` do `Cliente` (fonte: `Documentação/Fase_V_entidades.pdf`, que é seed): **Quadrimestral** (Prefeituras/Autarquias/Fundações) = 5 dias úteis após o quadrimestre; **Anual** (demais) = 15 dias úteis após o ano.
+A Fase V tem **4 prazos distintos** que o Workflow deve controlar:
+1. **Cadastro do Ajuste** — 10 dias úteis após a assinatura (interação direta/tela).
+2. **Cadastro do Termo Aditivo** — 10 dias úteis após a assinatura (interação direta/tela).
+3. **Declaração Negativa** — por **periodicidade do órgão** (fonte: `Fase_V_entidades`): **Quadrimestral** (Prefeituras/Autarquias/Fundações Típicas; UGEs estaduais) = 5 dias úteis após o quadrimestre; **Anual** (demais, ex. Câmaras) = 15 dias úteis após o ano.
+4. **Prestação de Contas** — **anual e consolidada** (Manual v1.18 = "prestação anual"; descritor `mes = 12`), até **30/06 do exercício subsequente** ao repasse (repasse 2025 → até 30/06/2026). Piloto = 2025; obrigatório a partir de 01/jan/2026.
+
+Ou seja, a periodicidade Quadrimestral/Anual do `Fase_V_entidades` dirige o prazo da **Declaração Negativa**; a **Prestação de Contas** é sempre anual (30/06). Detalhes em `Documentação/REGRAS_NEGOCIO_FASE_V.md` (§5).
 
 ## Comandos (após a inicialização do backend)
 

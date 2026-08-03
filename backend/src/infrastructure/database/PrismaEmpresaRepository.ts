@@ -35,7 +35,7 @@ export class PrismaEmpresaRepository implements IEmpresaRepository {
     return prisma.empresa.update({ where: { id }, data: { logoUrl } });
   }
 
-  async listar({ filtros, page, pageSize }: ListarEmpresasParams): Promise<Paginado<Empresa>> {
+  async listar({ filtros, busca, page, pageSize }: ListarEmpresasParams): Promise<Paginado<Empresa>> {
     const texto = (v?: string): Prisma.StringFilter | undefined =>
       v ? { contains: v, mode: 'insensitive' } : undefined;
 
@@ -47,6 +47,29 @@ export class PrismaEmpresaRepository implements IEmpresaRepository {
       uf: filtros.uf ? { equals: filtros.uf.toUpperCase() } : undefined,
       ativo: typeof filtros.ativo === 'boolean' ? filtros.ativo : undefined,
     };
+
+    // Busca global: casa com qualquer campo textual da grade (OR).
+    if (busca) {
+      const t = busca.trim();
+      const d = apenasDigitos(t);
+      where.OR = [
+        { razaoSocial: { contains: t, mode: 'insensitive' } },
+        { nomeFantasia: { contains: t, mode: 'insensitive' } },
+        { cidade: { contains: t, mode: 'insensitive' } },
+        { bairro: { contains: t, mode: 'insensitive' } },
+        { logradouro: { contains: t, mode: 'insensitive' } },
+        { email: { contains: t, mode: 'insensitive' } },
+        { uf: { contains: t, mode: 'insensitive' } },
+        ...(d
+          ? [
+              { cnpj: { contains: d } },
+              { cep: { contains: d } },
+              { telefoneFixo: { contains: d } },
+              { whatsapp: { contains: d } },
+            ]
+          : []),
+      ];
+    }
 
     const [total, data] = await Promise.all([
       prisma.empresa.count({ where }),

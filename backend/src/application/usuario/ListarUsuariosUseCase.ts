@@ -10,6 +10,7 @@ export class ListarUsuariosUseCase {
 
   async execute(params: {
     filtros?: FiltrosUsuario;
+    busca?: string;
     page?: number;
     pageSize?: number;
   }): Promise<Paginado<Usuario>> {
@@ -20,8 +21,9 @@ export class ListarUsuariosUseCase {
     );
 
     const filtros = this.limparFiltros(params.filtros ?? {});
+    const busca = params.busca?.trim() || undefined;
 
-    const listarParams: ListarUsuariosParams = { filtros, page, pageSize };
+    const listarParams: ListarUsuariosParams = { filtros, busca, page, pageSize };
     return this.repo.listar(listarParams);
   }
 

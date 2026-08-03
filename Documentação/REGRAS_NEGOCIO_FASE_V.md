@@ -47,16 +47,27 @@ Vários blocos **variam conforme o tipo** (ex.: Regulamento de Compras só p/ Co
 
 **Validação em 2 camadas:** (a) estrutura/formato → **JSON Schema** no momento do envio; (b) **regras de negócio** → após recepção pelo WebService.
 
-## 5. Prazos legais (por periodicidade)
+## 5. Prazos legais (são 4 prazos distintos)
 
-| Periodicidade | Quem | Prazo de envio |
-|---|---|---|
-| **Quadrimestral** | Prefeituras, Autarquias e Fundações Típicas (municipais); UGEs estaduais | **5 dias úteis** após o encerramento do quadrimestre |
-| **Anual** | Demais órgãos (Câmaras, previdência, etc.) | **15 dias úteis** após o encerramento do ano |
+A Fase V tem **quatro obrigações com prazos diferentes** — o Workflow deve controlar **todas**:
 
-A periodicidade de cada órgão está no arquivo **`Fase_V_entidades`** (seed). Base normativa: Comunicado AUDESP 53/2023 + calendário anual de obrigações.
+| # | Obrigação | Prazo | Envio |
+|---|---|---|---|
+| 1 | Cadastro do **Ajuste** | **10 dias úteis** após a assinatura ¹ | Interação direta (tela) |
+| 2 | Cadastro do **Termo Aditivo** | **10 dias úteis** após a assinatura ¹ | Interação direta (tela) |
+| 3 | **Declaração Negativa** | por **periodicidade** do órgão (ver abaixo) | Interação direta (tela) |
+| 4 | **Prestação de Contas** | **anual** — até **30/06 do exercício seguinte** ao repasse | API (software do jurisdicionado) |
 
-> **Implicação:** o **Workflow** da Solução TS pode gerar automaticamente as tarefas/prazos a partir da periodicidade do Cliente.
+**Declaração Negativa — prazo por periodicidade** (confirmado no *Manual da Declaração Negativa* oficial):
+- **Quadrimestral** — Prefeituras, Autarquias e Fundações Típicas (municipais) e, no Estado, UGEs: **5 dias úteis** após o encerramento do quadrimestre.
+- **Anual** — demais órgãos (Câmaras etc.): **15 dias úteis** após o encerramento do exercício.
+- A periodicidade de cada órgão está no arquivo **`Fase_V_entidades`** (seed) → é **essa** a informação que dirige o prazo da Declaração Negativa.
+
+**Prestação de Contas** é **anual e consolidada** (Manual v1.18 = "prestação anual"; descritor **`mes = 12`**), mesmo que o acompanhamento interno do órgão seja mensal/bimestral/etc. Prazo: **30/06 do exercício subsequente** (repasse 2025 → até 30/06/2026). Piloto = 2025; **obrigatório a partir de 01/jan/2026** (exercício 2025). Ajustes anteriores a **01/jun/2023** seguem no sistema antigo (SIS RTS municipal / processo estadual) até expirarem.
+
+> ¹ Os 10 dias úteis para cadastro de Ajuste/Aditivo constam dos treinamentos (Comunicado SDG 23/2023); confirmar no *Manual de Ajustes* / calendário Audesp ao implementar.
+>
+> **Implicação:** o **Workflow** gera tarefas para os 4 prazos — cadastro de ajuste/aditivo (10 d.ú. após assinatura), declaração negativa (5 ou 15 d.ú. conforme periodicidade) e prestação de contas (30/06 do ano seguinte).
 
 ## 6. Retificação e Declaração Negativa
 
@@ -131,3 +142,20 @@ O schema do DOCX (Convenio + Empenho simplificado) é **insuficiente**. O modelo
 - Todos os **blocos da prestação de contas** (§7) como entidades filhas de uma **PrestacaoContas** (com `ano`, `mes`, `status`, `protocolo`).
 - **Tabelas de domínio** (fontes de recurso, categorias de despesa, veículos de publicação, tipos de vigência, CBO, classificação econômica).
 - Estados/máquina de status alinhados ao TCESP (`Em elaboração`, `Enviado`, `Armazenado`, `Rejeitado`, `Substituído`, `Excluído`).
+
+## 12. Notas operacionais (palestras TCESP — inclui a de 26/06/2026)
+
+Regras práticas que afetam **validações e UX** da Solução TS:
+
+- **Semântica de status (tempestividade):** só **`Armazenado`** conta como prestação entregue. **`Rejeitado`** = como se **não existisse** (precisa reenviar). A data legal considerada é a do **último envio `Armazenado`** — se enviou no prazo mas só conseguiu armazenar após 30/06, fica **intempestiva**. Processamento costuma levar < 1 min. → O Workflow deve rastrear a data do último `Armazenado`, não a do envio.
+- **Metas = maior fonte de rejeição (milhares de erros).** A meta no Relatório de Atividades precisa **casar EXATAMENTE** com a cadastrada no Ajuste: **código, nome, período e periodicidade**. Diferenças bobas de texto (acento faltando, zero à esquerda) **quebram a identificação**. → **Oportunidade de produto:** vincular metas por **seleção** (copiando do ajuste), nunca digitação livre.
+- **Folha de pagamento:** não tem documento fiscal. Vai **só no bloco Pagamentos**, pelo **valor líquido**, com número **`9999`** (sinaliza exceção — o sistema não cobra doc fiscal). **Não** registrar folha em Documentos Fiscais nem inventar número fictício.
+- **Empregados/servidores — proporcional à parceria:** `carga_horaria` e `remuneracao_bruta` referem-se **apenas à parte da parceria prestada** (se a pessoa atua 50% em duas parcerias, informa 50% em cada), não ao total na entidade.
+- **Regime de caixa × competência:**
+  - **Documento fiscal** é declarado no exercício da **emissão** (competência) — uma única vez; depois não se redeclara. O **pagamento** entra no exercício em que foi **pago** (caixa).
+  - **Empenho** idem: declarado no exercício da emissão; o sistema não exige repasse para aceitar o empenho, mas o **repasse** referencia o empenho.
+  - **Prestação travada por exercício:** só aceita empenhos/docs fiscais **daquele** exercício. **Exceções:** (a) **2025** (1º ano) aceita empenhos/docs de exercícios anteriores; (b) **último ano de vigência** do ajuste aceita pagamentos realizados **após** o período (folha de dez. paga em jan., parcelados etc.), pois não haverá prestação seguinte.
+- **Descritor:** usar o **código do ajuste** gerado no cadastro (começa com o ano da assinatura) + `municipio`/`entidade` do **órgão prestador** (planilha de códigos do Audesp). Errar isso → rejeição por permissão/ajuste não encontrado.
+- **Certidões da prestação ≠ do ajuste:** "Dados Gerais" é igual à do ajuste, mas **Conselho** e **Corpo Diretivo** têm certidões **específicas de prestação** (mandato ativo no exercício prestado), + certidões do órgão concessor.
+- **Fluxo de responsabilidade:** a **entidade beneficiária** fornece a maior parte dos dados (despesas/receitas) ao **órgão concessor**, que complementa (responsáveis, relatórios) e **transmite**. A beneficiária **não** transmite. → A Solução TS é usada pelo concessor e precisa **coletar** os dados da beneficiária.
+- **Testar no piloto antes de produção:** no 1º ano, ~75% das remessas foram **rejeitadas** por falta de teste. → Espelhar as validações no **core** e oferecer envio ao **ambiente piloto** antes do de produção.

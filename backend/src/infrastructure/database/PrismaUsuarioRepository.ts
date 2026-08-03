@@ -107,7 +107,7 @@ export class PrismaUsuarioRepository implements IUsuarioRepository {
     });
   }
 
-  async listar({ filtros, page, pageSize }: ListarUsuariosParams): Promise<Paginado<Usuario>> {
+  async listar({ filtros, busca, page, pageSize }: ListarUsuariosParams): Promise<Paginado<Usuario>> {
     const texto = (v?: string): Prisma.StringFilter | undefined =>
       v ? { contains: v, mode: 'insensitive' } : undefined;
     const digitos = (v?: string): Prisma.StringFilter | undefined =>
@@ -124,6 +124,27 @@ export class PrismaUsuarioRepository implements IUsuarioRepository {
       email: texto(filtros.email),
       uf: filtros.uf ? { equals: filtros.uf.toUpperCase() } : undefined,
     };
+
+    // Busca global: casa com qualquer campo da grade (OR).
+    if (busca) {
+      const t = busca.trim();
+      const d = apenasDigitos(t);
+      where.OR = [
+        { nome: { contains: t, mode: 'insensitive' } },
+        { email: { contains: t, mode: 'insensitive' } },
+        { logradouro: { contains: t, mode: 'insensitive' } },
+        { bairro: { contains: t, mode: 'insensitive' } },
+        { cidade: { contains: t, mode: 'insensitive' } },
+        { uf: { contains: t, mode: 'insensitive' } },
+        ...(d
+          ? [
+              { documento: { contains: d } },
+              { cep: { contains: d } },
+              { celular: { contains: d } },
+            ]
+          : []),
+      ];
+    }
 
     const [total, rows] = await Promise.all([
       prisma.usuario.count({ where }),

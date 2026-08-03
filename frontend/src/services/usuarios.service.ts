@@ -13,11 +13,17 @@ export async function criarUsuario(payload: CriarUsuarioPayload): Promise<Usuari
 
 export async function listarUsuarios(params: {
   filtros?: FiltrosUsuario;
+  busca?: string;
   page?: number;
   pageSize?: number;
 }): Promise<Paginado<Usuario>> {
   const { data } = await http.get<Paginado<Usuario>>('/usuarios', {
-    params: { ...params.filtros, page: params.page, pageSize: params.pageSize },
+    params: {
+      ...params.filtros,
+      busca: params.busca || undefined,
+      page: params.page,
+      pageSize: params.pageSize,
+    },
   });
   return data;
 }

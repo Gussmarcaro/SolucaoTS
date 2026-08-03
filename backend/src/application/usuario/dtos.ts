@@ -59,6 +59,8 @@ export interface FiltrosUsuario {
 
 export interface ListarUsuariosParams {
   filtros: FiltrosUsuario;
+  /** Busca global — casa com qualquer campo da grade (OR). */
+  busca?: string;
   page: number;
   pageSize: number;
 }

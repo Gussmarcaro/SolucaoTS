@@ -31,6 +31,8 @@ export interface FiltrosEmpresa {
 
 export interface ListarEmpresasParams {
   filtros: FiltrosEmpresa;
+  /** Busca global — casa com qualquer campo textual da grade (OR). */
+  busca?: string;
   page: number;
   pageSize: number;
 }

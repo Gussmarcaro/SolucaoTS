@@ -10,6 +10,7 @@ export class ListarEmpresasUseCase {
 
   async execute(params: {
     filtros?: FiltrosEmpresa;
+    busca?: string;
     page?: number;
     pageSize?: number;
   }): Promise<Paginado<Empresa>> {
@@ -28,6 +29,8 @@ export class ListarEmpresasUseCase {
     if (entrada.uf?.trim()) filtros.uf = entrada.uf.trim();
     if (typeof entrada.ativo === 'boolean') filtros.ativo = entrada.ativo;
 
-    return this.repo.listar({ filtros, page, pageSize });
+    const busca = params.busca?.trim() || undefined;
+
+    return this.repo.listar({ filtros, busca, page, pageSize });
   }
 }

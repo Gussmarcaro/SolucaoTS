@@ -61,6 +61,7 @@ export class EmpresaController {
       };
       const resultado = await listar.execute({
         filtros,
+        busca: q.busca as string | undefined,
         page: q.page ? Number(q.page) : undefined,
         pageSize: q.pageSize ? Number(q.pageSize) : undefined,
       });

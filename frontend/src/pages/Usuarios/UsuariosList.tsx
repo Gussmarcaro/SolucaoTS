@@ -1,50 +1,43 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Inbox, Loader2, ServerCrash, Filter } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ChevronLeft, ChevronRight, Inbox, Loader2, Search, ServerCrash } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { useDebounce } from '@/hooks/useDebounce';
 import { listarUsuarios } from '@/services/usuarios.service';
 import { extrairMensagemErro } from '@/services/http';
 import { mascaraCelular, mascaraCep, mascaraCpfCnpj } from '@/lib/masks';
-import type { FiltrosUsuario, Paginado, Usuario } from '@/types/usuario';
+import type { Paginado, Usuario } from '@/types/usuario';
 
 const PAGE_SIZE = 10;
 
-type ColunaKey = keyof FiltrosUsuario;
-
-const colunas: { key: ColunaKey; label: string; placeholder: string; className?: string }[] = [
-  { key: 'nome', label: 'Nome / Razão Social', placeholder: 'Filtrar nome' },
-  { key: 'documento', label: 'CPF / CNPJ', placeholder: 'Filtrar documento' },
-  { key: 'email', label: 'E-mail', placeholder: 'Filtrar e-mail' },
-  { key: 'celular', label: 'Celular', placeholder: 'Filtrar celular' },
-  { key: 'logradouro', label: 'Endereço', placeholder: 'Filtrar endereço' },
-  { key: 'bairro', label: 'Bairro', placeholder: 'Filtrar bairro' },
-  { key: 'cidade', label: 'Cidade', placeholder: 'Filtrar cidade' },
-  { key: 'cep', label: 'CEP', placeholder: 'Filtrar CEP' },
-  { key: 'uf', label: 'UF', placeholder: 'UF', className: 'w-16' },
+const colunas = [
+  'Nome / Razão Social',
+  'CPF / CNPJ',
+  'E-mail',
+  'Celular',
+  'Endereço',
+  'Bairro',
+  'Cidade',
+  'CEP',
+  'UF',
 ];
 
 const vazio: Paginado<Usuario> = { data: [], total: 0, page: 1, pageSize: PAGE_SIZE, totalPages: 1 };
 
 export function UsuariosList({ refreshKey }: { refreshKey: number }) {
-  const [filtros, setFiltros] = useState<FiltrosUsuario>({});
+  const [busca, setBusca] = useState('');
   const [page, setPage] = useState(1);
   const [resultado, setResultado] = useState<Paginado<Usuario>>(vazio);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
-  const [mostrarFiltros, setMostrarFiltros] = useState(true);
 
-  const filtrosDebounced = useDebounce(filtros, 400);
-  const filtrosAtivos = useMemo(
-    () => Object.values(filtrosDebounced).filter(Boolean).length,
-    [filtrosDebounced],
-  );
+  const buscaDebounced = useDebounce(busca, 400);
 
   useEffect(() => {
     let ativo = true;
     setCarregando(true);
     setErro(null);
-    listarUsuarios({ filtros: filtrosDebounced, page, pageSize: PAGE_SIZE })
+    listarUsuarios({ busca: buscaDebounced, page, pageSize: PAGE_SIZE })
       .then((r) => ativo && setResultado(r))
       .catch((e) => {
         if (!ativo) return;
@@ -55,13 +48,10 @@ export function UsuariosList({ refreshKey }: { refreshKey: number }) {
     return () => {
       ativo = false;
     };
-  }, [filtrosDebounced, page, refreshKey]);
+  }, [buscaDebounced, page, refreshKey]);
 
-  // Volta para a primeira página sempre que os filtros mudam.
-  useEffect(() => setPage(1), [filtrosDebounced]);
-
-  const setFiltro = (key: ColunaKey, valor: string) =>
-    setFiltros((prev) => ({ ...prev, [key]: valor }));
+  // Volta para a primeira página sempre que a busca muda.
+  useEffect(() => setPage(1), [buscaDebounced]);
 
   const { data, total, totalPages } = resultado;
   const inicio = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
@@ -69,18 +59,17 @@ export function UsuariosList({ refreshKey }: { refreshKey: number }) {
 
   return (
     <div className="overflow-hidden rounded-2xl border border-ink-200/70 bg-white shadow-card dark:border-ink-800/70 dark:bg-ink-900">
-      {/* Barra superior */}
-      <div className="flex items-center justify-between gap-3 border-b border-ink-100 px-4 py-3 dark:border-ink-800">
-        <div className="flex items-center gap-2 text-sm text-ink-500 dark:text-ink-400">
-          <span className="font-medium text-ink-700 dark:text-ink-200">{total}</span> usuário(s)
-          {filtrosAtivos > 0 && (
-            <Badge tone="brand">{filtrosAtivos} filtro(s) ativo(s)</Badge>
-          )}
+      {/* Busca única — pesquisa em qualquer campo */}
+      <div className="border-b border-ink-100 p-4 dark:border-ink-800">
+        <div className="relative max-w-md">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
+          <input
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar por nome, CPF/CNPJ, e-mail, cidade..."
+            className="focus-ring h-9 w-full rounded-lg border border-ink-200 bg-ink-50 pl-9 pr-3 text-sm text-ink-800 placeholder:text-ink-400 dark:border-ink-800 dark:bg-ink-900 dark:text-ink-100"
+          />
         </div>
-        <Button variant="ghost" size="sm" onClick={() => setMostrarFiltros((v) => !v)}>
-          <Filter className="h-4 w-4" />
-          {mostrarFiltros ? 'Ocultar filtros' : 'Mostrar filtros'}
-        </Button>
       </div>
 
       <div className="overflow-x-auto">
@@ -88,25 +77,11 @@ export function UsuariosList({ refreshKey }: { refreshKey: number }) {
           <thead>
             <tr className="text-xs font-semibold uppercase tracking-wider text-ink-400">
               {colunas.map((c) => (
-                <th key={c.key} className="px-4 py-3 font-semibold">
-                  {c.label}
+                <th key={c} className="px-4 py-3 font-semibold">
+                  {c}
                 </th>
               ))}
             </tr>
-            {mostrarFiltros && (
-              <tr className="bg-ink-50/60 dark:bg-ink-800/40">
-                {colunas.map((c) => (
-                  <th key={c.key} className="px-4 pb-3">
-                    <input
-                      value={filtros[c.key] ?? ''}
-                      onChange={(e) => setFiltro(c.key, e.target.value)}
-                      placeholder={c.placeholder}
-                      className={`focus-ring h-8 w-full rounded-lg border border-ink-200 bg-white px-2.5 text-xs font-normal normal-case text-ink-700 placeholder:text-ink-400 dark:border-ink-700 dark:bg-ink-900 dark:text-ink-200 ${c.className ?? ''}`}
-                    />
-                  </th>
-                ))}
-              </tr>
-            )}
           </thead>
           <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
             {carregando ? (
@@ -144,7 +119,9 @@ export function UsuariosList({ refreshKey }: { refreshKey: number }) {
                   </td>
                   <td className="px-4 py-3 text-ink-600 dark:text-ink-300">{u.email}</td>
                   <td className="px-4 py-3 text-ink-600 dark:text-ink-300">{mascaraCelular(u.celular)}</td>
-                  <td className="px-4 py-3 text-ink-600 dark:text-ink-300">{u.logradouro}</td>
+                  <td className="px-4 py-3 text-ink-600 dark:text-ink-300">
+                    {[u.logradouro, u.numero].filter(Boolean).join(', ')}
+                  </td>
                   <td className="px-4 py-3 text-ink-600 dark:text-ink-300">{u.bairro}</td>
                   <td className="px-4 py-3 text-ink-600 dark:text-ink-300">{u.cidade}</td>
                   <td className="px-4 py-3 text-ink-500 dark:text-ink-400">{mascaraCep(u.cep)}</td>
@@ -160,9 +137,7 @@ export function UsuariosList({ refreshKey }: { refreshKey: number }) {
 
       {/* Paginação */}
       <div className="flex flex-col items-center justify-between gap-3 border-t border-ink-100 px-4 py-3 text-xs text-ink-400 dark:border-ink-800 sm:flex-row">
-        <span>
-          {total > 0 ? `Mostrando ${inicio}–${fim} de ${total}` : 'Sem registros'}
-        </span>
+        <span>{total > 0 ? `Mostrando ${inicio}–${fim} de ${total}` : 'Sem registros'}</span>
         <div className="flex items-center gap-2">
           <Button
             variant="secondary"
