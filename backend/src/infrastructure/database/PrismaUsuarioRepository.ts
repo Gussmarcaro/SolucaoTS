@@ -9,6 +9,8 @@ import type {
 } from '@/application/usuario/dtos';
 import type { Usuario } from '@/core/usuario/Usuario';
 import { apenasDigitos } from '@/shared/validators/documento';
+import { normalizarTexto } from '@/shared/normalizar';
+import { buscaUsuario } from './buscaTexto';
 
 /** Colunas do Prisma que retornamos ao domínio (sem senhaHash). */
 const selecao = {
@@ -70,6 +72,7 @@ export class PrismaUsuarioRepository implements IUsuarioRepository {
         email: dados.email,
         celular: dados.celular,
         senhaHash: dados.senhaHash,
+        buscaTexto: buscaUsuario(dados),
       },
       select: selecao,
     });
@@ -125,25 +128,15 @@ export class PrismaUsuarioRepository implements IUsuarioRepository {
       uf: filtros.uf ? { equals: filtros.uf.toUpperCase() } : undefined,
     };
 
-    // Busca global: casa com qualquer campo da grade (OR).
+    // Busca global insensível a acento/caixa: casa no campo normalizado (buscaTexto)
+    // e, para dígitos, direto nos campos numéricos (documento/CEP/celular).
     if (busca) {
-      const t = busca.trim();
-      const d = apenasDigitos(t);
-      where.OR = [
-        { nome: { contains: t, mode: 'insensitive' } },
-        { email: { contains: t, mode: 'insensitive' } },
-        { logradouro: { contains: t, mode: 'insensitive' } },
-        { bairro: { contains: t, mode: 'insensitive' } },
-        { cidade: { contains: t, mode: 'insensitive' } },
-        { uf: { contains: t, mode: 'insensitive' } },
-        ...(d
-          ? [
-              { documento: { contains: d } },
-              { cep: { contains: d } },
-              { celular: { contains: d } },
-            ]
-          : []),
-      ];
+      const t = normalizarTexto(busca);
+      const d = apenasDigitos(busca);
+      const ors: Prisma.UsuarioWhereInput[] = [];
+      if (t) ors.push({ buscaTexto: { contains: t } });
+      if (d) ors.push({ documento: { contains: d } }, { cep: { contains: d } }, { celular: { contains: d } });
+      if (ors.length) where.OR = ors;
     }
 
     const [total, rows] = await Promise.all([

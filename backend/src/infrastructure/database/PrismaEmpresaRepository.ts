@@ -9,6 +9,8 @@ import type {
 } from '@/application/empresa/dtos';
 import type { Empresa } from '@/core/empresa/Empresa';
 import { apenasDigitos } from '@/shared/validators/documento';
+import { normalizarTexto } from '@/shared/normalizar';
+import { buscaEmpresa } from './buscaTexto';
 
 export class PrismaEmpresaRepository implements IEmpresaRepository {
   buscarPorId(id: string): Promise<Empresa | null> {
@@ -20,11 +22,14 @@ export class PrismaEmpresaRepository implements IEmpresaRepository {
   }
 
   criar(dados: CriarEmpresaDTO): Promise<Empresa> {
-    return prisma.empresa.create({ data: dados });
+    return prisma.empresa.create({ data: { ...dados, buscaTexto: buscaEmpresa(dados) } });
   }
 
   atualizar(id: string, dados: AtualizarEmpresaDTO): Promise<Empresa> {
-    return prisma.empresa.update({ where: { id }, data: dados });
+    return prisma.empresa.update({
+      where: { id },
+      data: { ...dados, buscaTexto: buscaEmpresa(dados) },
+    });
   }
 
   definirAtivo(id: string, ativo: boolean): Promise<Empresa> {
@@ -48,27 +53,20 @@ export class PrismaEmpresaRepository implements IEmpresaRepository {
       ativo: typeof filtros.ativo === 'boolean' ? filtros.ativo : undefined,
     };
 
-    // Busca global: casa com qualquer campo textual da grade (OR).
+    // Busca global insensível a acento/caixa: campo normalizado + dígitos.
     if (busca) {
-      const t = busca.trim();
-      const d = apenasDigitos(t);
-      where.OR = [
-        { razaoSocial: { contains: t, mode: 'insensitive' } },
-        { nomeFantasia: { contains: t, mode: 'insensitive' } },
-        { cidade: { contains: t, mode: 'insensitive' } },
-        { bairro: { contains: t, mode: 'insensitive' } },
-        { logradouro: { contains: t, mode: 'insensitive' } },
-        { email: { contains: t, mode: 'insensitive' } },
-        { uf: { contains: t, mode: 'insensitive' } },
-        ...(d
-          ? [
-              { cnpj: { contains: d } },
-              { cep: { contains: d } },
-              { telefoneFixo: { contains: d } },
-              { whatsapp: { contains: d } },
-            ]
-          : []),
-      ];
+      const t = normalizarTexto(busca);
+      const d = apenasDigitos(busca);
+      const ors: Prisma.EmpresaWhereInput[] = [];
+      if (t) ors.push({ buscaTexto: { contains: t } });
+      if (d)
+        ors.push(
+          { cnpj: { contains: d } },
+          { cep: { contains: d } },
+          { telefoneFixo: { contains: d } },
+          { whatsapp: { contains: d } },
+        );
+      if (ors.length) where.OR = ors;
     }
 
     const [total, data] = await Promise.all([

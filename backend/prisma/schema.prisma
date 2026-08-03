@@ -158,6 +158,7 @@ model Usuario {
   uf            String        @db.VarChar(2)
   email         String        @unique
   celular       String        @db.VarChar(11)
+  buscaTexto    String        @default("") // texto normalizado (sem acento/caixa) para busca global
   senhaHash           String? // hash bcrypt da senha de login
   resetTokenHash      String?   @db.VarChar(64) // SHA-256 do token de recuperação (nunca o token puro)
   resetTokenExpiresAt DateTime? // validade do token de recuperação
@@ -194,6 +195,7 @@ model Empresa {
   email              String
   telefoneFixo       String?  @db.VarChar(11)
   whatsapp           String?  @db.VarChar(11)
+  buscaTexto         String   @default("") // texto normalizado (sem acento/caixa) para busca global
   logoUrl            String? // caminho/URL do logotipo
   ativo              Boolean  @default(true) // soft delete
   criadoEm           DateTime @default(now())
