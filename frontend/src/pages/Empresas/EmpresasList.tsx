@@ -13,7 +13,9 @@ import {
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
+import { ResizableHead } from '@/components/ui/ResizableHead';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useResizableColumns, type ColunaDef } from '@/hooks/useResizableColumns';
 import { listarEmpresas, resolverUrlLogo } from '@/services/empresas.service';
 import { extrairMensagemErro } from '@/services/http';
 import { mascaraCpfCnpj } from '@/lib/masks';
@@ -21,6 +23,14 @@ import type { Empresa, FiltrosEmpresa, Paginado } from '@/types/empresa';
 
 const PAGE_SIZE = 10;
 const vazio: Paginado<Empresa> = { data: [], total: 0, page: 1, pageSize: PAGE_SIZE, totalPages: 1 };
+
+const COLUNAS: ColunaDef[] = [
+  { key: 'empresa', label: 'Empresa', width: 300 },
+  { key: 'cnpj', label: 'CNPJ', width: 170 },
+  { key: 'cidadeuf', label: 'Cidade / UF', width: 170 },
+  { key: 'status', label: 'Status', width: 120 },
+  { key: 'acoes', label: 'Ações', width: 130, align: 'right' },
+];
 
 interface Props {
   refreshKey: number;
@@ -39,6 +49,7 @@ export function EmpresasList({ refreshKey, onVisualizar, onEditar, onAlternarSta
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
+  const { widths, startResize, totalWidth } = useResizableColumns('@SolucaoTS:grid:empresas', COLUNAS);
   const buscaDebounced = useDebounce(busca, 400);
 
   const filtros = useMemo<FiltrosEmpresa>(() => {
@@ -71,7 +82,7 @@ export function EmpresasList({ refreshKey, onVisualizar, onEditar, onAlternarSta
 
   return (
     <div className="overflow-hidden rounded-2xl border border-ink-200/70 bg-white shadow-card dark:border-ink-800/70 dark:bg-ink-900">
-      {/* Busca única (qualquer campo) + filtro de status */}
+      {/* Busca única (qualquer campo, ignora acentos) + filtro de status */}
       <div className="flex flex-col gap-3 border-b border-ink-100 p-4 dark:border-ink-800 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative max-w-md flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
@@ -97,26 +108,18 @@ export function EmpresasList({ refreshKey, onVisualizar, onEditar, onAlternarSta
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[900px] text-left text-sm">
-          <thead>
-            <tr className="text-xs font-semibold uppercase tracking-wider text-ink-400">
-              <th className="px-4 py-3">Empresa</th>
-              <th className="px-4 py-3">CNPJ</th>
-              <th className="px-4 py-3">Cidade / UF</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3 text-right">Ações</th>
-            </tr>
-          </thead>
+        <table className="w-full text-left text-sm" style={{ tableLayout: 'fixed', minWidth: totalWidth }}>
+          <ResizableHead colunas={COLUNAS} widths={widths} startResize={startResize} />
           <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
             {carregando ? (
               <tr>
-                <td colSpan={5} className="py-16 text-center">
+                <td colSpan={COLUNAS.length} className="py-16 text-center">
                   <Loader2 className="mx-auto h-6 w-6 animate-spin text-brand-500" />
                 </td>
               </tr>
             ) : erro ? (
               <tr>
-                <td colSpan={5} className="py-16 text-center">
+                <td colSpan={COLUNAS.length} className="py-16 text-center">
                   <ServerCrash className="mx-auto h-8 w-8 text-red-400" />
                   <p className="mt-2 text-sm font-medium text-ink-600 dark:text-ink-300">{erro}</p>
                   <p className="mt-1 text-xs text-ink-400">Verifique se a API do backend está em execução.</p>
@@ -124,7 +127,7 @@ export function EmpresasList({ refreshKey, onVisualizar, onEditar, onAlternarSta
               </tr>
             ) : data.length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-16 text-center">
+                <td colSpan={COLUNAS.length} className="py-16 text-center">
                   <Building2 className="mx-auto h-8 w-8 text-ink-300" />
                   <p className="mt-2 text-sm text-ink-500 dark:text-ink-400">Nenhuma empresa encontrada.</p>
                 </td>
@@ -144,23 +147,23 @@ export function EmpresasList({ refreshKey, onVisualizar, onEditar, onAlternarSta
                           )}
                         </div>
                         <div className="min-w-0">
-                          <p className="truncate font-medium text-ink-800 dark:text-ink-100">{emp.razaoSocial}</p>
+                          <p className="truncate font-medium text-ink-800 dark:text-ink-100" title={emp.razaoSocial}>
+                            {emp.razaoSocial}
+                          </p>
                           {emp.nomeFantasia && (
                             <p className="truncate text-xs text-ink-400">{emp.nomeFantasia}</p>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-ink-600 dark:text-ink-300">
+                    <td className="truncate px-4 py-3 font-mono text-xs text-ink-600 dark:text-ink-300">
                       {mascaraCpfCnpj(emp.cnpj)}
                     </td>
-                    <td className="px-4 py-3 text-ink-600 dark:text-ink-300">
+                    <td className="truncate px-4 py-3 text-ink-600 dark:text-ink-300">
                       {emp.cidade} / {emp.uf}
                     </td>
                     <td className="px-4 py-3">
-                      <Badge tone={emp.ativo ? 'success' : 'neutral'}>
-                        {emp.ativo ? 'Ativo' : 'Inativo'}
-                      </Badge>
+                      <Badge tone={emp.ativo ? 'success' : 'neutral'}>{emp.ativo ? 'Ativo' : 'Inativo'}</Badge>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
@@ -170,11 +173,7 @@ export function EmpresasList({ refreshKey, onVisualizar, onEditar, onAlternarSta
                         <IconBtn title="Editar" onClick={() => onEditar(emp)}>
                           <Pencil className="h-4 w-4" />
                         </IconBtn>
-                        <IconBtn
-                          title={emp.ativo ? 'Inativar' : 'Reativar'}
-                          danger={emp.ativo}
-                          onClick={() => onAlternarStatus(emp)}
-                        >
+                        <IconBtn title={emp.ativo ? 'Inativar' : 'Reativar'} danger={emp.ativo} onClick={() => onAlternarStatus(emp)}>
                           <Power className="h-4 w-4" />
                         </IconBtn>
                       </div>
@@ -187,7 +186,6 @@ export function EmpresasList({ refreshKey, onVisualizar, onEditar, onAlternarSta
         </table>
       </div>
 
-      {/* Paginação */}
       <div className="flex flex-col items-center justify-between gap-3 border-t border-ink-100 px-4 py-3 text-xs text-ink-400 dark:border-ink-800 sm:flex-row">
         <span>{total > 0 ? `${total} empresa(s)` : 'Sem registros'}</span>
         <div className="flex items-center gap-2">
@@ -195,9 +193,7 @@ export function EmpresasList({ refreshKey, onVisualizar, onEditar, onAlternarSta
             <ChevronLeft className="h-4 w-4" />
             Anterior
           </Button>
-          <span className="px-1 text-ink-500 dark:text-ink-400">
-            Página {page} de {totalPages}
-          </span>
+          <span className="px-1 text-ink-500 dark:text-ink-400">Página {page} de {totalPages}</span>
           <Button variant="secondary" size="sm" disabled={page >= totalPages || carregando} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>
             Próximo
             <ChevronRight className="h-4 w-4" />
