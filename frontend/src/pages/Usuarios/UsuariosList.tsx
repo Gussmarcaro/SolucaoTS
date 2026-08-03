@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Inbox, Loader2, Search, ServerCrash } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { ResizableHead } from '@/components/ui/ResizableHead';
+import { ResizableHead, type SortState } from '@/components/ui/ResizableHead';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useResizableColumns, type ColunaDef } from '@/hooks/useResizableColumns';
 import { listarUsuarios } from '@/services/usuarios.service';
@@ -13,15 +13,15 @@ import type { Paginado, Usuario } from '@/types/usuario';
 const PAGE_SIZE = 10;
 
 const COLUNAS: ColunaDef[] = [
-  { key: 'nome', label: 'Nome / Razão Social', width: 210 },
-  { key: 'documento', label: 'CPF / CNPJ', width: 140 },
-  { key: 'email', label: 'E-mail', width: 220 },
-  { key: 'celular', label: 'Celular', width: 140 },
-  { key: 'endereco', label: 'Endereço', width: 190 },
-  { key: 'bairro', label: 'Bairro', width: 160 },
-  { key: 'cidade', label: 'Cidade', width: 150 },
-  { key: 'cep', label: 'CEP', width: 110 },
-  { key: 'uf', label: 'UF', width: 70, minWidth: 50 },
+  { key: 'nome', label: 'Nome / Razão Social', width: 210, sortKey: 'nome' },
+  { key: 'documento', label: 'CPF / CNPJ', width: 140, sortKey: 'documento' },
+  { key: 'email', label: 'E-mail', width: 220, sortKey: 'email' },
+  { key: 'celular', label: 'Celular', width: 140, sortKey: 'celular' },
+  { key: 'endereco', label: 'Endereço', width: 190, sortKey: 'logradouro' },
+  { key: 'bairro', label: 'Bairro', width: 160, sortKey: 'bairro' },
+  { key: 'cidade', label: 'Cidade', width: 150, sortKey: 'cidade' },
+  { key: 'cep', label: 'CEP', width: 110, sortKey: 'cep' },
+  { key: 'uf', label: 'UF', width: 70, minWidth: 50, sortKey: 'uf' },
 ];
 
 const vazio: Paginado<Usuario> = { data: [], total: 0, page: 1, pageSize: PAGE_SIZE, totalPages: 1 };
@@ -33,6 +33,8 @@ export function UsuariosList({ refreshKey }: { refreshKey: number }) {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
+  const [sort, setSort] = useState<SortState | null>(null);
+
   const { widths, startResize, totalWidth } = useResizableColumns('@SolucaoTS:grid:usuarios', COLUNAS);
   const buscaDebounced = useDebounce(busca, 400);
 
@@ -40,7 +42,13 @@ export function UsuariosList({ refreshKey }: { refreshKey: number }) {
     let ativo = true;
     setCarregando(true);
     setErro(null);
-    listarUsuarios({ busca: buscaDebounced, page, pageSize: PAGE_SIZE })
+    listarUsuarios({
+      busca: buscaDebounced,
+      orderBy: sort?.campo,
+      orderDir: sort?.direcao,
+      page,
+      pageSize: PAGE_SIZE,
+    })
       .then((r) => ativo && setResultado(r))
       .catch((e) => {
         if (!ativo) return;
@@ -51,9 +59,17 @@ export function UsuariosList({ refreshKey }: { refreshKey: number }) {
     return () => {
       ativo = false;
     };
-  }, [buscaDebounced, page, refreshKey]);
+  }, [buscaDebounced, sort, page, refreshKey]);
 
-  useEffect(() => setPage(1), [buscaDebounced]);
+  useEffect(() => setPage(1), [buscaDebounced, sort]);
+
+  function handleSort(sortKey: string) {
+    setSort((prev) =>
+      prev?.campo === sortKey
+        ? { campo: sortKey, direcao: prev.direcao === 'asc' ? 'desc' : 'asc' }
+        : { campo: sortKey, direcao: 'asc' },
+    );
+  }
 
   const { data, total, totalPages } = resultado;
   const inicio = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
@@ -77,7 +93,7 @@ export function UsuariosList({ refreshKey }: { refreshKey: number }) {
 
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm" style={{ tableLayout: 'fixed', minWidth: totalWidth }}>
-          <ResizableHead colunas={COLUNAS} widths={widths} startResize={startResize} />
+          <ResizableHead colunas={COLUNAS} widths={widths} startResize={startResize} sort={sort} onSort={handleSort} />
           <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
             {carregando ? (
               <tr>

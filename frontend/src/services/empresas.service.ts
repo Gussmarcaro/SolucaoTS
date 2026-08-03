@@ -12,12 +12,21 @@ export function resolverUrlLogo(logoUrl: string | null): string | null {
 export async function listarEmpresas(params: {
   filtros?: FiltrosEmpresa;
   busca?: string;
+  orderBy?: string;
+  orderDir?: 'asc' | 'desc';
   page?: number;
   pageSize?: number;
 }): Promise<Paginado<Empresa>> {
-  const { filtros = {}, busca, page, pageSize } = params;
+  const { filtros = {}, busca, orderBy, orderDir, page, pageSize } = params;
   const { data } = await http.get<Paginado<Empresa>>('/empresas', {
-    params: { ...filtros, busca: busca || undefined, page, pageSize },
+    params: {
+      ...filtros,
+      busca: busca || undefined,
+      orderBy: orderBy || undefined,
+      orderDir: orderDir || undefined,
+      page,
+      pageSize,
+    },
   });
   return data;
 }

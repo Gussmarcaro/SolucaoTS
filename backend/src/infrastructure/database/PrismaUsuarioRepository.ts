@@ -110,7 +110,7 @@ export class PrismaUsuarioRepository implements IUsuarioRepository {
     });
   }
 
-  async listar({ filtros, busca, page, pageSize }: ListarUsuariosParams): Promise<Paginado<Usuario>> {
+  async listar({ filtros, busca, ordem, page, pageSize }: ListarUsuariosParams): Promise<Paginado<Usuario>> {
     const texto = (v?: string): Prisma.StringFilter | undefined =>
       v ? { contains: v, mode: 'insensitive' } : undefined;
     const digitos = (v?: string): Prisma.StringFilter | undefined =>
@@ -144,7 +144,9 @@ export class PrismaUsuarioRepository implements IUsuarioRepository {
       prisma.usuario.findMany({
         where,
         select: selecao,
-        orderBy: { criadoEm: 'desc' },
+        orderBy: ordem
+          ? ({ [ordem.campo]: ordem.direcao } as Prisma.UsuarioOrderByWithRelationInput)
+          : { criadoEm: 'desc' },
         skip: (page - 1) * pageSize,
         take: pageSize,
       }),

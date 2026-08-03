@@ -14,6 +14,8 @@ export async function criarUsuario(payload: CriarUsuarioPayload): Promise<Usuari
 export async function listarUsuarios(params: {
   filtros?: FiltrosUsuario;
   busca?: string;
+  orderBy?: string;
+  orderDir?: 'asc' | 'desc';
   page?: number;
   pageSize?: number;
 }): Promise<Paginado<Usuario>> {
@@ -21,6 +23,8 @@ export async function listarUsuarios(params: {
     params: {
       ...params.filtros,
       busca: params.busca || undefined,
+      orderBy: params.orderBy || undefined,
+      orderDir: params.orderDir || undefined,
       page: params.page,
       pageSize: params.pageSize,
     },

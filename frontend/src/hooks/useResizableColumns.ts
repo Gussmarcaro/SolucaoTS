@@ -9,6 +9,8 @@ export interface ColunaDef {
   minWidth?: number;
   /** Alinhamento do conteúdo da coluna. */
   align?: 'left' | 'right' | 'center';
+  /** Campo do backend usado na ordenação. Se ausente, a coluna não é ordenável. */
+  sortKey?: string;
 }
 
 /**

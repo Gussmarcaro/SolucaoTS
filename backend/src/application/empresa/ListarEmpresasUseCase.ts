@@ -5,12 +5,17 @@ import type { FiltrosEmpresa, Paginado } from './dtos';
 const PAGE_SIZE_PADRAO = 10;
 const PAGE_SIZE_MAX = 100;
 
+/** Campos permitidos para ordenação. */
+const CAMPOS_ORDENAVEIS = ['razaoSocial', 'nomeFantasia', 'cnpj', 'cidade', 'uf', 'ativo', 'criadoEm'];
+
 export class ListarEmpresasUseCase {
   constructor(private readonly repo: IEmpresaRepository) {}
 
   async execute(params: {
     filtros?: FiltrosEmpresa;
     busca?: string;
+    orderBy?: string;
+    orderDir?: string;
     page?: number;
     pageSize?: number;
   }): Promise<Paginado<Empresa>> {
@@ -31,6 +36,12 @@ export class ListarEmpresasUseCase {
 
     const busca = params.busca?.trim() || undefined;
 
-    return this.repo.listar({ filtros, busca, page, pageSize });
+    const campo =
+      params.orderBy && CAMPOS_ORDENAVEIS.includes(params.orderBy) ? params.orderBy : undefined;
+    const ordem = campo
+      ? { campo, direcao: params.orderDir === 'asc' ? ('asc' as const) : ('desc' as const) }
+      : undefined;
+
+    return this.repo.listar({ filtros, busca, ordem, page, pageSize });
   }
 }

@@ -36,6 +36,8 @@ export class UsuarioController {
       const resultado = await listarUsuarios.execute({
         filtros,
         busca: q.busca as string | undefined,
+        orderBy: q.orderBy as string | undefined,
+        orderDir: q.orderDir as string | undefined,
         page: q.page ? Number(q.page) : undefined,
         pageSize: q.pageSize ? Number(q.pageSize) : undefined,
       });

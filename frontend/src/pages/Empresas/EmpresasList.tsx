@@ -13,7 +13,7 @@ import {
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
-import { ResizableHead } from '@/components/ui/ResizableHead';
+import { ResizableHead, type SortState } from '@/components/ui/ResizableHead';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useResizableColumns, type ColunaDef } from '@/hooks/useResizableColumns';
 import { listarEmpresas, resolverUrlLogo } from '@/services/empresas.service';
@@ -25,10 +25,10 @@ const PAGE_SIZE = 10;
 const vazio: Paginado<Empresa> = { data: [], total: 0, page: 1, pageSize: PAGE_SIZE, totalPages: 1 };
 
 const COLUNAS: ColunaDef[] = [
-  { key: 'empresa', label: 'Empresa', width: 300 },
-  { key: 'cnpj', label: 'CNPJ', width: 170 },
-  { key: 'cidadeuf', label: 'Cidade / UF', width: 170 },
-  { key: 'status', label: 'Status', width: 120 },
+  { key: 'empresa', label: 'Empresa', width: 300, sortKey: 'razaoSocial' },
+  { key: 'cnpj', label: 'CNPJ', width: 170, sortKey: 'cnpj' },
+  { key: 'cidadeuf', label: 'Cidade / UF', width: 170, sortKey: 'cidade' },
+  { key: 'status', label: 'Status', width: 120, sortKey: 'ativo' },
   { key: 'acoes', label: 'Ações', width: 130, align: 'right' },
 ];
 
@@ -49,6 +49,8 @@ export function EmpresasList({ refreshKey, onVisualizar, onEditar, onAlternarSta
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
+  const [sort, setSort] = useState<SortState | null>(null);
+
   const { widths, startResize, totalWidth } = useResizableColumns('@SolucaoTS:grid:empresas', COLUNAS);
   const buscaDebounced = useDebounce(busca, 400);
 
@@ -63,7 +65,14 @@ export function EmpresasList({ refreshKey, onVisualizar, onEditar, onAlternarSta
     let ativo = true;
     setCarregando(true);
     setErro(null);
-    listarEmpresas({ filtros, busca: buscaDebounced, page, pageSize: PAGE_SIZE })
+    listarEmpresas({
+      filtros,
+      busca: buscaDebounced,
+      orderBy: sort?.campo,
+      orderDir: sort?.direcao,
+      page,
+      pageSize: PAGE_SIZE,
+    })
       .then((r) => ativo && setResultado(r))
       .catch((e) => {
         if (!ativo) return;
@@ -74,9 +83,17 @@ export function EmpresasList({ refreshKey, onVisualizar, onEditar, onAlternarSta
     return () => {
       ativo = false;
     };
-  }, [filtros, buscaDebounced, page, refreshKey]);
+  }, [filtros, buscaDebounced, sort, page, refreshKey]);
 
-  useEffect(() => setPage(1), [filtros, buscaDebounced]);
+  useEffect(() => setPage(1), [filtros, buscaDebounced, sort]);
+
+  function handleSort(sortKey: string) {
+    setSort((prev) =>
+      prev?.campo === sortKey
+        ? { campo: sortKey, direcao: prev.direcao === 'asc' ? 'desc' : 'asc' }
+        : { campo: sortKey, direcao: 'asc' },
+    );
+  }
 
   const { data, total, totalPages } = resultado;
 
@@ -109,7 +126,7 @@ export function EmpresasList({ refreshKey, onVisualizar, onEditar, onAlternarSta
 
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm" style={{ tableLayout: 'fixed', minWidth: totalWidth }}>
-          <ResizableHead colunas={COLUNAS} widths={widths} startResize={startResize} />
+          <ResizableHead colunas={COLUNAS} widths={widths} startResize={startResize} sort={sort} onSort={handleSort} />
           <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
             {carregando ? (
               <tr>

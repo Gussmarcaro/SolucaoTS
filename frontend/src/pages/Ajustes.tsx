@@ -66,7 +66,7 @@ export function Ajustes() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead>
-              <tr className="text-xs font-semibold uppercase tracking-wider text-ink-400">
+              <tr className="border-b border-ink-100 text-xs font-semibold text-ink-500 dark:border-ink-800 dark:text-ink-400">
                 <th className="px-5 py-3 font-semibold">Código do Ajuste</th>
                 <th className="px-5 py-3 font-semibold">Entidade</th>
                 <th className="px-5 py-3 font-semibold">Tipo</th>

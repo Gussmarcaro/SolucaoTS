@@ -33,6 +33,8 @@ export interface ListarEmpresasParams {
   filtros: FiltrosEmpresa;
   /** Busca global — casa com qualquer campo textual da grade (OR). */
   busca?: string;
+  /** Ordenação (campo já validado contra whitelist). */
+  ordem?: { campo: string; direcao: 'asc' | 'desc' };
   page: number;
   pageSize: number;
 }

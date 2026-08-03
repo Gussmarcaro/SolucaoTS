@@ -62,7 +62,7 @@ export function PrestacaoContas() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-left text-sm">
               <thead>
-                <tr className="text-xs font-semibold uppercase tracking-wider text-ink-400">
+                <tr className="border-b border-ink-100 text-xs font-semibold text-ink-500 dark:border-ink-800 dark:text-ink-400">
                   <th className="px-2 py-3">Ajuste</th>
                   <th className="px-2 py-3">Entidade</th>
                   <th className="px-2 py-3">Período</th>

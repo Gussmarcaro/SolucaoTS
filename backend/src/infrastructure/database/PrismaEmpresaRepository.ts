@@ -40,7 +40,7 @@ export class PrismaEmpresaRepository implements IEmpresaRepository {
     return prisma.empresa.update({ where: { id }, data: { logoUrl } });
   }
 
-  async listar({ filtros, busca, page, pageSize }: ListarEmpresasParams): Promise<Paginado<Empresa>> {
+  async listar({ filtros, busca, ordem, page, pageSize }: ListarEmpresasParams): Promise<Paginado<Empresa>> {
     const texto = (v?: string): Prisma.StringFilter | undefined =>
       v ? { contains: v, mode: 'insensitive' } : undefined;
 
@@ -73,7 +73,9 @@ export class PrismaEmpresaRepository implements IEmpresaRepository {
       prisma.empresa.count({ where }),
       prisma.empresa.findMany({
         where,
-        orderBy: { razaoSocial: 'asc' },
+        orderBy: ordem
+          ? ({ [ordem.campo]: ordem.direcao } as Prisma.EmpresaOrderByWithRelationInput)
+          : { razaoSocial: 'asc' },
         skip: (page - 1) * pageSize,
         take: pageSize,
       }),
