@@ -153,7 +153,12 @@ export function EmpresasList({ refreshKey, onVisualizar, onEditar, onAlternarSta
               data.map((emp) => {
                 const logo = resolverUrlLogo(emp.logoUrl);
                 return (
-                  <tr key={emp.id} className="transition-colors hover:bg-ink-50/70 dark:hover:bg-ink-800/40">
+                  <tr
+                    key={emp.id}
+                    onDoubleClick={() => onEditar(emp)}
+                    title="Duplo-clique para editar"
+                    className="transition-colors hover:bg-ink-50/70 dark:hover:bg-ink-800/40"
+                  >
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-1">
                         <IconBtn title="Visualizar" onClick={() => onVisualizar(emp)}>

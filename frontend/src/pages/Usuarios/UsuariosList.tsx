@@ -126,7 +126,12 @@ export function UsuariosList({
               </tr>
             ) : (
               data.map((u) => (
-                <tr key={u.id} className="transition-colors hover:bg-ink-50/70 dark:hover:bg-ink-800/40">
+                <tr
+                  key={u.id}
+                  onDoubleClick={() => onEditar(u)}
+                  title="Duplo-clique para editar"
+                  className="transition-colors hover:bg-ink-50/70 dark:hover:bg-ink-800/40"
+                >
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-center">
                       <button
