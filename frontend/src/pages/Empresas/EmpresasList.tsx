@@ -25,11 +25,11 @@ const PAGE_SIZE = 10;
 const vazio: Paginado<Empresa> = { data: [], total: 0, page: 1, pageSize: PAGE_SIZE, totalPages: 1 };
 
 const COLUNAS: ColunaDef[] = [
+  { key: 'acoes', label: 'Ações', width: 120, minWidth: 100, align: 'center' },
   { key: 'empresa', label: 'Empresa', width: 300, sortKey: 'razaoSocial' },
   { key: 'cnpj', label: 'CNPJ', width: 170, sortKey: 'cnpj' },
   { key: 'cidadeuf', label: 'Cidade / UF', width: 170, sortKey: 'cidade' },
   { key: 'status', label: 'Status', width: 120, sortKey: 'ativo' },
-  { key: 'acoes', label: 'Ações', width: 130, align: 'right' },
 ];
 
 interface Props {
@@ -155,6 +155,19 @@ export function EmpresasList({ refreshKey, onVisualizar, onEditar, onAlternarSta
                 return (
                   <tr key={emp.id} className="transition-colors hover:bg-ink-50/70 dark:hover:bg-ink-800/40">
                     <td className="px-4 py-3">
+                      <div className="flex items-center justify-center gap-1">
+                        <IconBtn title="Visualizar" onClick={() => onVisualizar(emp)}>
+                          <Eye className="h-4 w-4" />
+                        </IconBtn>
+                        <IconBtn title="Editar" onClick={() => onEditar(emp)}>
+                          <Pencil className="h-4 w-4" />
+                        </IconBtn>
+                        <IconBtn title={emp.ativo ? 'Inativar' : 'Reativar'} danger={emp.ativo} onClick={() => onAlternarStatus(emp)}>
+                          <Power className="h-4 w-4" />
+                        </IconBtn>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-ink-50 dark:bg-ink-800">
                           {logo ? (
@@ -181,19 +194,6 @@ export function EmpresasList({ refreshKey, onVisualizar, onEditar, onAlternarSta
                     </td>
                     <td className="px-4 py-3">
                       <Badge tone={emp.ativo ? 'success' : 'neutral'}>{emp.ativo ? 'Ativo' : 'Inativo'}</Badge>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        <IconBtn title="Visualizar" onClick={() => onVisualizar(emp)}>
-                          <Eye className="h-4 w-4" />
-                        </IconBtn>
-                        <IconBtn title="Editar" onClick={() => onEditar(emp)}>
-                          <Pencil className="h-4 w-4" />
-                        </IconBtn>
-                        <IconBtn title={emp.ativo ? 'Inativar' : 'Reativar'} danger={emp.ativo} onClick={() => onAlternarStatus(emp)}>
-                          <Power className="h-4 w-4" />
-                        </IconBtn>
-                      </div>
                     </td>
                   </tr>
                 );

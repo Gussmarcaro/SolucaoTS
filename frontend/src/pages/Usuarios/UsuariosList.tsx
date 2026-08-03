@@ -13,6 +13,7 @@ import type { Paginado, Usuario } from '@/types/usuario';
 const PAGE_SIZE = 10;
 
 const COLUNAS: ColunaDef[] = [
+  { key: 'acoes', label: 'Ações', width: 80, minWidth: 64, align: 'center' },
   { key: 'nome', label: 'Nome / Razão Social', width: 210, sortKey: 'nome' },
   { key: 'documento', label: 'CPF / CNPJ', width: 140, sortKey: 'documento' },
   { key: 'email', label: 'E-mail', width: 220, sortKey: 'email' },
@@ -22,7 +23,6 @@ const COLUNAS: ColunaDef[] = [
   { key: 'cidade', label: 'Cidade', width: 150, sortKey: 'cidade' },
   { key: 'cep', label: 'CEP', width: 110, sortKey: 'cep' },
   { key: 'uf', label: 'UF', width: 70, minWidth: 50, sortKey: 'uf' },
-  { key: 'acoes', label: 'Ações', width: 90, align: 'right' },
 ];
 
 const vazio: Paginado<Usuario> = { data: [], total: 0, page: 1, pageSize: PAGE_SIZE, totalPages: 1 };
@@ -126,12 +126,18 @@ export function UsuariosList({
               </tr>
             ) : (
               data.map((u) => (
-                <tr
-                  key={u.id}
-                  onDoubleClick={() => onEditar(u)}
-                  title="Dê um duplo-clique para editar"
-                  className="cursor-default transition-colors hover:bg-ink-50/70 dark:hover:bg-ink-800/40"
-                >
+                <tr key={u.id} className="transition-colors hover:bg-ink-50/70 dark:hover:bg-ink-800/40">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-center">
+                      <button
+                        title="Editar"
+                        onClick={() => onEditar(u)}
+                        className="focus-ring rounded-lg p-1.5 text-ink-400 transition-colors hover:bg-ink-100 hover:text-brand-600 dark:hover:bg-ink-800 dark:hover:text-brand-300"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </td>
                   <td className={`${cel} font-medium text-ink-800 dark:text-ink-100`} title={u.nome}>{u.nome}</td>
                   <td className={`${cel} font-mono text-xs text-ink-600 dark:text-ink-300`}>{mascaraCpfCnpj(u.documento)}</td>
                   <td className={`${cel} text-ink-600 dark:text-ink-300`} title={u.email}>{u.email}</td>
@@ -144,17 +150,6 @@ export function UsuariosList({
                   <td className={`${cel} text-ink-500 dark:text-ink-400`}>{mascaraCep(u.cep)}</td>
                   <td className="px-4 py-3">
                     <Badge tone="neutral">{u.uf}</Badge>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end">
-                      <button
-                        title="Editar"
-                        onClick={() => onEditar(u)}
-                        className="focus-ring rounded-lg p-1.5 text-ink-400 transition-colors hover:bg-ink-100 hover:text-ink-700 dark:hover:bg-ink-800 dark:hover:text-ink-200"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                    </div>
                   </td>
                 </tr>
               ))
