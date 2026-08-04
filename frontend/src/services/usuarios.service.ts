@@ -20,6 +20,11 @@ export async function atualizarUsuario(
   return data;
 }
 
+export async function definirStatusUsuario(id: string, ativo: boolean): Promise<Usuario> {
+  const { data } = await http.patch<Usuario>(`/usuarios/${id}/status`, { ativo });
+  return data;
+}
+
 export async function listarUsuarios(params: {
   filtros?: FiltrosUsuario;
   busca?: string;

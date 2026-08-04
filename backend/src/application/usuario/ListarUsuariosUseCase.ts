@@ -29,6 +29,7 @@ export class ListarUsuariosUseCase {
     );
 
     const filtros = this.limparFiltros(params.filtros ?? {});
+    if (typeof params.filtros?.ativo === 'boolean') filtros.ativo = params.filtros.ativo;
     const busca = params.busca?.trim() || undefined;
 
     const campo =
@@ -41,12 +42,13 @@ export class ListarUsuariosUseCase {
     return this.repo.listar(listarParams);
   }
 
-  /** Remove filtros vazios e normaliza. */
+  /** Remove filtros de texto vazios (o filtro booleano `ativo` é tratado à parte). */
   private limparFiltros(filtros: FiltrosUsuario): FiltrosUsuario {
     const limpo: FiltrosUsuario = {};
     for (const [chave, valor] of Object.entries(filtros)) {
-      const v = typeof valor === 'string' ? valor.trim() : valor;
-      if (v) limpo[chave as keyof FiltrosUsuario] = v as string;
+      if (typeof valor === 'string' && valor.trim()) {
+        (limpo as Record<string, string>)[chave] = valor.trim();
+      }
     }
     return limpo;
   }

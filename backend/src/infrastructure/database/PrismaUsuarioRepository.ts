@@ -109,6 +109,11 @@ export class PrismaUsuarioRepository implements IUsuarioRepository {
     return toDomain(row);
   }
 
+  async definirAtivo(id: string, ativo: boolean): Promise<Usuario> {
+    const row = await prisma.usuario.update({ where: { id }, data: { ativo }, select: selecao });
+    return toDomain(row);
+  }
+
   async buscarAuthPorEmail(email: string): Promise<UsuarioAuth | null> {
     const row = await prisma.usuario.findUnique({
       where: { email: email.trim().toLowerCase() },
@@ -156,6 +161,7 @@ export class PrismaUsuarioRepository implements IUsuarioRepository {
       cidade: texto(filtros.cidade),
       email: texto(filtros.email),
       uf: filtros.uf ? { equals: filtros.uf.toUpperCase() } : undefined,
+      ativo: typeof filtros.ativo === 'boolean' ? filtros.ativo : undefined,
     };
 
     // Busca global insensível a acento/caixa: casa no campo normalizado (buscaTexto)

@@ -1,19 +1,30 @@
-import { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight, Inbox, Loader2, Pencil, Search, ServerCrash } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Inbox,
+  Loader2,
+  Pencil,
+  Power,
+  Search,
+  ServerCrash,
+} from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { Select } from '@/components/ui/Select';
 import { ResizableHead, type SortState } from '@/components/ui/ResizableHead';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useResizableColumns, type ColunaDef } from '@/hooks/useResizableColumns';
 import { listarUsuarios } from '@/services/usuarios.service';
 import { extrairMensagemErro } from '@/services/http';
 import { mascaraCelular, mascaraCep, mascaraCpfCnpj } from '@/lib/masks';
-import type { Paginado, Usuario } from '@/types/usuario';
+import type { FiltrosUsuario, Paginado, Usuario } from '@/types/usuario';
 
 const PAGE_SIZE = 10;
 
 const COLUNAS: ColunaDef[] = [
-  { key: 'acoes', label: 'Ações', width: 80, minWidth: 64, align: 'center' },
+  { key: 'acoes', label: 'Ações', width: 120, minWidth: 100, align: 'center' },
   { key: 'nome', label: 'Nome / Razão Social', width: 210, sortKey: 'nome' },
   { key: 'documento', label: 'CPF / CNPJ', width: 140, sortKey: 'documento' },
   { key: 'email', label: 'E-mail', width: 220, sortKey: 'email' },
@@ -23,33 +34,45 @@ const COLUNAS: ColunaDef[] = [
   { key: 'cidade', label: 'Cidade', width: 150, sortKey: 'cidade' },
   { key: 'cep', label: 'CEP', width: 110, sortKey: 'cep' },
   { key: 'uf', label: 'UF', width: 70, minWidth: 50, sortKey: 'uf' },
+  { key: 'status', label: 'Status', width: 110, sortKey: 'ativo' },
 ];
 
 const vazio: Paginado<Usuario> = { data: [], total: 0, page: 1, pageSize: PAGE_SIZE, totalPages: 1 };
 
-export function UsuariosList({
-  refreshKey,
-  onEditar,
-}: {
+type StatusFiltro = '' | 'ativos' | 'inativos';
+
+interface Props {
   refreshKey: number;
+  onVisualizar: (usuario: Usuario) => void;
   onEditar: (usuario: Usuario) => void;
-}) {
+  onAlternarStatus: (usuario: Usuario) => void;
+}
+
+export function UsuariosList({ refreshKey, onVisualizar, onEditar, onAlternarStatus }: Props) {
   const [busca, setBusca] = useState('');
+  const [status, setStatus] = useState<StatusFiltro>('');
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<SortState | null>(null);
   const [resultado, setResultado] = useState<Paginado<Usuario>>(vazio);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
-  const [sort, setSort] = useState<SortState | null>(null);
-
   const { widths, startResize, totalWidth } = useResizableColumns('@SolucaoTS:grid:usuarios', COLUNAS);
   const buscaDebounced = useDebounce(busca, 400);
+
+  const filtros = useMemo<FiltrosUsuario>(() => {
+    const f: FiltrosUsuario = {};
+    if (status === 'ativos') f.ativo = true;
+    if (status === 'inativos') f.ativo = false;
+    return f;
+  }, [status]);
 
   useEffect(() => {
     let ativo = true;
     setCarregando(true);
     setErro(null);
     listarUsuarios({
+      filtros,
       busca: buscaDebounced,
       orderBy: sort?.campo,
       orderDir: sort?.direcao,
@@ -66,9 +89,9 @@ export function UsuariosList({
     return () => {
       ativo = false;
     };
-  }, [buscaDebounced, sort, page, refreshKey]);
+  }, [filtros, buscaDebounced, sort, page, refreshKey]);
 
-  useEffect(() => setPage(1), [buscaDebounced, sort]);
+  useEffect(() => setPage(1), [filtros, buscaDebounced, sort]);
 
   function handleSort(sortKey: string) {
     setSort((prev) =>
@@ -85,15 +108,27 @@ export function UsuariosList({
 
   return (
     <div className="overflow-hidden rounded-2xl border border-ink-200/70 bg-white shadow-card dark:border-ink-800/70 dark:bg-ink-900">
-      {/* Busca única — pesquisa em qualquer campo (ignora acentos/caixa) */}
-      <div className="border-b border-ink-100 p-4 dark:border-ink-800">
-        <div className="relative max-w-md">
+      {/* Busca única (qualquer campo, ignora acentos) + filtro de status */}
+      <div className="flex flex-col gap-3 border-b border-ink-100 p-4 dark:border-ink-800 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative max-w-md flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
           <input
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             placeholder="Buscar por nome, CPF/CNPJ, e-mail, cidade..."
             className="focus-ring h-9 w-full rounded-lg border border-ink-200 bg-ink-50 pl-9 pr-3 text-sm text-ink-800 placeholder:text-ink-400 dark:border-ink-800 dark:bg-ink-900 dark:text-ink-100"
+          />
+        </div>
+        <div className="w-full sm:w-44">
+          <Select
+            name="status"
+            value={status}
+            onChange={(e) => setStatus(e.target.value as StatusFiltro)}
+            options={[
+              { value: 'ativos', label: 'Ativos' },
+              { value: 'inativos', label: 'Inativos' },
+            ]}
+            placeholder="Status (todos)"
           />
         </div>
       </div>
@@ -133,14 +168,16 @@ export function UsuariosList({
                   className="transition-colors hover:bg-ink-50/70 dark:hover:bg-ink-800/40"
                 >
                   <td className="px-4 py-3">
-                    <div className="flex items-center justify-center">
-                      <button
-                        title="Editar"
-                        onClick={() => onEditar(u)}
-                        className="focus-ring rounded-lg p-1.5 text-ink-400 transition-colors hover:bg-ink-100 hover:text-brand-600 dark:hover:bg-ink-800 dark:hover:text-brand-300"
-                      >
+                    <div className="flex items-center justify-center gap-1">
+                      <IconBtn title="Visualizar" onClick={() => onVisualizar(u)}>
+                        <Eye className="h-4 w-4" />
+                      </IconBtn>
+                      <IconBtn title="Editar" onClick={() => onEditar(u)}>
                         <Pencil className="h-4 w-4" />
-                      </button>
+                      </IconBtn>
+                      <IconBtn title={u.ativo ? 'Inativar' : 'Reativar'} danger={u.ativo} onClick={() => onAlternarStatus(u)}>
+                        <Power className="h-4 w-4" />
+                      </IconBtn>
                     </div>
                   </td>
                   <td className={`${cel} font-medium text-ink-800 dark:text-ink-100`} title={u.nome}>{u.nome}</td>
@@ -155,6 +192,9 @@ export function UsuariosList({
                   <td className={`${cel} text-ink-500 dark:text-ink-400`}>{mascaraCep(u.cep)}</td>
                   <td className="px-4 py-3">
                     <Badge tone="neutral">{u.uf}</Badge>
+                  </td>
+                  <td className="px-4 py-3">
+                    <Badge tone={u.ativo ? 'success' : 'neutral'}>{u.ativo ? 'Ativo' : 'Inativo'}</Badge>
                   </td>
                 </tr>
               ))
@@ -178,5 +218,31 @@ export function UsuariosList({
         </div>
       </div>
     </div>
+  );
+}
+
+function IconBtn({
+  children,
+  title,
+  onClick,
+  danger,
+}: {
+  children: React.ReactNode;
+  title: string;
+  onClick: () => void;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      title={title}
+      onClick={onClick}
+      className={`focus-ring rounded-lg p-1.5 transition-colors ${
+        danger
+          ? 'text-ink-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10'
+          : 'text-ink-400 hover:bg-ink-100 hover:text-ink-700 dark:hover:bg-ink-800 dark:hover:text-ink-200'
+      }`}
+    >
+      {children}
+    </button>
   );
 }

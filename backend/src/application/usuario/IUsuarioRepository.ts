@@ -19,6 +19,8 @@ export interface IUsuarioRepository {
   criar(dados: NovoUsuarioDTO): Promise<Usuario>;
   /** Atualiza os dados; se `senhaHash` vier, também troca a senha. */
   atualizar(id: string, dados: DadosUsuario, senhaHash?: string): Promise<Usuario>;
+  /** Ativa/inativa o usuário (soft delete). */
+  definirAtivo(id: string, ativo: boolean): Promise<Usuario>;
   /** Lista paginada e filtrada por qualquer campo. */
   listar(params: ListarUsuariosParams): Promise<Paginado<Usuario>>;
 

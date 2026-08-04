@@ -2,14 +2,22 @@ import type { Request, Response, NextFunction } from 'express';
 import { CriarUsuarioUseCase } from '@/application/usuario/CriarUsuarioUseCase';
 import { AtualizarUsuarioUseCase } from '@/application/usuario/AtualizarUsuarioUseCase';
 import { ListarUsuariosUseCase } from '@/application/usuario/ListarUsuariosUseCase';
+import { GerenciarUsuarioUseCase } from '@/application/usuario/GerenciarUsuarioUseCase';
 import { PrismaUsuarioRepository } from '@/infrastructure/database/PrismaUsuarioRepository';
-import { NotFoundError } from '@/shared/errors';
+import { BusinessError, NotFoundError } from '@/shared/errors';
 import type { FiltrosUsuario } from '@/application/usuario/dtos';
 
 const repo = new PrismaUsuarioRepository();
 const criarUsuario = new CriarUsuarioUseCase(repo);
 const atualizarUsuario = new AtualizarUsuarioUseCase(repo);
 const listarUsuarios = new ListarUsuariosUseCase(repo);
+const gerenciarUsuario = new GerenciarUsuarioUseCase(repo);
+
+function parseAtivo(v: unknown): boolean | undefined {
+  if (v === 'true' || v === true) return true;
+  if (v === 'false' || v === false) return false;
+  return undefined;
+}
 
 export class UsuarioController {
   async criar(req: Request, res: Response, next: NextFunction) {
@@ -40,6 +48,18 @@ export class UsuarioController {
     }
   }
 
+  /** Ativa/inativa (soft delete). Body: { ativo: boolean }. */
+  async definirAtivo(req: Request, res: Response, next: NextFunction) {
+    try {
+      const ativo = parseAtivo(req.body?.ativo);
+      if (ativo === undefined) throw new BusinessError('Informe o campo "ativo" (true/false).');
+      const usuario = await gerenciarUsuario.definirAtivo(req.params.id, ativo);
+      return res.json(usuario);
+    } catch (error) {
+      return next(error);
+    }
+  }
+
   async listar(req: Request, res: Response, next: NextFunction) {
     try {
       const q = req.query;
@@ -53,6 +73,7 @@ export class UsuarioController {
         uf: q.uf as string | undefined,
         email: q.email as string | undefined,
         celular: q.celular as string | undefined,
+        ativo: parseAtivo(q.ativo),
       };
 
       const resultado = await listarUsuarios.execute({

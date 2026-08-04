@@ -73,6 +73,7 @@ export interface FiltrosUsuario {
   uf?: string;
   email?: string;
   celular?: string;
+  ativo?: boolean;
 }
 
 export interface ListarUsuariosParams {
