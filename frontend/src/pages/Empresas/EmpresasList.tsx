@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -16,9 +16,11 @@ import { Select } from '@/components/ui/Select';
 import { ResizableHead, type SortState } from '@/components/ui/ResizableHead';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useResizableColumns, type ColunaDef } from '@/hooks/useResizableColumns';
+import { useAuth } from '@/contexts/AuthContext';
 import { listarEmpresas, resolverUrlLogo } from '@/services/empresas.service';
 import { extrairMensagemErro } from '@/services/http';
 import { mascaraCpfCnpj } from '@/lib/masks';
+import { cn } from '@/lib/cn';
 import type { Empresa, FiltrosEmpresa, Paginado } from '@/types/empresa';
 
 const PAGE_SIZE = 10;
@@ -42,16 +44,19 @@ interface Props {
 type StatusFiltro = '' | 'ativos' | 'inativos';
 
 export function EmpresasList({ refreshKey, onVisualizar, onEditar, onAlternarStatus }: Props) {
+  const { usuario: logado } = useAuth();
   const [busca, setBusca] = useState('');
   const [status, setStatus] = useState<StatusFiltro>('');
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<SortState | null>(null);
   const [resultado, setResultado] = useState<Paginado<Empresa>>(vazio);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
-  const [sort, setSort] = useState<SortState | null>(null);
-
-  const { widths, startResize, totalWidth } = useResizableColumns('@SolucaoTS:grid:empresas', COLUNAS);
+  const { colunas, widths, startResize, reordenar, totalWidth } = useResizableColumns(
+    `@SolucaoTS:grid:empresas:${logado?.id ?? 'anon'}`,
+    COLUNAS,
+  );
   const buscaDebounced = useDebounce(busca, 400);
 
   const filtros = useMemo<FiltrosEmpresa>(() => {
@@ -95,11 +100,57 @@ export function EmpresasList({ refreshKey, onVisualizar, onEditar, onAlternarSta
     );
   }
 
+  function renderCell(key: string, emp: Empresa): ReactNode {
+    switch (key) {
+      case 'acoes':
+        return (
+          <div className="flex items-center justify-center gap-1">
+            <IconBtn title="Visualizar" onClick={() => onVisualizar(emp)}>
+              <Eye className="h-4 w-4" />
+            </IconBtn>
+            <IconBtn title="Editar" onClick={() => onEditar(emp)}>
+              <Pencil className="h-4 w-4" />
+            </IconBtn>
+            <IconBtn title={emp.ativo ? 'Inativar' : 'Reativar'} danger={emp.ativo} onClick={() => onAlternarStatus(emp)}>
+              <Power className="h-4 w-4" />
+            </IconBtn>
+          </div>
+        );
+      case 'empresa': {
+        const logo = resolverUrlLogo(emp.logoUrl);
+        return (
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-ink-50 dark:bg-ink-800">
+              {logo ? (
+                <img src={logo} alt="" className="h-full w-full object-contain" />
+              ) : (
+                <Building2 className="h-4 w-4 text-ink-300" />
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate font-medium text-ink-800 dark:text-ink-100" title={emp.razaoSocial}>
+                {emp.razaoSocial}
+              </p>
+              {emp.nomeFantasia && <p className="truncate text-xs text-ink-400">{emp.nomeFantasia}</p>}
+            </div>
+          </div>
+        );
+      }
+      case 'cnpj':
+        return <span className="block truncate font-mono text-xs text-ink-600 dark:text-ink-300">{mascaraCpfCnpj(emp.cnpj)}</span>;
+      case 'cidadeuf':
+        return <span className="block truncate text-ink-600 dark:text-ink-300">{emp.cidade} / {emp.uf}</span>;
+      case 'status':
+        return <Badge tone={emp.ativo ? 'success' : 'neutral'}>{emp.ativo ? 'Ativo' : 'Inativo'}</Badge>;
+      default:
+        return null;
+    }
+  }
+
   const { data, total, totalPages } = resultado;
 
   return (
     <div className="overflow-hidden rounded-2xl border border-ink-200/70 bg-white shadow-card dark:border-ink-800/70 dark:bg-ink-900">
-      {/* Busca única (qualquer campo, ignora acentos) + filtro de status */}
       <div className="flex flex-col gap-3 border-b border-ink-100 p-4 dark:border-ink-800 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative max-w-md flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
@@ -126,17 +177,24 @@ export function EmpresasList({ refreshKey, onVisualizar, onEditar, onAlternarSta
 
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm" style={{ tableLayout: 'fixed', minWidth: totalWidth }}>
-          <ResizableHead colunas={COLUNAS} widths={widths} startResize={startResize} sort={sort} onSort={handleSort} />
+          <ResizableHead
+            colunas={colunas}
+            widths={widths}
+            startResize={startResize}
+            sort={sort}
+            onSort={handleSort}
+            onReorder={reordenar}
+          />
           <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
             {carregando ? (
               <tr>
-                <td colSpan={COLUNAS.length} className="py-16 text-center">
+                <td colSpan={colunas.length} className="py-16 text-center">
                   <Loader2 className="mx-auto h-6 w-6 animate-spin text-brand-500" />
                 </td>
               </tr>
             ) : erro ? (
               <tr>
-                <td colSpan={COLUNAS.length} className="py-16 text-center">
+                <td colSpan={colunas.length} className="py-16 text-center">
                   <ServerCrash className="mx-auto h-8 w-8 text-red-400" />
                   <p className="mt-2 text-sm font-medium text-ink-600 dark:text-ink-300">{erro}</p>
                   <p className="mt-1 text-xs text-ink-400">Verifique se a API do backend está em execução.</p>
@@ -144,65 +202,33 @@ export function EmpresasList({ refreshKey, onVisualizar, onEditar, onAlternarSta
               </tr>
             ) : data.length === 0 ? (
               <tr>
-                <td colSpan={COLUNAS.length} className="py-16 text-center">
+                <td colSpan={colunas.length} className="py-16 text-center">
                   <Building2 className="mx-auto h-8 w-8 text-ink-300" />
                   <p className="mt-2 text-sm text-ink-500 dark:text-ink-400">Nenhuma empresa encontrada.</p>
                 </td>
               </tr>
             ) : (
-              data.map((emp) => {
-                const logo = resolverUrlLogo(emp.logoUrl);
-                return (
-                  <tr
-                    key={emp.id}
-                    onDoubleClick={() => onEditar(emp)}
-                    title="Duplo-clique para editar"
-                    className="transition-colors hover:bg-ink-50/70 dark:hover:bg-ink-800/40"
-                  >
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-center gap-1">
-                        <IconBtn title="Visualizar" onClick={() => onVisualizar(emp)}>
-                          <Eye className="h-4 w-4" />
-                        </IconBtn>
-                        <IconBtn title="Editar" onClick={() => onEditar(emp)}>
-                          <Pencil className="h-4 w-4" />
-                        </IconBtn>
-                        <IconBtn title={emp.ativo ? 'Inativar' : 'Reativar'} danger={emp.ativo} onClick={() => onAlternarStatus(emp)}>
-                          <Power className="h-4 w-4" />
-                        </IconBtn>
-                      </div>
+              data.map((emp) => (
+                <tr
+                  key={emp.id}
+                  onDoubleClick={() => onEditar(emp)}
+                  title="Duplo-clique para editar"
+                  className="transition-colors hover:bg-ink-50/70 dark:hover:bg-ink-800/40"
+                >
+                  {colunas.map((c) => (
+                    <td
+                      key={c.key}
+                      className={cn(
+                        'px-4 py-3',
+                        c.align === 'right' && 'text-right',
+                        c.align === 'center' && 'text-center',
+                      )}
+                    >
+                      {renderCell(c.key, emp)}
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-ink-50 dark:bg-ink-800">
-                          {logo ? (
-                            <img src={logo} alt="" className="h-full w-full object-contain" />
-                          ) : (
-                            <Building2 className="h-4 w-4 text-ink-300" />
-                          )}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="truncate font-medium text-ink-800 dark:text-ink-100" title={emp.razaoSocial}>
-                            {emp.razaoSocial}
-                          </p>
-                          {emp.nomeFantasia && (
-                            <p className="truncate text-xs text-ink-400">{emp.nomeFantasia}</p>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="truncate px-4 py-3 font-mono text-xs text-ink-600 dark:text-ink-300">
-                      {mascaraCpfCnpj(emp.cnpj)}
-                    </td>
-                    <td className="truncate px-4 py-3 text-ink-600 dark:text-ink-300">
-                      {emp.cidade} / {emp.uf}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge tone={emp.ativo ? 'success' : 'neutral'}>{emp.ativo ? 'Ativo' : 'Inativo'}</Badge>
-                    </td>
-                  </tr>
-                );
-              })
+                  ))}
+                </tr>
+              ))
             )}
           </tbody>
         </table>

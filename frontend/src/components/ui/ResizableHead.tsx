@@ -1,4 +1,5 @@
-import { ChevronDown, ChevronUp, ChevronsUpDown } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronDown, ChevronUp, ChevronsUpDown, GripVertical } from 'lucide-react';
 import type { ColunaDef } from '@/hooks/useResizableColumns';
 import { cn } from '@/lib/cn';
 
@@ -13,13 +14,19 @@ interface Props {
   startResize: (key: string, e: React.MouseEvent) => void;
   sort?: SortState | null;
   onSort?: (sortKey: string) => void;
+  /** Habilita arrastar-e-soltar para reordenar as colunas. */
+  onReorder?: (fromKey: string, toKey: string) => void;
 }
 
 /**
- * `<colgroup>` + `<thead>` para tabelas com colunas redimensionáveis e ordenáveis.
- * Renderize-o como filho direto de `<table style={{ tableLayout: 'fixed' }}>`.
+ * `<colgroup>` + `<thead>` para tabelas com colunas redimensionáveis, ordenáveis
+ * (clique no título) e reordenáveis (arraste pela alça). Filho direto de
+ * `<table style={{ tableLayout: 'fixed' }}>`.
  */
-export function ResizableHead({ colunas, widths, startResize, sort, onSort }: Props) {
+export function ResizableHead({ colunas, widths, startResize, sort, onSort, onReorder }: Props) {
+  const [arrastando, setArrastando] = useState<string | null>(null);
+  const [alvo, setAlvo] = useState<string | null>(null);
+
   return (
     <>
       <colgroup>
@@ -31,11 +38,13 @@ export function ResizableHead({ colunas, widths, startResize, sort, onSort }: Pr
         <tr className="border-b border-ink-100 text-xs font-semibold text-ink-500 dark:border-ink-800 dark:text-ink-400">
           {colunas.map((c, i) => {
             const ordenavel = !!(c.sortKey && onSort);
+            const movivel = !!onReorder && c.movivel !== false;
             const ativa = !!(c.sortKey && sort?.campo === c.sortKey);
-            const conteudo = (
+
+            const rotulo = (
               <span
                 className={cn(
-                  'flex items-center gap-1',
+                  'flex min-w-0 items-center gap-1',
                   c.align === 'right' && 'justify-end',
                   c.align === 'center' && 'justify-center',
                 )}
@@ -57,29 +66,70 @@ export function ResizableHead({ colunas, widths, startResize, sort, onSort }: Pr
             return (
               <th
                 key={c.key}
+                onDragOver={(e) => {
+                  if (arrastando && arrastando !== c.key) {
+                    e.preventDefault();
+                    setAlvo(c.key);
+                  }
+                }}
+                onDragLeave={() => setAlvo((k) => (k === c.key ? null : k))}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (arrastando && onReorder) onReorder(arrastando, c.key);
+                  setArrastando(null);
+                  setAlvo(null);
+                }}
                 className={cn(
-                  'group/th relative select-none px-4 py-3 font-semibold',
+                  'group/th relative select-none px-4 py-3 font-semibold transition-colors',
                   c.align === 'right' && 'text-right',
                   c.align === 'center' && 'text-center',
+                  alvo === c.key && 'bg-brand-50 dark:bg-brand-500/10',
+                  arrastando === c.key && 'opacity-50',
                 )}
               >
-                {ordenavel ? (
-                  <button
-                    type="button"
-                    onClick={() => onSort!(c.sortKey!)}
-                    className={cn(
-                      'focus-ring flex w-full items-center rounded transition-colors hover:text-ink-800 dark:hover:text-ink-100',
-                      ativa && 'text-brand-600 dark:text-brand-300',
-                      c.align === 'right' && 'justify-end',
-                      c.align === 'center' && 'justify-center',
-                    )}
-                    title="Ordenar"
-                  >
-                    {conteudo}
-                  </button>
-                ) : (
-                  conteudo
-                )}
+                <div
+                  className={cn(
+                    'flex min-w-0 items-center gap-1',
+                    c.align === 'right' && 'justify-end',
+                    c.align === 'center' && 'justify-center',
+                  )}
+                >
+                  {movivel && (
+                    <span
+                      draggable
+                      onDragStart={(e) => {
+                        setArrastando(c.key);
+                        e.dataTransfer.effectAllowed = 'move';
+                      }}
+                      onDragEnd={() => {
+                        setArrastando(null);
+                        setAlvo(null);
+                      }}
+                      title="Arraste para mover a coluna"
+                      className="-ml-1 shrink-0 cursor-grab text-ink-300 opacity-0 transition-opacity hover:text-ink-500 active:cursor-grabbing group-hover/th:opacity-100 dark:text-ink-600"
+                    >
+                      <GripVertical className="h-3.5 w-3.5" />
+                    </span>
+                  )}
+
+                  {ordenavel ? (
+                    <button
+                      type="button"
+                      onClick={() => onSort!(c.sortKey!)}
+                      className={cn(
+                        'focus-ring flex min-w-0 items-center rounded transition-colors hover:text-ink-800 dark:hover:text-ink-100',
+                        ativa && 'text-brand-600 dark:text-brand-300',
+                        c.align === 'right' && 'justify-end',
+                        c.align === 'center' && 'justify-center',
+                      )}
+                      title="Ordenar"
+                    >
+                      {rotulo}
+                    </button>
+                  ) : (
+                    rotulo
+                  )}
+                </div>
 
                 {/* Puxador de redimensionamento (não na última coluna) */}
                 {i < colunas.length - 1 && (

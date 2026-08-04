@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -16,9 +16,11 @@ import { Select } from '@/components/ui/Select';
 import { ResizableHead, type SortState } from '@/components/ui/ResizableHead';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useResizableColumns, type ColunaDef } from '@/hooks/useResizableColumns';
+import { useAuth } from '@/contexts/AuthContext';
 import { listarUsuarios } from '@/services/usuarios.service';
 import { extrairMensagemErro } from '@/services/http';
 import { mascaraCelular, mascaraCep, mascaraCpfCnpj } from '@/lib/masks';
+import { cn } from '@/lib/cn';
 import type { FiltrosUsuario, Paginado, Usuario } from '@/types/usuario';
 
 const PAGE_SIZE = 10;
@@ -38,6 +40,7 @@ const COLUNAS: ColunaDef[] = [
 ];
 
 const vazio: Paginado<Usuario> = { data: [], total: 0, page: 1, pageSize: PAGE_SIZE, totalPages: 1 };
+const txt = 'block truncate';
 
 type StatusFiltro = '' | 'ativos' | 'inativos';
 
@@ -49,6 +52,7 @@ interface Props {
 }
 
 export function UsuariosList({ refreshKey, onVisualizar, onEditar, onAlternarStatus }: Props) {
+  const { usuario: logado } = useAuth();
   const [busca, setBusca] = useState('');
   const [status, setStatus] = useState<StatusFiltro>('');
   const [page, setPage] = useState(1);
@@ -57,7 +61,10 @@ export function UsuariosList({ refreshKey, onVisualizar, onEditar, onAlternarSta
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
-  const { widths, startResize, totalWidth } = useResizableColumns('@SolucaoTS:grid:usuarios', COLUNAS);
+  const { colunas, widths, startResize, reordenar, totalWidth } = useResizableColumns(
+    `@SolucaoTS:grid:usuarios:${logado?.id ?? 'anon'}`,
+    COLUNAS,
+  );
   const buscaDebounced = useDebounce(busca, 400);
 
   const filtros = useMemo<FiltrosUsuario>(() => {
@@ -101,14 +108,55 @@ export function UsuariosList({ refreshKey, onVisualizar, onEditar, onAlternarSta
     );
   }
 
+  function renderCell(key: string, u: Usuario): ReactNode {
+    switch (key) {
+      case 'acoes':
+        return (
+          <div className="flex items-center justify-center gap-1">
+            <IconBtn title="Visualizar" onClick={() => onVisualizar(u)}>
+              <Eye className="h-4 w-4" />
+            </IconBtn>
+            <IconBtn title="Editar" onClick={() => onEditar(u)}>
+              <Pencil className="h-4 w-4" />
+            </IconBtn>
+            <IconBtn title={u.ativo ? 'Inativar' : 'Reativar'} danger={u.ativo} onClick={() => onAlternarStatus(u)}>
+              <Power className="h-4 w-4" />
+            </IconBtn>
+          </div>
+        );
+      case 'nome':
+        return <span className={`${txt} font-medium text-ink-800 dark:text-ink-100`} title={u.nome}>{u.nome}</span>;
+      case 'documento':
+        return <span className={`${txt} font-mono text-xs text-ink-600 dark:text-ink-300`}>{mascaraCpfCnpj(u.documento)}</span>;
+      case 'email':
+        return <span className={`${txt} text-ink-600 dark:text-ink-300`} title={u.email}>{u.email}</span>;
+      case 'celular':
+        return <span className={`${txt} text-ink-600 dark:text-ink-300`}>{mascaraCelular(u.celular)}</span>;
+      case 'endereco': {
+        const e = [u.logradouro, u.numero].filter(Boolean).join(', ');
+        return <span className={`${txt} text-ink-600 dark:text-ink-300`} title={e}>{e}</span>;
+      }
+      case 'bairro':
+        return <span className={`${txt} text-ink-600 dark:text-ink-300`} title={u.bairro}>{u.bairro}</span>;
+      case 'cidade':
+        return <span className={`${txt} text-ink-600 dark:text-ink-300`} title={u.cidade}>{u.cidade}</span>;
+      case 'cep':
+        return <span className={`${txt} text-ink-500 dark:text-ink-400`}>{mascaraCep(u.cep)}</span>;
+      case 'uf':
+        return <Badge tone="neutral">{u.uf}</Badge>;
+      case 'status':
+        return <Badge tone={u.ativo ? 'success' : 'neutral'}>{u.ativo ? 'Ativo' : 'Inativo'}</Badge>;
+      default:
+        return null;
+    }
+  }
+
   const { data, total, totalPages } = resultado;
   const inicio = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const fim = Math.min(page * PAGE_SIZE, total);
-  const cel = 'truncate px-4 py-3';
 
   return (
     <div className="overflow-hidden rounded-2xl border border-ink-200/70 bg-white shadow-card dark:border-ink-800/70 dark:bg-ink-900">
-      {/* Busca única (qualquer campo, ignora acentos) + filtro de status */}
       <div className="flex flex-col gap-3 border-b border-ink-100 p-4 dark:border-ink-800 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative max-w-md flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
@@ -135,18 +183,25 @@ export function UsuariosList({ refreshKey, onVisualizar, onEditar, onAlternarSta
 
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm" style={{ tableLayout: 'fixed', minWidth: totalWidth }}>
-          <ResizableHead colunas={COLUNAS} widths={widths} startResize={startResize} sort={sort} onSort={handleSort} />
+          <ResizableHead
+            colunas={colunas}
+            widths={widths}
+            startResize={startResize}
+            sort={sort}
+            onSort={handleSort}
+            onReorder={reordenar}
+          />
           <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
             {carregando ? (
               <tr>
-                <td colSpan={COLUNAS.length} className="py-16 text-center">
+                <td colSpan={colunas.length} className="py-16 text-center">
                   <Loader2 className="mx-auto h-6 w-6 animate-spin text-brand-500" />
                   <p className="mt-2 text-sm text-ink-400">Carregando...</p>
                 </td>
               </tr>
             ) : erro ? (
               <tr>
-                <td colSpan={COLUNAS.length} className="py-16 text-center">
+                <td colSpan={colunas.length} className="py-16 text-center">
                   <ServerCrash className="mx-auto h-8 w-8 text-red-400" />
                   <p className="mt-2 text-sm font-medium text-ink-600 dark:text-ink-300">{erro}</p>
                   <p className="mt-1 text-xs text-ink-400">Verifique se a API do backend está em execução.</p>
@@ -154,7 +209,7 @@ export function UsuariosList({ refreshKey, onVisualizar, onEditar, onAlternarSta
               </tr>
             ) : data.length === 0 ? (
               <tr>
-                <td colSpan={COLUNAS.length} className="py-16 text-center">
+                <td colSpan={colunas.length} className="py-16 text-center">
                   <Inbox className="mx-auto h-8 w-8 text-ink-300" />
                   <p className="mt-2 text-sm text-ink-500 dark:text-ink-400">Nenhum usuário encontrado.</p>
                 </td>
@@ -167,35 +222,18 @@ export function UsuariosList({ refreshKey, onVisualizar, onEditar, onAlternarSta
                   title="Duplo-clique para editar"
                   className="transition-colors hover:bg-ink-50/70 dark:hover:bg-ink-800/40"
                 >
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-center gap-1">
-                      <IconBtn title="Visualizar" onClick={() => onVisualizar(u)}>
-                        <Eye className="h-4 w-4" />
-                      </IconBtn>
-                      <IconBtn title="Editar" onClick={() => onEditar(u)}>
-                        <Pencil className="h-4 w-4" />
-                      </IconBtn>
-                      <IconBtn title={u.ativo ? 'Inativar' : 'Reativar'} danger={u.ativo} onClick={() => onAlternarStatus(u)}>
-                        <Power className="h-4 w-4" />
-                      </IconBtn>
-                    </div>
-                  </td>
-                  <td className={`${cel} font-medium text-ink-800 dark:text-ink-100`} title={u.nome}>{u.nome}</td>
-                  <td className={`${cel} font-mono text-xs text-ink-600 dark:text-ink-300`}>{mascaraCpfCnpj(u.documento)}</td>
-                  <td className={`${cel} text-ink-600 dark:text-ink-300`} title={u.email}>{u.email}</td>
-                  <td className={`${cel} text-ink-600 dark:text-ink-300`}>{mascaraCelular(u.celular)}</td>
-                  <td className={`${cel} text-ink-600 dark:text-ink-300`} title={[u.logradouro, u.numero].filter(Boolean).join(', ')}>
-                    {[u.logradouro, u.numero].filter(Boolean).join(', ')}
-                  </td>
-                  <td className={`${cel} text-ink-600 dark:text-ink-300`} title={u.bairro}>{u.bairro}</td>
-                  <td className={`${cel} text-ink-600 dark:text-ink-300`} title={u.cidade}>{u.cidade}</td>
-                  <td className={`${cel} text-ink-500 dark:text-ink-400`}>{mascaraCep(u.cep)}</td>
-                  <td className="px-4 py-3">
-                    <Badge tone="neutral">{u.uf}</Badge>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Badge tone={u.ativo ? 'success' : 'neutral'}>{u.ativo ? 'Ativo' : 'Inativo'}</Badge>
-                  </td>
+                  {colunas.map((c) => (
+                    <td
+                      key={c.key}
+                      className={cn(
+                        'px-4 py-3',
+                        c.align === 'right' && 'text-right',
+                        c.align === 'center' && 'text-center',
+                      )}
+                    >
+                      {renderCell(c.key, u)}
+                    </td>
+                  ))}
                 </tr>
               ))
             )}
