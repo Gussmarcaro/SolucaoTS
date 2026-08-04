@@ -28,10 +28,10 @@ const vazio: Paginado<Empresa> = { data: [], total: 0, page: 1, pageSize: PAGE_S
 
 const COLUNAS: ColunaDef[] = [
   { key: 'acoes', label: 'Ações', width: 120, minWidth: 100, align: 'center' },
+  { key: 'status', label: 'Status', width: 120, sortKey: 'ativo' },
   { key: 'empresa', label: 'Empresa', width: 300, sortKey: 'razaoSocial' },
   { key: 'cnpj', label: 'CNPJ', width: 170, sortKey: 'cnpj' },
   { key: 'cidadeuf', label: 'Cidade / UF', width: 170, sortKey: 'cidade' },
-  { key: 'status', label: 'Status', width: 120, sortKey: 'ativo' },
 ];
 
 interface Props {
@@ -54,7 +54,7 @@ export function EmpresasList({ refreshKey, onVisualizar, onEditar, onAlternarSta
   const [erro, setErro] = useState<string | null>(null);
 
   const { colunas, widths, startResize, reordenar, totalWidth } = useResizableColumns(
-    `@SolucaoTS:grid:empresas:${logado?.id ?? 'anon'}`,
+    `@SolucaoTS:grid:empresas:v2:${logado?.id ?? 'anon'}`,
     COLUNAS,
   );
   const buscaDebounced = useDebounce(busca, 400);

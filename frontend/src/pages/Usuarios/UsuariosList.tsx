@@ -27,6 +27,7 @@ const PAGE_SIZE = 10;
 
 const COLUNAS: ColunaDef[] = [
   { key: 'acoes', label: 'Ações', width: 120, minWidth: 100, align: 'center' },
+  { key: 'status', label: 'Status', width: 110, sortKey: 'ativo' },
   { key: 'nome', label: 'Nome / Razão Social', width: 210, sortKey: 'nome' },
   { key: 'documento', label: 'CPF / CNPJ', width: 140, sortKey: 'documento' },
   { key: 'email', label: 'E-mail', width: 220, sortKey: 'email' },
@@ -36,7 +37,6 @@ const COLUNAS: ColunaDef[] = [
   { key: 'cidade', label: 'Cidade', width: 150, sortKey: 'cidade' },
   { key: 'cep', label: 'CEP', width: 110, sortKey: 'cep' },
   { key: 'uf', label: 'UF', width: 70, minWidth: 50, sortKey: 'uf' },
-  { key: 'status', label: 'Status', width: 110, sortKey: 'ativo' },
 ];
 
 const vazio: Paginado<Usuario> = { data: [], total: 0, page: 1, pageSize: PAGE_SIZE, totalPages: 1 };
@@ -62,7 +62,7 @@ export function UsuariosList({ refreshKey, onVisualizar, onEditar, onAlternarSta
   const [erro, setErro] = useState<string | null>(null);
 
   const { colunas, widths, startResize, reordenar, totalWidth } = useResizableColumns(
-    `@SolucaoTS:grid:usuarios:${logado?.id ?? 'anon'}`,
+    `@SolucaoTS:grid:usuarios:v2:${logado?.id ?? 'anon'}`,
     COLUNAS,
   );
   const buscaDebounced = useDebounce(busca, 400);
