@@ -74,7 +74,7 @@ export function Usuarios() {
         onClose={fechar}
         title={modal.tipo === 'editar' ? 'Editar Usuário' : 'Novo Usuário'}
         subtitle="O endereço é preenchido automaticamente pelo CEP."
-        size="xl"
+        size="2xl"
       >
         {(modal.tipo === 'novo' || modal.tipo === 'editar') && (
           <UsuarioForm

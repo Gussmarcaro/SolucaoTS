@@ -3,32 +3,31 @@ import { Plus, Loader2, Power } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
-import { EmpresaForm } from './EmpresaForm';
-import { EmpresasList } from './EmpresasList';
-import { EmpresaView } from './EmpresaView';
-import { definirStatusEmpresa } from '@/services/empresas.service';
+import { EntidadeForm } from './EntidadeForm';
+import { EntidadesList } from './EntidadesList';
+import { EntidadeView } from './EntidadeView';
+import { definirStatusEntidade } from '@/services/entidades.service';
 import { extrairMensagemErro } from '@/services/http';
-import type { Empresa } from '@/types/empresa';
+import type { Entidade } from '@/types/entidade';
 
 type ModalState =
   | { tipo: 'fechado' }
   | { tipo: 'novo' }
-  | { tipo: 'editar'; empresa: Empresa }
-  | { tipo: 'ver'; empresa: Empresa }
-  | { tipo: 'status'; empresa: Empresa };
+  | { tipo: 'editar'; entidade: Entidade }
+  | { tipo: 'ver'; entidade: Entidade }
+  | { tipo: 'status'; entidade: Entidade };
 
-export function Empresas() {
+export function Entidades() {
   const [modal, setModal] = useState<ModalState>({ tipo: 'fechado' });
   const [refreshKey, setRefreshKey] = useState(0);
   const [processando, setProcessando] = useState(false);
   const [erroStatus, setErroStatus] = useState<string | null>(null);
 
   const fechar = () => setModal({ tipo: 'fechado' });
-  const recarregar = () => setRefreshKey((k) => k + 1);
 
   function handleSuccess() {
     fechar();
-    recarregar();
+    setRefreshKey((k) => k + 1);
   }
 
   async function confirmarStatus() {
@@ -36,7 +35,7 @@ export function Empresas() {
     setProcessando(true);
     setErroStatus(null);
     try {
-      await definirStatusEmpresa(modal.empresa.id, !modal.empresa.ativo);
+      await definirStatusEntidade(modal.entidade.id, !modal.entidade.ativo);
       handleSuccess();
     } catch (e) {
       setErroStatus(extrairMensagemErro(e, 'Não foi possível alterar o status.'));
@@ -48,23 +47,23 @@ export function Empresas() {
   return (
     <>
       <PageHeader
-        title="Empresas"
-        subtitle="Dados da empresa / contratante — suporta multi-empresa e filiais."
+        title="Entidades / Beneficiárias"
+        subtitle="Organizações da sociedade civil (OSCs) que recebem os repasses — base dos ajustes e da prestação de contas."
         actions={
           <Button onClick={() => setModal({ tipo: 'novo' })}>
             <Plus className="h-4 w-4" />
-            Nova Empresa
+            Nova Entidade
           </Button>
         }
       />
 
-      <EmpresasList
+      <EntidadesList
         refreshKey={refreshKey}
-        onVisualizar={(empresa) => setModal({ tipo: 'ver', empresa })}
-        onEditar={(empresa) => setModal({ tipo: 'editar', empresa })}
-        onAlternarStatus={(empresa) => {
+        onVisualizar={(entidade) => setModal({ tipo: 'ver', entidade })}
+        onEditar={(entidade) => setModal({ tipo: 'editar', entidade })}
+        onAlternarStatus={(entidade) => {
           setErroStatus(null);
-          setModal({ tipo: 'status', empresa });
+          setModal({ tipo: 'status', entidade });
         }}
       />
 
@@ -72,13 +71,13 @@ export function Empresas() {
       <Modal
         open={modal.tipo === 'novo' || modal.tipo === 'editar'}
         onClose={fechar}
-        title={modal.tipo === 'editar' ? 'Editar Empresa' : 'Nova Empresa'}
+        title={modal.tipo === 'editar' ? 'Editar Entidade' : 'Nova Entidade'}
         subtitle="O endereço é preenchido automaticamente pelo CEP."
         size="2xl"
       >
         {(modal.tipo === 'novo' || modal.tipo === 'editar') && (
-          <EmpresaForm
-            empresa={modal.tipo === 'editar' ? modal.empresa : null}
+          <EntidadeForm
+            entidade={modal.tipo === 'editar' ? modal.entidade : null}
             onSuccess={handleSuccess}
             onCancel={fechar}
           />
@@ -86,20 +85,15 @@ export function Empresas() {
       </Modal>
 
       {/* Visualização */}
-      <Modal
-        open={modal.tipo === 'ver'}
-        onClose={fechar}
-        title="Dados da Empresa"
-        size="lg"
-      >
-        {modal.tipo === 'ver' && <EmpresaView empresa={modal.empresa} />}
+      <Modal open={modal.tipo === 'ver'} onClose={fechar} title="Dados da Entidade" size="lg">
+        {modal.tipo === 'ver' && <EntidadeView entidade={modal.entidade} />}
       </Modal>
 
       {/* Confirmação de (in)ativação */}
       <Modal
         open={modal.tipo === 'status'}
         onClose={fechar}
-        title={modal.tipo === 'status' && modal.empresa.ativo ? 'Inativar empresa' : 'Reativar empresa'}
+        title={modal.tipo === 'status' && modal.entidade.ativo ? 'Inativar entidade' : 'Reativar entidade'}
         size="md"
         footer={
           <>
@@ -107,7 +101,7 @@ export function Empresas() {
               Cancelar
             </Button>
             <Button
-              variant={modal.tipo === 'status' && modal.empresa.ativo ? 'danger' : 'primary'}
+              variant={modal.tipo === 'status' && modal.entidade.ativo ? 'danger' : 'primary'}
               onClick={confirmarStatus}
               disabled={processando}
             >
@@ -120,15 +114,12 @@ export function Empresas() {
         {modal.tipo === 'status' && (
           <div className="space-y-3">
             <p className="text-sm text-ink-600 dark:text-ink-300">
-              Deseja realmente {modal.empresa.ativo ? 'inativar' : 'reativar'} a empresa{' '}
-              <span className="font-semibold text-ink-900 dark:text-ink-50">
-                {modal.empresa.razaoSocial}
-              </span>
-              ?
+              Deseja realmente {modal.entidade.ativo ? 'inativar' : 'reativar'} a entidade{' '}
+              <span className="font-semibold text-ink-900 dark:text-ink-50">{modal.entidade.razaoSocial}</span>?
             </p>
-            {modal.empresa.ativo && (
+            {modal.entidade.ativo && (
               <p className="text-xs text-ink-400">
-                A empresa não será excluída — ficará marcada como inativa (soft delete).
+                A entidade não será excluída — ficará marcada como inativa (soft delete).
               </p>
             )}
             {erroStatus && <p className="text-sm font-medium text-red-500">{erroStatus}</p>}

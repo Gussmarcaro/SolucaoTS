@@ -9,6 +9,7 @@ import { Ajustes } from '@/pages/Ajustes';
 import { PrestacaoContas } from '@/pages/PrestacaoContas';
 import { Usuarios } from '@/pages/Usuarios';
 import { Empresas } from '@/pages/Empresas';
+import { Entidades } from '@/pages/Entidades';
 import { Placeholder } from '@/pages/Placeholder';
 
 export default function App() {
@@ -25,7 +26,7 @@ export default function App() {
           <Route path="/" element={<Dashboard />} />
 
           {/* Cadastro */}
-          <Route path="/cadastro/entidades" element={<Placeholder title="Entidades / Beneficiárias" />} />
+          <Route path="/cadastro/entidades" element={<Entidades />} />
           <Route path="/cadastro/ajustes" element={<Ajustes />} />
           <Route path="/cadastro/fornecedores" element={<Placeholder title="Fornecedores / Prestadores" />} />
           <Route path="/cadastro/contratos" element={<Placeholder title="Contratos Firmados" />} />
