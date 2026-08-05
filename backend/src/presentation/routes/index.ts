@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { usuarioRoutes } from './usuario.routes';
 import { empresaRoutes } from './empresa.routes';
 import { entidadeRoutes } from './entidade.routes';
+import { fornecedorRoutes } from './fornecedor.routes';
 import { authRoutes } from './auth.routes';
 
 const routes = Router();
@@ -11,5 +12,6 @@ routes.use('/auth', authRoutes);
 routes.use('/usuarios', usuarioRoutes);
 routes.use('/empresas', empresaRoutes);
 routes.use('/entidades', entidadeRoutes);
+routes.use('/fornecedores', fornecedorRoutes);
 
 export { routes };

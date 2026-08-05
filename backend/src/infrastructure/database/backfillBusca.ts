@@ -1,5 +1,5 @@
 import { prisma } from './prisma';
-import { buscaEmpresa, buscaEntidade, buscaUsuario } from './buscaTexto';
+import { buscaEmpresa, buscaEntidade, buscaFornecedor, buscaUsuario } from './buscaTexto';
 
 /**
  * Preenche o campo `buscaTexto` de registros que ainda não o têm (criados
@@ -43,9 +43,21 @@ export async function backfillBusca(): Promise<void> {
       await prisma.entidadeBeneficiaria.update({ where: { id: e.id }, data: { buscaTexto: buscaEntidade(e) } });
     }
 
-    if (usuarios.length || empresas.length || entidades.length) {
+    const fornecedores = await prisma.fornecedor.findMany({
+      where: { buscaTexto: '' },
+      select: {
+        id: true, nome: true, documento: true, cep: true, logradouro: true,
+        numero: true, complemento: true, bairro: true, cidade: true, uf: true,
+        email: true, telefoneFixo: true, whatsapp: true,
+      },
+    });
+    for (const f of fornecedores) {
+      await prisma.fornecedor.update({ where: { id: f.id }, data: { buscaTexto: buscaFornecedor(f) } });
+    }
+
+    if (usuarios.length || empresas.length || entidades.length || fornecedores.length) {
       console.log(
-        `[backfill] buscaTexto preenchido: ${usuarios.length} usuário(s), ${empresas.length} empresa(s), ${entidades.length} entidade(s).`,
+        `[backfill] buscaTexto preenchido: ${usuarios.length} usuário(s), ${empresas.length} empresa(s), ${entidades.length} entidade(s), ${fornecedores.length} fornecedor(es).`,
       );
     }
   } catch (err) {

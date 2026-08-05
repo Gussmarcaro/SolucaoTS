@@ -21,6 +21,31 @@ export function buscaUsuario(u: {
   );
 }
 
+/** Concatena e normaliza os campos pesquisáveis de um Fornecedor. */
+export function buscaFornecedor(f: {
+  nome: string;
+  documento: string;
+  cep: string;
+  logradouro: string;
+  numero?: string | null;
+  complemento?: string | null;
+  bairro: string;
+  cidade: string;
+  uf: string;
+  email: string;
+  telefoneFixo?: string | null;
+  whatsapp?: string | null;
+}): string {
+  return normalizarTexto(
+    [
+      f.nome, f.documento, f.cep, f.logradouro, f.numero, f.complemento,
+      f.bairro, f.cidade, f.uf, f.email, f.telefoneFixo, f.whatsapp,
+    ]
+      .filter(Boolean)
+      .join(' '),
+  );
+}
+
 /** Concatena e normaliza os campos pesquisáveis de uma Entidade Beneficiária. */
 export function buscaEntidade(e: {
   razaoSocial: string;
