@@ -134,7 +134,7 @@ export function NavMenu({ collapsed, onNavigate, onExpandSidebar }: Props) {
           />
         </button>
         {aberto && (
-          <div className="ml-[18px] mt-1 space-y-1 border-l border-white/15 pl-2 dark:border-ink-700/70">
+          <div className="ml-[18px] mt-1 space-y-1 pl-2">
             {node.children.map((filho) => (
               <div key={filho.label}>{renderNode(filho)}</div>
             ))}
