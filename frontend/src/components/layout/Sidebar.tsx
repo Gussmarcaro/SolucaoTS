@@ -1,6 +1,5 @@
-import { NavLink } from 'react-router-dom';
 import { X, Menu } from 'lucide-react';
-import { navigation } from '@/lib/navigation';
+import { NavMenu } from './NavMenu';
 import { cn } from '@/lib/cn';
 
 interface SidebarProps {
@@ -75,64 +74,14 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse }: SidebarP
         </div>
 
         {/* Navegação */}
-        <nav className={cn('flex-1 space-y-6 overflow-y-auto px-3 py-4', collapsed && 'lg:px-2')}>
-          {navigation.map((group) => (
-            <div key={group.title}>
-              <p
-                className={cn(
-                  'px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-white/50 dark:text-ink-400',
-                  collapsed && 'lg:hidden',
-                )}
-              >
-                {group.title}
-              </p>
-              <ul className="space-y-1">
-                {group.items.map((item) => (
-                  <li key={item.to}>
-                    <NavLink
-                      to={item.to}
-                      end={item.to === '/'}
-                      onClick={onClose}
-                      title={collapsed ? item.label : undefined}
-                      className={({ isActive }) =>
-                        cn(
-                          'focus-ring group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
-                          collapsed && 'lg:justify-center lg:gap-0 lg:px-0',
-                          isActive
-                            ? 'bg-white/20 text-white shadow-soft dark:bg-brand-500/15 dark:text-brand-200 dark:shadow-none'
-                            : 'text-white/80 hover:bg-white/10 hover:text-white dark:text-ink-300 dark:hover:bg-ink-800 dark:hover:text-ink-50',
-                        )
-                      }
-                    >
-                      {({ isActive }) => (
-                        <>
-                          <item.icon
-                            className={cn(
-                              'h-[18px] w-[18px] shrink-0 transition-colors',
-                              isActive
-                                ? 'text-white dark:text-brand-300'
-                                : 'text-white/70 group-hover:text-white dark:text-ink-400 dark:group-hover:text-ink-200',
-                            )}
-                          />
-                          <span className={cn('flex-1', collapsed && 'lg:hidden')}>{item.label}</span>
-                          {item.badge && (
-                            <span
-                              className={cn(
-                                'inline-flex items-center rounded-full bg-white/20 px-2 py-0.5 text-xs font-semibold text-white dark:bg-ink-700/60 dark:text-ink-200',
-                                collapsed && 'lg:hidden',
-                              )}
-                            >
-                              {item.badge}
-                            </span>
-                          )}
-                        </>
-                      )}
-                    </NavLink>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+        <nav className={cn('flex-1 overflow-y-auto px-3 py-4', collapsed && 'lg:px-2')}>
+          <NavMenu
+            collapsed={collapsed}
+            onNavigate={onClose}
+            onExpandSidebar={() => {
+              if (collapsed) onToggleCollapse();
+            }}
+          />
         </nav>
       </aside>
     </>
