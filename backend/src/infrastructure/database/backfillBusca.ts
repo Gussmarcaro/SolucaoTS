@@ -1,10 +1,12 @@
 import { prisma } from './prisma';
 import {
+  buscaBemCedido,
   buscaColaborador,
   buscaContrato,
   buscaEmpresa,
   buscaEntidade,
   buscaFornecedor,
+  buscaServidorCedido,
   buscaUsuario,
 } from './buscaTexto';
 
@@ -91,16 +93,44 @@ export async function backfillBusca(): Promise<void> {
       });
     }
 
+    const bens = await prisma.bemCedido.findMany({
+      where: { buscaTexto: '' },
+      select: { id: true, descricao: true, tipo: true, identificador: true, observacao: true },
+    });
+    for (const b of bens) {
+      await prisma.bemCedido.update({ where: { id: b.id }, data: { buscaTexto: buscaBemCedido(b) } });
+    }
+
+    const servidores = await prisma.servidorCedidoCadastro.findMany({
+      where: { buscaTexto: '' },
+      select: {
+        id: true,
+        nome: true,
+        cpf: true,
+        cargoPublico: true,
+        funcaoEntidade: true,
+        onusPagamento: true,
+      },
+    });
+    for (const s of servidores) {
+      await prisma.servidorCedidoCadastro.update({
+        where: { id: s.id },
+        data: { buscaTexto: buscaServidorCedido(s) },
+      });
+    }
+
     if (
       usuarios.length ||
       empresas.length ||
       entidades.length ||
       fornecedores.length ||
       colaboradores.length ||
-      contratos.length
+      contratos.length ||
+      bens.length ||
+      servidores.length
     ) {
       console.log(
-        `[backfill] buscaTexto preenchido: ${usuarios.length} usuário(s), ${empresas.length} empresa(s), ${entidades.length} entidade(s), ${fornecedores.length} fornecedor(es), ${colaboradores.length} colaborador(es), ${contratos.length} contrato(s).`,
+        `[backfill] buscaTexto preenchido: ${usuarios.length} usuário(s), ${empresas.length} empresa(s), ${entidades.length} entidade(s), ${fornecedores.length} fornecedor(es), ${colaboradores.length} colaborador(es), ${contratos.length} contrato(s), ${bens.length} bem(ns), ${servidores.length} servidor(es).`,
       );
     }
   } catch (err) {

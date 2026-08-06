@@ -98,6 +98,31 @@ export function buscaContrato(c: {
   );
 }
 
+/** Concatena e normaliza os campos pesquisáveis de um Bem Cedido. */
+export function buscaBemCedido(b: {
+  descricao: string;
+  tipo: string;
+  identificador: string;
+  observacao?: string | null;
+}): string {
+  return normalizarTexto(
+    [b.descricao, b.tipo, b.identificador, b.observacao].filter(Boolean).join(' '),
+  );
+}
+
+/** Concatena e normaliza os campos pesquisáveis de um Servidor Cedido. */
+export function buscaServidorCedido(s: {
+  nome: string;
+  cpf: string;
+  cargoPublico: string;
+  funcaoEntidade: string;
+  onusPagamento: string;
+}): string {
+  return normalizarTexto(
+    [s.nome, s.cpf, s.cargoPublico, s.funcaoEntidade, s.onusPagamento].filter(Boolean).join(' '),
+  );
+}
+
 /** Concatena e normaliza os campos pesquisáveis de uma Empresa. */
 export function buscaEmpresa(e: {
   razaoSocial: string;

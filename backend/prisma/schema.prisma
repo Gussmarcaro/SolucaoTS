@@ -278,6 +278,46 @@ model ContratoFirmado {
   @@index([ativo])
 }
 
+// Cadastro de Bens Cedidos (standalone) — distinto do BemCedidoCadastro do Ajuste
+model BemCedido {
+  id            String    @id @default(uuid()) @db.Uuid
+  descricao     String
+  tipo          String // Móvel, Imóvel, Veículo, Equipamento, Outros
+  identificador String    @unique // nº de patrimônio / placa / identificação
+  valor         Decimal   @db.Decimal(15, 2)
+  dataCessao    DateTime  @db.Date
+  dataDevolucao DateTime? @db.Date
+  observacao    String?
+  buscaTexto    String    @default("")
+  ativo         Boolean   @default(true)
+  criadoEm      DateTime  @default(now())
+  atualizadoEm  DateTime  @updatedAt
+
+  @@index([tipo])
+  @@index([ativo])
+}
+
+// Cadastro de Servidores Cedidos (standalone) — precede o bloco de prestação ServidorCedido
+model ServidorCedidoCadastro {
+  id                String    @id @default(uuid()) @db.Uuid
+  nome              String
+  cpf               String    @unique @db.VarChar(11) // só dígitos
+  cargoPublico      String
+  funcaoEntidade    String
+  onusPagamento     String // "Com ônus (cedente)" | "Sem ônus (cessionária)"
+  cargaHoraria      Int? // horas semanais
+  remuneracaoBruta  Decimal   @db.Decimal(15, 2)
+  dataInicialCessao DateTime  @db.Date
+  dataFinalCessao   DateTime? @db.Date
+  buscaTexto        String    @default("")
+  ativo             Boolean   @default(true)
+  criadoEm          DateTime  @default(now())
+  atualizadoEm      DateTime  @updatedAt
+
+  @@index([nome])
+  @@index([ativo])
+}
+
 model GrupoUsuario {
   id        String @id @default(uuid()) @db.Uuid
   clienteId String @db.Uuid

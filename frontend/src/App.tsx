@@ -13,6 +13,8 @@ import { Entidades } from '@/pages/Entidades';
 import { Fornecedores } from '@/pages/Fornecedores';
 import { Colaboradores } from '@/pages/Colaboradores';
 import { Contratos } from '@/pages/Contratos';
+import { BensCedidos } from '@/pages/BensCedidos';
+import { ServidoresCedidos } from '@/pages/ServidoresCedidos';
 import { Placeholder } from '@/pages/Placeholder';
 
 export default function App() {
@@ -34,8 +36,8 @@ export default function App() {
           <Route path="/cadastro/fornecedores" element={<Fornecedores />} />
           <Route path="/cadastro/contratos" element={<Contratos />} />
           <Route path="/cadastro/colaboradores" element={<Colaboradores />} />
-          <Route path="/cadastro/bens-cedidos" element={<Placeholder title="Bens Cedidos" />} />
-          <Route path="/cadastro/servidores-cedidos" element={<Placeholder title="Servidores Cedidos" />} />
+          <Route path="/cadastro/bens-cedidos" element={<BensCedidos />} />
+          <Route path="/cadastro/servidores-cedidos" element={<ServidoresCedidos />} />
 
           {/* Execução */}
           <Route path="/execucao/financeiro/contas-bancarias" element={<Placeholder title="Contas Bancárias" />} />
