@@ -1,10 +1,13 @@
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   FileText,
-  ClipboardCheck,
-  CalendarClock,
-  CircleDollarSign,
+  Building2,
+  Truck,
+  UserRound,
+  Boxes,
+  UserCog,
   Plus,
-  Download,
   ArrowRight,
   CheckCircle2,
   Clock,
@@ -15,8 +18,16 @@ import { StatCard } from '@/components/ui/StatCard';
 import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { useAuth } from '@/contexts/AuthContext';
+import { listarEntidades } from '@/services/entidades.service';
+import { listarFornecedores } from '@/services/fornecedores.service';
+import { listarColaboradores } from '@/services/colaboradores.service';
+import { listarContratos } from '@/services/contratos.service';
+import { listarBensCedidos } from '@/services/bensCedidos.service';
+import { listarServidoresCedidos } from '@/services/servidoresCedidos.service';
 import { cn } from '@/lib/cn';
 
+/** Prazos e atividades ainda são ilustrativos (dependem dos módulos Ajustes e Prestação). */
 const prazos = [
   { orgao: 'Convênio 023/2025 — Instituto Vida', periodo: '2º Quadrimestre', vence: 'em 3 dias', tone: 'danger' as const },
   { orgao: 'Termo Colaboração 011/2025 — APAE', periodo: 'Anual 2025', vence: 'em 9 dias', tone: 'warning' as const },
@@ -31,32 +42,82 @@ const atividades = [
   { icon: CheckCircle2, color: 'text-emerald-500', text: 'Importação do Plano de Aplicação', em: 'concluída', quando: 'ontem' },
 ];
 
+type Contagens = Record<string, number | null>;
+
+function saudacao(): string {
+  const h = new Date().getHours();
+  if (h < 12) return 'Bom dia';
+  if (h < 18) return 'Boa tarde';
+  return 'Boa noite';
+}
+
 export function Dashboard() {
+  const navigate = useNavigate();
+  const { usuario } = useAuth();
+  const primeiroNome = usuario?.nome?.trim().split(/\s+/)[0] ?? '';
+  const [contagens, setContagens] = useState<Contagens | null>(null);
+
+  useEffect(() => {
+    let vivo = true;
+    const um = { page: 1, pageSize: 1 };
+    Promise.allSettled([
+      listarEntidades(um),
+      listarFornecedores(um),
+      listarColaboradores(um),
+      listarContratos(um),
+      listarBensCedidos(um),
+      listarServidoresCedidos(um),
+    ]).then((res) => {
+      if (!vivo) return;
+      const total = (i: number) =>
+        res[i].status === 'fulfilled' ? (res[i] as PromiseFulfilledResult<{ total: number }>).value.total : null;
+      setContagens({
+        entidades: total(0),
+        fornecedores: total(1),
+        colaboradores: total(2),
+        contratos: total(3),
+        bens: total(4),
+        servidores: total(5),
+      });
+    });
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
+  const fmt = (chave: string): string => {
+    if (!contagens) return '…';
+    const v = contagens[chave];
+    return v == null ? '—' : String(v);
+  };
+
+  const cards = [
+    { chave: 'entidades', label: 'Entidades beneficiárias', icon: Building2, tone: 'brand' as const },
+    { chave: 'fornecedores', label: 'Fornecedores / Prestadores', icon: Truck, tone: 'brand' as const },
+    { chave: 'colaboradores', label: 'Colaboradores', icon: UserRound, tone: 'emerald' as const },
+    { chave: 'contratos', label: 'Contratos firmados', icon: FileText, tone: 'amber' as const },
+    { chave: 'bens', label: 'Bens cedidos', icon: Boxes, tone: 'brand' as const },
+    { chave: 'servidores', label: 'Servidores cedidos', icon: UserCog, tone: 'emerald' as const },
+  ];
+
   return (
     <>
       <PageHeader
-        title="Bom dia, Gustavo 👋"
+        title={`${saudacao()}${primeiroNome ? `, ${primeiroNome}` : ''} 👋`}
         subtitle="Aqui está o panorama das prestações de contas ao Terceiro Setor."
         actions={
-          <>
-            <Button variant="secondary" size="md">
-              <Download className="h-4 w-4" />
-              Exportar
-            </Button>
-            <Button size="md">
-              <Plus className="h-4 w-4" />
-              Novo Ajuste
-            </Button>
-          </>
+          <Button size="md" onClick={() => navigate('/cadastro/ajustes')}>
+            <Plus className="h-4 w-4" />
+            Novo Ajuste
+          </Button>
         }
       />
 
-      {/* KPIs */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Ajustes ativos" value="28" icon={FileText} tone="brand" trend={{ value: '12%', direction: 'up' }} />
-        <StatCard label="Prestações pendentes" value="3" icon={ClipboardCheck} tone="amber" hint="1 rejeitada para corrigir" />
-        <StatCard label="Prazos a vencer (30d)" value="5" icon={CalendarClock} tone="red" trend={{ value: '2', direction: 'up' }} />
-        <StatCard label="Valor repassado (2025)" value="R$ 4,2 mi" icon={CircleDollarSign} tone="emerald" trend={{ value: '8%', direction: 'up' }} />
+      {/* KPIs — contagens reais dos cadastros */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {cards.map((c) => (
+          <StatCard key={c.chave} label={c.label} value={fmt(c.chave)} icon={c.icon} tone={c.tone} />
+        ))}
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -64,10 +125,7 @@ export function Dashboard() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Próximos prazos legais</CardTitle>
-            <Button variant="ghost" size="sm">
-              Ver todos
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Button>
+            <Badge tone="neutral">Exemplo</Badge>
           </CardHeader>
           <CardBody className="pt-3">
             <ul className="divide-y divide-ink-100 dark:divide-ink-800">
@@ -81,6 +139,10 @@ export function Dashboard() {
                 </li>
               ))}
             </ul>
+            <p className="mt-3 flex items-center gap-1 text-xs text-ink-400">
+              <ArrowRight className="h-3.5 w-3.5" />
+              Passa a usar dados reais quando o módulo Ajustes estiver ativo.
+            </p>
           </CardBody>
         </Card>
 
@@ -88,6 +150,7 @@ export function Dashboard() {
         <Card>
           <CardHeader>
             <CardTitle>Atividade recente</CardTitle>
+            <Badge tone="neutral">Exemplo</Badge>
           </CardHeader>
           <CardBody className="pt-3">
             <ul className="space-y-4">

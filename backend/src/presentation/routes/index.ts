@@ -7,6 +7,7 @@ import { colaboradorRoutes } from './colaborador.routes';
 import { contratoRoutes } from './contrato.routes';
 import { bemCedidoRoutes } from './bemCedido.routes';
 import { servidorCedidoRoutes } from './servidorCedido.routes';
+import { ajusteRoutes } from './ajuste.routes';
 import { authRoutes } from './auth.routes';
 
 const routes = Router();
@@ -21,5 +22,6 @@ routes.use('/colaboradores', colaboradorRoutes);
 routes.use('/contratos', contratoRoutes);
 routes.use('/bens-cedidos', bemCedidoRoutes);
 routes.use('/servidores-cedidos', servidorCedidoRoutes);
+routes.use('/ajustes', ajusteRoutes);
 
 export { routes };

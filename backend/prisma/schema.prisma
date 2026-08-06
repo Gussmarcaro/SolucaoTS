@@ -416,10 +416,10 @@ model Certidao {
 // Entidade CENTRAL do domínio (substitui o antigo "Convenio").
 model Ajuste {
   id                     String        @id @default(uuid()) @db.Uuid
-  clienteId              String        @db.Uuid
+  clienteId              String?       @db.Uuid // opcional até o multi-tenant/auth (Fase 1)
   entidadeBeneficiariaId String        @db.Uuid
   tipoAjuste             TipoAjuste
-  codigoAjuste           String        @db.VarChar(30) // código único do TCESP
+  codigoAjuste           String        @unique @db.VarChar(30) // código único do TCESP (trava de duplicidade — voltará a ser composto com clienteId no multi-tenant)
   numero                 String?
   objeto                 String
   valorGlobal            Decimal       @db.Decimal(15, 2)
@@ -431,7 +431,7 @@ model Ajuste {
   criadoEm               DateTime      @default(now())
   atualizadoEm           DateTime      @updatedAt
 
-  cliente              Cliente              @relation(fields: [clienteId], references: [id])
+  cliente              Cliente?             @relation(fields: [clienteId], references: [id])
   entidadeBeneficiaria EntidadeBeneficiaria @relation(fields: [entidadeBeneficiariaId], references: [id])
 
   termosAditivos   TermoAditivo[]
@@ -443,7 +443,6 @@ model Ajuste {
   prestacoesContas PrestacaoContas[]
   projetos         Projeto[]
 
-  @@unique([clienteId, codigoAjuste])
   @@index([tipoAjuste])
 }
 
