@@ -13,6 +13,22 @@ import {
   blocosAplicaveis,
   type Prestacao,
 } from '@/types/prestacao';
+import { cn } from '@/lib/cn';
+import { DocumentosFiscaisTab } from './blocos/DocumentosFiscaisTab';
+import { PagamentosTab } from './blocos/PagamentosTab';
+import { ReceitasTab } from './blocos/ReceitasTab';
+import { DisponibilidadesTab } from './blocos/DisponibilidadesTab';
+import { DescontosTab } from './blocos/DescontosTab';
+import { DevolucoesTab } from './blocos/DevolucoesTab';
+
+const IMPLEMENTADOS = new Set([
+  'documentosFiscais',
+  'pagamentos',
+  'receitas',
+  'disponibilidades',
+  'descontos',
+  'devolucoes',
+]);
 
 function Campo({ label, valor }: { label: string; valor: string }) {
   return (
@@ -32,6 +48,7 @@ export function PrestacaoDetalhe() {
   const [confirmar, setConfirmar] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
   const [erroExcluir, setErroExcluir] = useState<string | null>(null);
+  const [blocoAtivo, setBlocoAtivo] = useState('documentosFiscais');
 
   useEffect(() => {
     let vivo = true;
@@ -115,35 +132,68 @@ export function PrestacaoDetalhe() {
         </dl>
       </div>
 
-      {/* Blocos */}
-      <div className="rounded-2xl border border-ink-200/70 bg-white p-5 shadow-card dark:border-ink-800/70 dark:bg-ink-900">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-ink-700 dark:text-ink-200">Blocos do documento ({blocos.length})</h2>
-          <span className="text-xs text-ink-400">Aplicáveis a {TIPO_AJUSTE_LABEL[prestacao.ajusteTipo] ?? prestacao.tipoDocumento}</span>
-        </div>
-        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {blocos.map((b) => (
-            <li key={b.chave} className="flex items-center gap-2 rounded-lg border border-ink-100 px-3 py-2 text-sm dark:border-ink-800">
-              <Circle className="h-4 w-4 shrink-0 text-ink-300" />
-              <span className="flex-1 text-ink-700 dark:text-ink-200">{b.nome}</span>
-              <Badge tone="neutral">pendente</Badge>
-            </li>
-          ))}
-        </ul>
-        <div className="mt-5 flex flex-col gap-2 border-t border-ink-100 pt-4 dark:border-ink-800 sm:flex-row sm:items-center sm:justify-between">
-          <p className="flex items-center gap-1.5 text-xs text-ink-400">
-            <CheckCircle2 className="h-3.5 w-3.5" />
-            Os blocos serão preenchidos pelos módulos de execução (próxima fase).
-          </p>
-          <div className="flex items-center gap-2">
-            <Button variant="secondary" size="sm" disabled title="Disponível após os blocos de dados">
-              <ShieldCheck className="h-4 w-4" />
-              Validar
-            </Button>
-            <Button size="sm" disabled title="Disponível após montar e validar o JSON">
-              <Send className="h-4 w-4" />
-              Transmitir (piloto)
-            </Button>
+      {/* Blocos: navegação (esquerda) + painel (direita) */}
+      <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
+        <nav className="h-max rounded-2xl border border-ink-200/70 bg-white p-2 shadow-card dark:border-ink-800/70 dark:bg-ink-900">
+          <p className="px-2 py-1.5 text-xs font-semibold uppercase tracking-wider text-ink-400">Blocos ({blocos.length})</p>
+          <ul className="space-y-0.5">
+            {blocos.map((b) => {
+              const impl = IMPLEMENTADOS.has(b.chave);
+              const ativo = blocoAtivo === b.chave;
+              return (
+                <li key={b.chave}>
+                  <button
+                    type="button"
+                    onClick={() => setBlocoAtivo(b.chave)}
+                    className={cn(
+                      'focus-ring flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-colors',
+                      ativo ? 'bg-brand-50 font-medium text-brand-700 dark:bg-brand-500/15 dark:text-brand-200' : 'text-ink-600 hover:bg-ink-100 dark:text-ink-300 dark:hover:bg-ink-800',
+                    )}
+                  >
+                    {impl ? <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" /> : <Circle className="h-4 w-4 shrink-0 text-ink-300" />}
+                    <span className="flex-1 truncate">{b.nome}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+
+        <div className="rounded-2xl border border-ink-200/70 bg-white p-5 shadow-card dark:border-ink-800/70 dark:bg-ink-900">
+          {blocoAtivo === 'documentosFiscais' ? (
+            <DocumentosFiscaisTab prestacaoId={prestacao.id} />
+          ) : blocoAtivo === 'pagamentos' ? (
+            <PagamentosTab prestacaoId={prestacao.id} />
+          ) : blocoAtivo === 'receitas' ? (
+            <ReceitasTab prestacaoId={prestacao.id} />
+          ) : blocoAtivo === 'disponibilidades' ? (
+            <DisponibilidadesTab prestacaoId={prestacao.id} />
+          ) : blocoAtivo === 'descontos' ? (
+            <DescontosTab prestacaoId={prestacao.id} />
+          ) : blocoAtivo === 'devolucoes' ? (
+            <DevolucoesTab prestacaoId={prestacao.id} />
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
+              <Circle className="h-8 w-8 text-ink-300" />
+              <p className="text-sm font-medium text-ink-600 dark:text-ink-300">
+                {blocos.find((b) => b.chave === blocoAtivo)?.nome}
+              </p>
+              <p className="max-w-md text-xs text-ink-400">Este bloco entra numa próxima etapa da Fase B.</p>
+            </div>
+          )}
+
+          <div className="mt-5 flex flex-col gap-2 border-t border-ink-100 pt-4 dark:border-ink-800 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-ink-400">Validação e transmissão ficam disponíveis quando os blocos estiverem completos.</p>
+            <div className="flex items-center gap-2">
+              <Button variant="secondary" size="sm" disabled title="Disponível após os blocos de dados">
+                <ShieldCheck className="h-4 w-4" />
+                Validar
+              </Button>
+              <Button size="sm" disabled title="Disponível após montar e validar o JSON">
+                <Send className="h-4 w-4" />
+                Transmitir (piloto)
+              </Button>
+            </div>
           </div>
         </div>
       </div>
