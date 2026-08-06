@@ -20,14 +20,18 @@ import { ReceitasTab } from './blocos/ReceitasTab';
 import { DisponibilidadesTab } from './blocos/DisponibilidadesTab';
 import { DescontosTab } from './blocos/DescontosTab';
 import { DevolucoesTab } from './blocos/DevolucoesTab';
+import { GlosasTab } from './blocos/GlosasTab';
+import { EmpregadosTab } from './blocos/EmpregadosTab';
 
 const IMPLEMENTADOS = new Set([
+  'empregados',
   'documentosFiscais',
   'pagamentos',
   'receitas',
   'disponibilidades',
   'descontos',
   'devolucoes',
+  'glosas',
 ]);
 
 function Campo({ label, valor }: { label: string; valor: string }) {
@@ -160,7 +164,11 @@ export function PrestacaoDetalhe() {
         </nav>
 
         <div className="rounded-2xl border border-ink-200/70 bg-white p-5 shadow-card dark:border-ink-800/70 dark:bg-ink-900">
-          {blocoAtivo === 'documentosFiscais' ? (
+          {blocoAtivo === 'empregados' ? (
+            <EmpregadosTab prestacaoId={prestacao.id} />
+          ) : blocoAtivo === 'glosas' ? (
+            <GlosasTab prestacaoId={prestacao.id} />
+          ) : blocoAtivo === 'documentosFiscais' ? (
             <DocumentosFiscaisTab prestacaoId={prestacao.id} />
           ) : blocoAtivo === 'pagamentos' ? (
             <PagamentosTab prestacaoId={prestacao.id} />

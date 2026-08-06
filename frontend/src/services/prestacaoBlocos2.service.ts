@@ -22,7 +22,16 @@ function crud<T, P>(path: string) {
   };
 }
 
+import type {
+  Empregado,
+  EmpregadoPayload,
+  Glosa,
+  GlosaPayload,
+} from '@/types/prestacaoBlocos3';
+
 export const receitasApi = crud<Receita, ReceitaPayload>('receitas');
 export const disponibilidadesApi = crud<Disponibilidade, DisponibilidadePayload>('disponibilidades');
 export const descontosApi = crud<Desconto, DescontoPayload>('descontos');
 export const devolucoesApi = crud<Devolucao, DevolucaoPayload>('devolucoes');
+export const glosasApi = crud<Glosa, GlosaPayload>('glosas');
+export const empregadosApi = crud<Empregado, EmpregadoPayload>('empregados');
