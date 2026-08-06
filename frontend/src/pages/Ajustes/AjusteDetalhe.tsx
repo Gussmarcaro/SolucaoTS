@@ -13,6 +13,8 @@ import { AjusteView } from './AjusteView';
 import { AjusteForm } from './AjusteForm';
 import { TermosAditivosTab } from './tabs/TermosAditivosTab';
 import { EmpenhosTab } from './tabs/EmpenhosTab';
+import { PlanoAplicacaoTab } from './tabs/PlanoAplicacaoTab';
+import { CronogramaTab } from './tabs/CronogramaTab';
 
 type TabKey = 'dados' | 'termos' | 'empenhos' | 'metas' | 'plano' | 'cronograma' | 'bens';
 
@@ -20,9 +22,9 @@ const TABS: { key: TabKey; label: string; embreve?: boolean }[] = [
   { key: 'dados', label: 'Dados' },
   { key: 'termos', label: 'Termos Aditivos' },
   { key: 'empenhos', label: 'Empenhos' },
+  { key: 'plano', label: 'Plano de Aplicação' },
+  { key: 'cronograma', label: 'Cronograma' },
   { key: 'metas', label: 'Programas e Metas', embreve: true },
-  { key: 'plano', label: 'Plano de Aplicação', embreve: true },
-  { key: 'cronograma', label: 'Cronograma', embreve: true },
   { key: 'bens', label: 'Bens Cedidos', embreve: true },
 ];
 
@@ -127,7 +129,9 @@ export function AjusteDetalhe() {
         {aba === 'dados' && <AjusteView ajuste={ajuste} />}
         {aba === 'termos' && <TermosAditivosTab ajusteId={ajuste.id} />}
         {aba === 'empenhos' && <EmpenhosTab ajusteId={ajuste.id} />}
-        {(aba === 'metas' || aba === 'plano' || aba === 'cronograma' || aba === 'bens') && <EmBreve />}
+        {aba === 'plano' && <PlanoAplicacaoTab ajusteId={ajuste.id} />}
+        {aba === 'cronograma' && <CronogramaTab ajusteId={ajuste.id} />}
+        {(aba === 'metas' || aba === 'bens') && <EmBreve />}
       </div>
 
       {/* Edição dos dados do ajuste */}
@@ -151,7 +155,7 @@ function EmBreve() {
       <Sparkles className="h-8 w-8 text-brand-300" />
       <p className="text-sm font-medium text-ink-600 dark:text-ink-300">Em construção</p>
       <p className="max-w-md text-xs text-ink-400">
-        Programas/Metas e as importações via CSV (Plano de Aplicação, Cronograma e Bens Cedidos) entram na próxima etapa.
+        Programas/Metas (plano de metas) e os Bens Cedidos vinculados ao ajuste entram na próxima etapa.
       </p>
     </div>
   );

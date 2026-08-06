@@ -88,3 +88,13 @@ export function dataBr(iso?: string | null): string {
   const [a, m, d] = iso.split('-');
   return a && m && d ? `${d}/${m}/${a}` : iso;
 }
+
+const MESES_PT = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+];
+
+/** Nome do mês (1-12) por extenso. */
+export function nomeMes(n: number): string {
+  return MESES_PT[n - 1] ?? String(n);
+}
