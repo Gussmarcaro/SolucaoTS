@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import { navigation, type NavNode } from '@/lib/navigation';
@@ -41,6 +41,56 @@ const ativo = 'bg-white/20 text-white dark:bg-brand-500/15 dark:text-brand-200';
 function Marcador({ node }: { node: NavNode }) {
   if (node.icon) return <node.icon className="h-[18px] w-[18px] shrink-0" />;
   return <span className="ml-1 h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-50" />;
+}
+
+/**
+ * Contêiner "sanfona": anima a altura (0 ↔ conteúdo) de forma suave.
+ * Mede a altura real via ref, então funciona para qualquer quantidade de
+ * itens e para submenus aninhados (fica em `auto` quando aberto e estável).
+ */
+function Sanfona({ aberto, children }: { aberto: boolean; children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const primeira = useRef(true);
+  const [altura, setAltura] = useState<string>(aberto ? 'auto' : '0px');
+  const [opacidade, setOpacidade] = useState(aberto ? 1 : 0);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    // Na primeira renderização não anima (respeita o estado inicial).
+    if (primeira.current) {
+      primeira.current = false;
+      return;
+    }
+
+    setOpacidade(aberto ? 1 : 0);
+
+    if (aberto) {
+      setAltura(`${el.scrollHeight}px`);
+      const t = setTimeout(() => setAltura('auto'), 300);
+      return () => clearTimeout(t);
+    }
+
+    // Fecha: de 'auto' → altura atual em px → 0 (para a transição ter de onde partir).
+    setAltura(`${el.scrollHeight}px`);
+    const raf = requestAnimationFrame(() => requestAnimationFrame(() => setAltura('0px')));
+    return () => cancelAnimationFrame(raf);
+  }, [aberto]);
+
+  return (
+    <div
+      ref={ref}
+      style={{
+        height: altura,
+        opacity: opacidade,
+        transition: 'height 300ms ease-in-out, opacity 300ms ease-in-out',
+      }}
+      className="overflow-hidden"
+    >
+      {children}
+    </div>
+  );
 }
 
 export function NavMenu({ collapsed, onNavigate, onExpandSidebar }: Props) {
@@ -130,16 +180,19 @@ export function NavMenu({ collapsed, onNavigate, onExpandSidebar }: Props) {
           <Marcador node={node} />
           <span className="flex-1 truncate text-left">{node.label}</span>
           <ChevronRight
-            className={cn('h-4 w-4 shrink-0 transition-transform', aberto && 'rotate-90')}
+            className={cn(
+              'h-4 w-4 shrink-0 transition-transform duration-300 ease-out',
+              aberto && 'rotate-90',
+            )}
           />
         </button>
-        {aberto && (
+        <Sanfona aberto={aberto}>
           <div className="ml-[18px] mt-1 space-y-1 pl-2">
             {node.children.map((filho) => (
               <div key={filho.label}>{renderNode(filho)}</div>
             ))}
           </div>
-        )}
+        </Sanfona>
       </div>
     );
   };
