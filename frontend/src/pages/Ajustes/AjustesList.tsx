@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   ChevronLeft,
   ChevronRight,
   Eye,
   FileText,
+  FolderOpen,
   Loader2,
   Pencil,
   Search,
@@ -49,6 +51,7 @@ interface Props {
 type StatusFiltro = '' | 'EM_ELABORACAO' | 'ENVIADO';
 
 export function AjustesList({ refreshKey, onVisualizar, onEditar }: Props) {
+  const navigate = useNavigate();
   const { usuario: logado } = useAuth();
   const [busca, setBusca] = useState('');
   const [status, setStatus] = useState<StatusFiltro>('');
@@ -109,6 +112,9 @@ export function AjustesList({ refreshKey, onVisualizar, onEditar }: Props) {
       case 'acoes':
         return (
           <div className="flex items-center justify-center gap-1">
+            <IconBtn title="Abrir (abas)" onClick={() => navigate(`/cadastro/ajustes/${a.id}`)}>
+              <FolderOpen className="h-4 w-4" />
+            </IconBtn>
             <IconBtn title="Visualizar" onClick={() => onVisualizar(a)}>
               <Eye className="h-4 w-4" />
             </IconBtn>
@@ -203,8 +209,8 @@ export function AjustesList({ refreshKey, onVisualizar, onEditar }: Props) {
               data.map((a) => (
                 <tr
                   key={a.id}
-                  onDoubleClick={() => onEditar(a)}
-                  title="Duplo-clique para editar"
+                  onDoubleClick={() => navigate(`/cadastro/ajustes/${a.id}`)}
+                  title="Duplo-clique para abrir"
                   className="transition-colors hover:bg-ink-50/70 dark:hover:bg-ink-800/40"
                 >
                   {colunas.map((col) => (

@@ -6,6 +6,7 @@ import { EsqueciSenha } from '@/pages/auth/EsqueciSenha';
 import { RedefinirSenha } from '@/pages/auth/RedefinirSenha';
 import { Dashboard } from '@/pages/Dashboard';
 import { Ajustes } from '@/pages/Ajustes';
+import { AjusteDetalhe } from '@/pages/Ajustes/AjusteDetalhe';
 import { PrestacaoContas } from '@/pages/PrestacaoContas';
 import { Usuarios } from '@/pages/Usuarios';
 import { Empresas } from '@/pages/Empresas';
@@ -33,6 +34,7 @@ export default function App() {
           {/* Cadastro */}
           <Route path="/cadastro/entidades" element={<Entidades />} />
           <Route path="/cadastro/ajustes" element={<Ajustes />} />
+          <Route path="/cadastro/ajustes/:id" element={<AjusteDetalhe />} />
           <Route path="/cadastro/fornecedores" element={<Fornecedores />} />
           <Route path="/cadastro/contratos" element={<Contratos />} />
           <Route path="/cadastro/colaboradores" element={<Colaboradores />} />
