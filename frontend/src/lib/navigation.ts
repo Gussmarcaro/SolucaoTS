@@ -64,6 +64,7 @@ export const navigation: NavNode[] = [
     children: [
       { label: 'Empresas', to: '/empresas' },
       { label: 'Usuários', to: '/usuarios' },
+      { label: 'Grupos de Usuários', to: '/grupos' },
     ],
   },
 ];

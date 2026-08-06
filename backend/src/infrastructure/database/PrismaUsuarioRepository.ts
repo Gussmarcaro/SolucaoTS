@@ -17,6 +17,7 @@ import type { DadosUsuario } from '@/application/usuario/validarUsuario';
 const selecao = {
   id: true,
   clienteId: true,
+  grupoUsuarioId: true,
   nome: true,
   documento: true,
   documentoTipo: true,
@@ -32,12 +33,18 @@ const selecao = {
   ativo: true,
   criadoEm: true,
   atualizadoEm: true,
+  grupoUsuario: { select: { nome: true } },
 } satisfies Prisma.UsuarioSelect;
 
 type UsuarioRow = Prisma.UsuarioGetPayload<{ select: typeof selecao }>;
 
 function toDomain(row: UsuarioRow): Usuario {
-  return { ...row, documentoTipo: row.documentoTipo as 'CPF' | 'CNPJ' };
+  const { grupoUsuario, ...rest } = row;
+  return {
+    ...rest,
+    documentoTipo: row.documentoTipo as 'CPF' | 'CNPJ',
+    grupoNome: grupoUsuario?.nome ?? null,
+  };
 }
 
 export class PrismaUsuarioRepository implements IUsuarioRepository {
@@ -68,6 +75,7 @@ export class PrismaUsuarioRepository implements IUsuarioRepository {
         nome: dados.nome,
         documento: dados.documento,
         documentoTipo: dados.documentoTipo,
+        grupoUsuarioId: dados.grupoUsuarioId,
         cep: dados.cep,
         logradouro: dados.logradouro,
         numero: dados.numero,
@@ -92,6 +100,7 @@ export class PrismaUsuarioRepository implements IUsuarioRepository {
         nome: dados.nome,
         documento: dados.documento,
         documentoTipo: dados.documentoTipo,
+        grupoUsuarioId: dados.grupoUsuarioId,
         cep: dados.cep,
         logradouro: dados.logradouro,
         numero: dados.numero,

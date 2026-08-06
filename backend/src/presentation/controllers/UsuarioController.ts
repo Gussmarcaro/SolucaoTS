@@ -4,12 +4,14 @@ import { AtualizarUsuarioUseCase } from '@/application/usuario/AtualizarUsuarioU
 import { ListarUsuariosUseCase } from '@/application/usuario/ListarUsuariosUseCase';
 import { GerenciarUsuarioUseCase } from '@/application/usuario/GerenciarUsuarioUseCase';
 import { PrismaUsuarioRepository } from '@/infrastructure/database/PrismaUsuarioRepository';
+import { PrismaGrupoRepository } from '@/infrastructure/database/PrismaGrupoRepository';
 import { BusinessError, NotFoundError } from '@/shared/errors';
 import type { FiltrosUsuario } from '@/application/usuario/dtos';
 
 const repo = new PrismaUsuarioRepository();
-const criarUsuario = new CriarUsuarioUseCase(repo);
-const atualizarUsuario = new AtualizarUsuarioUseCase(repo);
+const grupoRepo = new PrismaGrupoRepository();
+const criarUsuario = new CriarUsuarioUseCase(repo, grupoRepo);
+const atualizarUsuario = new AtualizarUsuarioUseCase(repo, grupoRepo);
 const listarUsuarios = new ListarUsuariosUseCase(repo);
 const gerenciarUsuario = new GerenciarUsuarioUseCase(repo);
 

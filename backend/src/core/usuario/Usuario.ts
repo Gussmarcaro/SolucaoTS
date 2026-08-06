@@ -4,6 +4,8 @@ export type TipoDocumento = 'CPF' | 'CNPJ';
 export interface Usuario {
   id: string;
   clienteId: string | null;
+  grupoUsuarioId: string | null;
+  grupoNome: string | null; // nome do grupo (join p/ exibição)
   nome: string;
   documento: string; // apenas dígitos
   documentoTipo: TipoDocumento;

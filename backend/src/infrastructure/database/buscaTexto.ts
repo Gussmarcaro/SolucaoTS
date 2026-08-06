@@ -123,6 +123,11 @@ export function buscaServidorCedido(s: {
   );
 }
 
+/** Concatena e normaliza os campos pesquisáveis de um Grupo de Usuários. */
+export function buscaGrupo(g: { nome: string; descricao?: string | null }): string {
+  return normalizarTexto([g.nome, g.descricao].filter(Boolean).join(' '));
+}
+
 /** Concatena e normaliza os campos pesquisáveis de uma Empresa. */
 export function buscaEmpresa(e: {
   razaoSocial: string;

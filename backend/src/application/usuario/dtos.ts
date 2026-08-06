@@ -5,6 +5,7 @@ export interface CriarUsuarioDTO {
   nome: string;
   documento: string;
   documentoTipo: TipoDocumento;
+  grupoUsuarioId?: string | null;
   cep: string;
   logradouro: string;
   numero?: string | null;
@@ -23,6 +24,7 @@ export interface AtualizarUsuarioDTO {
   nome: string;
   documento: string;
   documentoTipo: TipoDocumento;
+  grupoUsuarioId?: string | null;
   cep: string;
   logradouro: string;
   numero?: string | null;
@@ -41,6 +43,7 @@ export interface NovoUsuarioDTO {
   nome: string;
   documento: string;
   documentoTipo: TipoDocumento;
+  grupoUsuarioId: string | null;
   cep: string;
   logradouro: string;
   numero: string | null;

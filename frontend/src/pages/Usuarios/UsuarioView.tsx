@@ -36,6 +36,7 @@ export function UsuarioView({ usuario }: { usuario: Usuario }) {
 
       <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
         <Campo label={usuario.documentoTipo} valor={mascaraCpfCnpj(usuario.documento)} />
+        <Campo label="Grupo de Usuários" valor={usuario.grupoNome} />
         <Campo label="Celular" valor={mascaraCelular(usuario.celular)} />
         <Campo label="CEP" valor={mascaraCep(usuario.cep)} />
         <div className="col-span-2 sm:col-span-3">

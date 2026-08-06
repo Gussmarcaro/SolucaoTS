@@ -146,6 +146,7 @@ model Cliente {
 model Usuario {
   id                  String        @id @default(uuid()) @db.Uuid
   clienteId           String?       @db.Uuid // opcional até o multi-tenant/auth (Fase 1)
+  grupoUsuarioId      String?       @db.Uuid // grupo de acesso (1 grupo por usuário)
   nome                String // Nome Completo / Razão Social
   documento           String        @unique @db.VarChar(14) // CPF (11) ou CNPJ (14) — só dígitos. Chave de duplicidade.
   documentoTipo       TipoDocumento // CPF | CNPJ
@@ -166,12 +167,14 @@ model Usuario {
   criadoEm            DateTime      @default(now())
   atualizadoEm        DateTime      @updatedAt
 
-  cliente    Cliente?          @relation(fields: [clienteId], references: [id])
-  grupos     UsuarioGrupo[]
-  tarefas    Tarefa[]
-  prestacoes PrestacaoContas[] @relation("PrestacaoResponsavel")
+  cliente      Cliente?          @relation(fields: [clienteId], references: [id])
+  grupoUsuario GrupoUsuario?     @relation(fields: [grupoUsuarioId], references: [id])
+  grupos       UsuarioGrupo[]
+  tarefas      Tarefa[]
+  prestacoes   PrestacaoContas[] @relation("PrestacaoResponsavel")
 
   @@index([clienteId])
+  @@index([grupoUsuarioId])
   @@index([cidade])
   @@index([uf])
   @@index([resetTokenHash])
@@ -319,15 +322,21 @@ model ServidorCedidoCadastro {
 }
 
 model GrupoUsuario {
-  id        String @id @default(uuid()) @db.Uuid
-  clienteId String @db.Uuid
-  nome      String // ex: "Controladoria", "Gestores de Parceria"
+  id           String   @id @default(uuid()) @db.Uuid
+  clienteId    String?  @db.Uuid // opcional até o multi-tenant/auth
+  nome         String   @unique // ex: "Controladoria", "Gestores de Parceria"
+  descricao    String?
+  buscaTexto   String   @default("") // texto normalizado para busca global
+  ativo        Boolean  @default(true) // status Ativo/Inativo
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
 
-  cliente    Cliente                 @relation(fields: [clienteId], references: [id])
-  usuarios   UsuarioGrupo[]
+  cliente    Cliente?                @relation(fields: [clienteId], references: [id])
+  membros    Usuario[] // usuários vinculados (1 grupo por usuário)
+  usuarios   UsuarioGrupo[] // legado RBAC N:N (não usado ainda)
   permissoes GrupoUsuarioPermissao[]
 
-  @@unique([clienteId, nome])
+  @@index([ativo])
 }
 
 model UsuarioGrupo {

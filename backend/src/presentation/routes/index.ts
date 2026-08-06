@@ -9,6 +9,7 @@ import { bemCedidoRoutes } from './bemCedido.routes';
 import { servidorCedidoRoutes } from './servidorCedido.routes';
 import { ajusteRoutes } from './ajuste.routes';
 import { prestacaoRoutes } from './prestacao.routes';
+import { grupoRoutes } from './grupo.routes';
 import { authRoutes } from './auth.routes';
 
 const routes = Router();
@@ -25,5 +26,6 @@ routes.use('/bens-cedidos', bemCedidoRoutes);
 routes.use('/servidores-cedidos', servidorCedidoRoutes);
 routes.use('/ajustes', ajusteRoutes);
 routes.use('/prestacoes', prestacaoRoutes);
+routes.use('/grupos', grupoRoutes);
 
 export { routes };

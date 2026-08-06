@@ -10,6 +10,7 @@ import { AjusteDetalhe } from '@/pages/Ajustes/AjusteDetalhe';
 import { PrestacaoContas } from '@/pages/PrestacaoContas';
 import { PrestacaoDetalhe } from '@/pages/PrestacaoContas/PrestacaoDetalhe';
 import { Usuarios } from '@/pages/Usuarios';
+import { Grupos } from '@/pages/Grupos';
 import { Empresas } from '@/pages/Empresas';
 import { Entidades } from '@/pages/Entidades';
 import { Fornecedores } from '@/pages/Fornecedores';
@@ -61,6 +62,7 @@ export default function App() {
           {/* Configurações */}
           <Route path="/empresas" element={<Empresas />} />
           <Route path="/usuarios" element={<Usuarios />} />
+          <Route path="/grupos" element={<Grupos />} />
 
           <Route path="*" element={<Placeholder title="Página não encontrada" />} />
         </Route>

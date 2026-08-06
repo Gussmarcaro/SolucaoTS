@@ -16,6 +16,7 @@ export function normalizarDadosUsuario(input: {
   nome: string;
   documento: string;
   documentoTipo: 'CPF' | 'CNPJ';
+  grupoUsuarioId?: string | null;
   cep: string;
   logradouro: string;
   numero?: string | null;
@@ -55,6 +56,7 @@ export function normalizarDadosUsuario(input: {
     nome,
     documento,
     documentoTipo,
+    grupoUsuarioId: input.grupoUsuarioId?.trim() || null,
     cep,
     logradouro,
     numero: input.numero?.trim() || null,

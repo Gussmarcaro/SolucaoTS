@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AlertCircle, Loader2, Search } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
+import { Combobox, type OpcaoCombo } from '@/components/ui/Combobox';
 import { Button } from '@/components/ui/Button';
+import { listarGruposAtivos } from '@/services/grupos.service';
 import { PasswordInput } from '@/components/ui/PasswordInput';
 import { PasswordStrength } from '@/components/ui/PasswordStrength';
 import { UF_OPTIONS } from '@/lib/ufs';
@@ -28,6 +30,7 @@ interface UsuarioFormProps {
 type Campos = {
   nome: string;
   documento: string;
+  grupoUsuarioId: string;
   cep: string;
   logradouro: string;
   numero: string;
@@ -45,6 +48,7 @@ function estadoInicial(u?: Usuario | null): Campos {
   return {
     nome: u?.nome ?? '',
     documento: u?.documento ?? '',
+    grupoUsuarioId: u?.grupoUsuarioId ?? '',
     cep: u?.cep ?? '',
     logradouro: u?.logradouro ?? '',
     numero: u?.numero ?? '',
@@ -66,6 +70,25 @@ export function UsuarioForm({ usuario, onSuccess, onCancel }: UsuarioFormProps) 
   const [alerta, setAlerta] = useState<string | null>(null);
   const [buscandoCep, setBuscandoCep] = useState(false);
   const [salvando, setSalvando] = useState(false);
+  const [grupos, setGrupos] = useState<OpcaoCombo[]>([]);
+
+  useEffect(() => {
+    let vivo = true;
+    listarGruposAtivos()
+      .then((ativos) => {
+        if (!vivo) return;
+        const opts: OpcaoCombo[] = ativos.map((g) => ({ value: g.id, label: g.nome }));
+        // mantém o grupo atual do usuário na lista mesmo se estiver inativo
+        if (usuario?.grupoUsuarioId && !opts.some((o) => o.value === usuario.grupoUsuarioId)) {
+          opts.push({ value: usuario.grupoUsuarioId, label: usuario.grupoNome ?? 'Grupo atual', sub: '(inativo)' });
+        }
+        setGrupos(opts);
+      })
+      .catch(() => vivo && setGrupos([]));
+    return () => {
+      vivo = false;
+    };
+  }, [usuario]);
 
   const set = (campo: keyof Campos, valor: string) => {
     setForm((prev) => ({ ...prev, [campo]: valor }));
@@ -126,6 +149,7 @@ export function UsuarioForm({ usuario, onSuccess, onCancel }: UsuarioFormProps) 
       nome: form.nome.trim(),
       documento: apenasDigitos(form.documento),
       documentoTipo: tipoDocumento(form.documento),
+      grupoUsuarioId: form.grupoUsuarioId || null,
       cep: apenasDigitos(form.cep),
       logradouro: form.logradouro.trim(),
       numero: form.numero.trim() || null,
@@ -293,6 +317,18 @@ export function UsuarioForm({ usuario, onSuccess, onCancel }: UsuarioFormProps) 
           placeholder="(00) 00000-0000"
           inputMode="numeric"
         />
+
+        <div className="sm:col-span-2">
+          <Combobox
+            label="Grupo de Usuários"
+            name="grupoUsuarioId"
+            value={form.grupoUsuarioId}
+            onChange={(v) => set('grupoUsuarioId', v)}
+            options={grupos}
+            placeholder="Selecione um grupo (opcional)"
+            hint="Apenas grupos ativos são exibidos. Define o perfil de acesso do usuário."
+          />
+        </div>
       </div>
 
       {/* Credenciais de acesso (o e-mail acima é o login) */}

@@ -1,15 +1,23 @@
 import type { Usuario } from '@/core/usuario/Usuario';
 import type { IUsuarioRepository } from './IUsuarioRepository';
+import type { IGrupoRepository } from '@/application/grupo/IGrupoRepository';
 import type { CriarUsuarioDTO, NovoUsuarioDTO } from './dtos';
 import { BusinessError, ConflictError } from '@/shared/errors';
 import { hashSenha, isSenhaForte } from '@/shared/auth/senha';
 import { normalizarDadosUsuario } from './validarUsuario';
+import { validarGrupoSelecionado } from './validarGrupoSelecionado';
 
 export class CriarUsuarioUseCase {
-  constructor(private readonly repo: IUsuarioRepository) {}
+  constructor(
+    private readonly repo: IUsuarioRepository,
+    private readonly grupos: IGrupoRepository,
+  ) {}
 
   async execute(input: CriarUsuarioDTO): Promise<Usuario> {
     const dados = normalizarDadosUsuario(input);
+
+    // Grupo (opcional): se informado, deve existir e estar ativo.
+    await validarGrupoSelecionado(this.grupos, dados.grupoUsuarioId, null);
 
     // Trava de duplicidade — o documento (CPF/CNPJ) é a chave primária de validação.
     const existente = await this.repo.buscarPorDocumento(dados.documento);

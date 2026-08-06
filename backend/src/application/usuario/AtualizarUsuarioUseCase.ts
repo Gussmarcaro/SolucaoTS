@@ -1,18 +1,26 @@
 import type { Usuario } from '@/core/usuario/Usuario';
 import type { IUsuarioRepository } from './IUsuarioRepository';
+import type { IGrupoRepository } from '@/application/grupo/IGrupoRepository';
 import type { AtualizarUsuarioDTO } from './dtos';
 import { BusinessError, ConflictError, NotFoundError } from '@/shared/errors';
 import { hashSenha, isSenhaForte } from '@/shared/auth/senha';
 import { normalizarDadosUsuario } from './validarUsuario';
+import { validarGrupoSelecionado } from './validarGrupoSelecionado';
 
 export class AtualizarUsuarioUseCase {
-  constructor(private readonly repo: IUsuarioRepository) {}
+  constructor(
+    private readonly repo: IUsuarioRepository,
+    private readonly grupos: IGrupoRepository,
+  ) {}
 
   async execute(id: string, input: AtualizarUsuarioDTO): Promise<Usuario> {
     const atual = await this.repo.buscarPorId(id);
     if (!atual) throw new NotFoundError('Usuário não encontrado.');
 
     const dados = normalizarDadosUsuario(input);
+
+    // Grupo: bloqueia vincular a grupo inativo, mas mantém o vínculo já existente.
+    await validarGrupoSelecionado(this.grupos, dados.grupoUsuarioId, atual.grupoUsuarioId);
 
     // Trava de duplicidade — outro registro com o mesmo documento/e-mail.
     const comMesmoDoc = await this.repo.buscarPorDocumento(dados.documento);
