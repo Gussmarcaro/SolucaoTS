@@ -31,3 +31,16 @@ export interface ResultadoImportacaoPlano extends ResumoImportacao {
 export interface ResultadoImportacaoCronograma extends ResumoImportacao {
   itens: CronogramaItem[];
 }
+
+export interface BemAjuste {
+  id: string;
+  ajusteId: string;
+  identificador: string;
+  data: string; // 'YYYY-MM-DD'
+  valor: number;
+  codigo: string;
+}
+
+export interface ResultadoImportacaoBens extends ResumoImportacao {
+  itens: BemAjuste[];
+}

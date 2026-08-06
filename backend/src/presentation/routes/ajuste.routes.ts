@@ -4,6 +4,8 @@ import { TermoAditivoController } from '@/presentation/controllers/TermoAditivoC
 import { EmpenhoController } from '@/presentation/controllers/EmpenhoController';
 import { PlanoAplicacaoController } from '@/presentation/controllers/PlanoAplicacaoController';
 import { CronogramaController } from '@/presentation/controllers/CronogramaController';
+import { BemAjusteController } from '@/presentation/controllers/BemAjusteController';
+import { ProgramaController } from '@/presentation/controllers/ProgramaController';
 import { uploadCsv } from '@/infrastructure/upload/upload';
 
 const ajusteRoutes = Router();
@@ -12,6 +14,8 @@ const termos = new TermoAditivoController();
 const empenhos = new EmpenhoController();
 const plano = new PlanoAplicacaoController();
 const cronograma = new CronogramaController();
+const bens = new BemAjusteController();
+const programas = new ProgramaController();
 
 ajusteRoutes.get('/', (req, res, next) => c.listar(req, res, next));
 ajusteRoutes.post('/', (req, res, next) => c.criar(req, res, next));
@@ -39,5 +43,19 @@ ajusteRoutes.delete('/:ajusteId/plano-aplicacao', (req, res, next) => plano.limp
 ajusteRoutes.get('/:ajusteId/cronograma', (req, res, next) => cronograma.listar(req, res, next));
 ajusteRoutes.post('/:ajusteId/cronograma/importar', uploadCsv, (req, res, next) => cronograma.importar(req, res, next));
 ajusteRoutes.delete('/:ajusteId/cronograma', (req, res, next) => cronograma.limpar(req, res, next));
+
+// --- Bens Cedidos do ajuste (importação CSV) ---
+ajusteRoutes.get('/:ajusteId/bens', (req, res, next) => bens.listar(req, res, next));
+ajusteRoutes.post('/:ajusteId/bens/importar', uploadCsv, (req, res, next) => bens.importar(req, res, next));
+ajusteRoutes.delete('/:ajusteId/bens', (req, res, next) => bens.limpar(req, res, next));
+
+// --- Programas e Metas (plano de metas) ---
+ajusteRoutes.get('/:ajusteId/programas', (req, res, next) => programas.listar(req, res, next));
+ajusteRoutes.post('/:ajusteId/programas', (req, res, next) => programas.criarPrograma(req, res, next));
+ajusteRoutes.put('/:ajusteId/programas/:programaId', (req, res, next) => programas.atualizarPrograma(req, res, next));
+ajusteRoutes.delete('/:ajusteId/programas/:programaId', (req, res, next) => programas.excluirPrograma(req, res, next));
+ajusteRoutes.post('/:ajusteId/programas/:programaId/metas', (req, res, next) => programas.criarMeta(req, res, next));
+ajusteRoutes.put('/:ajusteId/programas/:programaId/metas/:metaId', (req, res, next) => programas.atualizarMeta(req, res, next));
+ajusteRoutes.delete('/:ajusteId/programas/:programaId/metas/:metaId', (req, res, next) => programas.excluirMeta(req, res, next));
 
 export { ajusteRoutes };

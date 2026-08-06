@@ -1,7 +1,9 @@
 import { http } from './http';
 import type {
+  BemAjuste,
   CronogramaItem,
   PlanoItem,
+  ResultadoImportacaoBens,
   ResultadoImportacaoCronograma,
   ResultadoImportacaoPlano,
 } from '@/types/ajusteCsv';
@@ -49,4 +51,22 @@ export async function importarCronograma(
 
 export async function limparCronograma(ajusteId: string): Promise<void> {
   await http.delete(`/ajustes/${ajusteId}/cronograma`);
+}
+
+// ---- Bens Cedidos do ajuste ----
+export async function listarBensAjuste(ajusteId: string): Promise<BemAjuste[]> {
+  const { data } = await http.get<BemAjuste[]>(`/ajustes/${ajusteId}/bens`);
+  return data;
+}
+
+export async function importarBensAjuste(ajusteId: string, file: File): Promise<ResultadoImportacaoBens> {
+  const { data } = await http.post<ResultadoImportacaoBens>(
+    `/ajustes/${ajusteId}/bens/importar`,
+    formData(file),
+  );
+  return data;
+}
+
+export async function limparBensAjuste(ajusteId: string): Promise<void> {
+  await http.delete(`/ajustes/${ajusteId}/bens`);
 }

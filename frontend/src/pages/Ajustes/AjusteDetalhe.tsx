@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Loader2, Pencil, ServerCrash, Sparkles } from 'lucide-react';
+import { ArrowLeft, Loader2, Pencil, ServerCrash } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
@@ -15,6 +15,8 @@ import { TermosAditivosTab } from './tabs/TermosAditivosTab';
 import { EmpenhosTab } from './tabs/EmpenhosTab';
 import { PlanoAplicacaoTab } from './tabs/PlanoAplicacaoTab';
 import { CronogramaTab } from './tabs/CronogramaTab';
+import { ProgramasMetasTab } from './tabs/ProgramasMetasTab';
+import { BensAjusteTab } from './tabs/BensAjusteTab';
 
 type TabKey = 'dados' | 'termos' | 'empenhos' | 'metas' | 'plano' | 'cronograma' | 'bens';
 
@@ -22,10 +24,10 @@ const TABS: { key: TabKey; label: string; embreve?: boolean }[] = [
   { key: 'dados', label: 'Dados' },
   { key: 'termos', label: 'Termos Aditivos' },
   { key: 'empenhos', label: 'Empenhos' },
+  { key: 'metas', label: 'Programas e Metas' },
   { key: 'plano', label: 'Plano de Aplicação' },
   { key: 'cronograma', label: 'Cronograma' },
-  { key: 'metas', label: 'Programas e Metas', embreve: true },
-  { key: 'bens', label: 'Bens Cedidos', embreve: true },
+  { key: 'bens', label: 'Bens Cedidos' },
 ];
 
 export function AjusteDetalhe() {
@@ -129,9 +131,10 @@ export function AjusteDetalhe() {
         {aba === 'dados' && <AjusteView ajuste={ajuste} />}
         {aba === 'termos' && <TermosAditivosTab ajusteId={ajuste.id} />}
         {aba === 'empenhos' && <EmpenhosTab ajusteId={ajuste.id} />}
+        {aba === 'metas' && <ProgramasMetasTab ajusteId={ajuste.id} />}
         {aba === 'plano' && <PlanoAplicacaoTab ajusteId={ajuste.id} />}
         {aba === 'cronograma' && <CronogramaTab ajusteId={ajuste.id} />}
-        {(aba === 'metas' || aba === 'bens') && <EmBreve />}
+        {aba === 'bens' && <BensAjusteTab ajusteId={ajuste.id} />}
       </div>
 
       {/* Edição dos dados do ajuste */}
@@ -146,17 +149,5 @@ export function AjusteDetalhe() {
         />
       </Modal>
     </>
-  );
-}
-
-function EmBreve() {
-  return (
-    <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
-      <Sparkles className="h-8 w-8 text-brand-300" />
-      <p className="text-sm font-medium text-ink-600 dark:text-ink-300">Em construção</p>
-      <p className="max-w-md text-xs text-ink-400">
-        Programas/Metas (plano de metas) e os Bens Cedidos vinculados ao ajuste entram na próxima etapa.
-      </p>
-    </div>
   );
 }

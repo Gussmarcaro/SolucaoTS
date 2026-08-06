@@ -43,9 +43,29 @@ export function normalizarMes(bruto: string): number | null {
   return MESES[chave] ?? null;
 }
 
-/** Quebra o texto em linhas não vazias, tirando aspas que envolvam a linha inteira. */
+/** Converte data no padrão brasileiro 'DD/MM/AAAA' em Date (UTC). Retorna null se inválida. */
+export function parseDataBR(bruto: string): Date | null {
+  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec((bruto ?? '').trim());
+  if (!m) return null;
+  const dia = Number(m[1]);
+  const mes = Number(m[2]);
+  const ano = Number(m[3]);
+  if (mes < 1 || mes > 12 || dia < 1 || dia > 31) return null;
+  const data = new Date(Date.UTC(ano, mes - 1, dia));
+  if (data.getUTCMonth() !== mes - 1 || data.getUTCDate() !== dia) return null;
+  return data;
+}
+
+// BOM UTF-8 lido como Latin-1 vira "ï»¿" (ï»¿); ou o próprio ﻿.
+const BOM = /^(﻿|ï»¿)/;
+
+/**
+ * Quebra o texto em linhas não vazias, tirando um BOM inicial e as aspas que
+ * envolvam a linha inteira.
+ */
 export function linhasCsv(texto: string): string[] {
   return texto
+    .replace(BOM, '')
     .split(/\r?\n/)
     .map((l) => l.trim().replace(/^"(.*)"$/, '$1'))
     .filter((l) => l.length > 0);
