@@ -8,6 +8,7 @@ import { Dashboard } from '@/pages/Dashboard';
 import { Ajustes } from '@/pages/Ajustes';
 import { AjusteDetalhe } from '@/pages/Ajustes/AjusteDetalhe';
 import { PrestacaoContas } from '@/pages/PrestacaoContas';
+import { PrestacaoDetalhe } from '@/pages/PrestacaoContas/PrestacaoDetalhe';
 import { Usuarios } from '@/pages/Usuarios';
 import { Empresas } from '@/pages/Empresas';
 import { Entidades } from '@/pages/Entidades';
@@ -52,6 +53,7 @@ export default function App() {
 
           {/* Demais */}
           <Route path="/prestacao-contas" element={<PrestacaoContas />} />
+          <Route path="/prestacao-contas/:id" element={<PrestacaoDetalhe />} />
           <Route path="/relatorios" element={<Placeholder title="Relatórios" />} />
           <Route path="/fiscalizacao" element={<Placeholder title="Fiscalização | Monitoramento" />} />
           <Route path="/transparencia" element={<Placeholder title="Transparência" />} />
