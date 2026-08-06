@@ -1,5 +1,12 @@
 import { prisma } from './prisma';
-import { buscaEmpresa, buscaEntidade, buscaFornecedor, buscaUsuario } from './buscaTexto';
+import {
+  buscaColaborador,
+  buscaContrato,
+  buscaEmpresa,
+  buscaEntidade,
+  buscaFornecedor,
+  buscaUsuario,
+} from './buscaTexto';
 
 /**
  * Preenche o campo `buscaTexto` de registros que ainda não o têm (criados
@@ -55,9 +62,45 @@ export async function backfillBusca(): Promise<void> {
       await prisma.fornecedor.update({ where: { id: f.id }, data: { buscaTexto: buscaFornecedor(f) } });
     }
 
-    if (usuarios.length || empresas.length || entidades.length || fornecedores.length) {
+    const colaboradores = await prisma.colaborador.findMany({
+      where: { buscaTexto: '' },
+      select: { id: true, nome: true, cpf: true, cargo: true, cbo: true, cns: true },
+    });
+    for (const c of colaboradores) {
+      await prisma.colaborador.update({
+        where: { id: c.id },
+        data: { buscaTexto: buscaColaborador(c) },
+      });
+    }
+
+    const contratos = await prisma.contratoFirmado.findMany({
+      where: { buscaTexto: '' },
+      select: {
+        id: true,
+        numero: true,
+        credorNome: true,
+        credorDocumento: true,
+        naturezaContratacao: true,
+        objeto: true,
+      },
+    });
+    for (const c of contratos) {
+      await prisma.contratoFirmado.update({
+        where: { id: c.id },
+        data: { buscaTexto: buscaContrato(c) },
+      });
+    }
+
+    if (
+      usuarios.length ||
+      empresas.length ||
+      entidades.length ||
+      fornecedores.length ||
+      colaboradores.length ||
+      contratos.length
+    ) {
       console.log(
-        `[backfill] buscaTexto preenchido: ${usuarios.length} usuário(s), ${empresas.length} empresa(s), ${entidades.length} entidade(s), ${fornecedores.length} fornecedor(es).`,
+        `[backfill] buscaTexto preenchido: ${usuarios.length} usuário(s), ${empresas.length} empresa(s), ${entidades.length} entidade(s), ${fornecedores.length} fornecedor(es), ${colaboradores.length} colaborador(es), ${contratos.length} contrato(s).`,
       );
     }
   } catch (err) {

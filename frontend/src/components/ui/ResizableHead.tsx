@@ -33,10 +33,14 @@ export function ResizableHead({ colunas, widths, startResize, sort, onSort, onRe
         {colunas.map((c) => (
           <col key={c.key} style={{ width: widths[c.key] ?? c.width }} />
         ))}
+        {/* Coluna espaçadora: absorve a folga quando a soma das colunas é menor
+            que o container, para as colunas reais manterem a largura exata
+            (resize/arraste consistente em qualquer grade). */}
+        <col key="__spacer__" />
       </colgroup>
       <thead>
         <tr className="border-b border-ink-100 text-xs font-semibold text-ink-500 dark:border-ink-800 dark:text-ink-400">
-          {colunas.map((c, i) => {
+          {colunas.map((c) => {
             const ordenavel = !!(c.sortKey && onSort);
             const movivel = !!onReorder && c.movivel !== false;
             const ativa = !!(c.sortKey && sort?.campo === c.sortKey);
@@ -131,19 +135,20 @@ export function ResizableHead({ colunas, widths, startResize, sort, onSort, onRe
                   )}
                 </div>
 
-                {/* Puxador de redimensionamento (não na última coluna) */}
-                {i < colunas.length - 1 && (
-                  <span
-                    onMouseDown={(e) => startResize(c.key, e)}
-                    className="group/rz absolute right-0 top-0 z-10 flex h-full w-2 cursor-col-resize items-center justify-center"
-                    title="Arraste para redimensionar"
-                  >
-                    <span className="h-1/2 w-px bg-ink-200 transition-all group-hover/rz:h-full group-hover/rz:w-0.5 group-hover/rz:bg-brand-400 dark:bg-ink-700" />
-                  </span>
-                )}
+                {/* Puxador de redimensionamento — em todas as colunas reais
+                    (a coluna espaçadora final absorve a folga). */}
+                <span
+                  onMouseDown={(e) => startResize(c.key, e)}
+                  className="group/rz absolute right-0 top-0 z-10 flex h-full w-2 cursor-col-resize items-center justify-center"
+                  title="Arraste para redimensionar"
+                >
+                  <span className="h-1/2 w-px bg-ink-200 transition-all group-hover/rz:h-full group-hover/rz:w-0.5 group-hover/rz:bg-brand-400 dark:bg-ink-700" />
+                </span>
               </th>
             );
           })}
+          {/* Cabeçalho da coluna espaçadora (sem conteúdo). */}
+          <th aria-hidden className="px-0" />
         </tr>
       </thead>
     </>

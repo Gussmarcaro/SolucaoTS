@@ -12,7 +12,8 @@
       "PowerShell(New-Item -ItemType Directory -Force -Path \"C:\\\\SolucaoTS\\\\frontend\\\\src\\\\lib\")",
       "PowerShell(New-Item -ItemType Directory -Force -Path \"C:\\\\SolucaoTS\\\\frontend\\\\src\\\\services\")",
       "PowerShell(Copy-Item \"C:\\\\SolucaoTS\\\\Documenta��o\\\\LOGO_ESCOLHIDA.png\" \"C:\\\\SolucaoTS\\\\frontend\\\\public\\\\logo.png\" -Force)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "PowerShell($env:Path = \"$env:ProgramFiles\\\\nodejs;\" + $env:Path; cd C:\\\\SolucaoTS\\\\backend; npx tsc --noEmit)"
     ]
   }
 }

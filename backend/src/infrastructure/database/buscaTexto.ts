@@ -72,6 +72,32 @@ export function buscaEntidade(e: {
   );
 }
 
+/** Concatena e normaliza os campos pesquisáveis de um Colaborador. */
+export function buscaColaborador(c: {
+  nome: string;
+  cpf: string;
+  cargo: string;
+  cbo?: string | null;
+  cns?: string | null;
+}): string {
+  return normalizarTexto([c.nome, c.cpf, c.cargo, c.cbo, c.cns].filter(Boolean).join(' '));
+}
+
+/** Concatena e normaliza os campos pesquisáveis de um Contrato. */
+export function buscaContrato(c: {
+  numero: string;
+  credorNome: string;
+  credorDocumento: string;
+  naturezaContratacao: string;
+  objeto: string;
+}): string {
+  return normalizarTexto(
+    [c.numero, c.credorNome, c.credorDocumento, c.naturezaContratacao, c.objeto]
+      .filter(Boolean)
+      .join(' '),
+  );
+}
+
 /** Concatena e normaliza os campos pesquisáveis de uma Empresa. */
 export function buscaEmpresa(e: {
   razaoSocial: string;

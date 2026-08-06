@@ -56,3 +56,35 @@ export function mascaraInscricao(valor: string): string {
   if (/isento/i.test(valor)) return 'ISENTO';
   return apenasDigitos(valor).slice(0, 14);
 }
+
+/** Máscara de moeda BRL a partir de dígitos (centavos). Ex.: "150000" → "1.500,00". */
+export function mascaraMoeda(valor: string): string {
+  const d = apenasDigitos(valor).slice(0, 15);
+  if (!d) return '';
+  const n = Number(d) / 100;
+  return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/** Converte um texto de moeda BRL (ou dígitos de centavos) em número. */
+export function moedaParaNumero(valor: string): number {
+  const d = apenasDigitos(valor);
+  return d ? Number(d) / 100 : 0;
+}
+
+/** Formata um número como moeda BRL (para exibição). Ex.: 1500 → "R$ 1.500,00". */
+export function formatarMoeda(n: number): string {
+  return (n ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+/** Preenche o campo de moeda a partir de um número (ida ao formulário). */
+export function numeroParaMascaraMoeda(n: number): string {
+  if (!Number.isFinite(n)) return '';
+  return mascaraMoeda(String(Math.round(n * 100)));
+}
+
+/** Converte 'YYYY-MM-DD' em 'DD/MM/YYYY' para exibição (retorna '—' se vazio). */
+export function dataBr(iso?: string | null): string {
+  if (!iso) return '—';
+  const [a, m, d] = iso.split('-');
+  return a && m && d ? `${d}/${m}/${a}` : iso;
+}
