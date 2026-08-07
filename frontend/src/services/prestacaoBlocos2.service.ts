@@ -34,6 +34,12 @@ import type {
   Repasse,
   RepassePayload,
 } from '@/types/prestacaoBlocos4';
+import type {
+  BemPrestacao,
+  BemPrestacaoPayload,
+  ServidorPrestacao,
+  ServidorPrestacaoPayload,
+} from '@/types/prestacaoBlocos5';
 
 export const receitasApi = crud<Receita, ReceitaPayload>('receitas');
 export const disponibilidadesApi = crud<Disponibilidade, DisponibilidadePayload>('disponibilidades');
@@ -43,3 +49,5 @@ export const glosasApi = crud<Glosa, GlosaPayload>('glosas');
 export const empregadosApi = crud<Empregado, EmpregadoPayload>('empregados');
 export const empenhosApi = crud<EmpenhoPrestacao, EmpenhoPrestacaoPayload>('empenhos');
 export const repassesApi = crud<Repasse, RepassePayload>('repasses');
+export const bensApi = crud<BemPrestacao, BemPrestacaoPayload>('bens');
+export const servidoresApi = crud<ServidorPrestacao, ServidorPrestacaoPayload>('servidores-cedidos');
