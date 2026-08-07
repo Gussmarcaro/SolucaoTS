@@ -12,6 +12,7 @@ import { EmpenhoPrestacaoController } from '@/presentation/controllers/EmpenhoPr
 import { RepasseController } from '@/presentation/controllers/RepasseController';
 import { BemPrestacaoController } from '@/presentation/controllers/BemPrestacaoController';
 import { ServidorPrestacaoController } from '@/presentation/controllers/ServidorPrestacaoController';
+import { RelatorioAtividadeController } from '@/presentation/controllers/RelatorioAtividadeController';
 
 const prestacaoRoutes = Router();
 const c = new PrestacaoController();
@@ -66,5 +67,6 @@ bloco('empenhos', new EmpenhoPrestacaoController());
 bloco('repasses', new RepasseController());
 bloco('bens', new BemPrestacaoController());
 bloco('servidores-cedidos', new ServidorPrestacaoController());
+bloco('relatorio-atividades', new RelatorioAtividadeController());
 
 export { prestacaoRoutes };

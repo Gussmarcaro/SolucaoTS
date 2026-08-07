@@ -40,6 +40,7 @@ import type {
   ServidorPrestacao,
   ServidorPrestacaoPayload,
 } from '@/types/prestacaoBlocos5';
+import type { AfericaoMeta, AfericaoMetaPayload } from '@/types/prestacaoBlocos6';
 
 export const receitasApi = crud<Receita, ReceitaPayload>('receitas');
 export const disponibilidadesApi = crud<Disponibilidade, DisponibilidadePayload>('disponibilidades');
@@ -51,3 +52,4 @@ export const empenhosApi = crud<EmpenhoPrestacao, EmpenhoPrestacaoPayload>('empe
 export const repassesApi = crud<Repasse, RepassePayload>('repasses');
 export const bensApi = crud<BemPrestacao, BemPrestacaoPayload>('bens');
 export const servidoresApi = crud<ServidorPrestacao, ServidorPrestacaoPayload>('servidores-cedidos');
+export const afericoesApi = crud<AfericaoMeta, AfericaoMetaPayload>('relatorio-atividades');
