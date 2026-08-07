@@ -123,13 +123,16 @@ export function montarPrestacao(d: DadosMontagem): ResultadoMontagem {
   );
 
   // --- Receitas (objeto) ---
-  const somaAplic = d.receitas.filter((r) => r.tipo === 'APLIC_FINANCEIRA').reduce((s, r) => s + r.valor, 0);
-  if (somaAplic !== 0)
-    avisos.push('Receitas: aplicações financeiras foram somadas em "…_municipais". Separe municipal/estadual/federal ao integrar.');
+  const somaAplic = (tipo: string) =>
+    d.receitas.filter((r) => r.tipo === tipo).reduce((s, r) => s + r.valor, 0);
+  // Legado: registros antigos sem esfera caem em "municipais" (compatibilidade).
+  const aplicLegado = somaAplic('APLIC_FINANCEIRA');
+  if (aplicLegado !== 0)
+    avisos.push('Receitas: há aplicações financeiras sem esfera (registro antigo) somadas em "…_municipais". Reclassifique como municipal/estadual/federal.');
   doc.receitas = {
-    receitas_aplic_financ_repasses_publicos_municipais: somaAplic,
-    receitas_aplic_financ_repasses_publicos_estaduais: 0,
-    receitas_aplic_financ_repasses_publicos_federais: 0,
+    receitas_aplic_financ_repasses_publicos_municipais: somaAplic('APLIC_FINANC_MUNICIPAL') + aplicLegado,
+    receitas_aplic_financ_repasses_publicos_estaduais: somaAplic('APLIC_FINANC_ESTADUAL'),
+    receitas_aplic_financ_repasses_publicos_federais: somaAplic('APLIC_FINANC_FEDERAL'),
     repasses_recebidos: d.receitas
       .filter((r) => r.tipo === 'REPASSE_RECEBIDO')
       .map((r) => limpo({ data_prevista: r.dataPrevista, data_repasse: r.dataRepasse, valor: r.valor, fonte_recurso_tipo: r.fonteRecursoTipo })),

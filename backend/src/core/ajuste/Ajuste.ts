@@ -11,6 +11,8 @@ export type StatusAjuste = 'EM_ELABORACAO' | 'ENVIADO';
 /** Entidade de domínio — Ajuste (Convênio, Termo, Contrato de Gestão…). */
 export interface Ajuste {
   id: string;
+  clienteId: string | null;
+  orgaoNome: string | null; // nome do órgão prestador (join p/ exibição)
   entidadeBeneficiariaId: string;
   entidadeNome: string; // razão social da beneficiária (join p/ exibição)
   tipoAjuste: TipoAjuste;

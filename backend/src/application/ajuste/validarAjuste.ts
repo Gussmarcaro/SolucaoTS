@@ -15,6 +15,7 @@ const STATUS: StatusAjuste[] = ['EM_ELABORACAO', 'ENVIADO'];
 
 /** Normaliza e valida os dados do ajuste (reutilizado em criar/atualizar). */
 export function normalizarEValidarAjuste(input: CriarAjusteDTO): DadosAjuste {
+  const clienteId = input.clienteId?.trim() || null;
   const entidadeBeneficiariaId = input.entidadeBeneficiariaId?.trim() ?? '';
   const codigoAjuste = input.codigoAjuste?.trim() ?? '';
   const objeto = input.objeto?.trim() ?? '';
@@ -61,6 +62,7 @@ export function normalizarEValidarAjuste(input: CriarAjusteDTO): DadosAjuste {
   if (!Number.isFinite(valor) || valor < 0) throw new BusinessError('Valor global inválido.');
 
   return {
+    clienteId,
     entidadeBeneficiariaId,
     tipoAjuste: input.tipoAjuste,
     codigoAjuste,

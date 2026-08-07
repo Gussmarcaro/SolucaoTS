@@ -128,6 +128,18 @@ export function buscaGrupo(g: { nome: string; descricao?: string | null }): stri
   return normalizarTexto([g.nome, g.descricao].filter(Boolean).join(' '));
 }
 
+/** Concatena e normaliza os campos pesquisáveis de um Órgão (Cliente). */
+export function buscaCliente(c: {
+  nome: string;
+  cnpj: string;
+  codigoMunicipio: number;
+  codigoEntidade: number;
+}): string {
+  return normalizarTexto(
+    [c.nome, c.cnpj, String(c.codigoMunicipio), String(c.codigoEntidade)].filter(Boolean).join(' '),
+  );
+}
+
 /** Concatena e normaliza os campos pesquisáveis de uma Empresa. */
 export function buscaEmpresa(e: {
   razaoSocial: string;

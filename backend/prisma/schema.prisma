@@ -128,6 +128,7 @@ model Cliente {
   tipoOrgao       TipoOrgao
   periodicidade   Periodicidade
   cnpj            String        @unique @db.VarChar(14)
+  buscaTexto      String        @default("") // texto normalizado (sem acento/caixa) para busca global
   ativo           Boolean       @default(true)
   criadoEm        DateTime      @default(now())
   atualizadoEm    DateTime      @updatedAt

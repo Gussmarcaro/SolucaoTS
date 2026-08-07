@@ -7,6 +7,7 @@ import { paraDataISO } from '@/shared/datas';
 
 const selecao = {
   id: true,
+  clienteId: true,
   entidadeBeneficiariaId: true,
   tipoAjuste: true,
   codigoAjuste: true,
@@ -21,6 +22,7 @@ const selecao = {
   criadoEm: true,
   atualizadoEm: true,
   entidadeBeneficiaria: { select: { razaoSocial: true } },
+  cliente: { select: { nome: true } },
 } satisfies Prisma.AjusteSelect;
 
 type Row = Prisma.AjusteGetPayload<{ select: typeof selecao }>;
@@ -28,6 +30,8 @@ type Row = Prisma.AjusteGetPayload<{ select: typeof selecao }>;
 function toDomain(row: Row): Ajuste {
   return {
     id: row.id,
+    clienteId: row.clienteId ?? null,
+    orgaoNome: row.cliente?.nome ?? null,
     entidadeBeneficiariaId: row.entidadeBeneficiariaId,
     entidadeNome: row.entidadeBeneficiaria?.razaoSocial ?? '',
     tipoAjuste: row.tipoAjuste as TipoAjuste,
@@ -48,6 +52,7 @@ function toDomain(row: Row): Ajuste {
 /** Campos escalares persistidos (sem o join de leitura). */
 function toData(dados: DadosAjuste) {
   return {
+    clienteId: dados.clienteId,
     entidadeBeneficiariaId: dados.entidadeBeneficiariaId,
     tipoAjuste: dados.tipoAjuste,
     codigoAjuste: dados.codigoAjuste,
@@ -79,6 +84,11 @@ export class PrismaAjusteRepository implements IAjusteRepository {
       select: { id: true },
     });
     return !!e;
+  }
+
+  async clienteExiste(clienteId: string): Promise<boolean> {
+    const c = await prisma.cliente.findUnique({ where: { id: clienteId }, select: { id: true } });
+    return !!c;
   }
 
   async criar(dados: DadosAjuste): Promise<Ajuste> {

@@ -14,7 +14,8 @@
       "PowerShell(Copy-Item \"C:\\\\SolucaoTS\\\\Documenta��o\\\\LOGO_ESCOLHIDA.png\" \"C:\\\\SolucaoTS\\\\frontend\\\\public\\\\logo.png\" -Force)",
       "Bash(node -e ' *)",
       "PowerShell($env:Path = \"$env:ProgramFiles\\\\nodejs;\" + $env:Path; cd C:\\\\SolucaoTS\\\\backend; npx tsc --noEmit)",
-      "PowerShell($env:Path = \"$env:ProgramFiles\\\\nodejs;\" + $env:Path; cd C:\\\\SolucaoTS\\\\frontend; npm run build 2>&1 | Select-String -Pattern \"error|built|transformed\")"
+      "PowerShell($env:Path = \"$env:ProgramFiles\\\\nodejs;\" + $env:Path; cd C:\\\\SolucaoTS\\\\frontend; npm run build 2>&1 | Select-String -Pattern \"error|built|transformed\")",
+      "PowerShell($env:Path = \"$env:ProgramFiles\\\\nodejs;\" + $env:Path; cd C:\\\\SolucaoTS\\\\backend; npx tsc --noEmit 2>&1 | Select-String -Pattern \"error\" | Select-Object -First 30; if \\($?\\) { \"tsc concluido\" })"
     ]
   }
 }

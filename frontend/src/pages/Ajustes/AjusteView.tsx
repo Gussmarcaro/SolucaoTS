@@ -44,6 +44,9 @@ export function AjusteView({ ajuste }: { ajuste: Ajuste }) {
       </div>
 
       <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
+        <div className="col-span-2 sm:col-span-3">
+          <Campo label="Órgão prestador" valor={ajuste.orgaoNome} />
+        </div>
         <Campo label="Número interno" valor={ajuste.numero} />
         <Campo label="Valor Global" valor={formatarMoeda(ajuste.valorGlobal)} />
         <Campo label="Periodicidade" valor={PERIODICIDADE_LABEL[ajuste.periodicidade]} />

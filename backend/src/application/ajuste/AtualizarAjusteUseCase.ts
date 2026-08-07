@@ -16,6 +16,9 @@ export class AtualizarAjusteUseCase {
     if (!(await this.repo.entidadeExiste(dados.entidadeBeneficiariaId)))
       throw new BusinessError('Entidade beneficiária não encontrada.');
 
+    if (dados.clienteId && !(await this.repo.clienteExiste(dados.clienteId)))
+      throw new BusinessError('Órgão prestador não encontrado.');
+
     const existente = await this.repo.buscarPorCodigo(dados.codigoAjuste);
     if (existente && existente.id !== id)
       throw new ConflictError('Já existe um ajuste com este código.', 'CODIGO_DUPLICADO');

@@ -63,6 +63,7 @@ export const navigation: NavNode[] = [
     icon: Settings,
     children: [
       { label: 'Empresas', to: '/empresas' },
+      { label: 'Órgãos', to: '/orgaos' },
       { label: 'Usuários', to: '/usuarios' },
       { label: 'Grupos de Usuários', to: '/grupos' },
     ],

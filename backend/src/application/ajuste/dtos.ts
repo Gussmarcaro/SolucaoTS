@@ -1,6 +1,7 @@
 import type { Periodicidade, StatusAjuste, TipoAjuste } from '@/core/ajuste/Ajuste';
 
 export interface CriarAjusteDTO {
+  clienteId?: string | null;
   entidadeBeneficiariaId: string;
   tipoAjuste: TipoAjuste;
   codigoAjuste: string;
@@ -18,6 +19,7 @@ export type AtualizarAjusteDTO = CriarAjusteDTO;
 
 /** Dados normalizados/validados prontos para persistência. */
 export interface DadosAjuste {
+  clienteId: string | null;
   entidadeBeneficiariaId: string;
   tipoAjuste: TipoAjuste;
   codigoAjuste: string;

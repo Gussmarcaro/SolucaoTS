@@ -1,11 +1,22 @@
-export type ReceitaTipo = 'REPASSE_RECEBIDO' | 'APLIC_FINANCEIRA' | 'OUTRA' | 'RECURSO_PROPRIO';
+export type ReceitaTipo =
+  | 'REPASSE_RECEBIDO'
+  | 'APLIC_FINANC_MUNICIPAL'
+  | 'APLIC_FINANC_ESTADUAL'
+  | 'APLIC_FINANC_FEDERAL'
+  | 'OUTRA'
+  | 'RECURSO_PROPRIO';
 
 export const RECEITA_TIPO_LABEL: Record<ReceitaTipo, string> = {
   REPASSE_RECEBIDO: 'Repasse recebido',
-  APLIC_FINANCEIRA: 'Aplicação financeira',
+  APLIC_FINANC_MUNICIPAL: 'Aplic. financeira (repasses municipais)',
+  APLIC_FINANC_ESTADUAL: 'Aplic. financeira (repasses estaduais)',
+  APLIC_FINANC_FEDERAL: 'Aplic. financeira (repasses federais)',
   OUTRA: 'Outra receita',
   RECURSO_PROPRIO: 'Recurso próprio',
 };
+
+/** Verdadeiro para qualquer esfera de aplicação financeira. */
+export const ehAplicacaoFinanceira = (t: ReceitaTipo): boolean => t.startsWith('APLIC_FINANC_');
 
 export interface Receita {
   id: string;

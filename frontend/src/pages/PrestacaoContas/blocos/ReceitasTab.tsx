@@ -7,7 +7,7 @@ import { Modal } from '@/components/ui/Modal';
 import { apenasDigitos, dataBr, formatarMoeda, mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
 import { extrairMensagemErro } from '@/services/http';
 import { receitasApi } from '@/services/prestacaoBlocos2.service';
-import { RECEITA_TIPO_LABEL, type Receita, type ReceitaPayload, type ReceitaTipo } from '@/types/prestacaoBlocos2';
+import { RECEITA_TIPO_LABEL, ehAplicacaoFinanceira, type Receita, type ReceitaPayload, type ReceitaTipo } from '@/types/prestacaoBlocos2';
 import { ConfirmarExclusao } from '@/pages/Ajustes/tabs/TermosAditivosTab';
 import { AlertaErro, IconBtn } from './_ui';
 
@@ -147,7 +147,7 @@ function ReceitaForm({ prestacaoId, item, onSuccess, onCancel }: { prestacaoId: 
         <div className="sm:col-span-2">
           <Input label="Descrição" name="descricao" value={descricao} onChange={(e) => setDescricao(e.target.value)} />
         </div>
-        {tipo === 'APLIC_FINANCEIRA' && (
+        {ehAplicacaoFinanceira(tipo) && (
           <label className="flex items-center gap-2 text-sm text-ink-700 dark:text-ink-200">
             <input type="checkbox" checked={negativo} onChange={(e) => setNegativo(e.target.checked)} className="h-4 w-4 rounded border-ink-300 text-brand-500 focus:ring-brand-400 dark:border-ink-600 dark:bg-ink-800" />
             Valor negativo (resgate/perda)

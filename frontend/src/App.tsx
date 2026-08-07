@@ -11,6 +11,7 @@ import { PrestacaoContas } from '@/pages/PrestacaoContas';
 import { PrestacaoDetalhe } from '@/pages/PrestacaoContas/PrestacaoDetalhe';
 import { Usuarios } from '@/pages/Usuarios';
 import { Grupos } from '@/pages/Grupos';
+import { Orgaos } from '@/pages/Orgaos';
 import { Empresas } from '@/pages/Empresas';
 import { Entidades } from '@/pages/Entidades';
 import { Fornecedores } from '@/pages/Fornecedores';
@@ -61,6 +62,7 @@ export default function App() {
 
           {/* Configurações */}
           <Route path="/empresas" element={<Empresas />} />
+          <Route path="/orgaos" element={<Orgaos />} />
           <Route path="/usuarios" element={<Usuarios />} />
           <Route path="/grupos" element={<Grupos />} />
 

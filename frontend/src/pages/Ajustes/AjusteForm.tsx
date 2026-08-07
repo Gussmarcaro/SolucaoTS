@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
 import { atualizarAjuste, criarAjuste } from '@/services/ajustes.service';
 import { listarEntidades } from '@/services/entidades.service';
+import { listarOrgaos } from '@/services/orgaos.service';
 import { extrairCodigoErro, extrairMensagemErro } from '@/services/http';
 import {
   PERIODICIDADE_LABEL,
@@ -28,6 +29,7 @@ const opcoesDe = <T extends string>(m: Record<T, string>) =>
   (Object.keys(m) as T[]).map((v) => ({ value: v, label: m[v] }));
 
 type Campos = {
+  clienteId: string;
   entidadeBeneficiariaId: string;
   tipoAjuste: string;
   codigoAjuste: string;
@@ -43,6 +45,7 @@ type Campos = {
 
 function estadoInicial(a?: Ajuste | null): Campos {
   return {
+    clienteId: a?.clienteId ?? '',
     entidadeBeneficiariaId: a?.entidadeBeneficiariaId ?? '',
     tipoAjuste: a?.tipoAjuste ?? '',
     codigoAjuste: a?.codigoAjuste ?? '',
@@ -65,6 +68,8 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
   const [salvando, setSalvando] = useState(false);
   const [entidades, setEntidades] = useState<{ value: string; label: string }[]>([]);
   const [carregandoEntidades, setCarregandoEntidades] = useState(true);
+  const [orgaos, setOrgaos] = useState<{ value: string; label: string }[]>([]);
+  const [carregandoOrgaos, setCarregandoOrgaos] = useState(true);
 
   useEffect(() => {
     let vivo = true;
@@ -75,6 +80,20 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
       })
       .catch(() => vivo && setEntidades([]))
       .finally(() => vivo && setCarregandoEntidades(false));
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let vivo = true;
+    listarOrgaos({ filtros: { ativo: true }, page: 1, pageSize: 100, orderBy: 'nome', orderDir: 'asc' })
+      .then((r) => {
+        if (!vivo) return;
+        setOrgaos(r.data.map((o) => ({ value: o.id, label: `${o.nome} (mun. ${o.codigoMunicipio} / ent. ${o.codigoEntidade})` })));
+      })
+      .catch(() => vivo && setOrgaos([]))
+      .finally(() => vivo && setCarregandoOrgaos(false));
     return () => {
       vivo = false;
     };
@@ -107,6 +126,7 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
     if (!validar()) return;
 
     const payload: AjustePayload = {
+      clienteId: form.clienteId || null,
       entidadeBeneficiariaId: form.entidadeBeneficiariaId,
       tipoAjuste: form.tipoAjuste as TipoAjuste,
       codigoAjuste: form.codigoAjuste.trim(),
@@ -153,6 +173,17 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="sm:col-span-2">
+          <Select
+            label="Órgão prestador (município/entidade TCESP)"
+            name="clienteId"
+            value={form.clienteId}
+            onChange={(e) => set('clienteId', e.target.value)}
+            options={orgaos}
+            placeholder={carregandoOrgaos ? 'Carregando...' : orgaos.length ? 'Selecione o órgão (opcional)' : 'Nenhum órgão cadastrado'}
+          />
+          <p className="mt-1 text-xs text-ink-400">Define o código de município e entidade no descritor da prestação. Cadastre em Configurações › Órgãos.</p>
+        </div>
         <div className="sm:col-span-2">
           <Select
             label="Entidade Beneficiária *"

@@ -28,6 +28,8 @@ export const STATUS_AJUSTE_LABEL: Record<StatusAjuste, string> = {
 
 export interface Ajuste {
   id: string;
+  clienteId: string | null;
+  orgaoNome: string | null;
   entidadeBeneficiariaId: string;
   entidadeNome: string;
   tipoAjuste: TipoAjuste;
@@ -45,6 +47,7 @@ export interface Ajuste {
 }
 
 export interface AjustePayload {
+  clienteId?: string | null;
   entidadeBeneficiariaId: string;
   tipoAjuste: TipoAjuste;
   codigoAjuste: string;
