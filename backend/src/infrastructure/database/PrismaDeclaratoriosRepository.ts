@@ -3,10 +3,16 @@ import { prisma } from './prisma';
 import type { IDeclaratoriosRepository } from '@/application/declaratorios/IDeclaratoriosRepository';
 import type {
   Declaracoes,
+  Demonstracoes,
   EmpresaPertencente,
   Participacao,
   Parecer,
   DeclaracaoAnalise,
+  PrestacaoEntidade,
+  Publicacao,
+  PublicacaoParecerAta,
+  ItemParecerAta,
+  PublicacaoRelAtividades,
   RequisitoAtende,
   Transparencia,
 } from '@/application/declaratorios/dtos';
@@ -87,6 +93,82 @@ export class PrismaDeclaratoriosRepository implements IDeclaratoriosRepository {
       requisitosDivulgacao: J(dados.requisitosDivulgacao),
     };
     await prisma.transparencia.upsert({ where: { prestacaoId }, create: { prestacaoId, ...data }, update: data });
+    return { prestacaoId, ...dados };
+  }
+
+  // ---- Demonstrações Contábeis (28) ----
+  async obterDemonstracoes(prestacaoId: string): Promise<Demonstracoes | null> {
+    const r = await prisma.demonstracoesContabeis.findUnique({ where: { prestacaoId } });
+    if (!r) return null;
+    return {
+      prestacaoId,
+      publicacoes: (r.publicacoes as unknown as Publicacao[]) ?? [],
+      respNumeroCrc: r.respNumeroCrc,
+      respCpf: r.respCpf,
+      respSituacaoRegular: r.respSituacaoRegular,
+    };
+  }
+
+  async salvarDemonstracoes(prestacaoId: string, dados: Omit<Demonstracoes, 'prestacaoId'>): Promise<Demonstracoes> {
+    const data = {
+      publicacoes: J(dados.publicacoes),
+      respNumeroCrc: dados.respNumeroCrc,
+      respCpf: dados.respCpf,
+      respSituacaoRegular: dados.respSituacaoRegular,
+    };
+    await prisma.demonstracoesContabeis.upsert({ where: { prestacaoId }, create: { prestacaoId, ...data }, update: data });
+    return { prestacaoId, ...dados };
+  }
+
+  // ---- Publicações de Parecer ou Ata (29) ----
+  async obterPublicacaoParecerAta(prestacaoId: string): Promise<PublicacaoParecerAta | null> {
+    const r = await prisma.publicacaoParecerAta.findUnique({ where: { prestacaoId } });
+    if (!r) return null;
+    return { prestacaoId, itens: (r.itens as unknown as ItemParecerAta[]) ?? [] };
+  }
+
+  async salvarPublicacaoParecerAta(prestacaoId: string, dados: Omit<PublicacaoParecerAta, 'prestacaoId'>): Promise<PublicacaoParecerAta> {
+    const data = { itens: J(dados.itens) };
+    await prisma.publicacaoParecerAta.upsert({ where: { prestacaoId }, create: { prestacaoId, ...data }, update: data });
+    return { prestacaoId, ...dados };
+  }
+
+  // ---- Publicação do Relatório de Atividades (30) ----
+  async obterPublicacaoRelAtividades(prestacaoId: string): Promise<PublicacaoRelAtividades | null> {
+    const r = await prisma.publicacaoRelatorioAtividades.findUnique({ where: { prestacaoId } });
+    if (!r) return null;
+    return {
+      prestacaoId,
+      houvePublicacaoExercicio: r.houvePublicacaoExercicio,
+      publicacoes: (r.publicacoes as unknown as Publicacao[]) ?? [],
+    };
+  }
+
+  async salvarPublicacaoRelAtividades(prestacaoId: string, dados: Omit<PublicacaoRelAtividades, 'prestacaoId'>): Promise<PublicacaoRelAtividades> {
+    const data = { houvePublicacaoExercicio: dados.houvePublicacaoExercicio, publicacoes: J(dados.publicacoes) };
+    await prisma.publicacaoRelatorioAtividades.upsert({ where: { prestacaoId }, create: { prestacaoId, ...data }, update: data });
+    return { prestacaoId, ...dados };
+  }
+
+  // ---- Prestação de Contas da Entidade (32) ----
+  async obterPrestacaoEntidade(prestacaoId: string): Promise<PrestacaoEntidade | null> {
+    const r = await prisma.prestacaoContasEntidade.findUnique({ where: { prestacaoId } });
+    if (!r) return null;
+    return {
+      prestacaoId,
+      dataPrestacao: r.dataPrestacao,
+      periodoReferenciaInicial: r.periodoReferenciaInicial,
+      periodoReferenciaFinal: r.periodoReferenciaFinal,
+    };
+  }
+
+  async salvarPrestacaoEntidade(prestacaoId: string, dados: Omit<PrestacaoEntidade, 'prestacaoId'>): Promise<PrestacaoEntidade> {
+    const data = {
+      dataPrestacao: dados.dataPrestacao,
+      periodoReferenciaInicial: dados.periodoReferenciaInicial,
+      periodoReferenciaFinal: dados.periodoReferenciaFinal,
+    };
+    await prisma.prestacaoContasEntidade.upsert({ where: { prestacaoId }, create: { prestacaoId, ...data }, update: data });
     return { prestacaoId, ...dados };
   }
 }

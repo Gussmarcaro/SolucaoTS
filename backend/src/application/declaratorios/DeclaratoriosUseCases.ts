@@ -3,8 +3,17 @@ import type { IPrestacaoRepository } from '@/application/prestacao/IPrestacaoRep
 import type {
   Declaracoes,
   DeclaracoesDTO,
+  Demonstracoes,
+  DemonstracoesDTO,
   Parecer,
   ParecerDTO,
+  PrestacaoEntidade,
+  PrestacaoEntidadeDTO,
+  Publicacao,
+  PublicacaoParecerAta,
+  PublicacaoParecerAtaDTO,
+  PublicacaoRelAtividades,
+  PublicacaoRelAtividadesDTO,
   RequisitoAtende,
   Transparencia,
   TransparenciaDTO,
@@ -25,6 +34,18 @@ function normReqs(lista: RequisitoAtende[] | undefined): RequisitoAtende[] {
   return lista
     .map((r) => ({ requisito: Number(r?.requisito), atende: !!r?.atende }))
     .filter((r) => Number.isInteger(r.requisito));
+}
+
+function normPublicacoes(lista: Publicacao[] | undefined): Publicacao[] {
+  if (!Array.isArray(lista)) return [];
+  return lista
+    .map((p) => ({
+      tipoVeiculo: num(p?.tipoVeiculo),
+      nomeVeiculo: strOuNull(p?.nomeVeiculo),
+      dataPublicacao: strOuNull(p?.dataPublicacao),
+      enderecoInternet: strOuNull(p?.enderecoInternet),
+    }))
+    .filter((p) => p.tipoVeiculo != null);
 }
 
 export class DeclaratoriosUseCases {
@@ -98,6 +119,71 @@ export class DeclaratoriosUseCases {
       requisitos781: normReqs(input.requisitos781),
       requisitos83: normReqs(input.requisitos83),
       requisitosDivulgacao: normReqs(input.requisitosDivulgacao),
+    });
+  }
+
+  // ---- Demonstrações Contábeis (28) ----
+  async obterDemonstracoes(prestacaoId: string): Promise<Demonstracoes | null> {
+    await this.garantir(prestacaoId);
+    return this.repo.obterDemonstracoes(prestacaoId);
+  }
+
+  async salvarDemonstracoes(prestacaoId: string, input: DemonstracoesDTO): Promise<Demonstracoes> {
+    await this.garantir(prestacaoId);
+    return this.repo.salvarDemonstracoes(prestacaoId, {
+      publicacoes: normPublicacoes(input.publicacoes),
+      respNumeroCrc: strOuNull(input.respNumeroCrc),
+      respCpf: dig(input.respCpf),
+      respSituacaoRegular: bool(input.respSituacaoRegular),
+    });
+  }
+
+  // ---- Publicações de Parecer ou Ata (29) ----
+  async obterPublicacaoParecerAta(prestacaoId: string): Promise<PublicacaoParecerAta | null> {
+    await this.garantir(prestacaoId);
+    return this.repo.obterPublicacaoParecerAta(prestacaoId);
+  }
+
+  async salvarPublicacaoParecerAta(prestacaoId: string, input: PublicacaoParecerAtaDTO): Promise<PublicacaoParecerAta> {
+    await this.garantir(prestacaoId);
+    return this.repo.salvarPublicacaoParecerAta(prestacaoId, {
+      itens: (input.itens ?? [])
+        .map((it) => ({
+          tipoParecerAta: Number(it.tipoParecerAta),
+          houvePublicacao: bool(it.houvePublicacao),
+          publicacoes: normPublicacoes(it.publicacoes),
+          conclusaoParecer: num(it.conclusaoParecer),
+        }))
+        .filter((it) => Number.isInteger(it.tipoParecerAta)),
+    });
+  }
+
+  // ---- Publicação do Relatório de Atividades (30) ----
+  async obterPublicacaoRelAtividades(prestacaoId: string): Promise<PublicacaoRelAtividades | null> {
+    await this.garantir(prestacaoId);
+    return this.repo.obterPublicacaoRelAtividades(prestacaoId);
+  }
+
+  async salvarPublicacaoRelAtividades(prestacaoId: string, input: PublicacaoRelAtividadesDTO): Promise<PublicacaoRelAtividades> {
+    await this.garantir(prestacaoId);
+    return this.repo.salvarPublicacaoRelAtividades(prestacaoId, {
+      houvePublicacaoExercicio: bool(input.houvePublicacaoExercicio),
+      publicacoes: normPublicacoes(input.publicacoes),
+    });
+  }
+
+  // ---- Prestação de Contas da Entidade (32) ----
+  async obterPrestacaoEntidade(prestacaoId: string): Promise<PrestacaoEntidade | null> {
+    await this.garantir(prestacaoId);
+    return this.repo.obterPrestacaoEntidade(prestacaoId);
+  }
+
+  async salvarPrestacaoEntidade(prestacaoId: string, input: PrestacaoEntidadeDTO): Promise<PrestacaoEntidade> {
+    await this.garantir(prestacaoId);
+    return this.repo.salvarPrestacaoEntidade(prestacaoId, {
+      dataPrestacao: strOuNull(input.dataPrestacao),
+      periodoReferenciaInicial: strOuNull(input.periodoReferenciaInicial),
+      periodoReferenciaFinal: strOuNull(input.periodoReferenciaFinal),
     });
   }
 }

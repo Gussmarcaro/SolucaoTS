@@ -53,6 +53,36 @@ export const REQUISITOS_83: Record<number, string> = {
   6: 'Atualização periódica',
 };
 
+// --- Publicações (veículo de comunicação, §22/28/29/30) ---
+export const VEICULO_PUBLICACAO: Record<number, string> = {
+  1: 'Diário Oficial do Município',
+  2: 'Diário Oficial do Estado',
+  3: 'Diário Oficial da União',
+  4: 'Diário da Justiça Eletrônico',
+  5: 'Portal Nacional de Compras Públicas',
+  6: 'Jornal de grande circulação nacional',
+  7: 'Jornal de grande circulação regional/municipal',
+  8: 'Quadro ou mural de acesso público',
+  9: 'Site da administração direta na Internet',
+  10: 'Outros',
+};
+
+// --- Publicações de Parecer ou Ata (§29) ---
+export const TIPO_PARECER_ATA: Record<number, string> = {
+  1: 'Parecer ou Ata do Conselho Fiscal',
+  2: 'Parecer ou Ata do Conselho de Administração',
+  3: 'Parecer da Auditoria Independente',
+  4: 'Parecer do Conselho de Políticas Públicas',
+};
+
+export const CONCLUSAO_PARECER_ATA: Record<number, string> = {
+  1: 'Favorável sem Ressalvas',
+  2: 'Favorável com Ressalvas',
+  3: 'Desfavorável',
+  4: 'Adverso',
+  5: 'Com abstenção de opinião',
+};
+
 export const REQUISITOS_DIVULGACAO: Record<number, string> = {
   1: 'Estatuto Social atualizado',
   2: 'Ajustes (Termo de Parceria, Convênio, etc.)',

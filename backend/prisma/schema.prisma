@@ -572,25 +572,29 @@ model PrestacaoContas {
   ajuste      Ajuste   @relation(fields: [ajusteId], references: [id])
   responsavel Usuario? @relation("PrestacaoResponsavel", fields: [responsavelId], references: [id])
 
-  empregados        RelacaoEmpregado[]
-  bens              BemPrestacao[]
-  contratos         Contrato[]
-  documentosFiscais DocumentoFiscal[]
-  pagamentos        Pagamento[]
-  disponibilidades  Disponibilidade[]
-  receitas          Receita[]
-  servidoresCedidos ServidorCedido[]
-  descontos         Desconto[]
-  devolucoes        Devolucao[]
-  glosas            Glosa[]
-  empenhos          EmpenhoPrestacao[]
-  repasses          RepassePrestacao[]
-  metasReportadas   RelatorioAtividadeMeta[]
-  dadosGerais       DadosGeraisBeneficiaria?
-  responsaveis      ResponsaveisConcessor?
-  declaracoes       DeclaracoesPrestacao?
-  parecerConclusivo ParecerConclusivo?
-  transparencia     Transparencia?
+  empregados              RelacaoEmpregado[]
+  bens                    BemPrestacao[]
+  contratos               Contrato[]
+  documentosFiscais       DocumentoFiscal[]
+  pagamentos              Pagamento[]
+  disponibilidades        Disponibilidade[]
+  receitas                Receita[]
+  servidoresCedidos       ServidorCedido[]
+  descontos               Desconto[]
+  devolucoes              Devolucao[]
+  glosas                  Glosa[]
+  empenhos                EmpenhoPrestacao[]
+  repasses                RepassePrestacao[]
+  metasReportadas         RelatorioAtividadeMeta[]
+  dadosGerais             DadosGeraisBeneficiaria?
+  responsaveis            ResponsaveisConcessor?
+  declaracoes             DeclaracoesPrestacao?
+  parecerConclusivo       ParecerConclusivo?
+  transparencia           Transparencia?
+  demonstracoes           DemonstracoesContabeis?
+  publicacaoParecerAta    PublicacaoParecerAta?
+  publicacaoRelAtividades PublicacaoRelatorioAtividades?
+  prestacaoEntidade       PrestacaoContasEntidade?
 
   @@index([ajusteId])
   @@index([status])
@@ -656,6 +660,50 @@ model Transparencia {
   requisitos781        Json     @default("[]") // [{ requisito 1..8, atende }] (Arts. 7º e 8º §1º)
   requisitos83         Json     @default("[]") // [{ requisito 1..6, atende }] (Art. 8º §3º)
   requisitosDivulgacao Json     @default("[]") // [{ requisito 1..10, atende }] (Divulgação)
+
+  prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id], onDelete: Cascade)
+}
+
+// Publicação (subestrutura reusada): { tipoVeiculo 1..10, nomeVeiculo, dataPublicacao, enderecoInternet }
+
+// Bloco 28 — Demonstrações Contábeis (1:1).
+model DemonstracoesContabeis {
+  id                  String   @id @default(uuid()) @db.Uuid
+  prestacaoId         String   @unique @db.Uuid
+  publicacoes         Json     @default("[]") // [{ tipoVeiculo, nomeVeiculo, dataPublicacao, enderecoInternet }]
+  respNumeroCrc       String?
+  respCpf             String?
+  respSituacaoRegular Boolean?
+
+  prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id], onDelete: Cascade)
+}
+
+// Bloco 29 — Publicações de Parecer ou Ata (1:1): itens por tipo (1..4).
+model PublicacaoParecerAta {
+  id          String @id @default(uuid()) @db.Uuid
+  prestacaoId String @unique @db.Uuid
+  itens       Json   @default("[]") // [{ tipoParecerAta 1..4, houvePublicacao, publicacoes[], conclusaoParecer 1..5 }]
+
+  prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id], onDelete: Cascade)
+}
+
+// Bloco 30 — Publicação do Relatório de Atividades (1:1; só Contrato de Gestão).
+model PublicacaoRelatorioAtividades {
+  id                       String   @id @default(uuid()) @db.Uuid
+  prestacaoId              String   @unique @db.Uuid
+  houvePublicacaoExercicio Boolean?
+  publicacoes              Json     @default("[]")
+
+  prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id], onDelete: Cascade)
+}
+
+// Bloco 32 — Prestação de Contas da Entidade Beneficiária (1:1): 3 datas.
+model PrestacaoContasEntidade {
+  id                       String  @id @default(uuid()) @db.Uuid
+  prestacaoId              String  @unique @db.Uuid
+  dataPrestacao            String? // ISO 'YYYY-MM-DD'
+  periodoReferenciaInicial String?
+  periodoReferenciaFinal   String?
 
   prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id], onDelete: Cascade)
 }

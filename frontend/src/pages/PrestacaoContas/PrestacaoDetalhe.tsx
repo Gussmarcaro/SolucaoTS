@@ -41,6 +41,12 @@ import { ServidoresCedidosTab } from './blocos/ServidoresCedidosTab';
 import { RelatorioAtividadesTab } from './blocos/RelatorioAtividadesTab';
 import { DadosGeraisTab, ResponsaveisTab } from './blocos/CertidoesTabs';
 import { DeclaracoesTab, ParecerConclusivoTab, TransparenciaTab } from './blocos/DeclaratoriosTabs';
+import {
+  DemonstracoesContabeisTab,
+  PublicacaoParecerAtaTab,
+  PublicacaoRelAtividadesTab,
+  PrestacaoContasEntidadeTab,
+} from './blocos/PublicacoesTabs';
 
 const IMPLEMENTADOS = new Set([
   'empregados',
@@ -61,6 +67,10 @@ const IMPLEMENTADOS = new Set([
   'declaracoes',
   'parecerConclusivo',
   'transparencia',
+  'demonstracoes',
+  'publicacaoParecerAta',
+  'publicacaoRelAtividades',
+  'prestacaoEntidade',
 ]);
 
 function Campo({ label, valor }: { label: string; valor: string }) {
@@ -339,6 +349,14 @@ export function PrestacaoDetalhe() {
             <ParecerConclusivoTab prestacaoId={prestacao.id} />
           ) : blocoAtivo === 'transparencia' ? (
             <TransparenciaTab prestacaoId={prestacao.id} />
+          ) : blocoAtivo === 'demonstracoes' ? (
+            <DemonstracoesContabeisTab prestacaoId={prestacao.id} />
+          ) : blocoAtivo === 'publicacaoParecerAta' ? (
+            <PublicacaoParecerAtaTab prestacaoId={prestacao.id} />
+          ) : blocoAtivo === 'publicacaoRelAtividades' ? (
+            <PublicacaoRelAtividadesTab prestacaoId={prestacao.id} />
+          ) : blocoAtivo === 'prestacaoEntidade' ? (
+            <PrestacaoContasEntidadeTab prestacaoId={prestacao.id} />
           ) : (
             <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
               <Circle className="h-8 w-8 text-ink-300" />

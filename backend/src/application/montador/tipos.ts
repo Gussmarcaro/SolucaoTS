@@ -173,6 +173,44 @@ export interface DadosMontagem {
     requisitos83: Array<{ requisito: number; atende: boolean }>;
     requisitosDivulgacao: Array<{ requisito: number; atende: boolean }>;
   } | null;
+
+  // Bloco 28 — Demonstrações Contábeis
+  demonstracoes: {
+    publicacoes: PublicacaoMontagem[];
+    respNumeroCrc: string | null;
+    respCpf: string | null;
+    respSituacaoRegular: boolean | null;
+  } | null;
+
+  // Bloco 29 — Publicações de Parecer ou Ata
+  publicacaoParecerAta: {
+    itens: Array<{
+      tipoParecerAta: number;
+      houvePublicacao: boolean | null;
+      publicacoes: PublicacaoMontagem[];
+      conclusaoParecer: number | null;
+    }>;
+  } | null;
+
+  // Bloco 30 — Publicação do Relatório de Atividades (só Contrato de Gestão)
+  publicacaoRelAtividades: {
+    houvePublicacaoExercicio: boolean | null;
+    publicacoes: PublicacaoMontagem[];
+  } | null;
+
+  // Bloco 32 — Prestação de Contas da Entidade Beneficiária
+  prestacaoEntidade: {
+    dataPrestacao: string | null;
+    periodoReferenciaInicial: string | null;
+    periodoReferenciaFinal: string | null;
+  } | null;
+}
+
+export interface PublicacaoMontagem {
+  tipoVeiculo: number | null;
+  nomeVeiculo: string | null;
+  dataPublicacao: string | null;
+  enderecoInternet: string | null;
 }
 
 export interface ResultadoMontagem {

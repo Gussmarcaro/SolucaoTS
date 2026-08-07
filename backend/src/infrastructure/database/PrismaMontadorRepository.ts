@@ -6,6 +6,7 @@ import { paraDataISO } from '@/shared/datas';
 const dISO = (d: Date | null) => (d ? paraDataISO(d) : null);
 const n = (v: unknown) => (v == null ? null : Number(v));
 type Periodo = { mes: number; cargaHoraria: number; remuneracaoBruta: number };
+type PubRow = { tipoVeiculo: number | null; nomeVeiculo: string | null; dataPublicacao: string | null; enderecoInternet: string | null };
 
 export class PrismaMontadorRepository implements IMontadorRepository {
   async carregar(prestacaoId: string): Promise<DadosMontagem | null> {
@@ -26,7 +27,7 @@ export class PrismaMontadorRepository implements IMontadorRepository {
     });
     if (!prestacao) return null;
 
-    const [empregados, bens, documentosFiscais, pagamentos, receitas, disponibilidades, descontos, devolucoes, glosas, empenhos, repasses, servidores, atividades, dadosGerais, responsaveis, declaracoesBloco, parecer, transparencia] =
+    const [empregados, bens, documentosFiscais, pagamentos, receitas, disponibilidades, descontos, devolucoes, glosas, empenhos, repasses, servidores, atividades, dadosGerais, responsaveis, declaracoesBloco, parecer, transparencia, demonstracoes, publicacaoParecerAta, publicacaoRelAtividades, prestacaoEntidade] =
       await Promise.all([
         prisma.relacaoEmpregado.findMany({ where: { prestacaoId } }),
         prisma.bemPrestacao.findMany({ where: { prestacaoId } }),
@@ -46,6 +47,10 @@ export class PrismaMontadorRepository implements IMontadorRepository {
         prisma.declaracoesPrestacao.findUnique({ where: { prestacaoId } }),
         prisma.parecerConclusivo.findUnique({ where: { prestacaoId } }),
         prisma.transparencia.findUnique({ where: { prestacaoId } }),
+        prisma.demonstracoesContabeis.findUnique({ where: { prestacaoId } }),
+        prisma.publicacaoParecerAta.findUnique({ where: { prestacaoId } }),
+        prisma.publicacaoRelatorioAtividades.findUnique({ where: { prestacaoId } }),
+        prisma.prestacaoContasEntidade.findUnique({ where: { prestacaoId } }),
       ]);
 
     return {
@@ -230,6 +235,42 @@ export class PrismaMontadorRepository implements IMontadorRepository {
             requisitos83: (transparencia.requisitos83 as unknown as Array<{ requisito: number; atende: boolean }>) ?? [],
             requisitosDivulgacao:
               (transparencia.requisitosDivulgacao as unknown as Array<{ requisito: number; atende: boolean }>) ?? [],
+          }
+        : null,
+
+      demonstracoes: demonstracoes
+        ? {
+            publicacoes: (demonstracoes.publicacoes as unknown as PubRow[]) ?? [],
+            respNumeroCrc: demonstracoes.respNumeroCrc,
+            respCpf: demonstracoes.respCpf,
+            respSituacaoRegular: demonstracoes.respSituacaoRegular,
+          }
+        : null,
+
+      publicacaoParecerAta: publicacaoParecerAta
+        ? {
+            itens:
+              (publicacaoParecerAta.itens as unknown as Array<{
+                tipoParecerAta: number;
+                houvePublicacao: boolean | null;
+                publicacoes: PubRow[];
+                conclusaoParecer: number | null;
+              }>) ?? [],
+          }
+        : null,
+
+      publicacaoRelAtividades: publicacaoRelAtividades
+        ? {
+            houvePublicacaoExercicio: publicacaoRelAtividades.houvePublicacaoExercicio,
+            publicacoes: (publicacaoRelAtividades.publicacoes as unknown as PubRow[]) ?? [],
+          }
+        : null,
+
+      prestacaoEntidade: prestacaoEntidade
+        ? {
+            dataPrestacao: prestacaoEntidade.dataPrestacao,
+            periodoReferenciaInicial: prestacaoEntidade.periodoReferenciaInicial,
+            periodoReferenciaFinal: prestacaoEntidade.periodoReferenciaFinal,
           }
         : null,
     };

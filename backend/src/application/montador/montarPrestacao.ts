@@ -318,8 +318,62 @@ export function montarPrestacao(d: DadosMontagem): ResultadoMontagem {
     });
   }
 
+  // Publicação (subestrutura reutilizada nos blocos 28/29/30).
+  const pub = (p: { tipoVeiculo: number | null; nomeVeiculo: string | null; dataPublicacao: string | null; enderecoInternet: string | null }) =>
+    limpo({
+      tipo_veiculo_publicacao: p.tipoVeiculo,
+      nome_veiculo: p.tipoVeiculo === 10 ? p.nomeVeiculo : null,
+      data_publicacao: p.dataPublicacao,
+      endereco_internet: p.enderecoInternet,
+    });
+
+  // --- Demonstrações Contábeis (bloco 28) ---
+  if (d.demonstracoes) {
+    const dm = d.demonstracoes;
+    doc.demonstracoes_contabeis = limpo({
+      publicacoes: dm.publicacoes.map(pub),
+      responsavel: limpo({
+        numero_crc: dm.respNumeroCrc,
+        cpf: dm.respCpf,
+        situacao_regular_crc: dm.respSituacaoRegular,
+      }),
+    });
+  }
+
+  // --- Publicações de Parecer ou Ata (bloco 29) ---
+  if (d.publicacaoParecerAta && d.publicacaoParecerAta.itens.length) {
+    doc.publicacoes_parecer_ata = d.publicacaoParecerAta.itens.map((it) =>
+      limpo({
+        tipo_parecer_ata: it.tipoParecerAta,
+        houve_publicacao: it.houvePublicacao,
+        publicacoes: it.houvePublicacao ? it.publicacoes.map(pub) : null,
+        conclusao_parecer: it.conclusaoParecer,
+      }),
+    );
+  }
+
+  // --- Publicação do Relatório de Atividades (bloco 30; só Contrato de Gestão) ---
+  if (d.publicacaoRelAtividades && d.tipoAjuste === 'CONTRATO_GESTAO') {
+    const pr = d.publicacaoRelAtividades;
+    doc.publicacao_relatorio_atividades = limpo({
+      houve_publicacao_exercicio: pr.houvePublicacaoExercicio,
+      publicacoes: pr.houvePublicacaoExercicio ? pr.publicacoes.map(pub) : null,
+    });
+  }
+
+  // --- Prestação de Contas da Entidade Beneficiária (bloco 32) ---
+  if (d.prestacaoEntidade) {
+    const pe = d.prestacaoEntidade;
+    const bloco = limpo({
+      data_prestacao: pe.dataPrestacao,
+      periodo_referencia_data_inicial: pe.periodoReferenciaInicial,
+      periodo_referencia_data_final: pe.periodoReferenciaFinal,
+    });
+    if (Object.keys(bloco).length) doc.prestacao_contas_entidade_beneficiaria = bloco;
+  }
+
   avisos.push(
-    'Prévia parcial: blocos ainda não capturados neste sistema — Contratos, Ajustes de Saldo, Demonstrações Contábeis e Publicações (Parecer/Ata, Relatório de Atividades, Regulamento de Compras e Extrato Físico-Financeiro).',
+    'Prévia parcial: blocos ainda não capturados neste sistema — Contratos, Ajustes de Saldo, Termo de Bens Cedidos e Publicações específicas por tipo (Regulamento de Compras e Extrato Físico-Financeiro) + relatórios de Comissão de Avaliação, Governamental e Monitoramento.',
   );
 
   void SEM_TIPO;

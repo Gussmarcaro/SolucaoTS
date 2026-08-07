@@ -97,5 +97,13 @@ prestacaoRoutes.get('/:prestacaoId/parecer-conclusivo', (req, res, next) => decl
 prestacaoRoutes.put('/:prestacaoId/parecer-conclusivo', (req, res, next) => declaratorios.salvarParecer(req, res, next));
 prestacaoRoutes.get('/:prestacaoId/transparencia', (req, res, next) => declaratorios.obterTransparencia(req, res, next));
 prestacaoRoutes.put('/:prestacaoId/transparencia', (req, res, next) => declaratorios.salvarTransparencia(req, res, next));
+prestacaoRoutes.get('/:prestacaoId/demonstracoes-contabeis', (req, res, next) => declaratorios.obterDemonstracoes(req, res, next));
+prestacaoRoutes.put('/:prestacaoId/demonstracoes-contabeis', (req, res, next) => declaratorios.salvarDemonstracoes(req, res, next));
+prestacaoRoutes.get('/:prestacaoId/publicacao-parecer-ata', (req, res, next) => declaratorios.obterPublicacaoParecerAta(req, res, next));
+prestacaoRoutes.put('/:prestacaoId/publicacao-parecer-ata', (req, res, next) => declaratorios.salvarPublicacaoParecerAta(req, res, next));
+prestacaoRoutes.get('/:prestacaoId/publicacao-rel-atividades', (req, res, next) => declaratorios.obterPublicacaoRelAtividades(req, res, next));
+prestacaoRoutes.put('/:prestacaoId/publicacao-rel-atividades', (req, res, next) => declaratorios.salvarPublicacaoRelAtividades(req, res, next));
+prestacaoRoutes.get('/:prestacaoId/prestacao-entidade', (req, res, next) => declaratorios.obterPrestacaoEntidade(req, res, next));
+prestacaoRoutes.put('/:prestacaoId/prestacao-entidade', (req, res, next) => declaratorios.salvarPrestacaoEntidade(req, res, next));
 
 export { prestacaoRoutes };

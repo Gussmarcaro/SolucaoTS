@@ -18,12 +18,12 @@ import type { TipoAjuste } from '@/types/ajuste';
 import { AlertaErro, IconBtn } from './_ui';
 
 // ---------- infra compartilhada ----------
-interface Api<T> {
+export interface Api<T> {
   obter: (prestacaoId: string) => Promise<T | null>;
   salvar: (prestacaoId: string, payload: T) => Promise<T>;
 }
 
-function useBloco<T>(prestacaoId: string, api: Api<T>, vazio: T) {
+export function useBloco<T>(prestacaoId: string, api: Api<T>, vazio: T) {
   const [dados, setDados] = useState<T>(vazio);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
@@ -67,7 +67,7 @@ function useBloco<T>(prestacaoId: string, api: Api<T>, vazio: T) {
   return { dados, setDados, patch, carregando, salvando, erro, salvo, salvar };
 }
 
-function Nota({ children }: { children: React.ReactNode }) {
+export function Nota({ children }: { children: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-ink-200/70 bg-ink-50 px-4 py-3 text-xs text-ink-500 dark:border-ink-800/70 dark:bg-ink-950 dark:text-ink-400">
       {children}
@@ -75,7 +75,7 @@ function Nota({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Carregando() {
+export function Carregando() {
   return (
     <div className="flex justify-center py-10">
       <Loader2 className="h-5 w-5 animate-spin text-brand-500" />
@@ -83,7 +83,7 @@ function Carregando() {
   );
 }
 
-function BarraSalvar({ salvo, salvando, onSalvar }: { salvo: boolean; salvando: boolean; onSalvar: () => void }) {
+export function BarraSalvar({ salvo, salvando, onSalvar }: { salvo: boolean; salvando: boolean; onSalvar: () => void }) {
   return (
     <div className="flex items-center justify-end gap-3 pt-1">
       {salvo && (
@@ -100,7 +100,7 @@ function BarraSalvar({ salvo, salvando, onSalvar }: { salvo: boolean; salvando: 
   );
 }
 
-function BoolSelect({ label, value, onChange }: { label: string; value: boolean | null; onChange: (v: boolean | null) => void }) {
+export function BoolSelect({ label, value, onChange }: { label: string; value: boolean | null; onChange: (v: boolean | null) => void }) {
   const v = value === true ? 'sim' : value === false ? 'nao' : '';
   return (
     <Select
