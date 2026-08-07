@@ -270,4 +270,5 @@ export interface PublicacaoMontagem {
 export interface ResultadoMontagem {
   documento: Record<string, unknown>;
   avisos: string[];
+  erros: string[]; // regras de negócio que devem ser corrigidas ANTES de transmitir
 }

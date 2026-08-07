@@ -45,6 +45,7 @@ export async function excluirPrestacao(id: string): Promise<void> {
 export interface ResultadoJson {
   documento: unknown;
   avisos: string[];
+  erros: string[];
 }
 
 export async function gerarJsonPrestacao(id: string): Promise<ResultadoJson> {

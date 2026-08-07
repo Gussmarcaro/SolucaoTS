@@ -1,4 +1,5 @@
 import type { DadosMontagem, ResultadoMontagem } from './tipos';
+import { validarPrestacao } from './validarPrestacao';
 
 const TIPO_DOCUMENTO: Record<string, string> = {
   CONTRATO_GESTAO: 'Prestação de Contas de Contrato de Gestão',
@@ -494,5 +495,5 @@ export function montarPrestacao(d: DadosMontagem): ResultadoMontagem {
   );
 
   void SEM_TIPO;
-  return { documento: doc, avisos };
+  return { documento: doc, avisos, erros: validarPrestacao(d) };
 }

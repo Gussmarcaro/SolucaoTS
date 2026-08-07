@@ -457,6 +457,23 @@ export function PrestacaoDetalhe() {
           <p className="text-sm font-medium text-red-500">{erroJson}</p>
         ) : json ? (
           <div className="space-y-3">
+            {json.erros.length > 0 ? (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+                <p className="mb-1 flex items-center gap-1.5 font-medium">
+                  <AlertTriangle className="h-4 w-4" />
+                  Pendências que impedem a transmissão ({json.erros.length})
+                </p>
+                <ul className="list-disc space-y-0.5 pl-5 text-xs">
+                  {json.erros.map((e, i) => (
+                    <li key={i}>{e}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
+                Sem pendências de validação — pronto para transmitir ao piloto.
+              </div>
+            )}
             {json.avisos.length > 0 && (
               <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
                 <p className="mb-1 flex items-center gap-1.5 font-medium">

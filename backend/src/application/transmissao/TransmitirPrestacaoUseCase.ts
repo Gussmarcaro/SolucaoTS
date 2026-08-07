@@ -26,7 +26,11 @@ export class TransmitirPrestacaoUseCase {
     const prestacao = await this.repo.carregar(prestacaoId);
     if (!prestacao) throw new NotFoundError('Prestação não encontrada.');
 
-    const { documento, avisos } = await this.montador.execute(prestacaoId);
+    const { documento, avisos, erros } = await this.montador.execute(prestacaoId);
+    if (erros.length)
+      throw new BusinessError(
+        `Corrija ${erros.length} pendência(s) antes de transmitir:\n- ${erros.slice(0, 10).join('\n- ')}${erros.length > 10 ? '\n- …' : ''}`,
+      );
 
     const token = await this.gateway.autenticar(ambiente, credenciais);
     const envio = await this.gateway.enviar({
