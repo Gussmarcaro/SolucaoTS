@@ -10,8 +10,6 @@ import {
   Plus,
   ArrowRight,
   CheckCircle2,
-  Clock,
-  AlertTriangle,
 } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { StatCard } from '@/components/ui/StatCard';
@@ -25,24 +23,32 @@ import { listarColaboradores } from '@/services/colaboradores.service';
 import { listarContratos } from '@/services/contratos.service';
 import { listarBensCedidos } from '@/services/bensCedidos.service';
 import { listarServidoresCedidos } from '@/services/servidoresCedidos.service';
-import { cn } from '@/lib/cn';
+import { listarAjustes } from '@/services/ajustes.service';
+import { listarPrestacoes } from '@/services/prestacoes.service';
+import { STATUS_PRESTACAO_LABEL, STATUS_PRESTACAO_TONE, type Prestacao } from '@/types/prestacao';
+import { prazoPrestacao, diasAte, rotuloPrazo, tonePrazo } from '@/lib/prazos';
 
-/** Prazos e atividades ainda são ilustrativos (dependem dos módulos Ajustes e Prestação). */
-const prazos = [
-  { orgao: 'Convênio 023/2025 — Instituto Vida', periodo: '2º Quadrimestre', vence: 'em 3 dias', tone: 'danger' as const },
-  { orgao: 'Termo Colaboração 011/2025 — APAE', periodo: 'Anual 2025', vence: 'em 9 dias', tone: 'warning' as const },
-  { orgao: 'Convênio 040/2025 — Lar São Vicente', periodo: '2º Quadrimestre', vence: 'em 15 dias', tone: 'neutral' as const },
-  { orgao: 'Contrato Gestão 002/2025 — OS Saúde', periodo: '2º Quadrimestre', vence: 'em 21 dias', tone: 'neutral' as const },
-];
-
-const atividades = [
-  { icon: CheckCircle2, color: 'text-emerald-500', text: 'Prestação do Convênio 018/2025 foi', em: 'Armazenada', quando: 'há 2h' },
-  { icon: AlertTriangle, color: 'text-red-500', text: 'Prestação 015/2025 retornou', em: 'Rejeitada', quando: 'há 5h' },
-  { icon: Clock, color: 'text-brand-500', text: 'Novo ajuste 040/2025 em', em: 'Elaboração', quando: 'ontem' },
-  { icon: CheckCircle2, color: 'text-emerald-500', text: 'Importação do Plano de Aplicação', em: 'concluída', quando: 'ontem' },
-];
+interface PrazoItem {
+  id: string;
+  orgao: string;
+  periodo: string;
+  vence: string;
+  tone: 'danger' | 'warning' | 'neutral';
+  dias: number;
+}
 
 type Contagens = Record<string, number | null>;
+
+function tempoRelativo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return 'agora';
+  if (min < 60) return `há ${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `há ${h}h`;
+  const d = Math.floor(h / 24);
+  return d === 1 ? 'ontem' : `há ${d} dias`;
+}
 
 function saudacao(): string {
   const h = new Date().getHours();
@@ -56,6 +62,48 @@ export function Dashboard() {
   const { usuario } = useAuth();
   const primeiroNome = usuario?.nome?.trim().split(/\s+/)[0] ?? '';
   const [contagens, setContagens] = useState<Contagens | null>(null);
+  const [prazos, setPrazos] = useState<PrazoItem[] | null>(null);
+  const [atividade, setAtividade] = useState<Prestacao[] | null>(null);
+  const ciclo = prazoPrestacao();
+
+  useEffect(() => {
+    let vivo = true;
+    const { exercicio, deadline } = prazoPrestacao();
+    Promise.allSettled([
+      listarAjustes({ page: 1, pageSize: 100 }),
+      listarPrestacoes({ filtros: { ano: exercicio }, page: 1, pageSize: 100 }),
+      listarPrestacoes({ orderBy: 'atualizadoEm', orderDir: 'desc', page: 1, pageSize: 5 }),
+    ]).then((res) => {
+      if (!vivo) return;
+      const ajustes = res[0].status === 'fulfilled' ? res[0].value.data : [];
+      const doExercicio = res[1].status === 'fulfilled' ? res[1].value.data : [];
+      const recentes = res[2].status === 'fulfilled' ? res[2].value.data : [];
+
+      const statusPorAjuste = new Map<string, string>();
+      for (const p of doExercicio) {
+        if (p.status === 'ARMAZENADO' || !statusPorAjuste.has(p.ajusteId)) statusPorAjuste.set(p.ajusteId, p.status);
+      }
+      const dias = diasAte(deadline);
+      const itens: PrazoItem[] = ajustes
+        .filter((a) => new Date(a.dataAssinatura).getFullYear() <= exercicio)
+        .filter((a) => statusPorAjuste.get(a.id) !== 'ARMAZENADO')
+        .map((a) => ({
+          id: a.id,
+          orgao: `${a.codigoAjuste} — ${a.entidadeNome}`,
+          periodo: statusPorAjuste.get(a.id) === 'ENVIADO' ? `Exercício ${exercicio} · enviada, aguardando` : `Prestação do exercício ${exercicio}`,
+          vence: rotuloPrazo(dias),
+          tone: tonePrazo(dias),
+          dias,
+        }))
+        .sort((x, y) => x.dias - y.dias)
+        .slice(0, 6);
+      setPrazos(itens);
+      setAtividade(recentes);
+    });
+    return () => {
+      vivo = false;
+    };
+  }, []);
 
   useEffect(() => {
     let vivo = true;
@@ -121,52 +169,65 @@ export function Dashboard() {
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Próximos prazos */}
+        {/* Próximos prazos — Prestação de Contas (30/06) */}
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Próximos prazos legais</CardTitle>
-            <Badge tone="neutral">Exemplo</Badge>
+            <CardTitle>Prazo da Prestação de Contas</CardTitle>
+            <Badge tone="brand">Exercício {ciclo.exercicio}</Badge>
           </CardHeader>
           <CardBody className="pt-3">
-            <ul className="divide-y divide-ink-100 dark:divide-ink-800">
-              {prazos.map((p) => (
-                <li key={p.orgao} className="flex items-center justify-between gap-4 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-ink-800 dark:text-ink-100">{p.orgao}</p>
-                    <p className="mt-0.5 text-xs text-ink-400">{p.periodo}</p>
-                  </div>
-                  <Badge tone={p.tone}>{p.vence}</Badge>
-                </li>
-              ))}
-            </ul>
+            <p className="mb-3 text-xs text-ink-400">
+              Entrega até <span className="font-medium text-ink-600 dark:text-ink-300">30/06/{ciclo.deadline.getFullYear()}</span> (repasses de {ciclo.exercicio}). Ajustes sem prestação <strong>Armazenada</strong>:
+            </p>
+            {prazos == null ? (
+              <p className="py-6 text-center text-sm text-ink-400">Carregando…</p>
+            ) : prazos.length === 0 ? (
+              <p className="flex items-center gap-2 py-6 text-sm text-emerald-600 dark:text-emerald-400">
+                <CheckCircle2 className="h-4 w-4" /> Nenhuma prestação pendente para o exercício {ciclo.exercicio}.
+              </p>
+            ) : (
+              <ul className="divide-y divide-ink-100 dark:divide-ink-800">
+                {prazos.map((p) => (
+                  <li key={p.id} onClick={() => navigate('/prestacao-contas')} className="flex cursor-pointer items-center justify-between gap-4 py-3 transition-colors hover:bg-ink-50/70 dark:hover:bg-ink-800/40">
+                    <div className="min-w-0">
+                      <p className="truncate font-mono text-sm font-medium text-ink-800 dark:text-ink-100">{p.orgao}</p>
+                      <p className="mt-0.5 text-xs text-ink-400">{p.periodo}</p>
+                    </div>
+                    <Badge tone={p.tone}>{p.vence}</Badge>
+                  </li>
+                ))}
+              </ul>
+            )}
             <p className="mt-3 flex items-center gap-1 text-xs text-ink-400">
               <ArrowRight className="h-3.5 w-3.5" />
-              Passa a usar dados reais quando o módulo Ajustes estiver ativo.
+              Os prazos de cadastro (dias úteis) dependem do calendário oficial de feriados — não exibidos aqui.
             </p>
           </CardBody>
         </Card>
 
-        {/* Atividade recente */}
+        {/* Atividade recente — prestações */}
         <Card>
           <CardHeader>
-            <CardTitle>Atividade recente</CardTitle>
-            <Badge tone="neutral">Exemplo</Badge>
+            <CardTitle>Prestações recentes</CardTitle>
           </CardHeader>
           <CardBody className="pt-3">
-            <ul className="space-y-4">
-              {atividades.map((a, i) => (
-                <li key={i} className="flex gap-3">
-                  <a.icon className={cn('mt-0.5 h-4 w-4 shrink-0', a.color)} />
-                  <div>
-                    <p className="text-sm text-ink-700 dark:text-ink-200">
-                      {a.text}{' '}
-                      <span className="font-semibold text-ink-900 dark:text-ink-50">{a.em}</span>
-                    </p>
-                    <p className="mt-0.5 text-xs text-ink-400">{a.quando}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            {atividade == null ? (
+              <p className="py-6 text-center text-sm text-ink-400">Carregando…</p>
+            ) : atividade.length === 0 ? (
+              <p className="py-6 text-center text-sm text-ink-400">Nenhuma prestação ainda.</p>
+            ) : (
+              <ul className="space-y-3">
+                {atividade.map((p) => (
+                  <li key={p.id} onClick={() => navigate(`/prestacao-contas/${p.id}`)} className="flex cursor-pointer items-center justify-between gap-3 rounded-lg p-1.5 transition-colors hover:bg-ink-50/70 dark:hover:bg-ink-800/40">
+                    <div className="min-w-0">
+                      <p className="truncate font-mono text-sm text-ink-700 dark:text-ink-200">{p.ajusteCodigo}</p>
+                      <p className="mt-0.5 text-xs text-ink-400">Exercício {p.ano} · {tempoRelativo(p.atualizadoEm)}</p>
+                    </div>
+                    <Badge tone={STATUS_PRESTACAO_TONE[p.status]}>{STATUS_PRESTACAO_LABEL[p.status]}</Badge>
+                  </li>
+                ))}
+              </ul>
+            )}
           </CardBody>
         </Card>
       </div>
