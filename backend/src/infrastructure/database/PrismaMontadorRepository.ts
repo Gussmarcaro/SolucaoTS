@@ -26,7 +26,7 @@ export class PrismaMontadorRepository implements IMontadorRepository {
     });
     if (!prestacao) return null;
 
-    const [empregados, bens, documentosFiscais, pagamentos, receitas, disponibilidades, descontos, devolucoes, glosas, empenhos, repasses, servidores, atividades] =
+    const [empregados, bens, documentosFiscais, pagamentos, receitas, disponibilidades, descontos, devolucoes, glosas, empenhos, repasses, servidores, atividades, dadosGerais, responsaveis] =
       await Promise.all([
         prisma.relacaoEmpregado.findMany({ where: { prestacaoId } }),
         prisma.bemPrestacao.findMany({ where: { prestacaoId } }),
@@ -41,6 +41,8 @@ export class PrismaMontadorRepository implements IMontadorRepository {
         prisma.repassePrestacao.findMany({ where: { prestacaoId }, include: { empenho: { select: { numero: true, dataEmissao: true } } } }),
         prisma.servidorCedido.findMany({ where: { prestacaoId } }),
         prisma.relatorioAtividadeMeta.findMany({ where: { prestacaoId } }),
+        prisma.dadosGeraisBeneficiaria.findUnique({ where: { prestacaoId } }),
+        prisma.responsaveisConcessor.findUnique({ where: { prestacaoId } }),
       ]);
 
     return {
@@ -176,6 +178,24 @@ export class PrismaMontadorRepository implements IMontadorRepository {
         metaAtendida: a.metaAtendida,
         justificativaMeta: a.justificativaMeta,
       })),
+
+      dadosGerais: dadosGerais
+        ? {
+            identCertidaoDadosGerais: dadosGerais.identCertidaoDadosGerais,
+            identCertidaoCorpoDiretivo: dadosGerais.identCertidaoCorpoDiretivo,
+            identCertidaoMembrosConselho: dadosGerais.identCertidaoMembrosConselho,
+            identCertidaoResponsaveis: dadosGerais.identCertidaoResponsaveis,
+          }
+        : null,
+
+      responsaveis: responsaveis
+        ? {
+            identCertidaoResponsaveis: responsaveis.identCertidaoResponsaveis,
+            identCertidaoComissaoAvaliacao: responsaveis.identCertidaoComissaoAvaliacao,
+            identCertidaoControleInterno: responsaveis.identCertidaoControleInterno,
+            identCertidaoFiscalizacaoExecucao: responsaveis.identCertidaoFiscalizacaoExecucao,
+          }
+        : null,
     };
   }
 }

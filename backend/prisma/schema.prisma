@@ -586,9 +586,37 @@ model PrestacaoContas {
   empenhos          EmpenhoPrestacao[]
   repasses          RepassePrestacao[]
   metasReportadas   RelatorioAtividadeMeta[]
+  dadosGerais       DadosGeraisBeneficiaria?
+  responsaveis      ResponsaveisConcessor?
 
   @@index([ajusteId])
   @@index([status])
+}
+
+// Bloco 20 — Dados Gerais da Entidade Beneficiária (1:1): identificadores das
+// certidões cadastradas/concluídas no Audesp Fase V (não são certidões locais).
+model DadosGeraisBeneficiaria {
+  id                           String  @id @default(uuid()) @db.Uuid
+  prestacaoId                  String  @unique @db.Uuid
+  identCertidaoDadosGerais     String? // tipo varia por tipo de ajuste (OS/Conveniada/OSC/OSCIP)
+  identCertidaoCorpoDiretivo   String? // certidão de Corpo Diretivo (prestação de contas)
+  identCertidaoMembrosConselho String? // certidão de Conselho (prestação de contas)
+  identCertidaoResponsaveis    String? // Entidade Gerenciada - Responsáveis (só Contrato de Gestão)
+
+  prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id], onDelete: Cascade)
+}
+
+// Bloco 21 — Responsáveis e Membros do Órgão Concessor (1:1): identificadores
+// das certidões do órgão concessor no Audesp Fase V.
+model ResponsaveisConcessor {
+  id                                String  @id @default(uuid()) @db.Uuid
+  prestacaoId                       String  @unique @db.Uuid
+  identCertidaoResponsaveis         String?
+  identCertidaoComissaoAvaliacao    String?
+  identCertidaoControleInterno      String?
+  identCertidaoFiscalizacaoExecucao String? // só Convênio, Termo de Colaboração e Fomento
+
+  prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id], onDelete: Cascade)
 }
 
 model RelacaoEmpregado {

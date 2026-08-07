@@ -245,8 +245,37 @@ export function montarPrestacao(d: DadosMontagem): ResultadoMontagem {
     })),
   };
 
+  // --- Dados Gerais da Entidade Beneficiária (bloco 20) ---
+  // identificacao_certidao_responsaveis (entidade gerenciada) só p/ Contrato de Gestão.
+  if (d.dadosGerais) {
+    const dg = limpo({
+      identificacao_certidao_dados_gerais: d.dadosGerais.identCertidaoDadosGerais,
+      identificacao_certidao_corpo_diretivo: d.dadosGerais.identCertidaoCorpoDiretivo,
+      identificacao_certidao_membros_conselho: d.dadosGerais.identCertidaoMembrosConselho,
+      identificacao_certidao_responsaveis:
+        d.tipoAjuste === 'CONTRATO_GESTAO' ? d.dadosGerais.identCertidaoResponsaveis : null,
+    });
+    if (Object.keys(dg).length) doc.dados_gerais_entidade_beneficiaria = dg;
+  }
+
+  // --- Responsáveis e Membros do Órgão Concessor (bloco 21) ---
+  // fiscalizacao_execucao só p/ Convênio, Termo de Colaboração e Fomento.
+  if (d.responsaveis) {
+    const fiscalizavel =
+      d.tipoAjuste === 'CONVENIO' || d.tipoAjuste === 'TERMO_COLABORACAO' || d.tipoAjuste === 'TERMO_FOMENTO';
+    const rc = limpo({
+      identificacao_certidao_responsaveis: d.responsaveis.identCertidaoResponsaveis,
+      identificacao_certidao_membros_comissao_avaliacao: d.responsaveis.identCertidaoComissaoAvaliacao,
+      identificacao_certidao_membros_controle_interno: d.responsaveis.identCertidaoControleInterno,
+      identificacao_certidao_responsaveis_fiscalizacao_execucao: fiscalizavel
+        ? d.responsaveis.identCertidaoFiscalizacaoExecucao
+        : null,
+    });
+    if (Object.keys(rc).length) doc.responsaveis_membros_orgao_concessor = rc;
+  }
+
   avisos.push(
-    'Prévia parcial: blocos ainda não capturados neste sistema — Contratos, Ajustes de Saldo, Dados Gerais/Certidões, Responsáveis, Publicações, Declarações, Parecer Conclusivo, Transparência e Demonstrações Contábeis.',
+    'Prévia parcial: blocos ainda não capturados neste sistema — Contratos, Ajustes de Saldo, Publicações, Declarações, Parecer Conclusivo, Transparência e Demonstrações Contábeis.',
   );
 
   void SEM_TIPO;

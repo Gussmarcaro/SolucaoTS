@@ -15,6 +15,7 @@ import { ServidorPrestacaoController } from '@/presentation/controllers/Servidor
 import { RelatorioAtividadeController } from '@/presentation/controllers/RelatorioAtividadeController';
 import { MontadorController } from '@/presentation/controllers/MontadorController';
 import { TransmissaoController } from '@/presentation/controllers/TransmissaoController';
+import { CertidoesPrestacaoController } from '@/presentation/controllers/CertidoesPrestacaoController';
 
 const prestacaoRoutes = Router();
 const c = new PrestacaoController();
@@ -80,5 +81,12 @@ bloco('repasses', new RepasseController());
 bloco('bens', new BemPrestacaoController());
 bloco('servidores-cedidos', new ServidorPrestacaoController());
 bloco('relatorio-atividades', new RelatorioAtividadeController());
+
+// --- Blocos singleton (1:1 com a prestação) ---
+const certidoes = new CertidoesPrestacaoController();
+prestacaoRoutes.get('/:prestacaoId/dados-gerais', (req, res, next) => certidoes.obterDadosGerais(req, res, next));
+prestacaoRoutes.put('/:prestacaoId/dados-gerais', (req, res, next) => certidoes.salvarDadosGerais(req, res, next));
+prestacaoRoutes.get('/:prestacaoId/responsaveis', (req, res, next) => certidoes.obterResponsaveis(req, res, next));
+prestacaoRoutes.put('/:prestacaoId/responsaveis', (req, res, next) => certidoes.salvarResponsaveis(req, res, next));
 
 export { prestacaoRoutes };

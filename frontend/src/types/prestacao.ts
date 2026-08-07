@@ -88,6 +88,8 @@ export const BLOCOS: BlocoDef[] = [
   { chave: 'empenhos', nome: 'Empenhos' },
   { chave: 'repasses', nome: 'Repasses' },
   { chave: 'atividades', nome: 'Relatório de Atividades (Metas)' },
+  { chave: 'dadosGerais', nome: 'Dados Gerais da Beneficiária' },
+  { chave: 'responsaveis', nome: 'Responsáveis do Concessor' },
   { chave: 'regulamentoCompras', nome: 'Regulamento de Compras', somente: ['CONTRATO_GESTAO'] },
   { chave: 'comissaoAvaliacao', nome: 'Relatório da Comissão de Avaliação', somente: ['CONTRATO_GESTAO'] },
   { chave: 'extratoFisicoFinanceiro', nome: 'Extrato Físico-Financeiro', somente: ['TERMO_PARCERIA'] },

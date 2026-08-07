@@ -132,6 +132,21 @@ export interface DadosMontagem {
     metaAtendida: boolean | null;
     justificativaMeta: string | null;
   }>;
+
+  // Blocos 20/21 — identificadores de certidões (singletons; null se não preenchidos)
+  dadosGerais: {
+    identCertidaoDadosGerais: string | null;
+    identCertidaoCorpoDiretivo: string | null;
+    identCertidaoMembrosConselho: string | null;
+    identCertidaoResponsaveis: string | null;
+  } | null;
+
+  responsaveis: {
+    identCertidaoResponsaveis: string | null;
+    identCertidaoComissaoAvaliacao: string | null;
+    identCertidaoControleInterno: string | null;
+    identCertidaoFiscalizacaoExecucao: string | null;
+  } | null;
 }
 
 export interface ResultadoMontagem {
