@@ -14,6 +14,7 @@ import { BemPrestacaoController } from '@/presentation/controllers/BemPrestacaoC
 import { ServidorPrestacaoController } from '@/presentation/controllers/ServidorPrestacaoController';
 import { RelatorioAtividadeController } from '@/presentation/controllers/RelatorioAtividadeController';
 import { MontadorController } from '@/presentation/controllers/MontadorController';
+import { TransmissaoController } from '@/presentation/controllers/TransmissaoController';
 
 const prestacaoRoutes = Router();
 const c = new PrestacaoController();
@@ -47,6 +48,12 @@ prestacaoRoutes.get('/:id', (req, res, next) => c.buscar(req, res, next));
 // Montagem do documento JSON (prévia)
 const montador = new MontadorController();
 prestacaoRoutes.get('/:prestacaoId/json', (req, res, next) => montador.gerar(req, res, next));
+
+// Transmissão à API do TCESP (Fase D) — default de ambiente = PILOTO
+const transmissao = new TransmissaoController();
+prestacaoRoutes.post('/:prestacaoId/transmitir', (req, res, next) => transmissao.transmitir(req, res, next));
+prestacaoRoutes.post('/:prestacaoId/consultar-status', (req, res, next) => transmissao.consultar(req, res, next));
+
 prestacaoRoutes.delete('/:id', (req, res, next) => c.excluir(req, res, next));
 
 // --- Documentos Fiscais (bloco) ---

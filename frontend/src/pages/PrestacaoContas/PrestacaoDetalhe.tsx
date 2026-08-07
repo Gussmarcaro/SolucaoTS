@@ -1,10 +1,22 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { AlertTriangle, ArrowLeft, Braces, CheckCircle2, Circle, Copy, Download, Loader2, Send, ServerCrash, Trash2 } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Braces, CheckCircle2, Circle, Copy, Download, Loader2, RefreshCw, Send, ServerCrash, ShieldAlert, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
-import { buscarPrestacao, excluirPrestacao, gerarJsonPrestacao, type ResultadoJson } from '@/services/prestacoes.service';
+import {
+  buscarPrestacao,
+  consultarStatusPrestacao,
+  excluirPrestacao,
+  gerarJsonPrestacao,
+  transmitirPrestacao,
+  type Ambiente,
+  type ResultadoEnvio,
+  type ResultadoJson,
+  type StatusConsulta,
+} from '@/services/prestacoes.service';
 import { extrairMensagemErro } from '@/services/http';
 import { TIPO_AJUSTE_LABEL } from '@/types/ajuste';
 import {
@@ -68,6 +80,17 @@ export function PrestacaoDetalhe() {
   const [jsonAberto, setJsonAberto] = useState(false);
   const [erroJson, setErroJson] = useState<string | null>(null);
   const [copiado, setCopiado] = useState(false);
+  // Transmissão (Fase D)
+  const [transmitirAberto, setTransmitirAberto] = useState(false);
+  const [ambiente, setAmbiente] = useState<Ambiente>('PILOTO');
+  const [usuario, setUsuario] = useState('');
+  const [senha, setSenha] = useState('');
+  const [transmitindo, setTransmitindo] = useState(false);
+  const [envio, setEnvio] = useState<ResultadoEnvio | null>(null);
+  const [avisosEnvio, setAvisosEnvio] = useState<string[]>([]);
+  const [erroTransmit, setErroTransmit] = useState<string | null>(null);
+  const [consultando, setConsultando] = useState(false);
+  const [statusConsulta, setStatusConsulta] = useState<StatusConsulta | null>(null);
 
   useEffect(() => {
     let vivo = true;
@@ -144,6 +167,65 @@ export function PrestacaoDetalhe() {
     a.download = `prestacao-${prestacao?.ajusteCodigo ?? 'documento'}-${prestacao?.ano ?? ''}.json`;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  async function recarregarPrestacao() {
+    try {
+      setPrestacao(await buscarPrestacao(id));
+    } catch {
+      /* mantém o estado atual se a releitura falhar */
+    }
+  }
+
+  function abrirTransmissao() {
+    setEnvio(null);
+    setStatusConsulta(null);
+    setErroTransmit(null);
+    setSenha('');
+    setTransmitirAberto(true);
+  }
+
+  async function transmitir() {
+    if (!usuario.trim() || !senha.trim()) {
+      setErroTransmit('Informe usuário e senha do WebService Audesp.');
+      return;
+    }
+    setTransmitindo(true);
+    setErroTransmit(null);
+    setStatusConsulta(null);
+    try {
+      const r = await transmitirPrestacao(id, { ambiente, usuario: usuario.trim(), senha });
+      setEnvio(r.envio);
+      setAvisosEnvio(r.avisos);
+      await recarregarPrestacao();
+    } catch (e) {
+      setErroTransmit(extrairMensagemErro(e, 'Falha na transmissão.'));
+    } finally {
+      setTransmitindo(false);
+    }
+  }
+
+  async function consultarStatus() {
+    const protocolo = envio?.protocolo ?? prestacao?.protocolo ?? '';
+    if (!protocolo) {
+      setErroTransmit('Sem protocolo para consultar.');
+      return;
+    }
+    if (!usuario.trim() || !senha.trim()) {
+      setErroTransmit('Informe usuário e senha para consultar.');
+      return;
+    }
+    setConsultando(true);
+    setErroTransmit(null);
+    try {
+      const s = await consultarStatusPrestacao(id, { ambiente, usuario: usuario.trim(), senha, protocolo });
+      setStatusConsulta(s);
+      await recarregarPrestacao();
+    } catch (e) {
+      setErroTransmit(extrairMensagemErro(e, 'Falha ao consultar o status.'));
+    } finally {
+      setConsultando(false);
+    }
   }
 
   return (
@@ -251,15 +333,15 @@ export function PrestacaoDetalhe() {
           )}
 
           <div className="mt-5 flex flex-col gap-2 border-t border-ink-100 pt-4 dark:border-ink-800 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs text-ink-400">Gere a prévia do documento JSON. Transmissão ao piloto entra na próxima fase.</p>
+            <p className="text-xs text-ink-400">Gere a prévia do JSON e transmita ao Audesp. Teste sempre no <span className="font-medium">piloto</span> antes da produção.</p>
             <div className="flex items-center gap-2">
               <Button variant="secondary" size="sm" onClick={gerarJson} disabled={gerandoJson}>
                 {gerandoJson ? <Loader2 className="h-4 w-4 animate-spin" /> : <Braces className="h-4 w-4" />}
                 Gerar JSON (prévia)
               </Button>
-              <Button size="sm" disabled title="Disponível após validar o JSON e configurar as credenciais">
+              <Button size="sm" onClick={abrirTransmissao}>
                 <Send className="h-4 w-4" />
-                Transmitir (piloto)
+                Transmitir
               </Button>
             </div>
           </div>
@@ -332,6 +414,86 @@ export function PrestacaoDetalhe() {
             </pre>
           </div>
         ) : null}
+      </Modal>
+
+      {/* Transmissão ao Audesp (Fase D) */}
+      <Modal
+        open={transmitirAberto}
+        onClose={() => setTransmitirAberto(false)}
+        title="Transmitir ao Audesp"
+        subtitle="Autentica no WebService, envia o documento JSON e retorna o protocolo."
+        size="lg"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setTransmitirAberto(false)} disabled={transmitindo || consultando}>Fechar</Button>
+            {(envio?.protocolo || prestacao.protocolo) && (
+              <Button variant="secondary" onClick={consultarStatus} disabled={consultando || transmitindo}>
+                {consultando ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                Consultar status
+              </Button>
+            )}
+            <Button variant={ambiente === 'PRODUCAO' ? 'danger' : 'primary'} onClick={transmitir} disabled={transmitindo || consultando}>
+              {transmitindo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {ambiente === 'PRODUCAO' ? 'Transmitir à PRODUÇÃO' : 'Transmitir ao piloto'}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Select
+              label="Ambiente"
+              name="ambiente"
+              value={ambiente}
+              onChange={(e) => setAmbiente(e.target.value as Ambiente)}
+              options={[{ value: 'PILOTO', label: 'Piloto (teste)' }, { value: 'PRODUCAO', label: 'Produção (oficial)' }]}
+            />
+            <div />
+            <Input label="Usuário (WebService Audesp)" name="usuario" value={usuario} onChange={(e) => setUsuario(e.target.value)} autoComplete="off" />
+            <Input label="Senha" name="senha" type="password" value={senha} onChange={(e) => setSenha(e.target.value)} autoComplete="off" />
+          </div>
+
+          {ambiente === 'PRODUCAO' && (
+            <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+              <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>Envio <strong>oficial</strong> ao TCESP. Confirme que já testou no piloto — no 1º ano ~75% das remessas foram rejeitadas por falta de teste.</span>
+            </div>
+          )}
+
+          <p className="text-xs text-ink-400">As credenciais são usadas apenas nesta chamada e não ficam salvas. Requer a permissão “Transmissão Pacotes - Fase V”.</p>
+
+          {erroTransmit && <p className="text-sm font-medium text-red-500">{erroTransmit}</p>}
+
+          {envio && (
+            <div className={cn(
+              'rounded-xl border px-4 py-3 text-sm',
+              envio.aceito ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300'
+                : 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
+            )}>
+              <p className="font-medium">{envio.aceito ? 'Documento enviado.' : 'Envio não confirmado.'}</p>
+              {envio.protocolo && <p className="mt-0.5">Protocolo: <span className="font-mono font-semibold">{envio.protocolo}</span></p>}
+              {envio.mensagem && <p className="mt-0.5">{envio.mensagem}</p>}
+              {avisosEnvio.length > 0 && (
+                <ul className="mt-1.5 list-disc space-y-0.5 pl-5 text-xs">
+                  {avisosEnvio.map((a, i) => <li key={i}>{a}</li>)}
+                </ul>
+              )}
+            </div>
+          )}
+
+          {statusConsulta && (
+            <div className="rounded-xl border border-ink-200 bg-ink-50 px-4 py-3 text-sm dark:border-ink-800 dark:bg-ink-950">
+              <p className="font-medium text-ink-800 dark:text-ink-100">Estado: {statusConsulta.estado ?? '—'}</p>
+              {statusConsulta.inconformidades.length > 0 && (
+                <ul className="mt-1.5 list-disc space-y-0.5 pl-5 text-xs text-red-600 dark:text-red-300">
+                  {statusConsulta.inconformidades.map((inc, i) => (
+                    <li key={i}>{inc.campo ? `${inc.campo}: ` : ''}{inc.mensagem}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
       </Modal>
     </>
   );
