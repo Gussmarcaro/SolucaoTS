@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Circle, Loader2, Send, ServerCrash, ShieldCheck, Trash2 } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Braces, CheckCircle2, Circle, Copy, Download, Loader2, Send, ServerCrash, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
-import { buscarPrestacao, excluirPrestacao } from '@/services/prestacoes.service';
+import { buscarPrestacao, excluirPrestacao, gerarJsonPrestacao, type ResultadoJson } from '@/services/prestacoes.service';
 import { extrairMensagemErro } from '@/services/http';
 import { TIPO_AJUSTE_LABEL } from '@/types/ajuste';
 import {
@@ -63,6 +63,11 @@ export function PrestacaoDetalhe() {
   const [excluindo, setExcluindo] = useState(false);
   const [erroExcluir, setErroExcluir] = useState<string | null>(null);
   const [blocoAtivo, setBlocoAtivo] = useState('documentosFiscais');
+  const [json, setJson] = useState<ResultadoJson | null>(null);
+  const [gerandoJson, setGerandoJson] = useState(false);
+  const [jsonAberto, setJsonAberto] = useState(false);
+  const [erroJson, setErroJson] = useState<string | null>(null);
+  const [copiado, setCopiado] = useState(false);
 
   useEffect(() => {
     let vivo = true;
@@ -104,6 +109,41 @@ export function PrestacaoDetalhe() {
     } finally {
       setExcluindo(false);
     }
+  }
+
+  async function gerarJson() {
+    setGerandoJson(true);
+    setErroJson(null);
+    setCopiado(false);
+    try {
+      const r = await gerarJsonPrestacao(id);
+      setJson(r);
+      setJsonAberto(true);
+    } catch (e) {
+      setErroJson(extrairMensagemErro(e, 'Não foi possível gerar o JSON.'));
+      setJsonAberto(true);
+    } finally {
+      setGerandoJson(false);
+    }
+  }
+
+  const jsonTexto = json ? JSON.stringify(json.documento, null, 2) : '';
+
+  function copiarJson() {
+    navigator.clipboard.writeText(jsonTexto).then(() => {
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    });
+  }
+
+  function baixarJson() {
+    const blob = new Blob([jsonTexto], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `prestacao-${prestacao?.ajusteCodigo ?? 'documento'}-${prestacao?.ano ?? ''}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   return (
@@ -211,13 +251,13 @@ export function PrestacaoDetalhe() {
           )}
 
           <div className="mt-5 flex flex-col gap-2 border-t border-ink-100 pt-4 dark:border-ink-800 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs text-ink-400">Validação e transmissão ficam disponíveis quando os blocos estiverem completos.</p>
+            <p className="text-xs text-ink-400">Gere a prévia do documento JSON. Transmissão ao piloto entra na próxima fase.</p>
             <div className="flex items-center gap-2">
-              <Button variant="secondary" size="sm" disabled title="Disponível após os blocos de dados">
-                <ShieldCheck className="h-4 w-4" />
-                Validar
+              <Button variant="secondary" size="sm" onClick={gerarJson} disabled={gerandoJson}>
+                {gerandoJson ? <Loader2 className="h-4 w-4 animate-spin" /> : <Braces className="h-4 w-4" />}
+                Gerar JSON (prévia)
               </Button>
-              <Button size="sm" disabled title="Disponível após montar e validar o JSON">
+              <Button size="sm" disabled title="Disponível após validar o JSON e configurar as credenciais">
                 <Send className="h-4 w-4" />
                 Transmitir (piloto)
               </Button>
@@ -246,6 +286,52 @@ export function PrestacaoDetalhe() {
           Deseja excluir a prestação do exercício <span className="font-semibold text-ink-900 dark:text-ink-50">{prestacao.ano}</span> do ajuste {prestacao.ajusteCodigo}? Esta ação não pode ser desfeita.
         </p>
         {erroExcluir && <p className="mt-2 text-sm font-medium text-red-500">{erroExcluir}</p>}
+      </Modal>
+
+      {/* Prévia do documento JSON */}
+      <Modal
+        open={jsonAberto}
+        onClose={() => setJsonAberto(false)}
+        title="Documento JSON (prévia)"
+        subtitle="Montado a partir dos blocos capturados, no formato do manual v1.19."
+        size="2xl"
+        footer={
+          json ? (
+            <>
+              <Button variant="secondary" onClick={copiarJson}>
+                <Copy className="h-4 w-4" />
+                {copiado ? 'Copiado!' : 'Copiar'}
+              </Button>
+              <Button onClick={baixarJson}>
+                <Download className="h-4 w-4" />
+                Baixar .json
+              </Button>
+            </>
+          ) : undefined
+        }
+      >
+        {erroJson ? (
+          <p className="text-sm font-medium text-red-500">{erroJson}</p>
+        ) : json ? (
+          <div className="space-y-3">
+            {json.avisos.length > 0 && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+                <p className="mb-1 flex items-center gap-1.5 font-medium">
+                  <AlertTriangle className="h-4 w-4" />
+                  Avisos ({json.avisos.length})
+                </p>
+                <ul className="list-disc space-y-0.5 pl-5 text-xs">
+                  {json.avisos.map((a, i) => (
+                    <li key={i}>{a}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <pre className="max-h-[50vh] overflow-auto rounded-xl border border-ink-200 bg-ink-50 p-4 text-xs leading-relaxed text-ink-800 dark:border-ink-800 dark:bg-ink-950 dark:text-ink-200">
+              {jsonTexto}
+            </pre>
+          </div>
+        ) : null}
       </Modal>
     </>
   );

@@ -41,3 +41,13 @@ export async function criarPrestacao(payload: CriarPrestacaoPayload): Promise<Pr
 export async function excluirPrestacao(id: string): Promise<void> {
   await http.delete(`/prestacoes/${id}`);
 }
+
+export interface ResultadoJson {
+  documento: unknown;
+  avisos: string[];
+}
+
+export async function gerarJsonPrestacao(id: string): Promise<ResultadoJson> {
+  const { data } = await http.get<ResultadoJson>(`/prestacoes/${id}/json`);
+  return data;
+}

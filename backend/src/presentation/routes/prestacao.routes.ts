@@ -13,6 +13,7 @@ import { RepasseController } from '@/presentation/controllers/RepasseController'
 import { BemPrestacaoController } from '@/presentation/controllers/BemPrestacaoController';
 import { ServidorPrestacaoController } from '@/presentation/controllers/ServidorPrestacaoController';
 import { RelatorioAtividadeController } from '@/presentation/controllers/RelatorioAtividadeController';
+import { MontadorController } from '@/presentation/controllers/MontadorController';
 
 const prestacaoRoutes = Router();
 const c = new PrestacaoController();
@@ -42,6 +43,10 @@ function bloco(
 prestacaoRoutes.get('/', (req, res, next) => c.listar(req, res, next));
 prestacaoRoutes.post('/', (req, res, next) => c.criar(req, res, next));
 prestacaoRoutes.get('/:id', (req, res, next) => c.buscar(req, res, next));
+
+// Montagem do documento JSON (prévia)
+const montador = new MontadorController();
+prestacaoRoutes.get('/:prestacaoId/json', (req, res, next) => montador.gerar(req, res, next));
 prestacaoRoutes.delete('/:id', (req, res, next) => c.excluir(req, res, next));
 
 // --- Documentos Fiscais (bloco) ---

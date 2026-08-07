@@ -1,0 +1,140 @@
+/** Dados normalizados de uma prestação para montagem do documento JSON. Datas em 'YYYY-MM-DD'. */
+export interface DadosMontagem {
+  ano: number;
+  mes: number;
+  ehRetificacao: boolean;
+  tipoAjuste: string;
+  codigoAjuste: string;
+  municipio: number | null;
+  entidade: number | null;
+
+  empregados: Array<{
+    cpf: string;
+    dataAdmissao: string;
+    dataDemissao: string | null;
+    cbo: string;
+    cns: string | null;
+    salarioContratual: number;
+    periodos: Array<{ mes: number; cargaHoraria: number; remuneracaoBruta: number }>;
+  }>;
+
+  bens: Array<{
+    categoria: string;
+    numeroPatrimonio: string | null;
+    descricao: string;
+    data: string;
+    valor: number | null;
+  }>;
+
+  documentosFiscais: Array<{
+    numero: string;
+    credorTipoDoc: string;
+    credorNumeroDoc: string;
+    credorNome: string | null;
+    descricao: string;
+    dataEmissao: string;
+    estadoEmissor: number | null;
+    valorBruto: number;
+    valorEncargos: number;
+    categoriaDespesaTipo: number;
+    rateioProveniente: boolean;
+    rateioPercentual: number | null;
+  }>;
+
+  pagamentos: Array<{
+    folha: boolean;
+    docNumero: string | null;
+    docCredorTipo: string | null;
+    docCredorNumero: string | null;
+    dataPagamento: string;
+    valor: number;
+    fonteRecursoTipo: number;
+    meioPagamento: string;
+    banco: number | null;
+    agencia: number | null;
+    contaCorrente: string | null;
+    numeroTransacao: string | null;
+  }>;
+
+  receitas: Array<{
+    tipo: string;
+    descricao: string | null;
+    dataPrevista: string | null;
+    dataRepasse: string | null;
+    fonteRecursoTipo: number | null;
+    valor: number;
+  }>;
+
+  disponibilidades: Array<{
+    banco: number;
+    agencia: number;
+    conta: string;
+    contaTipo: number;
+    saldoBancario: number;
+    saldoContabil: number;
+  }>;
+
+  descontos: Array<{ data: string; descricao: string; valor: number }>;
+  devolucoes: Array<{ data: string; naturezaDevolucaoTipo: number; valor: number }>;
+
+  glosas: Array<{
+    docNumero: string | null;
+    docCredorTipo: string | null;
+    docCredorNumero: string | null;
+    pagamentoData: string | null;
+    resultadoAnalise: string;
+    valorGlosa: number | null;
+  }>;
+
+  empenhos: Array<{
+    numero: string;
+    dataEmissao: string;
+    classificacaoEconomica: string;
+    fonteRecursoTipo: number;
+    valor: number;
+    historico: string | null;
+    cpfOrdenadorDespesa: string;
+  }>;
+
+  repasses: Array<{
+    empenhoNumero: string | null;
+    empenhoDataEmissao: string | null;
+    dataPrevista: string;
+    dataRepasse: string;
+    valorPrevisto: number;
+    valorRepasse: number;
+    justificativaDiferenca: string | null;
+    tipoDocumentoBancario: number | null;
+    descricaoOutros: string | null;
+    numeroDocumento: string | null;
+    banco: number | null;
+    agencia: number | null;
+    conta: string | null;
+  }>;
+
+  servidores: Array<{
+    cpf: string;
+    dataInicialCessao: string;
+    dataFinalCessao: string | null;
+    cargoPublico: string;
+    funcaoEntidade: string;
+    onusPagamento: number;
+    periodos: Array<{ mes: number; cargaHoraria: number; remuneracaoBruta: number }>;
+  }>;
+
+  atividades: Array<{
+    nomePrograma: string;
+    codigoMeta: string;
+    periodo: number;
+    quantidadeRealizada: number | null;
+    resultadoMeta: string | null;
+    justificativaPeriodo: string | null;
+    metaAtendida: boolean | null;
+    justificativaMeta: string | null;
+  }>;
+}
+
+export interface ResultadoMontagem {
+  documento: Record<string, unknown>;
+  avisos: string[];
+}
