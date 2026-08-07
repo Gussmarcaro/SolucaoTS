@@ -588,6 +588,9 @@ model PrestacaoContas {
   metasReportadas   RelatorioAtividadeMeta[]
   dadosGerais       DadosGeraisBeneficiaria?
   responsaveis      ResponsaveisConcessor?
+  declaracoes       DeclaracoesPrestacao?
+  parecerConclusivo ParecerConclusivo?
+  transparencia     Transparencia?
 
   @@index([ajusteId])
   @@index([status])
@@ -615,6 +618,44 @@ model ResponsaveisConcessor {
   identCertidaoComissaoAvaliacao    String?
   identCertidaoControleInterno      String?
   identCertidaoFiscalizacaoExecucao String? // só Convênio, Termo de Colaboração e Fomento
+
+  prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id], onDelete: Cascade)
+}
+
+// Bloco 24 — Declarações (1:1): contratação de empresas de dirigentes/parentes.
+model DeclaracoesPrestacao {
+  id                   String   @id @default(uuid()) @db.Uuid
+  prestacaoId          String   @unique @db.Uuid
+  houveContratacao     Boolean? // empresas pertencentes a dirigentes/agentes/parentes
+  empresasPertencentes Json     @default("[]") // [{ cnpj, cpf }]
+  houveParticipacao    Boolean? // participação no quadro diretivo/administrativo
+  participacoes        Json     @default("[]") // [{ cpfDirigente, cpfsContratados: [] }]
+  comprasAdequadas     Boolean? // adequação ao regulamento (só Contrato de Gestão e Termo de Parceria)
+
+  prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id], onDelete: Cascade)
+}
+
+// Bloco 33 — Parecer Conclusivo (1:1): conclusão + 7 declarações de análise.
+model ParecerConclusivo {
+  id                   String  @id @default(uuid()) @db.Uuid
+  prestacaoId          String  @unique @db.Uuid
+  identificacaoParecer String?
+  conclusaoParecer     Int? // 1=Favorável, 2=Favorável c/ ressalvas, 3=Desfavorável
+  consideracoesParecer String? // obrigatório quando desfavorável
+  declaracoes          Json    @default("[]") // [{ tipoDeclaracao 1..7, declaracao 1..3, justificativa }]
+
+  prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id], onDelete: Cascade)
+}
+
+// Bloco 34 — Transparência (1:1): sítio na internet + requisitos LAI.
+model Transparencia {
+  id                   String   @id @default(uuid()) @db.Uuid
+  prestacaoId          String   @unique @db.Uuid
+  mantemSitio          Boolean?
+  sitios               Json     @default("[]") // string[] (URLs)
+  requisitos781        Json     @default("[]") // [{ requisito 1..8, atende }] (Arts. 7º e 8º §1º)
+  requisitos83         Json     @default("[]") // [{ requisito 1..6, atende }] (Art. 8º §3º)
+  requisitosDivulgacao Json     @default("[]") // [{ requisito 1..10, atende }] (Divulgação)
 
   prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id], onDelete: Cascade)
 }

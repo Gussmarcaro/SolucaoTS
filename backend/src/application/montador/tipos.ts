@@ -147,6 +147,32 @@ export interface DadosMontagem {
     identCertidaoControleInterno: string | null;
     identCertidaoFiscalizacaoExecucao: string | null;
   } | null;
+
+  // Bloco 24 — Declarações
+  declaracoesBloco: {
+    houveContratacao: boolean | null;
+    empresasPertencentes: Array<{ cnpj: string | null; cpf: string | null }>;
+    houveParticipacao: boolean | null;
+    participacoes: Array<{ cpfDirigente: string | null; cpfsContratados: string[] }>;
+    comprasAdequadas: boolean | null;
+  } | null;
+
+  // Bloco 33 — Parecer Conclusivo
+  parecer: {
+    identificacaoParecer: string | null;
+    conclusaoParecer: number | null;
+    consideracoesParecer: string | null;
+    declaracoes: Array<{ tipoDeclaracao: number; declaracao: number | null; justificativa: string | null }>;
+  } | null;
+
+  // Bloco 34 — Transparência
+  transparencia: {
+    mantemSitio: boolean | null;
+    sitios: string[];
+    requisitos781: Array<{ requisito: number; atende: boolean }>;
+    requisitos83: Array<{ requisito: number; atende: boolean }>;
+    requisitosDivulgacao: Array<{ requisito: number; atende: boolean }>;
+  } | null;
 }
 
 export interface ResultadoMontagem {

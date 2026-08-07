@@ -26,7 +26,7 @@ export class PrismaMontadorRepository implements IMontadorRepository {
     });
     if (!prestacao) return null;
 
-    const [empregados, bens, documentosFiscais, pagamentos, receitas, disponibilidades, descontos, devolucoes, glosas, empenhos, repasses, servidores, atividades, dadosGerais, responsaveis] =
+    const [empregados, bens, documentosFiscais, pagamentos, receitas, disponibilidades, descontos, devolucoes, glosas, empenhos, repasses, servidores, atividades, dadosGerais, responsaveis, declaracoesBloco, parecer, transparencia] =
       await Promise.all([
         prisma.relacaoEmpregado.findMany({ where: { prestacaoId } }),
         prisma.bemPrestacao.findMany({ where: { prestacaoId } }),
@@ -43,6 +43,9 @@ export class PrismaMontadorRepository implements IMontadorRepository {
         prisma.relatorioAtividadeMeta.findMany({ where: { prestacaoId } }),
         prisma.dadosGeraisBeneficiaria.findUnique({ where: { prestacaoId } }),
         prisma.responsaveisConcessor.findUnique({ where: { prestacaoId } }),
+        prisma.declaracoesPrestacao.findUnique({ where: { prestacaoId } }),
+        prisma.parecerConclusivo.findUnique({ where: { prestacaoId } }),
+        prisma.transparencia.findUnique({ where: { prestacaoId } }),
       ]);
 
     return {
@@ -194,6 +197,39 @@ export class PrismaMontadorRepository implements IMontadorRepository {
             identCertidaoComissaoAvaliacao: responsaveis.identCertidaoComissaoAvaliacao,
             identCertidaoControleInterno: responsaveis.identCertidaoControleInterno,
             identCertidaoFiscalizacaoExecucao: responsaveis.identCertidaoFiscalizacaoExecucao,
+          }
+        : null,
+
+      declaracoesBloco: declaracoesBloco
+        ? {
+            houveContratacao: declaracoesBloco.houveContratacao,
+            empresasPertencentes:
+              (declaracoesBloco.empresasPertencentes as unknown as Array<{ cnpj: string | null; cpf: string | null }>) ?? [],
+            houveParticipacao: declaracoesBloco.houveParticipacao,
+            participacoes:
+              (declaracoesBloco.participacoes as unknown as Array<{ cpfDirigente: string | null; cpfsContratados: string[] }>) ?? [],
+            comprasAdequadas: declaracoesBloco.comprasAdequadas,
+          }
+        : null,
+
+      parecer: parecer
+        ? {
+            identificacaoParecer: parecer.identificacaoParecer,
+            conclusaoParecer: parecer.conclusaoParecer,
+            consideracoesParecer: parecer.consideracoesParecer,
+            declaracoes:
+              (parecer.declaracoes as unknown as Array<{ tipoDeclaracao: number; declaracao: number | null; justificativa: string | null }>) ?? [],
+          }
+        : null,
+
+      transparencia: transparencia
+        ? {
+            mantemSitio: transparencia.mantemSitio,
+            sitios: (transparencia.sitios as unknown as string[]) ?? [],
+            requisitos781: (transparencia.requisitos781 as unknown as Array<{ requisito: number; atende: boolean }>) ?? [],
+            requisitos83: (transparencia.requisitos83 as unknown as Array<{ requisito: number; atende: boolean }>) ?? [],
+            requisitosDivulgacao:
+              (transparencia.requisitosDivulgacao as unknown as Array<{ requisito: number; atende: boolean }>) ?? [],
           }
         : null,
     };

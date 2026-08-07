@@ -16,6 +16,7 @@ import { RelatorioAtividadeController } from '@/presentation/controllers/Relator
 import { MontadorController } from '@/presentation/controllers/MontadorController';
 import { TransmissaoController } from '@/presentation/controllers/TransmissaoController';
 import { CertidoesPrestacaoController } from '@/presentation/controllers/CertidoesPrestacaoController';
+import { DeclaratoriosController } from '@/presentation/controllers/DeclaratoriosController';
 
 const prestacaoRoutes = Router();
 const c = new PrestacaoController();
@@ -88,5 +89,13 @@ prestacaoRoutes.get('/:prestacaoId/dados-gerais', (req, res, next) => certidoes.
 prestacaoRoutes.put('/:prestacaoId/dados-gerais', (req, res, next) => certidoes.salvarDadosGerais(req, res, next));
 prestacaoRoutes.get('/:prestacaoId/responsaveis', (req, res, next) => certidoes.obterResponsaveis(req, res, next));
 prestacaoRoutes.put('/:prestacaoId/responsaveis', (req, res, next) => certidoes.salvarResponsaveis(req, res, next));
+
+const declaratorios = new DeclaratoriosController();
+prestacaoRoutes.get('/:prestacaoId/declaracoes', (req, res, next) => declaratorios.obterDeclaracoes(req, res, next));
+prestacaoRoutes.put('/:prestacaoId/declaracoes', (req, res, next) => declaratorios.salvarDeclaracoes(req, res, next));
+prestacaoRoutes.get('/:prestacaoId/parecer-conclusivo', (req, res, next) => declaratorios.obterParecer(req, res, next));
+prestacaoRoutes.put('/:prestacaoId/parecer-conclusivo', (req, res, next) => declaratorios.salvarParecer(req, res, next));
+prestacaoRoutes.get('/:prestacaoId/transparencia', (req, res, next) => declaratorios.obterTransparencia(req, res, next));
+prestacaoRoutes.put('/:prestacaoId/transparencia', (req, res, next) => declaratorios.salvarTransparencia(req, res, next));
 
 export { prestacaoRoutes };

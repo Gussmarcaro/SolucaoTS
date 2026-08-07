@@ -274,8 +274,52 @@ export function montarPrestacao(d: DadosMontagem): ResultadoMontagem {
     if (Object.keys(rc).length) doc.responsaveis_membros_orgao_concessor = rc;
   }
 
+  // --- Declarações (bloco 24) ---
+  // compras_contratacoes_adequados_regulamento_proprio só p/ Contrato de Gestão e Termo de Parceria.
+  if (d.declaracoesBloco) {
+    const dc = d.declaracoesBloco;
+    const cgOuTp = d.tipoAjuste === 'CONTRATO_GESTAO' || d.tipoAjuste === 'TERMO_PARCERIA';
+    doc.declaracoes = limpo({
+      houve_contratacao_empresas_pertencentes: dc.houveContratacao,
+      empresas_pertencentes: dc.houveContratacao
+        ? dc.empresasPertencentes.map((e) => limpo({ cnpj: e.cnpj, cpf: e.cpf }))
+        : null,
+      houve_participacao_quadro_diretivo_administrativo: dc.houveParticipacao,
+      participacoes_quadro_diretivo_administrativo: dc.houveParticipacao
+        ? dc.participacoes.map((p) => limpo({ cpf_dirigente: p.cpfDirigente, cpf_contratados: p.cpfsContratados }))
+        : null,
+      compras_contratacoes_adequados_regulamento_proprio: cgOuTp ? dc.comprasAdequadas : null,
+    });
+  }
+
+  // --- Parecer Conclusivo (bloco 33) ---
+  if (d.parecer) {
+    doc.parecer_conclusivo = limpo({
+      identificacao_parecer: d.parecer.identificacaoParecer,
+      conclusao_parecer: d.parecer.conclusaoParecer,
+      consideracoes_parecer: d.parecer.consideracoesParecer,
+      declaracoes: d.parecer.declaracoes.map((dec) =>
+        limpo({ tipo_declaracao: dec.tipoDeclaracao, declaracao: dec.declaracao, justificativa: dec.justificativa }),
+      ),
+    });
+  }
+
+  // --- Transparência (bloco 34) ---
+  if (d.transparencia) {
+    const t = d.transparencia;
+    const reqs = (lista: Array<{ requisito: number; atende: boolean }>) =>
+      lista.map((r) => ({ requisito: r.requisito, atende: r.atende }));
+    doc.transparencia = limpo({
+      entidade_beneficiaria_mantem_sitio_internet: t.mantemSitio,
+      sitios_internet: t.mantemSitio ? t.sitios : null,
+      requisitos_artigos_7o_8o_paragrafo_1o: t.mantemSitio ? reqs(t.requisitos781) : null,
+      requisitos_sitio_artigo_8o_paragrafo_3o: t.mantemSitio ? reqs(t.requisitos83) : null,
+      requisitos_divulgacao_informacoes: t.mantemSitio ? reqs(t.requisitosDivulgacao) : null,
+    });
+  }
+
   avisos.push(
-    'Prévia parcial: blocos ainda não capturados neste sistema — Contratos, Ajustes de Saldo, Publicações, Declarações, Parecer Conclusivo, Transparência e Demonstrações Contábeis.',
+    'Prévia parcial: blocos ainda não capturados neste sistema — Contratos, Ajustes de Saldo, Demonstrações Contábeis e Publicações (Parecer/Ata, Relatório de Atividades, Regulamento de Compras e Extrato Físico-Financeiro).',
   );
 
   void SEM_TIPO;
