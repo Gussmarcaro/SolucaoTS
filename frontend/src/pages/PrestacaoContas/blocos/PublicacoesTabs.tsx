@@ -7,12 +7,17 @@ import {
   VEICULO_PUBLICACAO,
   TIPO_PARECER_ATA,
   CONCLUSAO_PARECER_ATA,
+  CONCLUSAO_RELATORIO,
 } from '@/lib/dominiosDeclaratorios';
 import {
   demonstracoesApi,
   publicacaoParecerAtaApi,
   publicacaoRelAtividadesApi,
   prestacaoEntidadeApi,
+  relatorioFinalApi,
+  regulamentoComprasApi,
+  extratoApi,
+  termoBensApi,
 } from '@/services/publicacoesPrestacao.service';
 import type {
   Demonstracoes,
@@ -22,6 +27,8 @@ import type {
   PublicacaoRelAtividades,
   PrestacaoEntidade,
 } from '@/types/prestacaoBlocos9';
+import type { Extrato, RegulamentoCompras, RelatorioFinal, TermoBens } from '@/types/prestacaoBlocos10';
+import type { TipoAjuste } from '@/types/ajuste';
 import { AlertaErro, IconBtn } from './_ui';
 import { BarraSalvar, BoolSelect, Carregando, Nota, useBloco } from './DeclaratoriosTabs';
 
@@ -147,6 +154,110 @@ export function PrestacaoContasEntidadeTab({ prestacaoId }: { prestacaoId: strin
         <Input label="Período — data inicial" name="periIni" type="date" value={dados.periodoReferenciaInicial ?? ''} onChange={(e) => patch({ periodoReferenciaInicial: e.target.value })} />
         <Input label="Período — data final" name="periFim" type="date" value={dados.periodoReferenciaFinal ?? ''} onChange={(e) => patch({ periodoReferenciaFinal: e.target.value })} />
       </div>
+      <BarraSalvar salvo={salvo} salvando={salvando} onSalvar={salvar} />
+    </div>
+  );
+}
+
+// ---------- Blocos 25/26/27 — Relatório Final da fiscalização ----------
+const RELATORIO_VAZIO: RelatorioFinal = { houveEmissao: null, conclusao: null, justificativa: null };
+
+const TITULO_RELATORIO: Record<TipoAjuste, string> = {
+  CONTRATO_GESTAO: 'Relatório da Comissão de Avaliação',
+  CONVENIO: 'Relatório Governamental da Análise da Execução',
+  TERMO_COLABORACAO: 'Relatório de Monitoramento e Avaliação',
+  TERMO_FOMENTO: 'Relatório de Monitoramento e Avaliação',
+  TERMO_PARCERIA: 'Relatório Final da fiscalização',
+};
+
+export function RelatorioFinalTab({ prestacaoId, ajusteTipo }: { prestacaoId: string; ajusteTipo: TipoAjuste }) {
+  const { dados, patch, carregando, salvando, erro, salvo, salvar } = useBloco(prestacaoId, relatorioFinalApi, RELATORIO_VAZIO);
+  if (carregando) return <Carregando />;
+  const desfavoravel = dados.conclusao === 3;
+  return (
+    <div className="space-y-4">
+      <Nota>{TITULO_RELATORIO[ajusteTipo]} — conclusão do relatório final emitido pela fiscalização no período.</Nota>
+      {erro && <AlertaErro msg={erro} />}
+      <BoolSelect label="Houve emissão do relatório final?" value={dados.houveEmissao} onChange={(v) => patch({ houveEmissao: v })} />
+      {dados.houveEmissao && (
+        <>
+          <Select label="Conclusão do relatório" name="conclusao" value={dados.conclusao != null ? String(dados.conclusao) : ''} onChange={(e) => patch({ conclusao: e.target.value ? Number(e.target.value) : null })} options={opcoesNum(CONCLUSAO_RELATORIO)} placeholder="—" />
+          {desfavoravel && (
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-300">Justificativa <span className="text-red-500">(obrigatória quando desfavorável)</span></label>
+              <textarea value={dados.justificativa ?? ''} onChange={(e) => patch({ justificativa: e.target.value })} rows={2} className="focus-ring w-full rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm text-ink-800 dark:border-ink-700 dark:bg-ink-900 dark:text-ink-100" />
+            </div>
+          )}
+        </>
+      )}
+      <BarraSalvar salvo={salvo} salvando={salvando} onSalvar={salvar} />
+    </div>
+  );
+}
+
+// ---------- Bloco 22 — Regulamento de Compras (só Contrato de Gestão) ----------
+const REGULAMENTO_VAZIO: RegulamentoCompras = {
+  houvePublicacaoInicial: null,
+  publicacoesInicial: [],
+  houveAlteracao: null,
+  houvePublicacaoAlterado: null,
+  publicacoesAlteracao: [],
+};
+
+export function RegulamentoComprasTab({ prestacaoId }: { prestacaoId: string }) {
+  const { dados, patch, carregando, salvando, erro, salvo, salvar } = useBloco(prestacaoId, regulamentoComprasApi, REGULAMENTO_VAZIO);
+  if (carregando) return <Carregando />;
+  return (
+    <div className="space-y-4">
+      <Nota>Publicação do regulamento de compras da entidade beneficiária (aplica-se a Contrato de Gestão).</Nota>
+      {erro && <AlertaErro msg={erro} />}
+      <BoolSelect label="Houve publicação inicial do regulamento?" value={dados.houvePublicacaoInicial} onChange={(v) => patch({ houvePublicacaoInicial: v })} />
+      {dados.houvePublicacaoInicial && <PublicacoesEditor lista={dados.publicacoesInicial} onChange={(l) => patch({ publicacoesInicial: l })} />}
+      <BoolSelect label="Houve alteração do regulamento?" value={dados.houveAlteracao} onChange={(v) => patch({ houveAlteracao: v })} />
+      {dados.houveAlteracao && (
+        <>
+          <BoolSelect label="A alteração foi publicada?" value={dados.houvePublicacaoAlterado} onChange={(v) => patch({ houvePublicacaoAlterado: v })} />
+          {dados.houvePublicacaoAlterado && <PublicacoesEditor lista={dados.publicacoesAlteracao} onChange={(l) => patch({ publicacoesAlteracao: l })} />}
+        </>
+      )}
+      <BarraSalvar salvo={salvo} salvando={salvando} onSalvar={salvar} />
+    </div>
+  );
+}
+
+// ---------- Bloco 23 — Extrato Físico-Financeiro (só Termo de Parceria) ----------
+const EXTRATO_VAZIO: Extrato = { haExtrato: null, extratoConformeModelo: null, publicacoes: [] };
+
+export function ExtratoTab({ prestacaoId }: { prestacaoId: string }) {
+  const { dados, patch, carregando, salvando, erro, salvo, salvar } = useBloco(prestacaoId, extratoApi, EXTRATO_VAZIO);
+  if (carregando) return <Carregando />;
+  return (
+    <div className="space-y-4">
+      <Nota>Publicação do extrato de execução física e financeira (aplica-se a Termo de Parceria).</Nota>
+      {erro && <AlertaErro msg={erro} />}
+      <BoolSelect label="Há extrato de execução física e financeira?" value={dados.haExtrato} onChange={(v) => patch({ haExtrato: v })} />
+      {dados.haExtrato && (
+        <>
+          <BoolSelect label="O extrato foi elaborado conforme o modelo?" value={dados.extratoConformeModelo} onChange={(v) => patch({ extratoConformeModelo: v })} />
+          <PublicacoesEditor lista={dados.publicacoes} onChange={(l) => patch({ publicacoes: l })} />
+        </>
+      )}
+      <BarraSalvar salvo={salvo} salvando={salvando} onSalvar={salvar} />
+    </div>
+  );
+}
+
+// ---------- Bloco 31 — Termo da Relação de Bens Cedidos (só Contrato de Gestão) ----------
+const TERMO_VAZIO: TermoBens = { termoCessaoPermissao: null };
+
+export function TermoBensCedidosTab({ prestacaoId }: { prestacaoId: string }) {
+  const { dados, patch, carregando, salvando, erro, salvo, salvar } = useBloco(prestacaoId, termoBensApi, TERMO_VAZIO);
+  if (carregando) return <Carregando />;
+  return (
+    <div className="space-y-4">
+      <Nota>Termo de cessão/permissão de bens formalizado no exercício (aplica-se a Contrato de Gestão).</Nota>
+      {erro && <AlertaErro msg={erro} />}
+      <BoolSelect label="Foi formalizado termo de cessão/permissão de bens?" value={dados.termoCessaoPermissao} onChange={(v) => patch({ termoCessaoPermissao: v })} />
       <BarraSalvar salvo={salvo} salvando={salvando} onSalvar={salvar} />
     </div>
   );

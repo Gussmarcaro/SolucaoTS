@@ -204,6 +204,32 @@ export interface DadosMontagem {
     periodoReferenciaInicial: string | null;
     periodoReferenciaFinal: string | null;
   } | null;
+
+  // Blocos 25/26/27 — Relatório Final (roteado por tipo de ajuste)
+  relatorioFinal: {
+    houveEmissao: boolean | null;
+    conclusao: number | null;
+    justificativa: string | null;
+  } | null;
+
+  // Bloco 22 — Regulamento de Compras (só CG)
+  regulamentoCompras: {
+    houvePublicacaoInicial: boolean | null;
+    publicacoesInicial: PublicacaoMontagem[];
+    houveAlteracao: boolean | null;
+    houvePublicacaoAlterado: boolean | null;
+    publicacoesAlteracao: PublicacaoMontagem[];
+  } | null;
+
+  // Bloco 23 — Extrato Físico-Financeiro (só TP)
+  extratoFisicoFinanceiro: {
+    haExtrato: boolean | null;
+    extratoConformeModelo: boolean | null;
+    publicacoes: PublicacaoMontagem[];
+  } | null;
+
+  // Bloco 31 — Termo de Bens Cedidos (só CG)
+  termoBensCedidos: { termoCessaoPermissao: boolean | null } | null;
 }
 
 export interface PublicacaoMontagem {

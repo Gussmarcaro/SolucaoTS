@@ -125,3 +125,55 @@ export interface PrestacaoEntidade {
   periodoReferenciaInicial: string | null;
   periodoReferenciaFinal: string | null;
 }
+
+// ---- Blocos 25/26/27 — Relatório Final da fiscalização ----
+export interface RelatorioFinalDTO {
+  houveEmissao?: boolean | null;
+  conclusao?: number | null; // 1..3
+  justificativa?: string | null;
+}
+export interface RelatorioFinal {
+  prestacaoId: string;
+  houveEmissao: boolean | null;
+  conclusao: number | null;
+  justificativa: string | null;
+}
+
+// ---- Bloco 22 — Regulamento de Compras ----
+export interface RegulamentoComprasDTO {
+  houvePublicacaoInicial?: boolean | null;
+  publicacoesInicial?: Publicacao[];
+  houveAlteracao?: boolean | null;
+  houvePublicacaoAlterado?: boolean | null;
+  publicacoesAlteracao?: Publicacao[];
+}
+export interface RegulamentoCompras {
+  prestacaoId: string;
+  houvePublicacaoInicial: boolean | null;
+  publicacoesInicial: Publicacao[];
+  houveAlteracao: boolean | null;
+  houvePublicacaoAlterado: boolean | null;
+  publicacoesAlteracao: Publicacao[];
+}
+
+// ---- Bloco 23 — Extrato de Execução Física e Financeira ----
+export interface ExtratoDTO {
+  haExtrato?: boolean | null;
+  extratoConformeModelo?: boolean | null;
+  publicacoes?: Publicacao[];
+}
+export interface Extrato {
+  prestacaoId: string;
+  haExtrato: boolean | null;
+  extratoConformeModelo: boolean | null;
+  publicacoes: Publicacao[];
+}
+
+// ---- Bloco 31 — Termo da Relação de Bens Cedidos ----
+export interface TermoBensDTO {
+  termoCessaoPermissao?: boolean | null;
+}
+export interface TermoBens {
+  prestacaoId: string;
+  termoCessaoPermissao: boolean | null;
+}

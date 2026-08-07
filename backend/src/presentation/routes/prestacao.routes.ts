@@ -105,5 +105,13 @@ prestacaoRoutes.get('/:prestacaoId/publicacao-rel-atividades', (req, res, next) 
 prestacaoRoutes.put('/:prestacaoId/publicacao-rel-atividades', (req, res, next) => declaratorios.salvarPublicacaoRelAtividades(req, res, next));
 prestacaoRoutes.get('/:prestacaoId/prestacao-entidade', (req, res, next) => declaratorios.obterPrestacaoEntidade(req, res, next));
 prestacaoRoutes.put('/:prestacaoId/prestacao-entidade', (req, res, next) => declaratorios.salvarPrestacaoEntidade(req, res, next));
+prestacaoRoutes.get('/:prestacaoId/relatorio-final', (req, res, next) => declaratorios.obterRelatorioFinal(req, res, next));
+prestacaoRoutes.put('/:prestacaoId/relatorio-final', (req, res, next) => declaratorios.salvarRelatorioFinal(req, res, next));
+prestacaoRoutes.get('/:prestacaoId/regulamento-compras', (req, res, next) => declaratorios.obterRegulamentoCompras(req, res, next));
+prestacaoRoutes.put('/:prestacaoId/regulamento-compras', (req, res, next) => declaratorios.salvarRegulamentoCompras(req, res, next));
+prestacaoRoutes.get('/:prestacaoId/extrato-fisico-financeiro', (req, res, next) => declaratorios.obterExtrato(req, res, next));
+prestacaoRoutes.put('/:prestacaoId/extrato-fisico-financeiro', (req, res, next) => declaratorios.salvarExtrato(req, res, next));
+prestacaoRoutes.get('/:prestacaoId/termo-bens-cedidos', (req, res, next) => declaratorios.obterTermoBens(req, res, next));
+prestacaoRoutes.put('/:prestacaoId/termo-bens-cedidos', (req, res, next) => declaratorios.salvarTermoBens(req, res, next));
 
 export { prestacaoRoutes };

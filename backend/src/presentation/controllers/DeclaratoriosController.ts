@@ -5,10 +5,14 @@ import { PrismaPrestacaoRepository } from '@/infrastructure/database/PrismaPrest
 import type {
   DeclaracoesDTO,
   DemonstracoesDTO,
+  ExtratoDTO,
   ParecerDTO,
   PrestacaoEntidadeDTO,
   PublicacaoParecerAtaDTO,
   PublicacaoRelAtividadesDTO,
+  RegulamentoComprasDTO,
+  RelatorioFinalDTO,
+  TermoBensDTO,
   TransparenciaDTO,
 } from '@/application/declaratorios/dtos';
 
@@ -42,4 +46,12 @@ export class DeclaratoriosController {
   salvarPublicacaoRelAtividades = wrap<PublicacaoRelAtividadesDTO>((id, body) => casos.salvarPublicacaoRelAtividades(id, body));
   obterPrestacaoEntidade = wrap((id) => casos.obterPrestacaoEntidade(id));
   salvarPrestacaoEntidade = wrap<PrestacaoEntidadeDTO>((id, body) => casos.salvarPrestacaoEntidade(id, body));
+  obterRelatorioFinal = wrap((id) => casos.obterRelatorioFinal(id));
+  salvarRelatorioFinal = wrap<RelatorioFinalDTO>((id, body) => casos.salvarRelatorioFinal(id, body));
+  obterRegulamentoCompras = wrap((id) => casos.obterRegulamentoCompras(id));
+  salvarRegulamentoCompras = wrap<RegulamentoComprasDTO>((id, body) => casos.salvarRegulamentoCompras(id, body));
+  obterExtrato = wrap((id) => casos.obterExtrato(id));
+  salvarExtrato = wrap<ExtratoDTO>((id, body) => casos.salvarExtrato(id, body));
+  obterTermoBens = wrap((id) => casos.obterTermoBens(id));
+  salvarTermoBens = wrap<TermoBensDTO>((id, body) => casos.salvarTermoBens(id, body));
 }

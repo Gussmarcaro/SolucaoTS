@@ -595,6 +595,10 @@ model PrestacaoContas {
   publicacaoParecerAta    PublicacaoParecerAta?
   publicacaoRelAtividades PublicacaoRelatorioAtividades?
   prestacaoEntidade       PrestacaoContasEntidade?
+  relatorioFinal          RelatorioFinal?
+  regulamentoCompras      RegulamentoCompras?
+  extratoFisicoFinanceiro ExtratoFisicoFinanceiro?
+  termoBensCedidos        TermoBensCedidos?
 
   @@index([ajusteId])
   @@index([status])
@@ -704,6 +708,52 @@ model PrestacaoContasEntidade {
   dataPrestacao            String? // ISO 'YYYY-MM-DD'
   periodoReferenciaInicial String?
   periodoReferenciaFinal   String?
+
+  prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id], onDelete: Cascade)
+}
+
+// Blocos 25/26/27 — Relatório Final da fiscalização (mesma estrutura; só um se
+// aplica por tipo: Comissão de Avaliação (CG), Governamental (Convênio) ou
+// Monitoramento e Avaliação (Colaboração/Fomento)).
+model RelatorioFinal {
+  id            String   @id @default(uuid()) @db.Uuid
+  prestacaoId   String   @unique @db.Uuid
+  houveEmissao  Boolean?
+  conclusao     Int? // 1=Favorável s/ ressalvas, 2=c/ ressalvas, 3=Desfavorável
+  justificativa String? // obrigatório se desfavorável
+
+  prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id], onDelete: Cascade)
+}
+
+// Bloco 22 — Publicação do Regulamento de Compras (1:1; só Contrato de Gestão).
+model RegulamentoCompras {
+  id                      String   @id @default(uuid()) @db.Uuid
+  prestacaoId             String   @unique @db.Uuid
+  houvePublicacaoInicial  Boolean?
+  publicacoesInicial      Json     @default("[]")
+  houveAlteracao          Boolean?
+  houvePublicacaoAlterado Boolean?
+  publicacoesAlteracao    Json     @default("[]")
+
+  prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id], onDelete: Cascade)
+}
+
+// Bloco 23 — Publicação do Extrato de Execução Física e Financeira (1:1; só Termo de Parceria).
+model ExtratoFisicoFinanceiro {
+  id                    String   @id @default(uuid()) @db.Uuid
+  prestacaoId           String   @unique @db.Uuid
+  haExtrato             Boolean?
+  extratoConformeModelo Boolean?
+  publicacoes           Json     @default("[]")
+
+  prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id], onDelete: Cascade)
+}
+
+// Bloco 31 — Termo da Relação de Bens Cedidos (1:1; só Contrato de Gestão).
+model TermoBensCedidos {
+  id                   String   @id @default(uuid()) @db.Uuid
+  prestacaoId          String   @unique @db.Uuid
+  termoCessaoPermissao Boolean?
 
   prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id], onDelete: Cascade)
 }

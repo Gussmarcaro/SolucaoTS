@@ -27,7 +27,7 @@ export class PrismaMontadorRepository implements IMontadorRepository {
     });
     if (!prestacao) return null;
 
-    const [empregados, bens, documentosFiscais, pagamentos, receitas, disponibilidades, descontos, devolucoes, glosas, empenhos, repasses, servidores, atividades, dadosGerais, responsaveis, declaracoesBloco, parecer, transparencia, demonstracoes, publicacaoParecerAta, publicacaoRelAtividades, prestacaoEntidade] =
+    const [empregados, bens, documentosFiscais, pagamentos, receitas, disponibilidades, descontos, devolucoes, glosas, empenhos, repasses, servidores, atividades, dadosGerais, responsaveis, declaracoesBloco, parecer, transparencia, demonstracoes, publicacaoParecerAta, publicacaoRelAtividades, prestacaoEntidade, relatorioFinal, regulamentoCompras, extratoFisicoFinanceiro, termoBensCedidos] =
       await Promise.all([
         prisma.relacaoEmpregado.findMany({ where: { prestacaoId } }),
         prisma.bemPrestacao.findMany({ where: { prestacaoId } }),
@@ -51,6 +51,10 @@ export class PrismaMontadorRepository implements IMontadorRepository {
         prisma.publicacaoParecerAta.findUnique({ where: { prestacaoId } }),
         prisma.publicacaoRelatorioAtividades.findUnique({ where: { prestacaoId } }),
         prisma.prestacaoContasEntidade.findUnique({ where: { prestacaoId } }),
+        prisma.relatorioFinal.findUnique({ where: { prestacaoId } }),
+        prisma.regulamentoCompras.findUnique({ where: { prestacaoId } }),
+        prisma.extratoFisicoFinanceiro.findUnique({ where: { prestacaoId } }),
+        prisma.termoBensCedidos.findUnique({ where: { prestacaoId } }),
       ]);
 
     return {
@@ -273,6 +277,30 @@ export class PrismaMontadorRepository implements IMontadorRepository {
             periodoReferenciaFinal: prestacaoEntidade.periodoReferenciaFinal,
           }
         : null,
+
+      relatorioFinal: relatorioFinal
+        ? { houveEmissao: relatorioFinal.houveEmissao, conclusao: relatorioFinal.conclusao, justificativa: relatorioFinal.justificativa }
+        : null,
+
+      regulamentoCompras: regulamentoCompras
+        ? {
+            houvePublicacaoInicial: regulamentoCompras.houvePublicacaoInicial,
+            publicacoesInicial: (regulamentoCompras.publicacoesInicial as unknown as PubRow[]) ?? [],
+            houveAlteracao: regulamentoCompras.houveAlteracao,
+            houvePublicacaoAlterado: regulamentoCompras.houvePublicacaoAlterado,
+            publicacoesAlteracao: (regulamentoCompras.publicacoesAlteracao as unknown as PubRow[]) ?? [],
+          }
+        : null,
+
+      extratoFisicoFinanceiro: extratoFisicoFinanceiro
+        ? {
+            haExtrato: extratoFisicoFinanceiro.haExtrato,
+            extratoConformeModelo: extratoFisicoFinanceiro.extratoConformeModelo,
+            publicacoes: (extratoFisicoFinanceiro.publicacoes as unknown as PubRow[]) ?? [],
+          }
+        : null,
+
+      termoBensCedidos: termoBensCedidos ? { termoCessaoPermissao: termoBensCedidos.termoCessaoPermissao } : null,
     };
   }
 }

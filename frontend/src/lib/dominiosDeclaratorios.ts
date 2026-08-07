@@ -53,6 +53,13 @@ export const REQUISITOS_83: Record<number, string> = {
   6: 'Atualização periódica',
 };
 
+// --- Conclusão de relatório final (§25/26/27) ---
+export const CONCLUSAO_RELATORIO: Record<number, string> = {
+  1: 'Favorável sem Ressalvas',
+  2: 'Favorável com Ressalvas',
+  3: 'Desfavorável',
+};
+
 // --- Publicações (veículo de comunicação, §22/28/29/30) ---
 export const VEICULO_PUBLICACAO: Record<number, string> = {
   1: 'Diário Oficial do Município',

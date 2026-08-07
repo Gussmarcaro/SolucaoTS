@@ -5,6 +5,8 @@ import type {
   DeclaracoesDTO,
   Demonstracoes,
   DemonstracoesDTO,
+  Extrato,
+  ExtratoDTO,
   Parecer,
   ParecerDTO,
   PrestacaoEntidade,
@@ -14,7 +16,13 @@ import type {
   PublicacaoParecerAtaDTO,
   PublicacaoRelAtividades,
   PublicacaoRelAtividadesDTO,
+  RegulamentoCompras,
+  RegulamentoComprasDTO,
+  RelatorioFinal,
+  RelatorioFinalDTO,
   RequisitoAtende,
+  TermoBens,
+  TermoBensDTO,
   Transparencia,
   TransparenciaDTO,
 } from './dtos';
@@ -185,5 +193,63 @@ export class DeclaratoriosUseCases {
       periodoReferenciaInicial: strOuNull(input.periodoReferenciaInicial),
       periodoReferenciaFinal: strOuNull(input.periodoReferenciaFinal),
     });
+  }
+
+  // ---- Relatório Final (25/26/27) ----
+  async obterRelatorioFinal(prestacaoId: string): Promise<RelatorioFinal | null> {
+    await this.garantir(prestacaoId);
+    return this.repo.obterRelatorioFinal(prestacaoId);
+  }
+
+  async salvarRelatorioFinal(prestacaoId: string, input: RelatorioFinalDTO): Promise<RelatorioFinal> {
+    await this.garantir(prestacaoId);
+    return this.repo.salvarRelatorioFinal(prestacaoId, {
+      houveEmissao: bool(input.houveEmissao),
+      conclusao: num(input.conclusao),
+      justificativa: strOuNull(input.justificativa),
+    });
+  }
+
+  // ---- Regulamento de Compras (22) ----
+  async obterRegulamentoCompras(prestacaoId: string): Promise<RegulamentoCompras | null> {
+    await this.garantir(prestacaoId);
+    return this.repo.obterRegulamentoCompras(prestacaoId);
+  }
+
+  async salvarRegulamentoCompras(prestacaoId: string, input: RegulamentoComprasDTO): Promise<RegulamentoCompras> {
+    await this.garantir(prestacaoId);
+    return this.repo.salvarRegulamentoCompras(prestacaoId, {
+      houvePublicacaoInicial: bool(input.houvePublicacaoInicial),
+      publicacoesInicial: normPublicacoes(input.publicacoesInicial),
+      houveAlteracao: bool(input.houveAlteracao),
+      houvePublicacaoAlterado: bool(input.houvePublicacaoAlterado),
+      publicacoesAlteracao: normPublicacoes(input.publicacoesAlteracao),
+    });
+  }
+
+  // ---- Extrato Físico-Financeiro (23) ----
+  async obterExtrato(prestacaoId: string): Promise<Extrato | null> {
+    await this.garantir(prestacaoId);
+    return this.repo.obterExtrato(prestacaoId);
+  }
+
+  async salvarExtrato(prestacaoId: string, input: ExtratoDTO): Promise<Extrato> {
+    await this.garantir(prestacaoId);
+    return this.repo.salvarExtrato(prestacaoId, {
+      haExtrato: bool(input.haExtrato),
+      extratoConformeModelo: bool(input.extratoConformeModelo),
+      publicacoes: normPublicacoes(input.publicacoes),
+    });
+  }
+
+  // ---- Termo de Bens Cedidos (31) ----
+  async obterTermoBens(prestacaoId: string): Promise<TermoBens | null> {
+    await this.garantir(prestacaoId);
+    return this.repo.obterTermoBens(prestacaoId);
+  }
+
+  async salvarTermoBens(prestacaoId: string, input: TermoBensDTO): Promise<TermoBens> {
+    await this.garantir(prestacaoId);
+    return this.repo.salvarTermoBens(prestacaoId, { termoCessaoPermissao: bool(input.termoCessaoPermissao) });
   }
 }

@@ -97,6 +97,7 @@ export const BLOCOS: BlocoDef[] = [
   { chave: 'publicacaoParecerAta', nome: 'Publicações de Parecer/Ata' },
   { chave: 'prestacaoEntidade', nome: 'Prestação de Contas da Entidade' },
   { chave: 'publicacaoRelAtividades', nome: 'Publicação do Rel. de Atividades', somente: ['CONTRATO_GESTAO'] },
+  { chave: 'termoBensCedidos', nome: 'Termo de Bens Cedidos', somente: ['CONTRATO_GESTAO'] },
   { chave: 'regulamentoCompras', nome: 'Regulamento de Compras', somente: ['CONTRATO_GESTAO'] },
   { chave: 'comissaoAvaliacao', nome: 'Relatório da Comissão de Avaliação', somente: ['CONTRATO_GESTAO'] },
   { chave: 'extratoFisicoFinanceiro', nome: 'Extrato Físico-Financeiro', somente: ['TERMO_PARCERIA'] },

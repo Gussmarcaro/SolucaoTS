@@ -46,6 +46,10 @@ import {
   PublicacaoParecerAtaTab,
   PublicacaoRelAtividadesTab,
   PrestacaoContasEntidadeTab,
+  RelatorioFinalTab,
+  RegulamentoComprasTab,
+  ExtratoTab,
+  TermoBensCedidosTab,
 } from './blocos/PublicacoesTabs';
 
 const IMPLEMENTADOS = new Set([
@@ -71,6 +75,12 @@ const IMPLEMENTADOS = new Set([
   'publicacaoParecerAta',
   'publicacaoRelAtividades',
   'prestacaoEntidade',
+  'comissaoAvaliacao',
+  'relatorioGovernamental',
+  'relatorioMonitoramento',
+  'regulamentoCompras',
+  'extratoFisicoFinanceiro',
+  'termoBensCedidos',
 ]);
 
 function Campo({ label, valor }: { label: string; valor: string }) {
@@ -357,6 +367,14 @@ export function PrestacaoDetalhe() {
             <PublicacaoRelAtividadesTab prestacaoId={prestacao.id} />
           ) : blocoAtivo === 'prestacaoEntidade' ? (
             <PrestacaoContasEntidadeTab prestacaoId={prestacao.id} />
+          ) : blocoAtivo === 'comissaoAvaliacao' || blocoAtivo === 'relatorioGovernamental' || blocoAtivo === 'relatorioMonitoramento' ? (
+            <RelatorioFinalTab prestacaoId={prestacao.id} ajusteTipo={prestacao.ajusteTipo} />
+          ) : blocoAtivo === 'regulamentoCompras' ? (
+            <RegulamentoComprasTab prestacaoId={prestacao.id} />
+          ) : blocoAtivo === 'extratoFisicoFinanceiro' ? (
+            <ExtratoTab prestacaoId={prestacao.id} />
+          ) : blocoAtivo === 'termoBensCedidos' ? (
+            <TermoBensCedidosTab prestacaoId={prestacao.id} />
           ) : (
             <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
               <Circle className="h-8 w-8 text-ink-300" />

@@ -372,8 +372,54 @@ export function montarPrestacao(d: DadosMontagem): ResultadoMontagem {
     if (Object.keys(bloco).length) doc.prestacao_contas_entidade_beneficiaria = bloco;
   }
 
+  // --- Relatório Final da fiscalização (blocos 25/26/27; chave por tipo de ajuste) ---
+  if (d.relatorioFinal) {
+    const CHAVE_RELATORIO: Record<string, string> = {
+      CONTRATO_GESTAO: 'relatorio_comissao_avaliacao',
+      CONVENIO: 'relatorio_governamental_analise_execucao',
+      TERMO_COLABORACAO: 'relatorio_monitoramento_avaliacao',
+      TERMO_FOMENTO: 'relatorio_monitoramento_avaliacao',
+    };
+    const chave = CHAVE_RELATORIO[d.tipoAjuste];
+    if (chave) {
+      const rf = d.relatorioFinal;
+      doc[chave] = limpo({
+        houve_emissao_relatorio_final: rf.houveEmissao,
+        conclusao_relatorio: rf.houveEmissao ? rf.conclusao : null,
+        justificativa: rf.conclusao === 3 ? rf.justificativa : null,
+      });
+    }
+  }
+
+  // --- Regulamento de Compras (bloco 22; só Contrato de Gestão) ---
+  if (d.regulamentoCompras && d.tipoAjuste === 'CONTRATO_GESTAO') {
+    const rg = d.regulamentoCompras;
+    doc.publicacao_regulamento_compras = limpo({
+      houve_publicacao_inicial: rg.houvePublicacaoInicial,
+      publicacoes_regulamento_inicial: rg.houvePublicacaoInicial ? rg.publicacoesInicial.map(pub) : null,
+      houve_alteracao_do_regulamento: rg.houveAlteracao,
+      houve_publicacao_regulamento_alterado: rg.houvePublicacaoAlterado,
+      publicacoes_alteracao_regulamento: rg.houvePublicacaoAlterado ? rg.publicacoesAlteracao.map(pub) : null,
+    });
+  }
+
+  // --- Extrato de Execução Física e Financeira (bloco 23; só Termo de Parceria) ---
+  if (d.extratoFisicoFinanceiro && d.tipoAjuste === 'TERMO_PARCERIA') {
+    const ex = d.extratoFisicoFinanceiro;
+    doc.publicacao_extrato_execucao_fisica_financeira = limpo({
+      ha_extrato_execucao_fisica_financeira: ex.haExtrato,
+      extrato_elaborado_conforme_modelo: ex.haExtrato ? ex.extratoConformeModelo : null,
+      publicacoes: ex.haExtrato ? ex.publicacoes.map(pub) : null,
+    });
+  }
+
+  // --- Termo da Relação de Bens Cedidos (bloco 31; só Contrato de Gestão) ---
+  if (d.termoBensCedidos && d.tipoAjuste === 'CONTRATO_GESTAO' && d.termoBensCedidos.termoCessaoPermissao != null) {
+    doc.termo_cessao_permissao_bens = d.termoBensCedidos.termoCessaoPermissao;
+  }
+
   avisos.push(
-    'Prévia parcial: blocos ainda não capturados neste sistema — Contratos, Ajustes de Saldo, Termo de Bens Cedidos e Publicações específicas por tipo (Regulamento de Compras e Extrato Físico-Financeiro) + relatórios de Comissão de Avaliação, Governamental e Monitoramento.',
+    'Prévia parcial: blocos ainda não capturados neste sistema — Contratos e Ajustes de Saldo (retificação/inclusão de repasses e pagamentos de períodos anteriores).',
   );
 
   void SEM_TIPO;

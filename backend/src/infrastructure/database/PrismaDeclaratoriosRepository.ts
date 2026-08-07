@@ -5,6 +5,7 @@ import type {
   Declaracoes,
   Demonstracoes,
   EmpresaPertencente,
+  Extrato,
   Participacao,
   Parecer,
   DeclaracaoAnalise,
@@ -13,7 +14,10 @@ import type {
   PublicacaoParecerAta,
   ItemParecerAta,
   PublicacaoRelAtividades,
+  RegulamentoCompras,
+  RelatorioFinal,
   RequisitoAtende,
+  TermoBens,
   Transparencia,
 } from '@/application/declaratorios/dtos';
 
@@ -169,6 +173,76 @@ export class PrismaDeclaratoriosRepository implements IDeclaratoriosRepository {
       periodoReferenciaFinal: dados.periodoReferenciaFinal,
     };
     await prisma.prestacaoContasEntidade.upsert({ where: { prestacaoId }, create: { prestacaoId, ...data }, update: data });
+    return { prestacaoId, ...dados };
+  }
+
+  // ---- Relatório Final (25/26/27) ----
+  async obterRelatorioFinal(prestacaoId: string): Promise<RelatorioFinal | null> {
+    const r = await prisma.relatorioFinal.findUnique({ where: { prestacaoId } });
+    if (!r) return null;
+    return { prestacaoId, houveEmissao: r.houveEmissao, conclusao: r.conclusao, justificativa: r.justificativa };
+  }
+
+  async salvarRelatorioFinal(prestacaoId: string, dados: Omit<RelatorioFinal, 'prestacaoId'>): Promise<RelatorioFinal> {
+    const data = { houveEmissao: dados.houveEmissao, conclusao: dados.conclusao, justificativa: dados.justificativa };
+    await prisma.relatorioFinal.upsert({ where: { prestacaoId }, create: { prestacaoId, ...data }, update: data });
+    return { prestacaoId, ...dados };
+  }
+
+  // ---- Regulamento de Compras (22) ----
+  async obterRegulamentoCompras(prestacaoId: string): Promise<RegulamentoCompras | null> {
+    const r = await prisma.regulamentoCompras.findUnique({ where: { prestacaoId } });
+    if (!r) return null;
+    return {
+      prestacaoId,
+      houvePublicacaoInicial: r.houvePublicacaoInicial,
+      publicacoesInicial: (r.publicacoesInicial as unknown as Publicacao[]) ?? [],
+      houveAlteracao: r.houveAlteracao,
+      houvePublicacaoAlterado: r.houvePublicacaoAlterado,
+      publicacoesAlteracao: (r.publicacoesAlteracao as unknown as Publicacao[]) ?? [],
+    };
+  }
+
+  async salvarRegulamentoCompras(prestacaoId: string, dados: Omit<RegulamentoCompras, 'prestacaoId'>): Promise<RegulamentoCompras> {
+    const data = {
+      houvePublicacaoInicial: dados.houvePublicacaoInicial,
+      publicacoesInicial: J(dados.publicacoesInicial),
+      houveAlteracao: dados.houveAlteracao,
+      houvePublicacaoAlterado: dados.houvePublicacaoAlterado,
+      publicacoesAlteracao: J(dados.publicacoesAlteracao),
+    };
+    await prisma.regulamentoCompras.upsert({ where: { prestacaoId }, create: { prestacaoId, ...data }, update: data });
+    return { prestacaoId, ...dados };
+  }
+
+  // ---- Extrato Físico-Financeiro (23) ----
+  async obterExtrato(prestacaoId: string): Promise<Extrato | null> {
+    const r = await prisma.extratoFisicoFinanceiro.findUnique({ where: { prestacaoId } });
+    if (!r) return null;
+    return {
+      prestacaoId,
+      haExtrato: r.haExtrato,
+      extratoConformeModelo: r.extratoConformeModelo,
+      publicacoes: (r.publicacoes as unknown as Publicacao[]) ?? [],
+    };
+  }
+
+  async salvarExtrato(prestacaoId: string, dados: Omit<Extrato, 'prestacaoId'>): Promise<Extrato> {
+    const data = { haExtrato: dados.haExtrato, extratoConformeModelo: dados.extratoConformeModelo, publicacoes: J(dados.publicacoes) };
+    await prisma.extratoFisicoFinanceiro.upsert({ where: { prestacaoId }, create: { prestacaoId, ...data }, update: data });
+    return { prestacaoId, ...dados };
+  }
+
+  // ---- Termo de Bens Cedidos (31) ----
+  async obterTermoBens(prestacaoId: string): Promise<TermoBens | null> {
+    const r = await prisma.termoBensCedidos.findUnique({ where: { prestacaoId } });
+    if (!r) return null;
+    return { prestacaoId, termoCessaoPermissao: r.termoCessaoPermissao };
+  }
+
+  async salvarTermoBens(prestacaoId: string, dados: Omit<TermoBens, 'prestacaoId'>): Promise<TermoBens> {
+    const data = { termoCessaoPermissao: dados.termoCessaoPermissao };
+    await prisma.termoBensCedidos.upsert({ where: { prestacaoId }, create: { prestacaoId, ...data }, update: data });
     return { prestacaoId, ...dados };
   }
 }
