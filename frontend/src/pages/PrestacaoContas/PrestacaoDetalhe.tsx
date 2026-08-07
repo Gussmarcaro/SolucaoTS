@@ -22,6 +22,8 @@ import { DescontosTab } from './blocos/DescontosTab';
 import { DevolucoesTab } from './blocos/DevolucoesTab';
 import { GlosasTab } from './blocos/GlosasTab';
 import { EmpregadosTab } from './blocos/EmpregadosTab';
+import { EmpenhosPrestacaoTab } from './blocos/EmpenhosPrestacaoTab';
+import { RepassesTab } from './blocos/RepassesTab';
 
 const IMPLEMENTADOS = new Set([
   'empregados',
@@ -32,6 +34,8 @@ const IMPLEMENTADOS = new Set([
   'descontos',
   'devolucoes',
   'glosas',
+  'empenhos',
+  'repasses',
 ]);
 
 function Campo({ label, valor }: { label: string; valor: string }) {
@@ -180,6 +184,10 @@ export function PrestacaoDetalhe() {
             <DescontosTab prestacaoId={prestacao.id} />
           ) : blocoAtivo === 'devolucoes' ? (
             <DevolucoesTab prestacaoId={prestacao.id} />
+          ) : blocoAtivo === 'empenhos' ? (
+            <EmpenhosPrestacaoTab prestacaoId={prestacao.id} />
+          ) : blocoAtivo === 'repasses' ? (
+            <RepassesTab prestacaoId={prestacao.id} />
           ) : (
             <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
               <Circle className="h-8 w-8 text-ink-300" />

@@ -8,6 +8,8 @@ import { DescontoController } from '@/presentation/controllers/DescontoControlle
 import { DevolucaoController } from '@/presentation/controllers/DevolucaoController';
 import { GlosaController } from '@/presentation/controllers/GlosaController';
 import { EmpregadoController } from '@/presentation/controllers/EmpregadoController';
+import { EmpenhoPrestacaoController } from '@/presentation/controllers/EmpenhoPrestacaoController';
+import { RepasseController } from '@/presentation/controllers/RepasseController';
 
 const prestacaoRoutes = Router();
 const c = new PrestacaoController();
@@ -58,5 +60,7 @@ bloco('descontos', descontos);
 bloco('devolucoes', devolucoes);
 bloco('glosas', new GlosaController());
 bloco('empregados', new EmpregadoController());
+bloco('empenhos', new EmpenhoPrestacaoController());
+bloco('repasses', new RepasseController());
 
 export { prestacaoRoutes };
