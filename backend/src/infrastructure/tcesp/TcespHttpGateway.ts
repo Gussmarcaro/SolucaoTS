@@ -75,7 +75,8 @@ export class TcespHttpGateway implements ITcespGateway {
     if (!resp.ok)
       throw new BusinessError(`Falha na autenticação Audesp (HTTP ${resp.status}). ${texto.slice(0, 300)}`);
 
-    const token = extrair(json, ['token', 'access_token', 'accesstoken', 'jwt']) ?? (texto.trim() || null);
+    // Fallback p/ texto puro só quando a resposta NÃO é JSON (json == null).
+    const token = extrair(json, ['token', 'access_token', 'accesstoken', 'jwt']) ?? (json == null ? texto.trim() || null : null);
     if (!token) throw new BusinessError('Autenticação Audesp não retornou token.');
     return token;
   }
