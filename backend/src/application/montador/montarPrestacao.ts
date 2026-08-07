@@ -418,8 +418,79 @@ export function montarPrestacao(d: DadosMontagem): ResultadoMontagem {
     doc.termo_cessao_permissao_bens = d.termoBensCedidos.termoCessaoPermissao;
   }
 
+  // --- Contratos (bloco 7) ---
+  const VIGENCIA: Record<string, number> = { PRE_ESTABELECIDA: 1, INDETERMINADA: 2 };
+  doc.contratos = d.contratos.map((c) =>
+    limpo({
+      numero: c.numero,
+      credor: limpo({ documento_tipo: DOC_TIPO[c.credorTipoDoc], documento_numero: c.credorNumeroDoc, nome: c.credorNome }),
+      data_assinatura: c.dataAssinatura,
+      vigencia_tipo: VIGENCIA[c.vigenciaTipo],
+      vigencia_data_inicial: c.vigenciaDataInicial,
+      vigencia_data_final: c.vigenciaDataFinal,
+      objeto: c.objeto,
+      natureza_contratacao: c.naturezaContratacao,
+      natureza_contratacao_outro: c.naturezaContratacao.includes(23) ? c.naturezaOutro : null,
+      criterio_selecao: c.criterioSelecao,
+      criterio_selecao_outro: c.criterioSelecao === 4 ? c.criterioSelecaoOutro : null,
+      artigo_regulamento_compras: c.artigoRegulamentoCompras,
+      valor_montante: c.valorMontante,
+      valor_tipo: c.valorTipo,
+    }),
+  );
+
+  // --- Ajustes de Saldo (bloco 12) ---
+  if (d.ajustesSaldo) {
+    const a = d.ajustesSaldo;
+    const identDoc = (numero: string | null, tipo: number | null, num: string | null) =>
+      numero || tipo != null || num
+        ? limpo({
+            numero,
+            identificacao_credor: tipo != null || num ? limpo({ documento_tipo: tipo, documento_numero: num }) : null,
+          })
+        : null;
+    const naoVazio = <T>(l: T[]) => (l.length ? l : null);
+    const bloco = limpo({
+      retificacao_repasses: naoVazio(
+        a.retificacaoRepasses.map((r) =>
+          limpo({ data_prevista: r.dataPrevista, data_repasse: r.dataRepasse, fonte_recurso_tipo: r.fonteRecursoTipo, valor_retificado: r.valorRetificado }),
+        ),
+      ),
+      inclusao_repasses: naoVazio(
+        a.inclusaoRepasses.map((r) => limpo({ data_prevista: r.dataPrevista, data_repasse: r.dataRepasse, valor: r.valor, fonte_recurso_tipo: r.fonteRecursoTipo })),
+      ),
+      retificacao_pagamentos: naoVazio(
+        a.retificacaoPagamentos.map((p) =>
+          limpo({
+            identificacao_documento_fiscal: identDoc(p.docNumero, p.docCredorTipo, p.docCredorNumero),
+            pagamento_data: p.pagamentoData,
+            pagamento_valor: p.pagamentoValor,
+            fonte_recurso_tipo: p.fonteRecursoTipo,
+            valor_retificado: p.valorRetificado,
+          }),
+        ),
+      ),
+      inclusao_pagamentos: naoVazio(
+        a.inclusaoPagamentos.map((p) =>
+          limpo({
+            identificacao_documento_fiscal: identDoc(p.docNumero, p.docCredorTipo, p.docCredorNumero),
+            pagamento_data: p.pagamentoData,
+            pagamento_valor: p.pagamentoValor,
+            fonte_recurso_tipo: p.fonteRecursoTipo,
+            meio_pagamento_tipo: p.meioPagamento,
+            banco: p.meioPagamento === 1 ? p.banco : null,
+            agencia: p.meioPagamento === 1 ? p.agencia : null,
+            conta_corrente: p.meioPagamento === 1 ? p.contaCorrente : null,
+            numero_transacao: p.numeroTransacao,
+          }),
+        ),
+      ),
+    });
+    if (Object.keys(bloco).length) doc.ajustes_saldo = bloco;
+  }
+
   avisos.push(
-    'Prévia parcial: blocos ainda não capturados neste sistema — Contratos e Ajustes de Saldo (retificação/inclusão de repasses e pagamentos de períodos anteriores).',
+    'Documento completo (todos os blocos do manual v1.19). Confira os códigos de domínio numéricos (natureza da contratação, critério de seleção, fonte de recurso, categoria de despesa, classificação econômica, CBO) contra as tabelas oficiais do TCESP antes de transmitir.',
   );
 
   void SEM_TIPO;

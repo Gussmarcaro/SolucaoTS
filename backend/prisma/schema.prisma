@@ -599,9 +599,23 @@ model PrestacaoContas {
   regulamentoCompras      RegulamentoCompras?
   extratoFisicoFinanceiro ExtratoFisicoFinanceiro?
   termoBensCedidos        TermoBensCedidos?
+  ajustesSaldo            AjustesSaldo?
 
   @@index([ajusteId])
   @@index([status])
+}
+
+// Bloco 12 — Ajustes de Saldo (1:1): retificação/inclusão de repasses e
+// pagamentos de exercícios ANTERIORES (armazenados no TCESP).
+model AjustesSaldo {
+  id                    String @id @default(uuid()) @db.Uuid
+  prestacaoId           String @unique @db.Uuid
+  retificacaoRepasses   Json   @default("[]")
+  inclusaoRepasses      Json   @default("[]")
+  retificacaoPagamentos Json   @default("[]")
+  inclusaoPagamentos    Json   @default("[]")
+
+  prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id], onDelete: Cascade)
 }
 
 // Bloco 20 — Dados Gerais da Entidade Beneficiária (1:1): identificadores das

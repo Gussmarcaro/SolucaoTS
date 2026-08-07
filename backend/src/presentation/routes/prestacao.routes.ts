@@ -13,10 +13,12 @@ import { RepasseController } from '@/presentation/controllers/RepasseController'
 import { BemPrestacaoController } from '@/presentation/controllers/BemPrestacaoController';
 import { ServidorPrestacaoController } from '@/presentation/controllers/ServidorPrestacaoController';
 import { RelatorioAtividadeController } from '@/presentation/controllers/RelatorioAtividadeController';
+import { ContratoPrestacaoController } from '@/presentation/controllers/ContratoPrestacaoController';
 import { MontadorController } from '@/presentation/controllers/MontadorController';
 import { TransmissaoController } from '@/presentation/controllers/TransmissaoController';
 import { CertidoesPrestacaoController } from '@/presentation/controllers/CertidoesPrestacaoController';
 import { DeclaratoriosController } from '@/presentation/controllers/DeclaratoriosController';
+import { AjustesSaldoController } from '@/presentation/controllers/AjustesSaldoController';
 
 const prestacaoRoutes = Router();
 const c = new PrestacaoController();
@@ -82,6 +84,7 @@ bloco('repasses', new RepasseController());
 bloco('bens', new BemPrestacaoController());
 bloco('servidores-cedidos', new ServidorPrestacaoController());
 bloco('relatorio-atividades', new RelatorioAtividadeController());
+bloco('contratos', new ContratoPrestacaoController());
 
 // --- Blocos singleton (1:1 com a prestação) ---
 const certidoes = new CertidoesPrestacaoController();
@@ -113,5 +116,9 @@ prestacaoRoutes.get('/:prestacaoId/extrato-fisico-financeiro', (req, res, next) 
 prestacaoRoutes.put('/:prestacaoId/extrato-fisico-financeiro', (req, res, next) => declaratorios.salvarExtrato(req, res, next));
 prestacaoRoutes.get('/:prestacaoId/termo-bens-cedidos', (req, res, next) => declaratorios.obterTermoBens(req, res, next));
 prestacaoRoutes.put('/:prestacaoId/termo-bens-cedidos', (req, res, next) => declaratorios.salvarTermoBens(req, res, next));
+
+const ajustesSaldo = new AjustesSaldoController();
+prestacaoRoutes.get('/:prestacaoId/ajustes-saldo', (req, res, next) => ajustesSaldo.obter(req, res, next));
+prestacaoRoutes.put('/:prestacaoId/ajustes-saldo', (req, res, next) => ajustesSaldo.salvar(req, res, next));
 
 export { prestacaoRoutes };

@@ -87,6 +87,7 @@ export const BLOCOS: BlocoDef[] = [
   { chave: 'glosas', nome: 'Glosas' },
   { chave: 'empenhos', nome: 'Empenhos' },
   { chave: 'repasses', nome: 'Repasses' },
+  { chave: 'ajustesSaldo', nome: 'Ajustes de Saldo' },
   { chave: 'atividades', nome: 'Relatório de Atividades (Metas)' },
   { chave: 'dadosGerais', nome: 'Dados Gerais da Beneficiária' },
   { chave: 'responsaveis', nome: 'Responsáveis do Concessor' },

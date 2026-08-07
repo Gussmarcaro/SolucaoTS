@@ -230,6 +230,34 @@ export interface DadosMontagem {
 
   // Bloco 31 — Termo de Bens Cedidos (só CG)
   termoBensCedidos: { termoCessaoPermissao: boolean | null } | null;
+
+  // Bloco 7 — Contratos (lista)
+  contratos: Array<{
+    numero: string;
+    credorTipoDoc: string;
+    credorNumeroDoc: string;
+    credorNome: string | null;
+    dataAssinatura: string;
+    vigenciaTipo: string;
+    vigenciaDataInicial: string;
+    vigenciaDataFinal: string | null;
+    objeto: string;
+    naturezaContratacao: number[];
+    naturezaOutro: string | null;
+    criterioSelecao: number | null;
+    criterioSelecaoOutro: string | null;
+    artigoRegulamentoCompras: string | null;
+    valorMontante: number;
+    valorTipo: number | null;
+  }>;
+
+  // Bloco 12 — Ajustes de Saldo (singleton com 4 arrays)
+  ajustesSaldo: {
+    retificacaoRepasses: Array<{ dataPrevista: string | null; dataRepasse: string | null; fonteRecursoTipo: number | null; valorRetificado: number | null }>;
+    inclusaoRepasses: Array<{ dataPrevista: string | null; dataRepasse: string | null; valor: number | null; fonteRecursoTipo: number | null }>;
+    retificacaoPagamentos: Array<{ docNumero: string | null; docCredorTipo: number | null; docCredorNumero: string | null; pagamentoData: string | null; pagamentoValor: number | null; fonteRecursoTipo: number | null; valorRetificado: number | null }>;
+    inclusaoPagamentos: Array<{ docNumero: string | null; docCredorTipo: number | null; docCredorNumero: string | null; pagamentoData: string | null; pagamentoValor: number | null; fonteRecursoTipo: number | null; meioPagamento: number | null; banco: number | null; agencia: number | null; contaCorrente: string | null; numeroTransacao: string | null }>;
+  } | null;
 }
 
 export interface PublicacaoMontagem {

@@ -40,6 +40,8 @@ import { BensTab } from './blocos/BensTab';
 import { ServidoresCedidosTab } from './blocos/ServidoresCedidosTab';
 import { RelatorioAtividadesTab } from './blocos/RelatorioAtividadesTab';
 import { DadosGeraisTab, ResponsaveisTab } from './blocos/CertidoesTabs';
+import { ContratosTab } from './blocos/ContratosTab';
+import { AjustesSaldoTab } from './blocos/AjustesSaldoTab';
 import { DeclaracoesTab, ParecerConclusivoTab, TransparenciaTab } from './blocos/DeclaratoriosTabs';
 import {
   DemonstracoesContabeisTab,
@@ -55,6 +57,8 @@ import {
 const IMPLEMENTADOS = new Set([
   'empregados',
   'bens',
+  'contratos',
+  'ajustesSaldo',
   'documentosFiscais',
   'pagamentos',
   'receitas',
@@ -325,6 +329,10 @@ export function PrestacaoDetalhe() {
         <div className="rounded-2xl border border-ink-200/70 bg-white p-5 shadow-card dark:border-ink-800/70 dark:bg-ink-900">
           {blocoAtivo === 'empregados' ? (
             <EmpregadosTab prestacaoId={prestacao.id} />
+          ) : blocoAtivo === 'contratos' ? (
+            <ContratosTab prestacaoId={prestacao.id} />
+          ) : blocoAtivo === 'ajustesSaldo' ? (
+            <AjustesSaldoTab prestacaoId={prestacao.id} />
           ) : blocoAtivo === 'glosas' ? (
             <GlosasTab prestacaoId={prestacao.id} />
           ) : blocoAtivo === 'documentosFiscais' ? (

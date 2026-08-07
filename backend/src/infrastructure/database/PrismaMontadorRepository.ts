@@ -7,6 +7,7 @@ const dISO = (d: Date | null) => (d ? paraDataISO(d) : null);
 const n = (v: unknown) => (v == null ? null : Number(v));
 type Periodo = { mes: number; cargaHoraria: number; remuneracaoBruta: number };
 type PubRow = { tipoVeiculo: number | null; nomeVeiculo: string | null; dataPublicacao: string | null; enderecoInternet: string | null };
+type AjustesSaldoBloco = NonNullable<DadosMontagem['ajustesSaldo']>;
 
 export class PrismaMontadorRepository implements IMontadorRepository {
   async carregar(prestacaoId: string): Promise<DadosMontagem | null> {
@@ -27,7 +28,7 @@ export class PrismaMontadorRepository implements IMontadorRepository {
     });
     if (!prestacao) return null;
 
-    const [empregados, bens, documentosFiscais, pagamentos, receitas, disponibilidades, descontos, devolucoes, glosas, empenhos, repasses, servidores, atividades, dadosGerais, responsaveis, declaracoesBloco, parecer, transparencia, demonstracoes, publicacaoParecerAta, publicacaoRelAtividades, prestacaoEntidade, relatorioFinal, regulamentoCompras, extratoFisicoFinanceiro, termoBensCedidos] =
+    const [empregados, bens, documentosFiscais, pagamentos, receitas, disponibilidades, descontos, devolucoes, glosas, empenhos, repasses, servidores, atividades, dadosGerais, responsaveis, declaracoesBloco, parecer, transparencia, demonstracoes, publicacaoParecerAta, publicacaoRelAtividades, prestacaoEntidade, relatorioFinal, regulamentoCompras, extratoFisicoFinanceiro, termoBensCedidos, contratos, ajustesSaldoRow] =
       await Promise.all([
         prisma.relacaoEmpregado.findMany({ where: { prestacaoId } }),
         prisma.bemPrestacao.findMany({ where: { prestacaoId } }),
@@ -55,6 +56,8 @@ export class PrismaMontadorRepository implements IMontadorRepository {
         prisma.regulamentoCompras.findUnique({ where: { prestacaoId } }),
         prisma.extratoFisicoFinanceiro.findUnique({ where: { prestacaoId } }),
         prisma.termoBensCedidos.findUnique({ where: { prestacaoId } }),
+        prisma.contrato.findMany({ where: { prestacaoId }, orderBy: { dataAssinatura: 'asc' } }),
+        prisma.ajustesSaldo.findUnique({ where: { prestacaoId } }),
       ]);
 
     return {
@@ -301,6 +304,34 @@ export class PrismaMontadorRepository implements IMontadorRepository {
         : null,
 
       termoBensCedidos: termoBensCedidos ? { termoCessaoPermissao: termoBensCedidos.termoCessaoPermissao } : null,
+
+      contratos: contratos.map((c) => ({
+        numero: c.numero,
+        credorTipoDoc: c.credorTipoDoc,
+        credorNumeroDoc: c.credorNumeroDoc,
+        credorNome: c.credorNome,
+        dataAssinatura: paraDataISO(c.dataAssinatura),
+        vigenciaTipo: c.vigenciaTipo,
+        vigenciaDataInicial: paraDataISO(c.vigenciaDataInicial),
+        vigenciaDataFinal: c.vigenciaDataFinal ? paraDataISO(c.vigenciaDataFinal) : null,
+        objeto: c.objeto,
+        naturezaContratacao: c.naturezaContratacao,
+        naturezaOutro: c.naturezaOutro,
+        criterioSelecao: c.criterioSelecao,
+        criterioSelecaoOutro: c.criterioSelecaoOutro,
+        artigoRegulamentoCompras: c.artigoRegulamentoCompras,
+        valorMontante: Number(c.valorMontante),
+        valorTipo: c.valorTipo,
+      })),
+
+      ajustesSaldo: ajustesSaldoRow
+        ? {
+            retificacaoRepasses: (ajustesSaldoRow.retificacaoRepasses as unknown as AjustesSaldoBloco['retificacaoRepasses']) ?? [],
+            inclusaoRepasses: (ajustesSaldoRow.inclusaoRepasses as unknown as AjustesSaldoBloco['inclusaoRepasses']) ?? [],
+            retificacaoPagamentos: (ajustesSaldoRow.retificacaoPagamentos as unknown as AjustesSaldoBloco['retificacaoPagamentos']) ?? [],
+            inclusaoPagamentos: (ajustesSaldoRow.inclusaoPagamentos as unknown as AjustesSaldoBloco['inclusaoPagamentos']) ?? [],
+          }
+        : null,
     };
   }
 }
