@@ -1,6 +1,8 @@
-import { Menu, Search, Bell, LogOut } from 'lucide-react';
+import { useState } from 'react';
+import { Menu, Search, Bell, Info, LogOut } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useAuth } from '@/contexts/AuthContext';
+import { SobreModal } from './SobreModal';
 
 interface TopbarProps {
   onOpenSidebar: () => void;
@@ -14,6 +16,8 @@ function iniciais(nome?: string): string {
 
 export function Topbar({ onOpenSidebar }: TopbarProps) {
   const { usuario, sair } = useAuth();
+  const [sobreAberto, setSobreAberto] = useState(false);
+
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-ink-200/70 bg-white/80 px-4 backdrop-blur-md dark:border-ink-800/70 dark:bg-ink-950/70 sm:px-6">
       <button
@@ -45,6 +49,15 @@ export function Topbar({ onOpenSidebar }: TopbarProps) {
           <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-brand-500 ring-2 ring-white dark:ring-ink-950" />
         </button>
 
+        <button
+          onClick={() => setSobreAberto(true)}
+          className="focus-ring inline-flex h-9 w-9 items-center justify-center rounded-xl text-ink-500 transition-colors hover:bg-ink-100 hover:text-ink-800 dark:text-ink-400 dark:hover:bg-ink-800 dark:hover:text-ink-100"
+          aria-label="Sobre o sistema"
+          title="Sobre o sistema"
+        >
+          <Info className="h-[18px] w-[18px]" />
+        </button>
+
         <div className="mx-1 hidden h-6 w-px bg-ink-200 dark:bg-ink-800 sm:block" />
 
         {/* Perfil */}
@@ -71,6 +84,8 @@ export function Topbar({ onOpenSidebar }: TopbarProps) {
           <LogOut className="h-[18px] w-[18px]" />
         </button>
       </div>
+
+      <SobreModal open={sobreAberto} onClose={() => setSobreAberto(false)} />
     </header>
   );
 }
