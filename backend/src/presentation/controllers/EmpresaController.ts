@@ -4,7 +4,6 @@ import { AtualizarEmpresaUseCase } from '@/application/empresa/AtualizarEmpresaU
 import { ListarEmpresasUseCase } from '@/application/empresa/ListarEmpresasUseCase';
 import { GerenciarEmpresaUseCase } from '@/application/empresa/GerenciarEmpresaUseCase';
 import { PrismaEmpresaRepository } from '@/infrastructure/database/PrismaEmpresaRepository';
-import { urlPublicaLogo } from '@/infrastructure/upload/upload';
 import { BusinessError } from '@/shared/errors';
 import type { FiltrosEmpresa } from '@/application/empresa/dtos';
 
@@ -80,22 +79,6 @@ export class EmpresaController {
       if (ativo === undefined) throw new BusinessError('Informe o campo "ativo" (true/false).');
       const empresa = await gerenciar.definirAtivo(req.params.id, ativo);
       return res.json(empresa);
-    } catch (e) {
-      return next(e);
-    }
-  }
-
-  /** Upload do logotipo (multipart, campo "file"). Retorna { logoUrl }. */
-  async uploadLogo(req: Request, res: Response, next: NextFunction) {
-    try {
-      if (!req.file) throw new BusinessError('Nenhum arquivo enviado.');
-      const logoUrl = urlPublicaLogo(req.file.filename);
-      // Se veio associado a uma empresa, grava a URL nela.
-      if (req.params.id) {
-        const empresa = await gerenciar.atualizarLogo(req.params.id, logoUrl);
-        return res.json({ logoUrl, empresa });
-      }
-      return res.status(201).json({ logoUrl });
     } catch (e) {
       return next(e);
     }

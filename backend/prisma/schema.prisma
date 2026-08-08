@@ -200,7 +200,6 @@ model Empresa {
   telefoneFixo       String?  @db.VarChar(11)
   whatsapp           String?  @db.VarChar(11)
   buscaTexto         String   @default("") // texto normalizado (sem acento/caixa) para busca global
-  logoUrl            String? // caminho/URL do logotipo
   ativo              Boolean  @default(true) // soft delete
   criadoEm           DateTime @default(now())
   atualizadoEm       DateTime @updatedAt

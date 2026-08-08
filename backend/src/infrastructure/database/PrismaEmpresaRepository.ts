@@ -36,10 +36,6 @@ export class PrismaEmpresaRepository implements IEmpresaRepository {
     return prisma.empresa.update({ where: { id }, data: { ativo } });
   }
 
-  atualizarLogo(id: string, logoUrl: string): Promise<Empresa> {
-    return prisma.empresa.update({ where: { id }, data: { logoUrl } });
-  }
-
   async listar({ filtros, busca, ordem, page, pageSize }: ListarEmpresasParams): Promise<Paginado<Empresa>> {
     const texto = (v?: string): Prisma.StringFilter | undefined =>
       v ? { contains: v, mode: 'insensitive' } : undefined;

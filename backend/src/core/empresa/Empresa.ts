@@ -16,7 +16,6 @@ export interface Empresa {
   email: string;
   telefoneFixo: string | null;
   whatsapp: string | null;
-  logoUrl: string | null;
   ativo: boolean;
   criadoEm: Date;
   atualizadoEm: Date;

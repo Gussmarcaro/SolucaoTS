@@ -2,7 +2,7 @@ import type { Empresa } from '@/core/empresa/Empresa';
 import type { IEmpresaRepository } from './IEmpresaRepository';
 import { NotFoundError } from '@/shared/errors';
 
-/** Casos de uso pontuais: buscar, (in)ativar e atualizar logo. */
+/** Casos de uso pontuais: buscar e (in)ativar. */
 export class GerenciarEmpresaUseCase {
   constructor(private readonly repo: IEmpresaRepository) {}
 
@@ -16,10 +16,5 @@ export class GerenciarEmpresaUseCase {
   async definirAtivo(id: string, ativo: boolean): Promise<Empresa> {
     await this.buscar(id);
     return this.repo.definirAtivo(id, ativo);
-  }
-
-  async atualizarLogo(id: string, logoUrl: string): Promise<Empresa> {
-    await this.buscar(id);
-    return this.repo.atualizarLogo(id, logoUrl);
   }
 }

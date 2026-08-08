@@ -48,6 +48,5 @@ export function normalizarEValidarEmpresa(input: CriarEmpresaDTO): CriarEmpresaD
     email,
     telefoneFixo,
     whatsapp,
-    logoUrl: input.logoUrl?.trim() || null,
   };
 }

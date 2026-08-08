@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { AlertCircle, ImagePlus, Loader2, Search, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { AlertCircle, Loader2, Search } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
@@ -14,12 +14,7 @@ import {
 } from '@/lib/masks';
 import { isCnpjValido, isEmailValido } from '@/lib/validators';
 import { consultarCep } from '@/services/viacep.service';
-import {
-  atualizarEmpresa,
-  criarEmpresa,
-  enviarLogo,
-  resolverUrlLogo,
-} from '@/services/empresas.service';
+import { atualizarEmpresa, criarEmpresa } from '@/services/empresas.service';
 import { extrairCodigoErro, extrairMensagemErro } from '@/services/http';
 import type { Empresa, EmpresaPayload } from '@/types/empresa';
 
@@ -75,38 +70,11 @@ export function EmpresaForm({ empresa, onSuccess, onCancel }: EmpresaFormProps) 
   const [buscandoCep, setBuscandoCep] = useState(false);
   const [salvando, setSalvando] = useState(false);
 
-  // Logo
-  const inputFile = useRef<HTMLInputElement>(null);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(resolverUrlLogo(empresa?.logoUrl ?? null));
-
   const set = (campo: keyof Campos, valor: string) => {
     setForm((prev) => ({ ...prev, [campo]: valor }));
     setErros((prev) => ({ ...prev, [campo]: undefined }));
     setAlerta(null);
   };
-
-  function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!['image/png', 'image/jpeg'].includes(file.type)) {
-      setAlerta('Formato inválido. Envie uma imagem PNG ou JPG.');
-      return;
-    }
-    if (file.size > 2 * 1024 * 1024) {
-      setAlerta('Imagem muito grande (máx. 2 MB).');
-      return;
-    }
-    setLogoFile(file);
-    setLogoPreview(URL.createObjectURL(file));
-    setAlerta(null);
-  }
-
-  function removerLogo() {
-    setLogoFile(null);
-    setLogoPreview(null);
-    if (inputFile.current) inputFile.current.value = '';
-  }
 
   async function handleCepBlur() {
     if (apenasDigitos(form.cep).length !== 8) return;
@@ -170,14 +138,8 @@ export function EmpresaForm({ empresa, onSuccess, onCancel }: EmpresaFormProps) 
 
     setSalvando(true);
     try {
-      const salva = editando
-        ? await atualizarEmpresa(empresa!.id, payload)
-        : await criarEmpresa(payload);
-
-      // Se um novo logo foi selecionado, envia após salvar a empresa.
-      if (logoFile) {
-        await enviarLogo(salva.id, logoFile);
-      }
+      if (editando) await atualizarEmpresa(empresa!.id, payload);
+      else await criarEmpresa(payload);
       onSuccess();
     } catch (error) {
       const codigo = extrairCodigoErro(error);
@@ -197,40 +159,6 @@ export function EmpresaForm({ empresa, onSuccess, onCancel }: EmpresaFormProps) 
           <span>{alerta}</span>
         </div>
       )}
-
-      {/* Logotipo */}
-      <div className="flex items-center gap-4 rounded-xl border border-dashed border-ink-200 p-4 dark:border-ink-700">
-        <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-ink-50 dark:bg-ink-800">
-          {logoPreview ? (
-            <img src={logoPreview} alt="Logo" className="h-full w-full object-contain" />
-          ) : (
-            <ImagePlus className="h-7 w-7 text-ink-300" />
-          )}
-        </div>
-        <div className="flex-1">
-          <p className="text-sm font-medium text-ink-700 dark:text-ink-200">Logotipo da empresa</p>
-          <p className="text-xs text-ink-400">PNG ou JPG, até 2 MB. Usado em cabeçalhos e relatórios.</p>
-          <div className="mt-2 flex gap-2">
-            <Button type="button" variant="secondary" size="sm" onClick={() => inputFile.current?.click()}>
-              <ImagePlus className="h-4 w-4" />
-              {logoPreview ? 'Trocar' : 'Enviar'}
-            </Button>
-            {logoPreview && (
-              <Button type="button" variant="ghost" size="sm" onClick={removerLogo}>
-                <Trash2 className="h-4 w-4" />
-                Remover
-              </Button>
-            )}
-          </div>
-          <input
-            ref={inputFile}
-            type="file"
-            accept="image/png,image/jpeg"
-            className="hidden"
-            onChange={handleLogoChange}
-          />
-        </div>
-      </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">

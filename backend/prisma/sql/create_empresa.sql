@@ -21,7 +21,6 @@ CREATE TABLE IF NOT EXISTS "Empresa" (
   "email"              VARCHAR(255) NOT NULL,
   "telefoneFixo"       VARCHAR(11)  NULL,
   "whatsapp"           VARCHAR(11)  NULL,
-  "logoUrl"            VARCHAR(500) NULL,
   "ativo"              BOOLEAN NOT NULL DEFAULT TRUE,      -- soft delete
   "criadoEm"           TIMESTAMP NOT NULL DEFAULT now(),
   "atualizadoEm"       TIMESTAMP NOT NULL DEFAULT now()

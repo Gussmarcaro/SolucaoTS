@@ -15,7 +15,6 @@ export interface Empresa {
   email: string;
   telefoneFixo: string | null;
   whatsapp: string | null;
-  logoUrl: string | null;
   ativo: boolean;
   criadoEm: string;
   atualizadoEm: string;
@@ -37,7 +36,6 @@ export interface EmpresaPayload {
   email: string;
   telefoneFixo?: string | null;
   whatsapp?: string | null;
-  logoUrl?: string | null;
 }
 
 export interface FiltrosEmpresa {

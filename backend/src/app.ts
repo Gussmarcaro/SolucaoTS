@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import { routes } from '@/presentation/routes';
 import { errorHandler } from '@/presentation/middlewares/errorHandler';
-import { UPLOADS_DIR } from '@/infrastructure/upload/upload';
 
 export const app = express();
 
@@ -14,9 +13,6 @@ const corsOrigin = process.env.CORS_ORIGIN
 
 app.use(cors({ origin: corsOrigin }));
 app.use(express.json());
-
-// Arquivos enviados (logotipos) servidos estaticamente.
-app.use('/uploads', express.static(UPLOADS_DIR));
 
 app.use('/api', routes);
 app.use(errorHandler);

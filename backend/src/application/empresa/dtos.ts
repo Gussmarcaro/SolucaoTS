@@ -14,7 +14,6 @@ export interface CriarEmpresaDTO {
   email: string;
   telefoneFixo?: string | null;
   whatsapp?: string | null;
-  logoUrl?: string | null;
 }
 
 export type AtualizarEmpresaDTO = CriarEmpresaDTO;

@@ -13,6 +13,5 @@ export interface IEmpresaRepository {
   criar(dados: CriarEmpresaDTO): Promise<Empresa>;
   atualizar(id: string, dados: AtualizarEmpresaDTO): Promise<Empresa>;
   definirAtivo(id: string, ativo: boolean): Promise<Empresa>;
-  atualizarLogo(id: string, logoUrl: string): Promise<Empresa>;
   listar(params: ListarEmpresasParams): Promise<Paginado<Empresa>>;
 }
