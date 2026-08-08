@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
@@ -33,7 +34,10 @@ export function Modal({ open, onClose, title, subtitle, children, footer, size =
 
   if (!open) return null;
 
-  return (
+  // Renderiza no <body> em vez de onde foi declarado. Sem isso, um ancestral
+  // posicionado (a Topbar é `sticky z-20`) cria um contexto de empilhamento e
+  // prende o `z-50` dentro dele — o modal aparece por baixo da página.
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 sm:items-center">
       <div className="fixed inset-0 bg-ink-950/50 backdrop-blur-sm" onClick={onClose} aria-hidden />
       <div
@@ -64,6 +68,7 @@ export function Modal({ open, onClose, title, subtitle, children, footer, size =
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
