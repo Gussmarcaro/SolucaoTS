@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/Badge';
+import { HistoricoRegistro } from '@/pages/Auditoria/HistoricoRegistro';
 import { dataBr, formatarMoeda, mascaraCpfCnpj } from '@/lib/masks';
 import type { Colaborador } from '@/types/colaborador';
 
@@ -32,6 +33,11 @@ export function ColaboradorView({ colaborador }: { colaborador: Colaborador }) {
         <Campo label="Demissão" valor={colaborador.dataDemissao ? dataBr(colaborador.dataDemissao) : null} />
         <Campo label="Salário Contratual" valor={formatarMoeda(colaborador.salarioContratual)} />
       </dl>
+
+      <div>
+        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-400">Histórico de alterações</h4>
+        <HistoricoRegistro entidade="Colaborador" registroId={colaborador.id} />
+      </div>
     </div>
   );
 }

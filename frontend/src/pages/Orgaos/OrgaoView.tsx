@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/Badge';
+import { HistoricoRegistro } from '@/pages/Auditoria/HistoricoRegistro';
 import { mascaraCpfCnpj } from '@/lib/masks';
 import { TIPO_ORGAO_LABEL, PERIODICIDADE_LABEL, type Orgao } from '@/types/orgao';
 
@@ -28,6 +29,11 @@ export function OrgaoView({ orgao }: { orgao: Orgao }) {
         <Campo rotulo="Periodicidade (Declaração Negativa)" valor={PERIODICIDADE_LABEL[orgao.periodicidade] ?? orgao.periodicidade} />
         <Campo rotulo="CNPJ" valor={mascaraCpfCnpj(orgao.cnpj)} />
       </dl>
+
+      <div>
+        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-400">Histórico de alterações</h4>
+        <HistoricoRegistro entidade="Cliente" registroId={orgao.id} />
+      </div>
     </div>
   );
 }

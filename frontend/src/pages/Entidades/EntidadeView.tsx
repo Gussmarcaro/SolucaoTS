@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/Badge';
+import { HistoricoRegistro } from '@/pages/Auditoria/HistoricoRegistro';
 import { mascaraCep, mascaraCelular, mascaraCpfCnpj, mascaraTelefoneFixo } from '@/lib/masks';
 import type { Entidade } from '@/types/entidade';
 
@@ -46,6 +47,11 @@ export function EntidadeView({ entidade }: { entidade: Entidade }) {
         <Campo label="Cidade / UF" valor={`${entidade.cidade} / ${entidade.uf}`} />
         <Campo label="CEP" valor={mascaraCep(entidade.cep)} />
       </dl>
+
+      <div>
+        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-400">Histórico de alterações</h4>
+        <HistoricoRegistro entidade="EntidadeBeneficiaria" registroId={entidade.id} />
+      </div>
     </div>
   );
 }

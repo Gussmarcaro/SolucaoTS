@@ -13,11 +13,19 @@ import { grupoRoutes } from './grupo.routes';
 import { clienteRoutes } from './cliente.routes';
 import { dominioRoutes } from './dominio.routes';
 import { authRoutes } from './auth.routes';
+import { auditoriaRoutes } from './auditoria.routes';
+import { autenticar } from '@/presentation/middlewares/autenticar';
 
 const routes = Router();
 
+// --- Públicas ---
 routes.get('/health', (_req, res) => res.json({ status: 'ok' }));
 routes.use('/auth', authRoutes);
+
+// Daqui para baixo tudo exige JWT. O middleware também abre o contexto da
+// requisição, de onde saem a autoria dos registros e a trilha de auditoria.
+routes.use(autenticar);
+
 routes.use('/usuarios', usuarioRoutes);
 routes.use('/empresas', empresaRoutes);
 routes.use('/entidades', entidadeRoutes);
@@ -31,5 +39,6 @@ routes.use('/prestacoes', prestacaoRoutes);
 routes.use('/grupos', grupoRoutes);
 routes.use('/orgaos', clienteRoutes);
 routes.use('/dominios', dominioRoutes);
+routes.use('/auditoria', auditoriaRoutes);
 
 export { routes };

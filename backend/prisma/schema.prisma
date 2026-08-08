@@ -130,6 +130,7 @@ model Cliente {
   cnpj            String        @unique @db.VarChar(14)
   buscaTexto      String        @default("") // texto normalizado (sem acento/caixa) para busca global
   ativo           Boolean       @default(true)
+  criadoPor       String?       @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   criadoEm        DateTime      @default(now())
   atualizadoEm    DateTime      @updatedAt
 
@@ -165,6 +166,7 @@ model Usuario {
   resetTokenHash      String?       @db.VarChar(64) // SHA-256 do token de recuperação (nunca o token puro)
   resetTokenExpiresAt DateTime? // validade do token de recuperação
   ativo               Boolean       @default(true)
+  criadoPor           String?       @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   criadoEm            DateTime      @default(now())
   atualizadoEm        DateTime      @updatedAt
 
@@ -201,6 +203,7 @@ model Empresa {
   whatsapp           String?  @db.VarChar(11)
   buscaTexto         String   @default("") // texto normalizado (sem acento/caixa) para busca global
   ativo              Boolean  @default(true) // soft delete
+  criadoPor          String?  @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   criadoEm           DateTime @default(now())
   atualizadoEm       DateTime @updatedAt
 
@@ -228,6 +231,7 @@ model Fornecedor {
   whatsapp          String?       @db.VarChar(11)
   buscaTexto        String        @default("") // texto normalizado para busca global
   ativo             Boolean       @default(true) // soft delete
+  criadoPor         String?       @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   criadoEm          DateTime      @default(now())
   atualizadoEm      DateTime      @updatedAt
 
@@ -249,6 +253,7 @@ model Colaborador {
   salarioContratual Decimal   @db.Decimal(15, 2)
   buscaTexto        String    @default("") // texto normalizado para busca global
   ativo             Boolean   @default(true) // soft delete
+  criadoPor         String?   @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   criadoEm          DateTime  @default(now())
   atualizadoEm      DateTime  @updatedAt
 
@@ -273,6 +278,7 @@ model ContratoFirmado {
   valorMontante       Decimal       @db.Decimal(15, 2)
   buscaTexto          String        @default("") // texto normalizado para busca global
   ativo               Boolean       @default(true) // soft delete
+  criadoPor           String?       @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   criadoEm            DateTime      @default(now())
   atualizadoEm        DateTime      @updatedAt
 
@@ -293,6 +299,7 @@ model BemCedido {
   observacao    String?
   buscaTexto    String    @default("")
   ativo         Boolean   @default(true)
+  criadoPor     String?   @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   criadoEm      DateTime  @default(now())
   atualizadoEm  DateTime  @updatedAt
 
@@ -314,6 +321,7 @@ model ServidorCedidoCadastro {
   dataFinalCessao   DateTime? @db.Date
   buscaTexto        String    @default("")
   ativo             Boolean   @default(true)
+  criadoPor         String?   @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   criadoEm          DateTime  @default(now())
   atualizadoEm      DateTime  @updatedAt
 
@@ -328,6 +336,7 @@ model GrupoUsuario {
   descricao    String?
   buscaTexto   String   @default("") // texto normalizado para busca global
   ativo        Boolean  @default(true) // status Ativo/Inativo
+  criadoPor    String?  @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
@@ -393,6 +402,7 @@ model EntidadeBeneficiaria {
   whatsapp           String?   @db.VarChar(11)
   buscaTexto         String    @default("") // texto normalizado para busca global
   ativo              Boolean   @default(true) // soft delete
+  criadoPor          String?   @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   criadoEm           DateTime  @default(now())
   atualizadoEm       DateTime  @updatedAt
 
@@ -437,6 +447,7 @@ model Ajuste {
   vigenciaFinal          DateTime?     @db.Date
   periodicidade          Periodicidade
   status                 StatusAjuste  @default(EM_ELABORACAO)
+  criadoPor              String?       @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   criadoEm               DateTime      @default(now())
   atualizadoEm           DateTime      @updatedAt
 
@@ -1097,4 +1108,42 @@ model ComponenteDespesa {
   buscaTexto String
 
   @@id([tipo, codigo])
+}
+
+// ============================================================================
+// AUDITORIA
+// ============================================================================
+// Trilha de alterações e exclusões, gravada pela extension do Prisma Client
+// (`extensaoAuditoria`). A tabela é **append-only**: a aplicação nunca atualiza
+// nem exclui um registro daqui, e ela fica fora da própria auditoria.
+//
+// Criação de cadastro NÃO gera registro: a autoria da inclusão fica no campo
+// `criadoPor` do próprio cadastro.
+
+enum AcaoAuditoria {
+  ALTERACAO
+  EXCLUSAO
+  INATIVACAO // soft delete: `ativo` passou a false
+  REATIVACAO // `ativo` voltou a true
+  CRIACAO // só para blocos da prestação, que não têm `criadoPor`
+}
+
+model RegistroAuditoria {
+  id          String        @id @default(uuid()) @db.Uuid
+  ocorridoEm  DateTime      @default(now())
+  // Autor desnormalizado: o log precisa continuar legível se o usuário for
+  // excluído depois. Sem FK, pelo mesmo motivo.
+  usuarioId   String?       @db.Uuid
+  usuarioNome String        @default("(sistema)")
+  entidade    String // nome do model, ex.: "Fornecedor"
+  registroId  String // id do registro afetado
+  acao        AcaoAuditoria
+  // ALTERACAO: só os campos que mudaram, como { campo: { de, para } }.
+  // EXCLUSAO: o registro completo, é a última chance de saber o que havia.
+  alteracoes  Json?
+  rota        String? // ex.: "PUT /api/fornecedores/:id"
+
+  @@index([entidade, registroId])
+  @@index([ocorridoEm])
+  @@index([usuarioId])
 }

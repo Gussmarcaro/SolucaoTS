@@ -99,6 +99,21 @@ Esse cruzamento também confirmou que a extração da ND 2025 está fiel: 1717 l
 
 Armadilhas já verificadas: a spec em PDF (v1.1) está **defasada** — `categoria_despesas_tipo` foi renumerada por inteiro entre a v1.1 e a v1.14, então código capturado por aquela lista está errado. A planilha da STN ("Fonte ou Destinação de Recursos") é a tabela **nacional** e não corresponde ao `fonte_recurso_tipo` do TCESP. E o PDF erra ao dizer "3 – Outros" em `tipo_documento_bancario`: o schema define `2 = Outros` e `3 = Cheque`.
 
+## Autenticação e auditoria
+
+**Toda rota exige JWT**, exceto `/health` e `/auth/*`. O middleware `autenticar` valida o Bearer, popula `req.usuario` e abre um **`AsyncLocalStorage`** (`shared/contexto.ts`) com usuário e rota. É esse contexto que permite à camada de dados saber *quem* está operando sem que use cases e repositórios recebam o usuário como parâmetro — a regra de dependência continua intacta.
+
+A trilha é gravada por uma **extension do Prisma Client** (`extensaoAuditoria.ts`), não por chamadas espalhadas pelos use cases: assim vale para qualquer caminho que grave, inclusive código novo.
+
+- **Inclusão em cadastro não gera log** — a autoria fica no campo `criadoPor` do próprio registro, preenchido pela extension. Blocos da prestação, que não têm esse campo, geram `CRIACAO`.
+- `ALTERACAO` guarda **só o diff** (`{ campo: { de, para } }`); `EXCLUSAO` guarda o registro inteiro (última chance de saber o que havia). Soft delete (`definirAtivo`) vira `INATIVACAO`/`REATIVACAO`.
+- Operações em lote (a reimportação de CSV apaga e recria tudo) viram **uma** linha com a quantidade, não centenas.
+- **Nunca logar** `senhaHash`, `resetTokenHash`, `resetTokenExpiresAt`; `buscaTexto` e `atualizadoEm` também ficam de fora, por serem derivados que mudam a cada gravação e só poluiriam o diff.
+- Fora da trilha: tabelas de domínio (`Cbo`, `ClassificacaoEconomica`, `ComponenteDespesa`) e a própria `RegistroAuditoria` — que é **append-only** e se auditar-se-ia em laço infinito.
+- Falha ao gravar a trilha **não derruba** a operação de negócio; vai para o log do servidor.
+
+`npm run verificar:auditoria` confere as regras puras (diff e omissão de campos sensíveis) sem precisar de banco.
+
 ## Prazos legais (regra que dirige o Workflow)
 
 A Fase V tem **4 prazos distintos** que o Workflow deve controlar:
@@ -119,6 +134,7 @@ No `backend/`:
 - `npm run dominios:gerar` / `npm run dominios:seed` — regerar e carregar CBO e classificação econômica (tabelas grandes, no banco).
 - `npm run dominios:fase-v` — regerar as tabelas de domínio do JSON Schema (front + back).
 - `npm run verificar:montador` — conferir o montador contra o schema e as regras de negócio (sem banco).
+- `npm run verificar:auditoria` — conferir as regras da trilha de auditoria (sem banco).
 
 No `frontend/`: `npm run dev` (Vite em :5173) e `npm run build`.
 

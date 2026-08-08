@@ -66,6 +66,7 @@ export const navigation: NavNode[] = [
       { label: 'Órgãos', to: '/orgaos' },
       { label: 'Usuários', to: '/usuarios' },
       { label: 'Grupos de Usuários', to: '/grupos' },
+      { label: 'Auditoria', to: '/auditoria' },
     ],
   },
 ];
