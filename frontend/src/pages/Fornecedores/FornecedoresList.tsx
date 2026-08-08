@@ -120,14 +120,9 @@ export function FornecedoresList({ refreshKey, onVisualizar, onEditar, onAlterna
         return <Badge tone={f.ativo ? 'success' : 'neutral'}>{f.ativo ? 'Ativo' : 'Inativo'}</Badge>;
       case 'fornecedor':
         return (
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-300">
-              <Truck className="h-4 w-4" />
-            </div>
-            <div className="min-w-0">
-              <p className="truncate font-medium text-ink-800 dark:text-ink-100" title={f.nome}>{f.nome}</p>
-              <p className="truncate text-xs text-ink-400">{f.documentoTipo}</p>
-            </div>
+          <div className="min-w-0">
+            <p className="truncate font-medium text-ink-800 dark:text-ink-100" title={f.nome}>{f.nome}</p>
+            <p className="truncate text-xs text-ink-400">{f.documentoTipo}</p>
           </div>
         );
       case 'documento':

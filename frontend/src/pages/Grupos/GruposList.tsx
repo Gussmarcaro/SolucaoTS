@@ -107,12 +107,7 @@ export function GruposList({ refreshKey, onVisualizar, onEditar, onAlternarStatu
         return <Badge tone={g.ativo ? 'success' : 'neutral'}>{g.ativo ? 'Ativo' : 'Inativo'}</Badge>;
       case 'nome':
         return (
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-300">
-              <Users className="h-4 w-4" />
-            </div>
-            <p className="truncate font-medium text-ink-800 dark:text-ink-100" title={g.nome}>{g.nome}</p>
-          </div>
+          <p className="truncate font-medium text-ink-800 dark:text-ink-100" title={g.nome}>{g.nome}</p>
         );
       case 'descricao':
         return <span className="block truncate text-ink-500 dark:text-ink-400" title={g.descricao ?? ''}>{g.descricao || '—'}</span>;

@@ -121,14 +121,9 @@ export function ServidoresCedidosList({ refreshKey, onVisualizar, onEditar, onAl
         return <Badge tone={s.ativo ? 'success' : 'neutral'}>{s.ativo ? 'Ativo' : 'Inativo'}</Badge>;
       case 'servidor':
         return (
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-300">
-              <UserCog className="h-4 w-4" />
-            </div>
-            <div className="min-w-0">
-              <p className="truncate font-medium text-ink-800 dark:text-ink-100" title={s.nome}>{s.nome}</p>
-              <p className="truncate text-xs text-ink-400" title={s.cargoPublico}>{s.cargoPublico}</p>
-            </div>
+          <div className="min-w-0">
+            <p className="truncate font-medium text-ink-800 dark:text-ink-100" title={s.nome}>{s.nome}</p>
+            <p className="truncate text-xs text-ink-400" title={s.cargoPublico}>{s.cargoPublico}</p>
           </div>
         );
       case 'cpf':

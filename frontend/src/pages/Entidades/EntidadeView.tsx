@@ -1,4 +1,3 @@
-import { Landmark } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { mascaraCep, mascaraCelular, mascaraCpfCnpj, mascaraTelefoneFixo } from '@/lib/masks';
 import type { Entidade } from '@/types/entidade';
@@ -22,18 +21,13 @@ export function EntidadeView({ entidade }: { entidade: Entidade }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-300">
-          <Landmark className="h-6 w-6" />
-        </div>
-        <div>
-          <h3 className="text-base font-semibold text-ink-900 dark:text-ink-50">{entidade.razaoSocial}</h3>
-          {entidade.nomeFantasia && <p className="text-sm text-ink-500">{entidade.nomeFantasia}</p>}
-          <div className="mt-1">
-            <Badge tone={entidade.ativo ? 'success' : 'neutral'}>
-              {entidade.ativo ? 'Ativo' : 'Inativo'}
-            </Badge>
-          </div>
+      <div>
+        <h3 className="text-base font-semibold text-ink-900 dark:text-ink-50">{entidade.razaoSocial}</h3>
+        {entidade.nomeFantasia && <p className="text-sm text-ink-500">{entidade.nomeFantasia}</p>}
+        <div className="mt-1">
+          <Badge tone={entidade.ativo ? 'success' : 'neutral'}>
+            {entidade.ativo ? 'Ativo' : 'Inativo'}
+          </Badge>
         </div>
       </div>
 

@@ -1,4 +1,3 @@
-import { Truck } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { mascaraCep, mascaraCelular, mascaraCpfCnpj, mascaraTelefoneFixo } from '@/lib/masks';
 import type { Fornecedor } from '@/types/fornecedor';
@@ -19,18 +18,13 @@ export function FornecedorView({ fornecedor }: { fornecedor: Fornecedor }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-300">
-          <Truck className="h-6 w-6" />
-        </div>
-        <div>
-          <h3 className="text-base font-semibold text-ink-900 dark:text-ink-50">{fornecedor.nome}</h3>
-          <p className="text-sm text-ink-500">{fornecedor.email}</p>
-          <div className="mt-1">
-            <Badge tone={fornecedor.ativo ? 'success' : 'neutral'}>
-              {fornecedor.ativo ? 'Ativo' : 'Inativo'}
-            </Badge>
-          </div>
+      <div>
+        <h3 className="text-base font-semibold text-ink-900 dark:text-ink-50">{fornecedor.nome}</h3>
+        <p className="text-sm text-ink-500">{fornecedor.email}</p>
+        <div className="mt-1">
+          <Badge tone={fornecedor.ativo ? 'success' : 'neutral'}>
+            {fornecedor.ativo ? 'Ativo' : 'Inativo'}
+          </Badge>
         </div>
       </div>
 

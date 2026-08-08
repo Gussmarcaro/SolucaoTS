@@ -121,14 +121,9 @@ export function BensCedidosList({ refreshKey, onVisualizar, onEditar, onAlternar
         return <Badge tone={b.ativo ? 'success' : 'neutral'}>{b.ativo ? 'Ativo' : 'Inativo'}</Badge>;
       case 'bem':
         return (
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-300">
-              <Boxes className="h-4 w-4" />
-            </div>
-            <div className="min-w-0">
-              <p className="truncate font-medium text-ink-800 dark:text-ink-100" title={b.descricao}>{b.descricao}</p>
-              <p className="truncate text-xs text-ink-400">{b.tipo}</p>
-            </div>
+          <div className="min-w-0">
+            <p className="truncate font-medium text-ink-800 dark:text-ink-100" title={b.descricao}>{b.descricao}</p>
+            <p className="truncate text-xs text-ink-400">{b.tipo}</p>
           </div>
         );
       case 'identificador':

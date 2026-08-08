@@ -1,4 +1,3 @@
-import { UserCog } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { dataBr, formatarMoeda, mascaraCpfCnpj } from '@/lib/masks';
 import type { ServidorCedido } from '@/types/servidorCedido';
@@ -19,18 +18,13 @@ export function ServidorCedidoView({ servidor }: { servidor: ServidorCedido }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-300">
-          <UserCog className="h-6 w-6" />
-        </div>
-        <div>
-          <h3 className="text-base font-semibold text-ink-900 dark:text-ink-50">{servidor.nome}</h3>
-          <p className="text-sm text-ink-500">{servidor.cargoPublico}</p>
-          <div className="mt-1">
-            <Badge tone={servidor.ativo ? 'success' : 'neutral'}>
-              {servidor.ativo ? 'Ativo' : 'Inativo'}
-            </Badge>
-          </div>
+      <div>
+        <h3 className="text-base font-semibold text-ink-900 dark:text-ink-50">{servidor.nome}</h3>
+        <p className="text-sm text-ink-500">{servidor.cargoPublico}</p>
+        <div className="mt-1">
+          <Badge tone={servidor.ativo ? 'success' : 'neutral'}>
+            {servidor.ativo ? 'Ativo' : 'Inativo'}
+          </Badge>
         </div>
       </div>
 

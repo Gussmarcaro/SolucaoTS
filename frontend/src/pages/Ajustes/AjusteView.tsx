@@ -1,4 +1,3 @@
-import { FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { dataBr, formatarMoeda } from '@/lib/masks';
 import {
@@ -27,19 +26,14 @@ export function AjusteView({ ajuste }: { ajuste: Ajuste }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-300">
-          <FileText className="h-6 w-6" />
-        </div>
-        <div>
-          <h3 className="font-mono text-base font-semibold text-ink-900 dark:text-ink-50">{ajuste.codigoAjuste}</h3>
-          <p className="text-sm text-ink-500">{ajuste.entidadeNome}</p>
-          <div className="mt-1 flex gap-2">
-            <Badge tone="brand">{TIPO_AJUSTE_LABEL[ajuste.tipoAjuste]}</Badge>
-            <Badge tone={ajuste.status === 'ENVIADO' ? 'success' : 'warning'}>
-              {STATUS_AJUSTE_LABEL[ajuste.status]}
-            </Badge>
-          </div>
+      <div>
+        <h3 className="font-mono text-base font-semibold text-ink-900 dark:text-ink-50">{ajuste.codigoAjuste}</h3>
+        <p className="text-sm text-ink-500">{ajuste.entidadeNome}</p>
+        <div className="mt-1 flex gap-2">
+          <Badge tone="brand">{TIPO_AJUSTE_LABEL[ajuste.tipoAjuste]}</Badge>
+          <Badge tone={ajuste.status === 'ENVIADO' ? 'success' : 'warning'}>
+            {STATUS_AJUSTE_LABEL[ajuste.status]}
+          </Badge>
         </div>
       </div>
 
