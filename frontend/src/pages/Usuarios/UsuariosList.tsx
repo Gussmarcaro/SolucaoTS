@@ -27,7 +27,7 @@ const PAGE_SIZE = 10;
 const COLUNAS: ColunaDef[] = [
   { key: 'acoes', label: 'Ações', width: 120, minWidth: 100, align: 'center' },
   { key: 'status', label: 'Status', width: 110, sortKey: 'ativo' },
-  { key: 'nome', label: 'Nome / Razão Social', width: 210, sortKey: 'nome' },
+  { key: 'nome', label: 'Nome', width: 210, sortKey: 'nome' },
   { key: 'documento', label: 'CPF / CNPJ', width: 140, sortKey: 'documento' },
   { key: 'email', label: 'E-mail', width: 220, sortKey: 'email' },
   { key: 'celular', label: 'Celular', width: 140, sortKey: 'celular' },

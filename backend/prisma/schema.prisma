@@ -149,7 +149,7 @@ model Usuario {
   id                  String        @id @default(uuid()) @db.Uuid
   clienteId           String?       @db.Uuid // opcional até o multi-tenant/auth (Fase 1)
   grupoUsuarioId      String?       @db.Uuid // grupo de acesso (1 grupo por usuário)
-  nome                String // Nome Completo / Razão Social
+  nome                String // Nome completo (usuário do sistema é sempre pessoa física)
   documento           String        @unique @db.VarChar(14) // CPF (11) ou CNPJ (14) — só dígitos. Chave de duplicidade.
   documentoTipo       TipoDocumento // CPF | CNPJ
   cep                 String        @db.VarChar(8)

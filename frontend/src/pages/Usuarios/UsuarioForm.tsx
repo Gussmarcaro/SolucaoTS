@@ -203,7 +203,7 @@ export function UsuarioForm({ usuario, onSuccess, onCancel }: UsuarioFormProps) 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <Input
-              label="Nome Completo / Razão Social"
+              label="Nome Completo"
               name="nome"
               value={form.nome}
               onChange={(e) => set('nome', e.target.value)}
