@@ -30,7 +30,6 @@ const COLUNAS: ColunaDef[] = [
   { key: 'status', label: 'Status', width: 120, sortKey: 'ativo' },
   { key: 'nome', label: 'Grupo', width: 260, sortKey: 'nome' },
   { key: 'descricao', label: 'Descrição', width: 340 },
-  { key: 'membros', label: 'Usuários', width: 120, align: 'center' },
 ];
 
 interface Props {
@@ -110,8 +109,6 @@ export function GruposList({ refreshKey, onVisualizar, onEditar, onAlternarStatu
         );
       case 'descricao':
         return <span className="block truncate text-ink-500 dark:text-ink-400" title={g.descricao ?? ''}>{g.descricao || '—'}</span>;
-      case 'membros':
-        return <span className="block text-center text-ink-600 dark:text-ink-300">{g.totalMembros}</span>;
       default:
         return null;
     }
