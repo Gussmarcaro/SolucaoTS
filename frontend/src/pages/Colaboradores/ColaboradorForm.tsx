@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { FormularioNovo } from '@/components/ui/LabelCampo';
 import { BuscaCbo } from '@/components/ui/BuscaCbo';
 import { apenasDigitos, mascaraCpfCnpj, mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
 import { isCpfValido } from '@/lib/validators';
@@ -99,70 +100,72 @@ export function ColaboradorForm({ colaborador, onSuccess, onCancel }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      {alerta && (
-        <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>{alerta}</span>
+    <FormularioNovo novo={!editando}>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {alerta && (
+          <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{alerta}</span>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <Input label="Nome *" name="nome" value={form.nome} onChange={(e) => set('nome', e.target.value)} error={erros.nome} />
+          </div>
+          <Input
+            label="CPF *"
+            name="cpf"
+            value={mascaraCpfCnpj(form.cpf)}
+            onChange={(e) => set('cpf', e.target.value)}
+            error={erros.cpf}
+            placeholder="000.000.000-00"
+            inputMode="numeric"
+          />
+          <Input label="Cargo / Função *" name="cargo" value={form.cargo} onChange={(e) => set('cargo', e.target.value)} error={erros.cargo} />
+
+          <BuscaCbo
+            name="cbo"
+            value={apenasDigitos(form.cbo).slice(0, 6)}
+            onChange={(codigo) => set('cbo', codigo)}
+            error={erros.cbo}
+            hint="Classificação Brasileira de Ocupações (CBO 2002)."
+          />
+          <Input
+            label="CNS"
+            name="cns"
+            value={apenasDigitos(form.cns).slice(0, 15)}
+            onChange={(e) => set('cns', e.target.value)}
+            error={erros.cns}
+            hint="Cartão Nacional de Saúde (profissionais de saúde)."
+            placeholder="000000000000000"
+            inputMode="numeric"
+          />
+
+          <Input label="Data de Admissão *" name="dataAdmissao" type="date" value={form.dataAdmissao} onChange={(e) => set('dataAdmissao', e.target.value)} error={erros.dataAdmissao} />
+          <Input label="Data de Demissão" name="dataDemissao" type="date" value={form.dataDemissao} onChange={(e) => set('dataDemissao', e.target.value)} error={erros.dataDemissao} hint="Deixe em branco se ativo." />
+
+          <Input
+            label="Salário Contratual (R$) *"
+            name="salario"
+            value={form.salario}
+            onChange={(e) => set('salario', mascaraMoeda(e.target.value))}
+            error={erros.salario}
+            placeholder="0,00"
+            inputMode="numeric"
+          />
         </div>
-      )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="sm:col-span-2">
-          <Input label="Nome *" name="nome" value={form.nome} onChange={(e) => set('nome', e.target.value)} error={erros.nome} />
+        <div className="flex items-center justify-end gap-2 pt-2">
+          <Button type="button" variant="secondary" onClick={onCancel} disabled={salvando}>
+            Cancelar
+          </Button>
+          <Button type="submit" disabled={salvando}>
+            {salvando && <Loader2 className="h-4 w-4 animate-spin" />}
+            {salvando ? 'Salvando...' : editando ? 'Salvar Alterações' : 'Cadastrar Colaborador'}
+          </Button>
         </div>
-        <Input
-          label="CPF *"
-          name="cpf"
-          value={mascaraCpfCnpj(form.cpf)}
-          onChange={(e) => set('cpf', e.target.value)}
-          error={erros.cpf}
-          placeholder="000.000.000-00"
-          inputMode="numeric"
-        />
-        <Input label="Cargo / Função *" name="cargo" value={form.cargo} onChange={(e) => set('cargo', e.target.value)} error={erros.cargo} />
-
-        <BuscaCbo
-          name="cbo"
-          value={apenasDigitos(form.cbo).slice(0, 6)}
-          onChange={(codigo) => set('cbo', codigo)}
-          error={erros.cbo}
-          hint="Classificação Brasileira de Ocupações (CBO 2002)."
-        />
-        <Input
-          label="CNS"
-          name="cns"
-          value={apenasDigitos(form.cns).slice(0, 15)}
-          onChange={(e) => set('cns', e.target.value)}
-          error={erros.cns}
-          hint="Cartão Nacional de Saúde (profissionais de saúde)."
-          placeholder="000000000000000"
-          inputMode="numeric"
-        />
-
-        <Input label="Data de Admissão *" name="dataAdmissao" type="date" value={form.dataAdmissao} onChange={(e) => set('dataAdmissao', e.target.value)} error={erros.dataAdmissao} />
-        <Input label="Data de Demissão" name="dataDemissao" type="date" value={form.dataDemissao} onChange={(e) => set('dataDemissao', e.target.value)} error={erros.dataDemissao} hint="Deixe em branco se ativo." />
-
-        <Input
-          label="Salário Contratual (R$) *"
-          name="salario"
-          value={form.salario}
-          onChange={(e) => set('salario', mascaraMoeda(e.target.value))}
-          error={erros.salario}
-          placeholder="0,00"
-          inputMode="numeric"
-        />
-      </div>
-
-      <div className="flex items-center justify-end gap-2 pt-2">
-        <Button type="button" variant="secondary" onClick={onCancel} disabled={salvando}>
-          Cancelar
-        </Button>
-        <Button type="submit" disabled={salvando}>
-          {salvando && <Loader2 className="h-4 w-4 animate-spin" />}
-          {salvando ? 'Salvando...' : editando ? 'Salvar Alterações' : 'Cadastrar Colaborador'}
-        </Button>
-      </div>
-    </form>
+      </form>
+    </FormularioNovo>
   );
 }

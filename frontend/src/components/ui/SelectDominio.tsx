@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Check, ChevronDown, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { LabelCampo, temValor } from './LabelCampo';
 import type { Opcao } from '@/lib/dominios';
 
 interface Props {
@@ -39,7 +40,7 @@ export function MultiSelectDominio({ label, value, onChange, options, hint, erro
 
   return (
     <div className="w-full">
-      {label && <label className="mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-300">{label}</label>}
+      {label && <LabelCampo texto={label} preenchido={temValor(value)} />}
       <div
         className={cn(
           'max-h-44 overflow-auto rounded-xl border bg-white p-1 dark:bg-ink-900',
@@ -139,7 +140,7 @@ export function SelectDominio({
 
   return (
     <div className="w-full" ref={ref}>
-      {label && <label className="mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-300">{label}</label>}
+      {label && <LabelCampo texto={label} preenchido={temValor(value)} />}
       <div className="relative">
         <input
           name={name}

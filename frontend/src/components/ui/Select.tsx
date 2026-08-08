@@ -1,6 +1,7 @@
 import { forwardRef, type SelectHTMLAttributes } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { LabelCampo, temValor } from './LabelCampo';
 
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
@@ -14,14 +15,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     const selectId = id ?? props.name;
     return (
       <div className="w-full">
-        {label && (
-          <label
-            htmlFor={selectId}
-            className="mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-300"
-          >
-            {label}
-          </label>
-        )}
+        {label && <LabelCampo texto={label} preenchido={temValor(props.value)} htmlFor={selectId} />}
         <div className="relative">
           <select
             ref={ref}

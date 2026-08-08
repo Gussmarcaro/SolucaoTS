@@ -1,6 +1,7 @@
 import { forwardRef, useState, type InputHTMLAttributes } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { LabelCampo, temValor } from './LabelCampo';
 
 interface PasswordInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
   label?: string;
@@ -14,12 +15,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label
-            htmlFor={inputId}
-            className="mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-300"
-          >
-            {label}
-          </label>
+          <LabelCampo texto={label} preenchido={temValor(props.value)} htmlFor={inputId} />
         )}
         <div className="relative">
           <input

@@ -3,6 +3,7 @@ import { AlertCircle, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
+import { FormularioNovo } from '@/components/ui/LabelCampo';
 import { apenasDigitos, mascaraCpfCnpj, mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
 import { isCpfValido } from '@/lib/validators';
 import { atualizarServidorCedido, criarServidorCedido } from '@/services/servidoresCedidos.service';
@@ -104,71 +105,73 @@ export function ServidorCedidoForm({ servidor, onSuccess, onCancel }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      {alerta && (
-        <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>{alerta}</span>
+    <FormularioNovo novo={!editando}>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {alerta && (
+          <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{alerta}</span>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <Input label="Nome *" name="nome" value={form.nome} onChange={(e) => set('nome', e.target.value)} error={erros.nome} />
+          </div>
+          <Input
+            label="CPF *"
+            name="cpf"
+            value={mascaraCpfCnpj(form.cpf)}
+            onChange={(e) => set('cpf', e.target.value)}
+            error={erros.cpf}
+            placeholder="000.000.000-00"
+            inputMode="numeric"
+          />
+          <Input label="Cargo Público *" name="cargoPublico" value={form.cargoPublico} onChange={(e) => set('cargoPublico', e.target.value)} error={erros.cargoPublico} />
+
+          <Input label="Função na Entidade *" name="funcaoEntidade" value={form.funcaoEntidade} onChange={(e) => set('funcaoEntidade', e.target.value)} error={erros.funcaoEntidade} />
+          <Select
+            label="Ônus do Pagamento *"
+            name="onusPagamento"
+            value={form.onusPagamento}
+            onChange={(e) => set('onusPagamento', e.target.value)}
+            error={erros.onusPagamento}
+            options={ONUS_OPCOES.map((o) => ({ value: o, label: o }))}
+            placeholder="Selecione..."
+          />
+
+          <Input
+            label="Carga Horária Semanal"
+            name="cargaHoraria"
+            value={apenasDigitos(form.cargaHoraria).slice(0, 3)}
+            onChange={(e) => set('cargaHoraria', e.target.value)}
+            placeholder="ex.: 40"
+            inputMode="numeric"
+          />
+          <Input
+            label="Remuneração Bruta (R$) *"
+            name="remuneracao"
+            value={form.remuneracao}
+            onChange={(e) => set('remuneracao', mascaraMoeda(e.target.value))}
+            error={erros.remuneracao}
+            placeholder="0,00"
+            inputMode="numeric"
+          />
+
+          <Input label="Início da Cessão *" name="dataInicialCessao" type="date" value={form.dataInicialCessao} onChange={(e) => set('dataInicialCessao', e.target.value)} error={erros.dataInicialCessao} />
+          <Input label="Fim da Cessão" name="dataFinalCessao" type="date" value={form.dataFinalCessao} onChange={(e) => set('dataFinalCessao', e.target.value)} error={erros.dataFinalCessao} hint="Em branco = em vigor." />
         </div>
-      )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="sm:col-span-2">
-          <Input label="Nome *" name="nome" value={form.nome} onChange={(e) => set('nome', e.target.value)} error={erros.nome} />
+        <div className="flex items-center justify-end gap-2 pt-2">
+          <Button type="button" variant="secondary" onClick={onCancel} disabled={salvando}>
+            Cancelar
+          </Button>
+          <Button type="submit" disabled={salvando}>
+            {salvando && <Loader2 className="h-4 w-4 animate-spin" />}
+            {salvando ? 'Salvando...' : editando ? 'Salvar Alterações' : 'Cadastrar Servidor'}
+          </Button>
         </div>
-        <Input
-          label="CPF *"
-          name="cpf"
-          value={mascaraCpfCnpj(form.cpf)}
-          onChange={(e) => set('cpf', e.target.value)}
-          error={erros.cpf}
-          placeholder="000.000.000-00"
-          inputMode="numeric"
-        />
-        <Input label="Cargo Público *" name="cargoPublico" value={form.cargoPublico} onChange={(e) => set('cargoPublico', e.target.value)} error={erros.cargoPublico} />
-
-        <Input label="Função na Entidade *" name="funcaoEntidade" value={form.funcaoEntidade} onChange={(e) => set('funcaoEntidade', e.target.value)} error={erros.funcaoEntidade} />
-        <Select
-          label="Ônus do Pagamento *"
-          name="onusPagamento"
-          value={form.onusPagamento}
-          onChange={(e) => set('onusPagamento', e.target.value)}
-          error={erros.onusPagamento}
-          options={ONUS_OPCOES.map((o) => ({ value: o, label: o }))}
-          placeholder="Selecione..."
-        />
-
-        <Input
-          label="Carga Horária Semanal"
-          name="cargaHoraria"
-          value={apenasDigitos(form.cargaHoraria).slice(0, 3)}
-          onChange={(e) => set('cargaHoraria', e.target.value)}
-          placeholder="ex.: 40"
-          inputMode="numeric"
-        />
-        <Input
-          label="Remuneração Bruta (R$) *"
-          name="remuneracao"
-          value={form.remuneracao}
-          onChange={(e) => set('remuneracao', mascaraMoeda(e.target.value))}
-          error={erros.remuneracao}
-          placeholder="0,00"
-          inputMode="numeric"
-        />
-
-        <Input label="Início da Cessão *" name="dataInicialCessao" type="date" value={form.dataInicialCessao} onChange={(e) => set('dataInicialCessao', e.target.value)} error={erros.dataInicialCessao} />
-        <Input label="Fim da Cessão" name="dataFinalCessao" type="date" value={form.dataFinalCessao} onChange={(e) => set('dataFinalCessao', e.target.value)} error={erros.dataFinalCessao} hint="Em branco = em vigor." />
-      </div>
-
-      <div className="flex items-center justify-end gap-2 pt-2">
-        <Button type="button" variant="secondary" onClick={onCancel} disabled={salvando}>
-          Cancelar
-        </Button>
-        <Button type="submit" disabled={salvando}>
-          {salvando && <Loader2 className="h-4 w-4 animate-spin" />}
-          {salvando ? 'Salvando...' : editando ? 'Salvar Alterações' : 'Cadastrar Servidor'}
-        </Button>
-      </div>
-    </form>
+      </form>
+    </FormularioNovo>
   );
 }

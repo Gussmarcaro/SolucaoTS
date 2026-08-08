@@ -1,5 +1,6 @@
 import { forwardRef, type InputHTMLAttributes, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
+import { LabelCampo, temValor } from './LabelCampo';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -13,14 +14,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     const inputId = id ?? props.name;
     return (
       <div className="w-full">
-        {label && (
-          <label
-            htmlFor={inputId}
-            className="mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-300"
-          >
-            {label}
-          </label>
-        )}
+        {label && <LabelCampo texto={label} preenchido={temValor(props.value)} htmlFor={inputId} />}
         <div className="relative">
           <input
             ref={ref}

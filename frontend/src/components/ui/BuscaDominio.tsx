@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, Loader2, Search, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { LabelCampo, temValor } from './LabelCampo';
 
 export interface ItemDominio {
   /** Código oficial — é o que fica gravado no registro. */
@@ -120,7 +121,7 @@ export function BuscaDominio({
 
   return (
     <div className="w-full" ref={ref}>
-      {label && <label className="mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-300">{label}</label>}
+      {label && <LabelCampo texto={label} preenchido={temValor(value)} />}
       <div className="relative">
         <input
           name={name}

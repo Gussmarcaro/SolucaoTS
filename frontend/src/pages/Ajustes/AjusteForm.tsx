@@ -3,6 +3,7 @@ import { AlertCircle, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
+import { FormularioNovo } from '@/components/ui/LabelCampo';
 import { mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
 import { atualizarAjuste, criarAjuste } from '@/services/ajustes.service';
 import { listarEntidades } from '@/services/entidades.service';
@@ -158,117 +159,119 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
   const semEntidades = !carregandoEntidades && entidades.length === 0;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      {alerta && (
-        <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>{alerta}</span>
-        </div>
-      )}
-      {semEntidades && (
-        <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>Cadastre uma Entidade Beneficiária antes de criar um ajuste.</span>
-        </div>
-      )}
+    <FormularioNovo novo={!editando}>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {alerta && (
+          <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{alerta}</span>
+          </div>
+        )}
+        {semEntidades && (
+          <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>Cadastre uma Entidade Beneficiária antes de criar um ajuste.</span>
+          </div>
+        )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="sm:col-span-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <Select
+              label="Órgão prestador (município/entidade TCESP)"
+              name="clienteId"
+              value={form.clienteId}
+              onChange={(e) => set('clienteId', e.target.value)}
+              options={orgaos}
+              placeholder={carregandoOrgaos ? 'Carregando...' : orgaos.length ? 'Selecione o órgão (opcional)' : 'Nenhum órgão cadastrado'}
+            />
+            <p className="mt-1 text-xs text-ink-400">Define o código de município e entidade no descritor da prestação. Cadastre em Configurações › Órgãos.</p>
+          </div>
+          <div className="sm:col-span-2">
+            <Select
+              label="Entidade Beneficiária *"
+              name="entidadeBeneficiariaId"
+              value={form.entidadeBeneficiariaId}
+              onChange={(e) => set('entidadeBeneficiariaId', e.target.value)}
+              error={erros.entidadeBeneficiariaId}
+              options={entidades}
+              placeholder={carregandoEntidades ? 'Carregando...' : 'Selecione a entidade'}
+            />
+          </div>
+
           <Select
-            label="Órgão prestador (município/entidade TCESP)"
-            name="clienteId"
-            value={form.clienteId}
-            onChange={(e) => set('clienteId', e.target.value)}
-            options={orgaos}
-            placeholder={carregandoOrgaos ? 'Carregando...' : orgaos.length ? 'Selecione o órgão (opcional)' : 'Nenhum órgão cadastrado'}
+            label="Tipo de Ajuste *"
+            name="tipoAjuste"
+            value={form.tipoAjuste}
+            onChange={(e) => set('tipoAjuste', e.target.value)}
+            error={erros.tipoAjuste}
+            options={opcoesDe(TIPO_AJUSTE_LABEL)}
+            placeholder="Selecione..."
           />
-          <p className="mt-1 text-xs text-ink-400">Define o código de município e entidade no descritor da prestação. Cadastre em Configurações › Órgãos.</p>
-        </div>
-        <div className="sm:col-span-2">
           <Select
-            label="Entidade Beneficiária *"
-            name="entidadeBeneficiariaId"
-            value={form.entidadeBeneficiariaId}
-            onChange={(e) => set('entidadeBeneficiariaId', e.target.value)}
-            error={erros.entidadeBeneficiariaId}
-            options={entidades}
-            placeholder={carregandoEntidades ? 'Carregando...' : 'Selecione a entidade'}
+            label="Periodicidade (Declaração Negativa) *"
+            name="periodicidade"
+            value={form.periodicidade}
+            onChange={(e) => set('periodicidade', e.target.value)}
+            error={erros.periodicidade}
+            options={opcoesDe(PERIODICIDADE_LABEL)}
+            placeholder="Selecione..."
           />
-        </div>
 
-        <Select
-          label="Tipo de Ajuste *"
-          name="tipoAjuste"
-          value={form.tipoAjuste}
-          onChange={(e) => set('tipoAjuste', e.target.value)}
-          error={erros.tipoAjuste}
-          options={opcoesDe(TIPO_AJUSTE_LABEL)}
-          placeholder="Selecione..."
-        />
-        <Select
-          label="Periodicidade (Declaração Negativa) *"
-          name="periodicidade"
-          value={form.periodicidade}
-          onChange={(e) => set('periodicidade', e.target.value)}
-          error={erros.periodicidade}
-          options={opcoesDe(PERIODICIDADE_LABEL)}
-          placeholder="Selecione..."
-        />
+          <Input label="Código do Ajuste (TCESP) *" name="codigoAjuste" value={form.codigoAjuste} onChange={(e) => set('codigoAjuste', e.target.value)} error={erros.codigoAjuste} placeholder="ex.: 2025000000000023" />
+          <Input label="Número (interno)" name="numero" value={form.numero} onChange={(e) => set('numero', e.target.value)} placeholder="ex.: 023/2025" />
 
-        <Input label="Código do Ajuste (TCESP) *" name="codigoAjuste" value={form.codigoAjuste} onChange={(e) => set('codigoAjuste', e.target.value)} error={erros.codigoAjuste} placeholder="ex.: 2025000000000023" />
-        <Input label="Número (interno)" name="numero" value={form.numero} onChange={(e) => set('numero', e.target.value)} placeholder="ex.: 023/2025" />
-
-        <Input
-          label="Valor Global (R$) *"
-          name="valor"
-          value={form.valor}
-          onChange={(e) => set('valor', mascaraMoeda(e.target.value))}
-          error={erros.valor}
-          placeholder="0,00"
-          inputMode="numeric"
-        />
-        <Select
-          label="Situação"
-          name="status"
-          value={form.status}
-          onChange={(e) => set('status', e.target.value)}
-          options={opcoesDe(STATUS_AJUSTE_LABEL)}
-        />
-
-        <Input label="Data de Assinatura *" name="dataAssinatura" type="date" value={form.dataAssinatura} onChange={(e) => set('dataAssinatura', e.target.value)} error={erros.dataAssinatura} />
-        <div className="grid grid-cols-2 gap-3">
-          <Input label="Vigência (início)" name="vigenciaInicial" type="date" value={form.vigenciaInicial} onChange={(e) => set('vigenciaInicial', e.target.value)} />
-          <Input label="Vigência (fim)" name="vigenciaFinal" type="date" value={form.vigenciaFinal} onChange={(e) => set('vigenciaFinal', e.target.value)} error={erros.vigenciaFinal} />
-        </div>
-
-        <div className="sm:col-span-2">
-          <label htmlFor="objeto" className="mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-300">
-            Objeto *
-          </label>
-          <textarea
-            id="objeto"
-            name="objeto"
-            value={form.objeto}
-            onChange={(e) => set('objeto', e.target.value)}
-            rows={3}
-            className={`focus-ring w-full rounded-xl border bg-white px-3 py-2 text-sm text-ink-800 placeholder:text-ink-400 transition-colors dark:bg-ink-900 dark:text-ink-100 ${
-              erros.objeto ? 'border-red-400 dark:border-red-500' : 'border-ink-200 dark:border-ink-700'
-            }`}
-            placeholder="Descreva o objeto do ajuste."
+          <Input
+            label="Valor Global (R$) *"
+            name="valor"
+            value={form.valor}
+            onChange={(e) => set('valor', mascaraMoeda(e.target.value))}
+            error={erros.valor}
+            placeholder="0,00"
+            inputMode="numeric"
           />
-          {erros.objeto && <p className="mt-1 text-xs font-medium text-red-500">{erros.objeto}</p>}
-        </div>
-      </div>
+          <Select
+            label="Situação"
+            name="status"
+            value={form.status}
+            onChange={(e) => set('status', e.target.value)}
+            options={opcoesDe(STATUS_AJUSTE_LABEL)}
+          />
 
-      <div className="flex items-center justify-end gap-2 pt-2">
-        <Button type="button" variant="secondary" onClick={onCancel} disabled={salvando}>
-          Cancelar
-        </Button>
-        <Button type="submit" disabled={salvando || semEntidades}>
-          {salvando && <Loader2 className="h-4 w-4 animate-spin" />}
-          {salvando ? 'Salvando...' : editando ? 'Salvar Alterações' : 'Cadastrar Ajuste'}
-        </Button>
-      </div>
-    </form>
+          <Input label="Data de Assinatura *" name="dataAssinatura" type="date" value={form.dataAssinatura} onChange={(e) => set('dataAssinatura', e.target.value)} error={erros.dataAssinatura} />
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="Vigência (início)" name="vigenciaInicial" type="date" value={form.vigenciaInicial} onChange={(e) => set('vigenciaInicial', e.target.value)} />
+            <Input label="Vigência (fim)" name="vigenciaFinal" type="date" value={form.vigenciaFinal} onChange={(e) => set('vigenciaFinal', e.target.value)} error={erros.vigenciaFinal} />
+          </div>
+
+          <div className="sm:col-span-2">
+            <label htmlFor="objeto" className="mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-300">
+              Objeto *
+            </label>
+            <textarea
+              id="objeto"
+              name="objeto"
+              value={form.objeto}
+              onChange={(e) => set('objeto', e.target.value)}
+              rows={3}
+              className={`focus-ring w-full rounded-xl border bg-white px-3 py-2 text-sm text-ink-800 placeholder:text-ink-400 transition-colors dark:bg-ink-900 dark:text-ink-100 ${
+                erros.objeto ? 'border-red-400 dark:border-red-500' : 'border-ink-200 dark:border-ink-700'
+              }`}
+              placeholder="Descreva o objeto do ajuste."
+            />
+            {erros.objeto && <p className="mt-1 text-xs font-medium text-red-500">{erros.objeto}</p>}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-2 pt-2">
+          <Button type="button" variant="secondary" onClick={onCancel} disabled={salvando}>
+            Cancelar
+          </Button>
+          <Button type="submit" disabled={salvando || semEntidades}>
+            {salvando && <Loader2 className="h-4 w-4 animate-spin" />}
+            {salvando ? 'Salvando...' : editando ? 'Salvar Alterações' : 'Cadastrar Ajuste'}
+          </Button>
+        </div>
+      </form>
+    </FormularioNovo>
   );
 }

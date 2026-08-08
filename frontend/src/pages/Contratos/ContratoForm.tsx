@@ -3,6 +3,7 @@ import { AlertCircle, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
+import { FormularioNovo } from '@/components/ui/LabelCampo';
 import {
   apenasDigitos,
   mascaraCpfCnpj,
@@ -120,82 +121,84 @@ export function ContratoForm({ contrato, onSuccess, onCancel }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      {alerta && (
-        <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>{alerta}</span>
-        </div>
-      )}
+    <FormularioNovo novo={!editando}>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {alerta && (
+          <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{alerta}</span>
+          </div>
+        )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Input label="Número do Contrato *" name="numero" value={form.numero} onChange={(e) => set('numero', e.target.value)} error={erros.numero} />
-        <Input
-          label="Valor do Contrato (R$) *"
-          name="valor"
-          value={form.valor}
-          onChange={(e) => set('valor', mascaraMoeda(e.target.value))}
-          error={erros.valor}
-          placeholder="0,00"
-          inputMode="numeric"
-        />
-
-        <div className="sm:col-span-2">
-          <Input label="Credor (Nome / Razão Social) *" name="credorNome" value={form.credorNome} onChange={(e) => set('credorNome', e.target.value)} error={erros.credorNome} />
-        </div>
-        <Input
-          label="CPF / CNPJ do Credor *"
-          name="credorDocumento"
-          value={mascaraCpfCnpj(form.credorDocumento)}
-          onChange={(e) => set('credorDocumento', e.target.value)}
-          error={erros.credorDocumento}
-          placeholder="000.000.000-00"
-          inputMode="numeric"
-        />
-        <Select
-          label="Natureza da Contratação *"
-          name="naturezaContratacao"
-          value={form.naturezaContratacao}
-          onChange={(e) => set('naturezaContratacao', e.target.value)}
-          error={erros.naturezaContratacao}
-          options={NATUREZAS.map((n) => ({ value: n, label: n }))}
-          placeholder="Selecione..."
-        />
-
-        <div className="grid grid-cols-1 gap-4 sm:col-span-2 sm:grid-cols-3">
-          <Input label="Data de Assinatura *" name="dataAssinatura" type="date" value={form.dataAssinatura} onChange={(e) => set('dataAssinatura', e.target.value)} error={erros.dataAssinatura} />
-          <Input label="Início da Vigência *" name="vigenciaInicio" type="date" value={form.vigenciaInicio} onChange={(e) => set('vigenciaInicio', e.target.value)} error={erros.vigenciaInicio} />
-          <Input label="Fim da Vigência" name="vigenciaFim" type="date" value={form.vigenciaFim} onChange={(e) => set('vigenciaFim', e.target.value)} error={erros.vigenciaFim} hint="Em branco = indeterminada." />
-        </div>
-
-        <div className="sm:col-span-2">
-          <label htmlFor="objeto" className="mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-300">
-            Objeto *
-          </label>
-          <textarea
-            id="objeto"
-            name="objeto"
-            value={form.objeto}
-            onChange={(e) => set('objeto', e.target.value)}
-            rows={3}
-            className={`focus-ring w-full rounded-xl border bg-white px-3 py-2 text-sm text-ink-800 placeholder:text-ink-400 transition-colors dark:bg-ink-900 dark:text-ink-100 ${
-              erros.objeto ? 'border-red-400 dark:border-red-500' : 'border-ink-200 dark:border-ink-700'
-            }`}
-            placeholder="Descreva o objeto do contrato."
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Input label="Número do Contrato *" name="numero" value={form.numero} onChange={(e) => set('numero', e.target.value)} error={erros.numero} />
+          <Input
+            label="Valor do Contrato (R$) *"
+            name="valor"
+            value={form.valor}
+            onChange={(e) => set('valor', mascaraMoeda(e.target.value))}
+            error={erros.valor}
+            placeholder="0,00"
+            inputMode="numeric"
           />
-          {erros.objeto && <p className="mt-1 text-xs font-medium text-red-500">{erros.objeto}</p>}
-        </div>
-      </div>
 
-      <div className="flex items-center justify-end gap-2 pt-2">
-        <Button type="button" variant="secondary" onClick={onCancel} disabled={salvando}>
-          Cancelar
-        </Button>
-        <Button type="submit" disabled={salvando}>
-          {salvando && <Loader2 className="h-4 w-4 animate-spin" />}
-          {salvando ? 'Salvando...' : editando ? 'Salvar Alterações' : 'Cadastrar Contrato'}
-        </Button>
-      </div>
-    </form>
+          <div className="sm:col-span-2">
+            <Input label="Credor (Nome / Razão Social) *" name="credorNome" value={form.credorNome} onChange={(e) => set('credorNome', e.target.value)} error={erros.credorNome} />
+          </div>
+          <Input
+            label="CPF / CNPJ do Credor *"
+            name="credorDocumento"
+            value={mascaraCpfCnpj(form.credorDocumento)}
+            onChange={(e) => set('credorDocumento', e.target.value)}
+            error={erros.credorDocumento}
+            placeholder="000.000.000-00"
+            inputMode="numeric"
+          />
+          <Select
+            label="Natureza da Contratação *"
+            name="naturezaContratacao"
+            value={form.naturezaContratacao}
+            onChange={(e) => set('naturezaContratacao', e.target.value)}
+            error={erros.naturezaContratacao}
+            options={NATUREZAS.map((n) => ({ value: n, label: n }))}
+            placeholder="Selecione..."
+          />
+
+          <div className="grid grid-cols-1 gap-4 sm:col-span-2 sm:grid-cols-3">
+            <Input label="Data de Assinatura *" name="dataAssinatura" type="date" value={form.dataAssinatura} onChange={(e) => set('dataAssinatura', e.target.value)} error={erros.dataAssinatura} />
+            <Input label="Início da Vigência *" name="vigenciaInicio" type="date" value={form.vigenciaInicio} onChange={(e) => set('vigenciaInicio', e.target.value)} error={erros.vigenciaInicio} />
+            <Input label="Fim da Vigência" name="vigenciaFim" type="date" value={form.vigenciaFim} onChange={(e) => set('vigenciaFim', e.target.value)} error={erros.vigenciaFim} hint="Em branco = indeterminada." />
+          </div>
+
+          <div className="sm:col-span-2">
+            <label htmlFor="objeto" className="mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-300">
+              Objeto *
+            </label>
+            <textarea
+              id="objeto"
+              name="objeto"
+              value={form.objeto}
+              onChange={(e) => set('objeto', e.target.value)}
+              rows={3}
+              className={`focus-ring w-full rounded-xl border bg-white px-3 py-2 text-sm text-ink-800 placeholder:text-ink-400 transition-colors dark:bg-ink-900 dark:text-ink-100 ${
+                erros.objeto ? 'border-red-400 dark:border-red-500' : 'border-ink-200 dark:border-ink-700'
+              }`}
+              placeholder="Descreva o objeto do contrato."
+            />
+            {erros.objeto && <p className="mt-1 text-xs font-medium text-red-500">{erros.objeto}</p>}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-2 pt-2">
+          <Button type="button" variant="secondary" onClick={onCancel} disabled={salvando}>
+            Cancelar
+          </Button>
+          <Button type="submit" disabled={salvando}>
+            {salvando && <Loader2 className="h-4 w-4 animate-spin" />}
+            {salvando ? 'Salvando...' : editando ? 'Salvar Alterações' : 'Cadastrar Contrato'}
+          </Button>
+        </div>
+      </form>
+    </FormularioNovo>
   );
 }

@@ -3,6 +3,7 @@ import { AlertCircle, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
+import { FormularioNovo } from '@/components/ui/LabelCampo';
 import { apenasDigitos, mascaraCpfCnpj } from '@/lib/masks';
 import { isCnpjValido } from '@/lib/validators';
 import { atualizarOrgao, criarOrgao } from '@/services/orgaos.service';
@@ -99,37 +100,39 @@ export function OrgaoForm({ orgao, onSuccess, onCancel }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      {alerta && (
-        <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>{alerta}</span>
+    <FormularioNovo novo={!editando}>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {alerta && (
+          <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{alerta}</span>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <Input label="Nome do Órgão *" name="nome" value={form.nome} onChange={(e) => set('nome', e.target.value)} error={erros.nome} placeholder="ex.: PREFEITURA MUNICIPAL DE ADAMANTINA" autoFocus />
+          </div>
+
+          <Select label="Tipo de Órgão *" name="tipoOrgao" value={form.tipoOrgao} onChange={(e) => set('tipoOrgao', e.target.value)} error={erros.tipoOrgao} options={opcoesDe(TIPO_ORGAO_LABEL)} placeholder="Selecione..." />
+          <Select label="Periodicidade (Declaração Negativa) *" name="periodicidade" value={form.periodicidade} onChange={(e) => set('periodicidade', e.target.value)} error={erros.periodicidade} options={opcoesDe(PERIODICIDADE_LABEL)} placeholder="Selecione..." />
+
+          <Input label="Código do Município (TCESP) *" name="codigoMunicipio" value={form.codigoMunicipio} onChange={(e) => set('codigoMunicipio', apenasDigitos(e.target.value).slice(0, 4))} error={erros.codigoMunicipio} placeholder="1–9999" inputMode="numeric" />
+          <Input label="Código da Entidade (TCESP) *" name="codigoEntidade" value={form.codigoEntidade} onChange={(e) => set('codigoEntidade', apenasDigitos(e.target.value).slice(0, 5))} error={erros.codigoEntidade} placeholder="1–99999" inputMode="numeric" />
+
+          <div className="sm:col-span-2">
+            <Input label="CNPJ *" name="cnpj" value={form.cnpj} onChange={(e) => set('cnpj', mascaraCpfCnpj(e.target.value))} error={erros.cnpj} placeholder="00.000.000/0000-00" inputMode="numeric" />
+          </div>
         </div>
-      )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="sm:col-span-2">
-          <Input label="Nome do Órgão *" name="nome" value={form.nome} onChange={(e) => set('nome', e.target.value)} error={erros.nome} placeholder="ex.: PREFEITURA MUNICIPAL DE ADAMANTINA" autoFocus />
+        <div className="flex items-center justify-end gap-2 pt-2">
+          <Button type="button" variant="secondary" onClick={onCancel} disabled={salvando}>Cancelar</Button>
+          <Button type="submit" disabled={salvando}>
+            {salvando && <Loader2 className="h-4 w-4 animate-spin" />}
+            {salvando ? 'Salvando...' : editando ? 'Salvar Alterações' : 'Cadastrar Órgão'}
+          </Button>
         </div>
-
-        <Select label="Tipo de Órgão *" name="tipoOrgao" value={form.tipoOrgao} onChange={(e) => set('tipoOrgao', e.target.value)} error={erros.tipoOrgao} options={opcoesDe(TIPO_ORGAO_LABEL)} placeholder="Selecione..." />
-        <Select label="Periodicidade (Declaração Negativa) *" name="periodicidade" value={form.periodicidade} onChange={(e) => set('periodicidade', e.target.value)} error={erros.periodicidade} options={opcoesDe(PERIODICIDADE_LABEL)} placeholder="Selecione..." />
-
-        <Input label="Código do Município (TCESP) *" name="codigoMunicipio" value={form.codigoMunicipio} onChange={(e) => set('codigoMunicipio', apenasDigitos(e.target.value).slice(0, 4))} error={erros.codigoMunicipio} placeholder="1–9999" inputMode="numeric" />
-        <Input label="Código da Entidade (TCESP) *" name="codigoEntidade" value={form.codigoEntidade} onChange={(e) => set('codigoEntidade', apenasDigitos(e.target.value).slice(0, 5))} error={erros.codigoEntidade} placeholder="1–99999" inputMode="numeric" />
-
-        <div className="sm:col-span-2">
-          <Input label="CNPJ *" name="cnpj" value={form.cnpj} onChange={(e) => set('cnpj', mascaraCpfCnpj(e.target.value))} error={erros.cnpj} placeholder="00.000.000/0000-00" inputMode="numeric" />
-        </div>
-      </div>
-
-      <div className="flex items-center justify-end gap-2 pt-2">
-        <Button type="button" variant="secondary" onClick={onCancel} disabled={salvando}>Cancelar</Button>
-        <Button type="submit" disabled={salvando}>
-          {salvando && <Loader2 className="h-4 w-4 animate-spin" />}
-          {salvando ? 'Salvando...' : editando ? 'Salvar Alterações' : 'Cadastrar Órgão'}
-        </Button>
-      </div>
-    </form>
+      </form>
+    </FormularioNovo>
   );
 }

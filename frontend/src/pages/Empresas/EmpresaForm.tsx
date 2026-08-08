@@ -3,6 +3,7 @@ import { AlertCircle, Loader2, Search } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
+import { FormularioNovo } from '@/components/ui/LabelCampo';
 import { UF_OPTIONS } from '@/lib/ufs';
 import {
   apenasDigitos,
@@ -152,151 +153,153 @@ export function EmpresaForm({ empresa, onSuccess, onCancel }: EmpresaFormProps) 
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      {alerta && (
-        <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>{alerta}</span>
-        </div>
-      )}
+    <FormularioNovo novo={!editando}>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {alerta && (
+          <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{alerta}</span>
+          </div>
+        )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="sm:col-span-2">
-          <Input
-            label="Razão Social *"
-            name="razaoSocial"
-            value={form.razaoSocial}
-            onChange={(e) => set('razaoSocial', e.target.value)}
-            error={erros.razaoSocial}
-          />
-        </div>
-        <Input
-          label="Nome Fantasia"
-          name="nomeFantasia"
-          value={form.nomeFantasia}
-          onChange={(e) => set('nomeFantasia', e.target.value)}
-        />
-        <Input
-          label="CNPJ *"
-          name="cnpj"
-          value={mascaraCpfCnpj(form.cnpj)}
-          onChange={(e) => set('cnpj', e.target.value)}
-          error={erros.cnpj}
-          placeholder="00.000.000/0000-00"
-          inputMode="numeric"
-        />
-        <Input
-          label="Inscrição Estadual"
-          name="inscricaoEstadual"
-          value={mascaraInscricao(form.inscricaoEstadual)}
-          onChange={(e) => set('inscricaoEstadual', e.target.value)}
-          placeholder="Isento ou nº"
-        />
-        <Input
-          label="Inscrição Municipal"
-          name="inscricaoMunicipal"
-          value={mascaraInscricao(form.inscricaoMunicipal)}
-          onChange={(e) => set('inscricaoMunicipal', e.target.value)}
-        />
-
-        <Input
-          label="CEP *"
-          name="cep"
-          value={mascaraCep(form.cep)}
-          onChange={(e) => set('cep', e.target.value)}
-          onBlur={handleCepBlur}
-          error={erros.cep}
-          placeholder="00000-000"
-          inputMode="numeric"
-          rightSlot={buscandoCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-        />
-        <div className="grid grid-cols-3 gap-3 sm:col-span-1">
-          <div className="col-span-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
             <Input
-              label="Endereço *"
-              name="logradouro"
-              value={form.logradouro}
-              onChange={(e) => set('logradouro', e.target.value)}
-              error={erros.logradouro}
+              label="Razão Social *"
+              name="razaoSocial"
+              value={form.razaoSocial}
+              onChange={(e) => set('razaoSocial', e.target.value)}
+              error={erros.razaoSocial}
             />
           </div>
           <Input
-            label="Número"
-            name="numero"
-            value={form.numero}
-            onChange={(e) => set('numero', e.target.value)}
+            label="Nome Fantasia"
+            name="nomeFantasia"
+            value={form.nomeFantasia}
+            onChange={(e) => set('nomeFantasia', e.target.value)}
           />
-        </div>
+          <Input
+            label="CNPJ *"
+            name="cnpj"
+            value={mascaraCpfCnpj(form.cnpj)}
+            onChange={(e) => set('cnpj', e.target.value)}
+            error={erros.cnpj}
+            placeholder="00.000.000/0000-00"
+            inputMode="numeric"
+          />
+          <Input
+            label="Inscrição Estadual"
+            name="inscricaoEstadual"
+            value={mascaraInscricao(form.inscricaoEstadual)}
+            onChange={(e) => set('inscricaoEstadual', e.target.value)}
+            placeholder="Isento ou nº"
+          />
+          <Input
+            label="Inscrição Municipal"
+            name="inscricaoMunicipal"
+            value={mascaraInscricao(form.inscricaoMunicipal)}
+            onChange={(e) => set('inscricaoMunicipal', e.target.value)}
+          />
 
-        <Input
-          label="Complemento"
-          name="complemento"
-          value={form.complemento}
-          onChange={(e) => set('complemento', e.target.value)}
-        />
-        <Input
-          label="Bairro *"
-          name="bairro"
-          value={form.bairro}
-          onChange={(e) => set('bairro', e.target.value)}
-          error={erros.bairro}
-        />
-        <div className="grid grid-cols-3 gap-3">
-          <div className="col-span-2">
+          <Input
+            label="CEP *"
+            name="cep"
+            value={mascaraCep(form.cep)}
+            onChange={(e) => set('cep', e.target.value)}
+            onBlur={handleCepBlur}
+            error={erros.cep}
+            placeholder="00000-000"
+            inputMode="numeric"
+            rightSlot={buscandoCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+          />
+          <div className="grid grid-cols-3 gap-3 sm:col-span-1">
+            <div className="col-span-2">
+              <Input
+                label="Endereço *"
+                name="logradouro"
+                value={form.logradouro}
+                onChange={(e) => set('logradouro', e.target.value)}
+                error={erros.logradouro}
+              />
+            </div>
             <Input
-              label="Cidade *"
-              name="cidade"
-              value={form.cidade}
-              onChange={(e) => set('cidade', e.target.value)}
-              error={erros.cidade}
+              label="Número"
+              name="numero"
+              value={form.numero}
+              onChange={(e) => set('numero', e.target.value)}
             />
           </div>
-          <Select
-            label="UF *"
-            name="uf"
-            value={form.uf}
-            onChange={(e) => set('uf', e.target.value)}
-            error={erros.uf}
-            options={UF_OPTIONS}
-            placeholder="—"
+
+          <Input
+            label="Complemento"
+            name="complemento"
+            value={form.complemento}
+            onChange={(e) => set('complemento', e.target.value)}
+          />
+          <Input
+            label="Bairro *"
+            name="bairro"
+            value={form.bairro}
+            onChange={(e) => set('bairro', e.target.value)}
+            error={erros.bairro}
+          />
+          <div className="grid grid-cols-3 gap-3">
+            <div className="col-span-2">
+              <Input
+                label="Cidade *"
+                name="cidade"
+                value={form.cidade}
+                onChange={(e) => set('cidade', e.target.value)}
+                error={erros.cidade}
+              />
+            </div>
+            <Select
+              label="UF *"
+              name="uf"
+              value={form.uf}
+              onChange={(e) => set('uf', e.target.value)}
+              error={erros.uf}
+              options={UF_OPTIONS}
+              placeholder="—"
+            />
+          </div>
+
+          <Input
+            label="E-mail corporativo *"
+            name="email"
+            type="email"
+            value={form.email}
+            onChange={(e) => set('email', e.target.value)}
+            error={erros.email}
+          />
+          <Input
+            label="Telefone Fixo"
+            name="telefoneFixo"
+            value={mascaraTelefoneFixo(form.telefoneFixo)}
+            onChange={(e) => set('telefoneFixo', e.target.value)}
+            placeholder="(00) 0000-0000"
+            inputMode="numeric"
+          />
+          <Input
+            label="Celular"
+            name="whatsapp"
+            value={mascaraCelular(form.whatsapp)}
+            onChange={(e) => set('whatsapp', e.target.value)}
+            placeholder="(00) 00000-0000"
+            inputMode="numeric"
           />
         </div>
 
-        <Input
-          label="E-mail corporativo *"
-          name="email"
-          type="email"
-          value={form.email}
-          onChange={(e) => set('email', e.target.value)}
-          error={erros.email}
-        />
-        <Input
-          label="Telefone Fixo"
-          name="telefoneFixo"
-          value={mascaraTelefoneFixo(form.telefoneFixo)}
-          onChange={(e) => set('telefoneFixo', e.target.value)}
-          placeholder="(00) 0000-0000"
-          inputMode="numeric"
-        />
-        <Input
-          label="Celular"
-          name="whatsapp"
-          value={mascaraCelular(form.whatsapp)}
-          onChange={(e) => set('whatsapp', e.target.value)}
-          placeholder="(00) 00000-0000"
-          inputMode="numeric"
-        />
-      </div>
-
-      <div className="flex items-center justify-end gap-2 pt-2">
-        <Button type="button" variant="secondary" onClick={onCancel} disabled={salvando}>
-          Cancelar
-        </Button>
-        <Button type="submit" disabled={salvando}>
-          {salvando && <Loader2 className="h-4 w-4 animate-spin" />}
-          {salvando ? 'Salvando...' : editando ? 'Salvar Alterações' : 'Cadastrar Empresa'}
-        </Button>
-      </div>
-    </form>
+        <div className="flex items-center justify-end gap-2 pt-2">
+          <Button type="button" variant="secondary" onClick={onCancel} disabled={salvando}>
+            Cancelar
+          </Button>
+          <Button type="submit" disabled={salvando}>
+            {salvando && <Loader2 className="h-4 w-4 animate-spin" />}
+            {salvando ? 'Salvando...' : editando ? 'Salvar Alterações' : 'Cadastrar Empresa'}
+          </Button>
+        </div>
+      </form>
+    </FormularioNovo>
   );
 }
