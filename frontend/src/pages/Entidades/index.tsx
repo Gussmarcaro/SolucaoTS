@@ -50,7 +50,7 @@ export function Entidades() {
         title="Entidades / Beneficiárias"
         subtitle="Organizações da sociedade civil (OSCs) que recebem os repasses — base dos ajustes e da prestação de contas."
         actions={
-          <Button onClick={() => setModal({ tipo: 'novo' })}>
+          <Button variant="success" onClick={() => setModal({ tipo: 'novo' })}>
             <Plus className="h-4 w-4" />
             Nova Entidade
           </Button>

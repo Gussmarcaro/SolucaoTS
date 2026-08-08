@@ -31,7 +31,7 @@ export function Ajustes() {
         title="Ajustes Celebrados"
         subtitle="Convênios, termos e contratos de gestão firmados com o Terceiro Setor."
         actions={
-          <Button onClick={() => setModal({ tipo: 'novo' })}>
+          <Button variant="success" onClick={() => setModal({ tipo: 'novo' })}>
             <Plus className="h-4 w-4" />
             Novo Ajuste
           </Button>

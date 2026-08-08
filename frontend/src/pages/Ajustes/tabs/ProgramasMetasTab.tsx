@@ -55,7 +55,7 @@ export function ProgramasMetasTab({ ajusteId }: { ajusteId: string }) {
         <p className="text-sm text-ink-500 dark:text-ink-400">
           Plano de metas: programas e suas metas (quantificáveis ou não).
         </p>
-        <Button size="sm" onClick={() => setModal({ tipo: 'programa', programa: null })}>
+        <Button variant="success" size="sm" onClick={() => setModal({ tipo: 'programa', programa: null })}>
           <Plus className="h-4 w-4" />
           Novo programa
         </Button>

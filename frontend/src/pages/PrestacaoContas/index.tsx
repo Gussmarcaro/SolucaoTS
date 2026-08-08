@@ -64,7 +64,7 @@ export function PrestacaoContas() {
         title="Prestação de Contas"
         subtitle="Montagem, validação e transmissão dos documentos à API do Audesp (TCESP)."
         actions={
-          <Button onClick={() => setNovo(true)}>
+          <Button variant="success" onClick={() => setNovo(true)}>
             <Plus className="h-4 w-4" />
             Nova Prestação
           </Button>

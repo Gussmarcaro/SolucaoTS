@@ -51,7 +51,7 @@ export function Usuarios() {
         title="Usuários"
         subtitle="Cadastro de pessoas e entidades, com consulta automática de CEP e trava de duplicidade de CPF/CNPJ."
         actions={
-          <Button onClick={() => setModal({ tipo: 'novo' })}>
+          <Button variant="success" onClick={() => setModal({ tipo: 'novo' })}>
             <Plus className="h-4 w-4" />
             Novo Usuário
           </Button>

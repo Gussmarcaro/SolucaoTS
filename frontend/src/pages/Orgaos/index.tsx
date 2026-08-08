@@ -50,7 +50,7 @@ export function Orgaos() {
         title="Órgãos"
         subtitle="Órgãos prestadores (Prefeitura, Câmara, Autarquia…) com seus códigos de município e entidade no TCESP."
         actions={
-          <Button onClick={() => setModal({ tipo: 'novo' })}>
+          <Button variant="success" onClick={() => setModal({ tipo: 'novo' })}>
             <Plus className="h-4 w-4" />
             Novo Órgão
           </Button>

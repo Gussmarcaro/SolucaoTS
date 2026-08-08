@@ -50,7 +50,7 @@ export function Contratos() {
         title="Contratos Firmados"
         subtitle="Contratos celebrados pela entidade beneficiária (base para o bloco de Contratos da prestação de contas)."
         actions={
-          <Button onClick={() => setModal({ tipo: 'novo' })}>
+          <Button variant="success" onClick={() => setModal({ tipo: 'novo' })}>
             <Plus className="h-4 w-4" />
             Novo Contrato
           </Button>

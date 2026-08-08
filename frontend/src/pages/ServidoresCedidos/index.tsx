@@ -50,7 +50,7 @@ export function ServidoresCedidos() {
         title="Servidores Cedidos"
         subtitle="Servidores públicos cedidos à entidade beneficiária (com ou sem ônus)."
         actions={
-          <Button onClick={() => setModal({ tipo: 'novo' })}>
+          <Button variant="success" onClick={() => setModal({ tipo: 'novo' })}>
             <Plus className="h-4 w-4" />
             Novo Servidor
           </Button>

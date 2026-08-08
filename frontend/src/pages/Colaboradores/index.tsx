@@ -50,7 +50,7 @@ export function Colaboradores() {
         title="Colaboradores"
         subtitle="Empregados da entidade beneficiária (base para a Relação de Empregados da prestação de contas)."
         actions={
-          <Button onClick={() => setModal({ tipo: 'novo' })}>
+          <Button variant="success" onClick={() => setModal({ tipo: 'novo' })}>
             <Plus className="h-4 w-4" />
             Novo Colaborador
           </Button>

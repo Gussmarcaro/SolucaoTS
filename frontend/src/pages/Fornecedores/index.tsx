@@ -50,7 +50,7 @@ export function Fornecedores() {
         title="Fornecedores / Prestadores"
         subtitle="Credores da entidade beneficiária (documentos fiscais e contratos) — pessoas físicas ou jurídicas."
         actions={
-          <Button onClick={() => setModal({ tipo: 'novo' })}>
+          <Button variant="success" onClick={() => setModal({ tipo: 'novo' })}>
             <Plus className="h-4 w-4" />
             Novo Fornecedor
           </Button>

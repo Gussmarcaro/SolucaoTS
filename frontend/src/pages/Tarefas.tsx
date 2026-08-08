@@ -53,7 +53,7 @@ export function Tarefas() {
         title="Tarefas & Prazos"
         subtitle="Controle operacional das obrigações — prazos gerados a partir da periodicidade do órgão."
         actions={
-          <Button>
+          <Button variant="success">
             <Plus className="h-4 w-4" />
             Nova Tarefa
           </Button>

@@ -65,7 +65,7 @@ export function Grupos() {
         title="Grupos de Usuários"
         subtitle="Organize os usuários por perfil de acesso (base para o controle de permissões)."
         actions={
-          <Button onClick={() => setModal({ tipo: 'novo' })}>
+          <Button variant="success" onClick={() => setModal({ tipo: 'novo' })}>
             <Plus className="h-4 w-4" />
             Novo Grupo
           </Button>

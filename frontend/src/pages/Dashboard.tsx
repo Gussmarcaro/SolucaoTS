@@ -154,7 +154,7 @@ export function Dashboard() {
         title={`${saudacao()}${primeiroNome ? `, ${primeiroNome}` : ''} 👋`}
         subtitle="Aqui está o panorama das prestações de contas ao Terceiro Setor."
         actions={
-          <Button size="md" onClick={() => navigate('/cadastro/ajustes')}>
+          <Button variant="success" size="md" onClick={() => navigate('/cadastro/ajustes')}>
             <Plus className="h-4 w-4" />
             Novo Ajuste
           </Button>

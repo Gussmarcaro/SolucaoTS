@@ -1,7 +1,7 @@
 import { forwardRef, type ButtonHTMLAttributes } from 'react';
 import { cn } from '@/lib/cn';
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success';
 type Size = 'sm' | 'md' | 'lg';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -17,6 +17,8 @@ const variants: Record<Variant, string> = {
   ghost:
     'text-ink-600 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-300 dark:hover:bg-ink-800 dark:hover:text-ink-50',
   danger: 'bg-red-500 text-white hover:bg-red-600 active:bg-red-700 shadow-soft',
+  // Ação de criar registro. Verde do mesmo tom do Badge de sucesso.
+  success: 'bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 shadow-soft',
 };
 
 const sizes: Record<Size, string> = {

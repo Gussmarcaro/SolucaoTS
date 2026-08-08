@@ -50,7 +50,7 @@ export function BensCedidos() {
         title="Bens Cedidos"
         subtitle="Bens patrimoniais cedidos à / pela entidade beneficiária."
         actions={
-          <Button onClick={() => setModal({ tipo: 'novo' })}>
+          <Button variant="success" onClick={() => setModal({ tipo: 'novo' })}>
             <Plus className="h-4 w-4" />
             Novo Bem
           </Button>

@@ -51,7 +51,7 @@ export function Empresas() {
         title="Empresas"
         subtitle="Dados da empresa / contratante — suporta multi-empresa e filiais."
         actions={
-          <Button onClick={() => setModal({ tipo: 'novo' })}>
+          <Button variant="success" onClick={() => setModal({ tipo: 'novo' })}>
             <Plus className="h-4 w-4" />
             Nova Empresa
           </Button>
