@@ -4,17 +4,11 @@
 -- Gerar/aplicar via: npx prisma migrate dev --name usuario_cadastro
 -- ============================================================================
 
--- Enum de tipo de documento (reaproveitado do domínio: CPF | CNPJ | RNE)
-DO $$ BEGIN
-  CREATE TYPE "TipoDocumento" AS ENUM ('CPF', 'CNPJ', 'RNE');
-EXCEPTION WHEN duplicate_object THEN null; END $$;
-
 CREATE TABLE IF NOT EXISTS "Usuario" (
   "id"            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   "clienteId"     UUID NULL REFERENCES "Cliente"("id"),
-  "nome"          VARCHAR(255) NOT NULL,                -- Nome Completo / Razão Social
-  "documento"     VARCHAR(14)  NOT NULL,                -- CPF (11) ou CNPJ (14), só dígitos
-  "documentoTipo" "TipoDocumento" NOT NULL,
+  "nome"          VARCHAR(255) NOT NULL,                -- Nome Completo (sempre pessoa física)
+  "documento"     VARCHAR(14)  NOT NULL,                -- CPF (11 dígitos), só dígitos
   "cep"           VARCHAR(8)   NOT NULL,
   "logradouro"    VARCHAR(255) NOT NULL,
   "bairro"        VARCHAR(255) NOT NULL,
@@ -30,7 +24,7 @@ CREATE TABLE IF NOT EXISTS "Usuario" (
   "atualizadoEm"  TIMESTAMP NOT NULL DEFAULT now()
 );
 
--- Trava de duplicidade: o documento (CPF/CNPJ) é a chave de validação primária.
+-- Trava de duplicidade: o CPF é a chave de validação primária.
 CREATE UNIQUE INDEX IF NOT EXISTS "Usuario_documento_key" ON "Usuario" ("documento");
 CREATE UNIQUE INDEX IF NOT EXISTS "Usuario_email_key"     ON "Usuario" ("email");
 CREATE INDEX        IF NOT EXISTS "Usuario_cidade_idx"    ON "Usuario" ("cidade");

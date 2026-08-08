@@ -20,7 +20,6 @@ const selecao = {
   grupoUsuarioId: true,
   nome: true,
   documento: true,
-  documentoTipo: true,
   cep: true,
   logradouro: true,
   numero: true,
@@ -42,7 +41,6 @@ function toDomain(row: UsuarioRow): Usuario {
   const { grupoUsuario, ...rest } = row;
   return {
     ...rest,
-    documentoTipo: row.documentoTipo as 'CPF' | 'CNPJ',
     grupoNome: grupoUsuario?.nome ?? null,
   };
 }
@@ -74,7 +72,6 @@ export class PrismaUsuarioRepository implements IUsuarioRepository {
       data: {
         nome: dados.nome,
         documento: dados.documento,
-        documentoTipo: dados.documentoTipo,
         grupoUsuarioId: dados.grupoUsuarioId,
         cep: dados.cep,
         logradouro: dados.logradouro,
@@ -99,7 +96,6 @@ export class PrismaUsuarioRepository implements IUsuarioRepository {
       data: {
         nome: dados.nome,
         documento: dados.documento,
-        documentoTipo: dados.documentoTipo,
         grupoUsuarioId: dados.grupoUsuarioId,
         cep: dados.cep,
         logradouro: dados.logradouro,

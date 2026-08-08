@@ -1,14 +1,11 @@
-export type TipoDocumento = 'CPF' | 'CNPJ';
-
-/** Entidade de domínio — representa um usuário cadastrado. */
+/** Entidade de domínio — representa um usuário cadastrado (sempre pessoa física). */
 export interface Usuario {
   id: string;
   clienteId: string | null;
   grupoUsuarioId: string | null;
   grupoNome: string | null; // nome do grupo (join p/ exibição)
   nome: string;
-  documento: string; // apenas dígitos
-  documentoTipo: TipoDocumento;
+  documento: string; // CPF, apenas dígitos
   cep: string;
   logradouro: string;
   numero: string | null;

@@ -146,29 +146,28 @@ model Cliente {
 }
 
 model Usuario {
-  id                  String        @id @default(uuid()) @db.Uuid
-  clienteId           String?       @db.Uuid // opcional até o multi-tenant/auth (Fase 1)
-  grupoUsuarioId      String?       @db.Uuid // grupo de acesso (1 grupo por usuário)
+  id                  String    @id @default(uuid()) @db.Uuid
+  clienteId           String?   @db.Uuid // opcional até o multi-tenant/auth (Fase 1)
+  grupoUsuarioId      String?   @db.Uuid // grupo de acesso (1 grupo por usuário)
   nome                String // Nome completo (usuário do sistema é sempre pessoa física)
-  documento           String        @unique @db.VarChar(14) // CPF (11) ou CNPJ (14) — só dígitos. Chave de duplicidade.
-  documentoTipo       TipoDocumento // CPF | CNPJ
-  cep                 String        @db.VarChar(8)
+  documento           String    @unique @db.VarChar(14) // CPF — só dígitos (11). Chave de duplicidade.
+  cep                 String    @db.VarChar(8)
   logradouro          String
-  numero              String?       @db.VarChar(20)
+  numero              String?   @db.VarChar(20)
   complemento         String?
   bairro              String
   cidade              String
-  uf                  String        @db.VarChar(2)
-  email               String        @unique
-  celular             String        @db.VarChar(11)
-  buscaTexto          String        @default("") // texto normalizado (sem acento/caixa) para busca global
+  uf                  String    @db.VarChar(2)
+  email               String    @unique
+  celular             String    @db.VarChar(11)
+  buscaTexto          String    @default("") // texto normalizado (sem acento/caixa) para busca global
   senhaHash           String? // hash bcrypt da senha de login
-  resetTokenHash      String?       @db.VarChar(64) // SHA-256 do token de recuperação (nunca o token puro)
+  resetTokenHash      String?   @db.VarChar(64) // SHA-256 do token de recuperação (nunca o token puro)
   resetTokenExpiresAt DateTime? // validade do token de recuperação
-  ativo               Boolean       @default(true)
-  criadoPor           String?       @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
-  criadoEm            DateTime      @default(now())
-  atualizadoEm        DateTime      @updatedAt
+  ativo               Boolean   @default(true)
+  criadoPor           String?   @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
+  criadoEm            DateTime  @default(now())
+  atualizadoEm        DateTime  @updatedAt
 
   cliente      Cliente?          @relation(fields: [clienteId], references: [id])
   grupoUsuario GrupoUsuario?     @relation(fields: [grupoUsuarioId], references: [id])
@@ -1129,22 +1128,22 @@ enum AcaoAuditoria {
 }
 
 model RegistroAuditoria {
-  id          String        @id @default(uuid()) @db.Uuid
-  ocorridoEm  DateTime      @default(now())
+  id                String        @id @default(uuid()) @db.Uuid
+  ocorridoEm        DateTime      @default(now())
   // Autor desnormalizado: o log precisa continuar legível se o usuário for
   // excluído depois. Sem FK, pelo mesmo motivo.
-  usuarioId   String?       @db.Uuid
-  usuarioNome String        @default("(sistema)")
-  entidade    String // nome do model, ex.: "Fornecedor"
-  registroId  String // id do registro afetado
+  usuarioId         String?       @db.Uuid
+  usuarioNome       String        @default("(sistema)")
+  entidade          String // nome do model, ex.: "Fornecedor"
+  registroId        String // id do registro afetado
   // Descrição legível do registro no momento do evento (razão social, nome,
   // número). Capturada aqui porque, após a exclusão, não há mais onde lê-la.
   registroDescricao String?
-  acao        AcaoAuditoria
+  acao              AcaoAuditoria
   // ALTERACAO: só os campos que mudaram, como { campo: { de, para } }.
   // EXCLUSAO: o registro completo, é a última chance de saber o que havia.
-  alteracoes  Json?
-  rota        String? // ex.: "PUT /api/fornecedores/:id"
+  alteracoes        Json?
+  rota              String? // ex.: "PUT /api/fornecedores/:id"
 
   @@index([entidade, registroId])
   @@index([ocorridoEm])

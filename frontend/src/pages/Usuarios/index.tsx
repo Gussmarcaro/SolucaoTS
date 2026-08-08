@@ -49,7 +49,7 @@ export function Usuarios() {
     <>
       <PageHeader
         title="Usuários"
-        subtitle="Cadastro de pessoas e entidades, com consulta automática de CEP e trava de duplicidade de CPF/CNPJ."
+        subtitle="Cadastro de pessoas físicas, com consulta automática de CEP e trava de duplicidade de CPF."
         actions={
           <Button variant="success" onClick={() => setModal({ tipo: 'novo' })}>
             <Plus className="h-4 w-4" />

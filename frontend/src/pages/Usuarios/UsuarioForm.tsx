@@ -9,14 +9,8 @@ import { listarGruposAtivos } from '@/services/grupos.service';
 import { PasswordInput } from '@/components/ui/PasswordInput';
 import { PasswordStrength } from '@/components/ui/PasswordStrength';
 import { UF_OPTIONS } from '@/lib/ufs';
-import {
-  apenasDigitos,
-  mascaraCelular,
-  mascaraCep,
-  mascaraCpfCnpj,
-  tipoDocumento,
-} from '@/lib/masks';
-import { isDocumentoValido, isEmailValido, isSenhaForte } from '@/lib/validators';
+import { apenasDigitos, mascaraCelular, mascaraCep, mascaraCpf } from '@/lib/masks';
+import { isCpfValido, isEmailValido, isSenhaForte } from '@/lib/validators';
 import { consultarCep } from '@/services/viacep.service';
 import { atualizarUsuario, criarUsuario } from '@/services/usuarios.service';
 import { extrairCodigoErro, extrairMensagemErro } from '@/services/http';
@@ -124,7 +118,7 @@ export function UsuarioForm({ usuario, onSuccess, onCancel }: UsuarioFormProps) 
   function validar(): boolean {
     const novos: Partial<Record<keyof Campos, string>> = {};
     if (form.nome.trim().length < 3) novos.nome = 'Informe o nome completo.';
-    if (!isDocumentoValido(form.documento)) novos.documento = 'CPF/CNPJ inválido.';
+    if (!isCpfValido(form.documento)) novos.documento = 'CPF inválido.';
     if (apenasDigitos(form.cep).length !== 8) novos.cep = 'CEP inválido.';
     if (!form.logradouro.trim()) novos.logradouro = 'Informe o endereço.';
     if (!form.bairro.trim()) novos.bairro = 'Informe o bairro.';
@@ -149,7 +143,6 @@ export function UsuarioForm({ usuario, onSuccess, onCancel }: UsuarioFormProps) 
     const base = {
       nome: form.nome.trim(),
       documento: apenasDigitos(form.documento),
-      documentoTipo: tipoDocumento(form.documento),
       grupoUsuarioId: form.grupoUsuarioId || null,
       cep: apenasDigitos(form.cep),
       logradouro: form.logradouro.trim(),
@@ -215,9 +208,9 @@ export function UsuarioForm({ usuario, onSuccess, onCancel }: UsuarioFormProps) 
           </div>
           <div className="sm:col-span-5">
             <Input
-              label="CPF / CNPJ *"
+              label="CPF *"
               name="documento"
-              value={mascaraCpfCnpj(form.documento)}
+              value={mascaraCpf(form.documento)}
               onChange={(e) => set('documento', e.target.value)}
               error={erros.documento}
               placeholder="000.000.000-00"

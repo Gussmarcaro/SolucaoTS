@@ -1,5 +1,5 @@
 import { BusinessError } from '@/shared/errors';
-import { apenasDigitos, isDocumentoValido } from '@/shared/validators/documento';
+import { apenasDigitos, isCPFValido } from '@/shared/validators/documento';
 import type { NovoUsuarioDTO } from './dtos';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -10,12 +10,12 @@ export type DadosUsuario = Omit<NovoUsuarioDTO, 'senhaHash'>;
 
 /**
  * Normaliza e valida os dados de um usuário (exceto senha).
- * Reutilizado na criação e na edição.
+ * Reutilizado na criação e na edição. Usuário do sistema é sempre pessoa
+ * física, então o documento é obrigatoriamente um CPF.
  */
 export function normalizarDadosUsuario(input: {
   nome: string;
   documento: string;
-  documentoTipo: 'CPF' | 'CNPJ';
   grupoUsuarioId?: string | null;
   cep: string;
   logradouro: string;
@@ -28,7 +28,6 @@ export function normalizarDadosUsuario(input: {
   celular: string;
 }): DadosUsuario {
   const nome = input.nome?.trim() ?? '';
-  const documentoTipo = input.documentoTipo;
   const documento = apenasDigitos(input.documento);
   const cep = apenasDigitos(input.cep);
   const celular = apenasDigitos(input.celular);
@@ -38,11 +37,8 @@ export function normalizarDadosUsuario(input: {
   const bairro = input.bairro?.trim() ?? '';
   const cidade = input.cidade?.trim() ?? '';
 
-  if (nome.length < 3) throw new BusinessError('Informe o nome completo / razão social.');
-  if (documentoTipo !== 'CPF' && documentoTipo !== 'CNPJ')
-    throw new BusinessError('Tipo de documento inválido. Use CPF ou CNPJ.');
-  if (!isDocumentoValido(documento, documentoTipo))
-    throw new BusinessError(`${documentoTipo} inválido.`);
+  if (nome.length < 3) throw new BusinessError('Informe o nome completo.');
+  if (!isCPFValido(documento)) throw new BusinessError('CPF inválido.');
   if (cep.length !== 8) throw new BusinessError('CEP inválido.');
   if (!logradouro) throw new BusinessError('Informe o endereço (logradouro).');
   if (!bairro) throw new BusinessError('Informe o bairro.');
@@ -55,7 +51,6 @@ export function normalizarDadosUsuario(input: {
   return {
     nome,
     documento,
-    documentoTipo,
     grupoUsuarioId: input.grupoUsuarioId?.trim() || null,
     cep,
     logradouro,

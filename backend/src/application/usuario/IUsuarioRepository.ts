@@ -11,7 +11,7 @@ import type { DadosUsuario } from './validarUsuario';
 export interface IUsuarioRepository {
   /** Busca por id. */
   buscarPorId(id: string): Promise<Usuario | null>;
-  /** Busca por documento (CPF/CNPJ, apenas dígitos) — usado na trava de duplicidade. */
+  /** Busca por documento (CPF, apenas dígitos) — usado na trava de duplicidade. */
   buscarPorDocumento(documento: string): Promise<Usuario | null>;
   /** Busca por e-mail. */
   buscarPorEmail(email: string): Promise<Usuario | null>;

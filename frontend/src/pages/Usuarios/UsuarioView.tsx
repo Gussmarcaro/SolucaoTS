@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/Badge';
 import { HistoricoRegistro } from '@/pages/Auditoria/HistoricoRegistro';
-import { mascaraCelular, mascaraCep, mascaraCpfCnpj } from '@/lib/masks';
+import { mascaraCelular, mascaraCep, mascaraCpf } from '@/lib/masks';
 import type { Usuario } from '@/types/usuario';
 
 function Campo({ label, valor }: { label: string; valor?: string | null }) {
@@ -30,7 +30,7 @@ export function UsuarioView({ usuario }: { usuario: Usuario }) {
       </div>
 
       <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
-        <Campo label={usuario.documentoTipo} valor={mascaraCpfCnpj(usuario.documento)} />
+        <Campo label="CPF" valor={mascaraCpf(usuario.documento)} />
         <Campo label="Grupo de Usuários" valor={usuario.grupoNome} />
         <Campo label="Celular" valor={mascaraCelular(usuario.celular)} />
         <Campo label="CEP" valor={mascaraCep(usuario.cep)} />

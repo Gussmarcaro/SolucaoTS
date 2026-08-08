@@ -18,7 +18,7 @@ import { useResizableColumns, type ColunaDef } from '@/hooks/useResizableColumns
 import { useAuth } from '@/contexts/AuthContext';
 import { listarUsuarios } from '@/services/usuarios.service';
 import { extrairMensagemErro } from '@/services/http';
-import { mascaraCelular, mascaraCep, mascaraCpfCnpj } from '@/lib/masks';
+import { mascaraCelular, mascaraCep, mascaraCpf } from '@/lib/masks';
 import { cn } from '@/lib/cn';
 import type { FiltrosUsuario, Paginado, Usuario } from '@/types/usuario';
 
@@ -28,7 +28,7 @@ const COLUNAS: ColunaDef[] = [
   { key: 'acoes', label: 'Ações', width: 120, minWidth: 100, align: 'center' },
   { key: 'status', label: 'Status', width: 110, sortKey: 'ativo' },
   { key: 'nome', label: 'Nome', width: 210, sortKey: 'nome' },
-  { key: 'documento', label: 'CPF / CNPJ', width: 140, sortKey: 'documento' },
+  { key: 'documento', label: 'CPF', width: 140, sortKey: 'documento' },
   { key: 'email', label: 'E-mail', width: 220, sortKey: 'email' },
   { key: 'celular', label: 'Celular', width: 140, sortKey: 'celular' },
   { key: 'endereco', label: 'Endereço', width: 190, sortKey: 'logradouro' },
@@ -126,7 +126,7 @@ export function UsuariosList({ refreshKey, onVisualizar, onEditar, onAlternarSta
       case 'nome':
         return <span className={`${txt} font-medium text-ink-800 dark:text-ink-100`} title={u.nome}>{u.nome}</span>;
       case 'documento':
-        return <span className={`${txt} font-mono text-xs text-ink-600 dark:text-ink-300`}>{mascaraCpfCnpj(u.documento)}</span>;
+        return <span className={`${txt} font-mono text-xs text-ink-600 dark:text-ink-300`}>{mascaraCpf(u.documento)}</span>;
       case 'email':
         return <span className={`${txt} text-ink-600 dark:text-ink-300`} title={u.email}>{u.email}</span>;
       case 'celular':
@@ -162,7 +162,7 @@ export function UsuariosList({ refreshKey, onVisualizar, onEditar, onAlternarSta
           <input
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            placeholder="Buscar por nome, CPF/CNPJ, e-mail, cidade..."
+            placeholder="Buscar por nome, CPF, e-mail, cidade..."
             className="focus-ring h-9 w-full rounded-lg border border-ink-200 bg-ink-50 pl-9 pr-3 text-sm text-ink-800 placeholder:text-ink-400 dark:border-ink-800 dark:bg-ink-900 dark:text-ink-100"
           />
         </div>

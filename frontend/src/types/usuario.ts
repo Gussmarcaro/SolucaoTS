@@ -1,13 +1,10 @@
-export type TipoDocumento = 'CPF' | 'CNPJ';
-
 export interface Usuario {
   id: string;
   clienteId: string | null;
   grupoUsuarioId: string | null;
   grupoNome: string | null;
   nome: string;
-  documento: string;
-  documentoTipo: TipoDocumento;
+  documento: string; // CPF — usuário do sistema é sempre pessoa física
   cep: string;
   logradouro: string;
   numero: string | null;
@@ -25,7 +22,6 @@ export interface Usuario {
 export interface CriarUsuarioPayload {
   nome: string;
   documento: string;
-  documentoTipo: TipoDocumento;
   grupoUsuarioId?: string | null;
   cep: string;
   logradouro: string;

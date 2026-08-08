@@ -22,11 +22,11 @@ export class AtualizarUsuarioUseCase {
     // Grupo: bloqueia vincular a grupo inativo, mas mantém o vínculo já existente.
     await validarGrupoSelecionado(this.grupos, dados.grupoUsuarioId, atual.grupoUsuarioId);
 
-    // Trava de duplicidade — outro registro com o mesmo documento/e-mail.
+    // Trava de duplicidade — outro registro com o mesmo CPF/e-mail.
     const comMesmoDoc = await this.repo.buscarPorDocumento(dados.documento);
     if (comMesmoDoc && comMesmoDoc.id !== id) {
       throw new ConflictError(
-        'Este CPF/CNPJ já está cadastrado em nossa base de dados.',
+        'Este CPF já está cadastrado em nossa base de dados.',
         'DOCUMENTO_DUPLICADO',
       );
     }

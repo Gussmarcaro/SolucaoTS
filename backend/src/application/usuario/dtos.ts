@@ -1,10 +1,7 @@
-import type { TipoDocumento } from '@/core/usuario/Usuario';
-
 /** Entrada do cadastro (inclui senha + confirmação, usadas para login). */
 export interface CriarUsuarioDTO {
   nome: string;
   documento: string;
-  documentoTipo: TipoDocumento;
   grupoUsuarioId?: string | null;
   cep: string;
   logradouro: string;
@@ -23,7 +20,6 @@ export interface CriarUsuarioDTO {
 export interface AtualizarUsuarioDTO {
   nome: string;
   documento: string;
-  documentoTipo: TipoDocumento;
   grupoUsuarioId?: string | null;
   cep: string;
   logradouro: string;
@@ -42,7 +38,6 @@ export interface AtualizarUsuarioDTO {
 export interface NovoUsuarioDTO {
   nome: string;
   documento: string;
-  documentoTipo: TipoDocumento;
   grupoUsuarioId: string | null;
   cep: string;
   logradouro: string;

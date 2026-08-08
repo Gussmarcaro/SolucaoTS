@@ -19,11 +19,11 @@ export class CriarUsuarioUseCase {
     // Grupo (opcional): se informado, deve existir e estar ativo.
     await validarGrupoSelecionado(this.grupos, dados.grupoUsuarioId, null);
 
-    // Trava de duplicidade — o documento (CPF/CNPJ) é a chave primária de validação.
+    // Trava de duplicidade — o CPF é a chave primária de validação.
     const existente = await this.repo.buscarPorDocumento(dados.documento);
     if (existente) {
       throw new ConflictError(
-        'Este CPF/CNPJ já está cadastrado em nossa base de dados.',
+        'Este CPF já está cadastrado em nossa base de dados.',
         'DOCUMENTO_DUPLICADO',
       );
     }

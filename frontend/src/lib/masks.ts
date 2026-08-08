@@ -19,6 +19,15 @@ export function mascaraCpfCnpj(valor: string): string {
     .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
 }
 
+/** Máscara de CPF (000.000.000-00) — para cadastros que só aceitam pessoa física. */
+export function mascaraCpf(valor: string): string {
+  return apenasDigitos(valor)
+    .slice(0, 11)
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+}
+
 /** Detecta se o documento (por quantidade de dígitos) é CPF ou CNPJ. */
 export function tipoDocumento(valor: string): 'CPF' | 'CNPJ' {
   return apenasDigitos(valor).length > 11 ? 'CNPJ' : 'CPF';
