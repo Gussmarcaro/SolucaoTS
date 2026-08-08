@@ -3,6 +3,8 @@ import { AlertCircle, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
+import { SelectDominio } from '@/components/ui/SelectDominio';
+import { CATEGORIA_DESPESA, ESTADO_EMISSOR } from '@/lib/dominiosFaseV';
 import { Modal } from '@/components/ui/Modal';
 import {
   apenasDigitos,
@@ -234,10 +236,10 @@ function DocForm({
         <Input label="Valor Bruto (R$) *" name="bruto" value={bruto} onChange={(e) => setBruto(mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
         <Input label="Encargos (R$)" name="encargos" value={encargos} onChange={(e) => setEncargos(mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" hint="Deve ser menor que o bruto." />
 
-        <Input label="Categoria de Despesa (código) *" name="categoria" value={apenasDigitos(categoria)} onChange={(e) => setCategoria(e.target.value)} inputMode="numeric" />
+        <SelectDominio label="Categoria de Despesa *" name="categoria" value={apenasDigitos(categoria)} onChange={setCategoria} options={CATEGORIA_DESPESA} />
         <Input label="Nº do Contrato (opcional)" name="contratoNumero" value={contratoNumero} onChange={(e) => setContratoNumero(e.target.value)} />
 
-        <Input label="UF do Emissor (código, opcional)" name="estadoEmissor" value={apenasDigitos(estadoEmissor)} onChange={(e) => setEstadoEmissor(e.target.value)} inputMode="numeric" />
+        <SelectDominio label="UF do Emissor (opcional)" name="estadoEmissor" value={apenasDigitos(estadoEmissor)} onChange={setEstadoEmissor} options={ESTADO_EMISSOR} />
         <div className="flex flex-col justify-end gap-2">
           <label className="flex items-center gap-2 text-sm text-ink-700 dark:text-ink-200">
             <input type="checkbox" checked={rateio} onChange={(e) => setRateio(e.target.checked)} className="h-4 w-4 rounded border-ink-300 text-brand-500 focus:ring-brand-400 dark:border-ink-600 dark:bg-ink-800" />

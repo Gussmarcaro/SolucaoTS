@@ -65,4 +65,16 @@ export class DisponibilidadeUseCases {
     await this.garantirNaPrestacao(prestacaoId, id);
     await this.repo.excluir(id);
   }
+
+  async obterSaldoFundoFixo(prestacaoId: string): Promise<number> {
+    await this.garantirPrestacao(prestacaoId);
+    return this.repo.obterSaldoFundoFixo(prestacaoId);
+  }
+
+  async definirSaldoFundoFixo(prestacaoId: string, valor: unknown): Promise<number> {
+    await this.garantirPrestacao(prestacaoId);
+    const n = decimal(valor, 'Saldo do fundo fixo');
+    if (n < 0) throw new BusinessError('O saldo do fundo fixo não pode ser negativo.');
+    return this.repo.definirSaldoFundoFixo(prestacaoId, n);
+  }
 }

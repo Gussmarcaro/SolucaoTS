@@ -1,5 +1,6 @@
-import type { DadosMontagem, ResultadoMontagem } from './tipos';
+import type { CodigosInexistentes, DadosMontagem, ResultadoMontagem } from './tipos';
 import { validarPrestacao } from './validarPrestacao';
+import { validarDominios } from './validarDominios';
 
 const TIPO_DOCUMENTO: Record<string, string> = {
   CONTRATO_GESTAO: 'Prestação de Contas de Contrato de Gestão',
@@ -28,7 +29,7 @@ function limpo<T extends Record<string, unknown>>(obj: T): T {
  * blocos capturados. Retorna também `avisos` com as lacunas conhecidas.
  * É uma PRÉVIA: alguns blocos declaratórios/certidões ainda não são capturados.
  */
-export function montarPrestacao(d: DadosMontagem): ResultadoMontagem {
+export function montarPrestacao(d: DadosMontagem, inexistentes?: CodigosInexistentes): ResultadoMontagem {
   const avisos: string[] = [];
   const doc: Record<string, unknown> = {};
 
@@ -151,6 +152,7 @@ export function montarPrestacao(d: DadosMontagem): ResultadoMontagem {
       saldo_bancario: x.saldoBancario,
       saldo_contabil: x.saldoContabil,
     })),
+    saldo_fundo_fixo: d.saldoFundoFixo,
   };
 
   // --- Descontos / Devoluções ---
@@ -282,8 +284,10 @@ export function montarPrestacao(d: DadosMontagem): ResultadoMontagem {
     const cgOuTp = d.tipoAjuste === 'CONTRATO_GESTAO' || d.tipoAjuste === 'TERMO_PARCERIA';
     doc.declaracoes = limpo({
       houve_contratacao_empresas_pertencentes: dc.houveContratacao,
+      // O schema exige os DOIS campos em cada item (CNPJ da empresa contratada
+      // + CPF do dirigente/agente político): não use `limpo` aqui.
       empresas_pertencentes: dc.houveContratacao
-        ? dc.empresasPertencentes.map((e) => limpo({ cnpj: e.cnpj, cpf: e.cpf }))
+        ? dc.empresasPertencentes.map((e) => ({ cnpj: e.cnpj ?? '', cpf: e.cpf ?? '' }))
         : null,
       houve_participacao_quadro_diretivo_administrativo: dc.houveParticipacao,
       participacoes_quadro_diretivo_administrativo: dc.houveParticipacao
@@ -490,10 +494,13 @@ export function montarPrestacao(d: DadosMontagem): ResultadoMontagem {
     if (Object.keys(bloco).length) doc.ajustes_saldo = bloco;
   }
 
-  avisos.push(
-    'Documento completo (todos os blocos do manual v1.19). Confira os códigos de domínio numéricos (natureza da contratação, critério de seleção, fonte de recurso, categoria de despesa, classificação econômica, CBO) contra as tabelas oficiais do TCESP antes de transmitir.',
-  );
-
   void SEM_TIPO;
-  return { documento: doc, avisos, erros: validarPrestacao(d) };
+  // Todos os códigos de domínio agora vêm de tabelas oficiais (schema v1.14 e
+  // as tabelas CBO/classificação econômica carregadas), então código inválido
+  // é erro bloqueante — seria rejeitado na transmissão de qualquer forma.
+  return {
+    documento: doc,
+    avisos,
+    erros: [...validarPrestacao(d, inexistentes), ...validarDominios(d)],
+  };
 }

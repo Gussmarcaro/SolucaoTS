@@ -3,9 +3,11 @@ import { Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
+import { SelectDominio } from '@/components/ui/SelectDominio';
+import { BANCO, CONTA_TIPO, rotulo } from '@/lib/dominiosFaseV';
 import { apenasDigitos, formatarMoeda, mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
 import { extrairMensagemErro } from '@/services/http';
-import { disponibilidadesApi } from '@/services/prestacaoBlocos2.service';
+import { disponibilidadesApi, saldoFundoFixoApi } from '@/services/prestacaoBlocos2.service';
 import type { Disponibilidade, DisponibilidadePayload } from '@/types/prestacaoBlocos2';
 import { ConfirmarExclusao } from '@/pages/Ajustes/tabs/TermosAditivosTab';
 import { AlertaErro, IconBtn } from './_ui';
@@ -39,6 +41,8 @@ export function DisponibilidadesTab({ prestacaoId }: { prestacaoId: string }) {
         <Button size="sm" onClick={() => setModal({ tipo: 'form', item: null })}><Plus className="h-4 w-4" />Adicionar</Button>
       </div>
 
+      <FundoFixo prestacaoId={prestacaoId} />
+
       <div className="overflow-x-auto rounded-xl border border-ink-200/70 dark:border-ink-800/70">
         <table className="w-full min-w-[560px] text-left text-sm">
           <thead>
@@ -61,7 +65,7 @@ export function DisponibilidadesTab({ prestacaoId }: { prestacaoId: string }) {
               lista.map((i) => (
                 <tr key={i.id} className="hover:bg-ink-50/70 dark:hover:bg-ink-800/40">
                   <td className="px-4 py-2.5 text-ink-700 dark:text-ink-200">{i.banco} / {i.agencia}</td>
-                  <td className="px-4 py-2.5 font-mono text-xs text-ink-600 dark:text-ink-300">{i.conta} <span className="text-ink-400">(tipo {i.contaTipo})</span></td>
+                  <td className="px-4 py-2.5 font-mono text-xs text-ink-600 dark:text-ink-300">{i.conta} <span className="text-ink-400">({rotulo(CONTA_TIPO, i.contaTipo)})</span></td>
                   <td className="px-4 py-2.5 text-right tabular-nums text-ink-700 dark:text-ink-200">{formatarMoeda(i.saldoBancario)}</td>
                   <td className="px-4 py-2.5 text-right tabular-nums text-ink-500 dark:text-ink-400">{formatarMoeda(i.saldoContabil)}</td>
                   <td className="px-4 py-2.5">
@@ -86,6 +90,65 @@ export function DisponibilidadesTab({ prestacaoId }: { prestacaoId: string }) {
         onCancel={() => setModal({ tipo: 'fechado' })}
         onConfirm={async () => { if (modal.tipo !== 'excluir') return; await disponibilidadesApi.excluir(prestacaoId, modal.item.id); recarregar(); }}
       />
+    </div>
+  );
+}
+
+/**
+ * Saldo do fundo fixo: valor único do bloco, não um item da lista de saldos.
+ * É obrigatório no schema do TCESP — sem ele o envio é rejeitado, por isso
+ * aparece sempre, mesmo quando zero.
+ */
+function FundoFixo({ prestacaoId }: { prestacaoId: string }) {
+  const [valor, setValor] = useState('');
+  const [carregando, setCarregando] = useState(true);
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const [salvo, setSalvo] = useState(false);
+
+  useEffect(() => {
+    let vivo = true;
+    saldoFundoFixoApi
+      .obter(prestacaoId)
+      .then((v) => vivo && setValor(numeroParaMascaraMoeda(v)))
+      .catch(() => vivo && setErro('Falha ao carregar o saldo do fundo fixo.'))
+      .finally(() => vivo && setCarregando(false));
+    return () => { vivo = false; };
+  }, [prestacaoId]);
+
+  async function salvar() {
+    setErro(null);
+    setSalvando(true);
+    try {
+      await saldoFundoFixoApi.salvar(prestacaoId, moedaParaNumero(valor));
+      setSalvo(true);
+    } catch (e) {
+      setErro(extrairMensagemErro(e, 'Não foi possível salvar o saldo do fundo fixo.'));
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <div className="rounded-xl border border-ink-200/70 p-3 dark:border-ink-800/70">
+      {erro && <AlertaErro msg={erro} />}
+      <div className="flex items-end gap-3">
+        <div className="w-56">
+          <Input
+            label="Saldo do Fundo Fixo (R$) *"
+            name="saldoFundoFixo"
+            value={valor}
+            onChange={(e) => { setValor(mascaraMoeda(e.target.value)); setSalvo(false); }}
+            placeholder="0,00"
+            inputMode="numeric"
+            disabled={carregando}
+            hint="Obrigatório no envio; informe 0,00 se não houver."
+          />
+        </div>
+        <Button size="sm" variant="secondary" onClick={salvar} disabled={carregando || salvando}>
+          {salvando ? 'Salvando...' : salvo ? 'Salvo' : 'Salvar'}
+        </Button>
+      </div>
     </div>
   );
 }
@@ -128,10 +191,10 @@ function DispForm({ prestacaoId, item, onSuccess, onCancel }: { prestacaoId: str
     <form onSubmit={submeter} className="space-y-4">
       {erro && <AlertaErro msg={erro} />}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Input label="Banco (código) *" name="banco" value={apenasDigitos(banco)} onChange={(e) => setBanco(e.target.value)} inputMode="numeric" />
+        <SelectDominio label="Banco *" name="banco" value={apenasDigitos(banco)} onChange={setBanco} options={BANCO} />
         <Input label="Agência *" name="agencia" value={apenasDigitos(agencia)} onChange={(e) => setAgencia(e.target.value)} inputMode="numeric" />
         <Input label="Conta *" name="conta" value={conta} onChange={(e) => setConta(e.target.value)} />
-        <Input label="Tipo de Conta (código) *" name="contaTipo" value={apenasDigitos(contaTipo)} onChange={(e) => setContaTipo(e.target.value)} inputMode="numeric" />
+        <SelectDominio label="Tipo de Conta *" name="contaTipo" value={apenasDigitos(contaTipo)} onChange={setContaTipo} options={CONTA_TIPO} />
         <Input label="Saldo Bancário (R$) *" name="saldoBanc" value={saldoBanc} onChange={(e) => setSaldoBanc(mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
         <Input label="Saldo Contábil (R$) *" name="saldoCont" value={saldoCont} onChange={(e) => setSaldoCont(mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
       </div>

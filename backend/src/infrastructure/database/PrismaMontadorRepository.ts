@@ -1,6 +1,6 @@
 import { prisma } from './prisma';
 import type { IMontadorRepository } from '@/application/montador/IMontadorRepository';
-import type { DadosMontagem } from '@/application/montador/tipos';
+import type { CodigosInexistentes, DadosMontagem } from '@/application/montador/tipos';
 import { paraDataISO } from '@/shared/datas';
 
 const dISO = (d: Date | null) => (d ? paraDataISO(d) : null);
@@ -17,10 +17,15 @@ export class PrismaMontadorRepository implements IMontadorRepository {
         ano: true,
         mes: true,
         ehRetificacao: true,
+        saldoFundoFixo: true,
         ajuste: {
           select: {
             codigoAjuste: true,
             tipoAjuste: true,
+            valorGlobal: true,
+            // Descontos e devoluções são limitados pelo valor ATUALIZADO do
+            // ajuste, que inclui o que os termos aditivos acresceram/suprimiram.
+            termosAditivos: { select: { valorAcrescido: true, valorSuprimido: true } },
             cliente: { select: { codigoMunicipio: true, codigoEntidade: true } },
           },
         },
@@ -68,6 +73,12 @@ export class PrismaMontadorRepository implements IMontadorRepository {
       codigoAjuste: prestacao.ajuste?.codigoAjuste ?? '',
       municipio: prestacao.ajuste?.cliente?.codigoMunicipio ?? null,
       entidade: prestacao.ajuste?.cliente?.codigoEntidade ?? null,
+      valorAtualizadoAjuste: prestacao.ajuste
+        ? (prestacao.ajuste.termosAditivos ?? []).reduce(
+            (total, t) => total + Number(t.valorAcrescido ?? 0) - Number(t.valorSuprimido ?? 0),
+            Number(prestacao.ajuste.valorGlobal),
+          )
+        : null,
 
       empregados: empregados.map((e) => ({
         cpf: e.cpf,
@@ -134,6 +145,7 @@ export class PrismaMontadorRepository implements IMontadorRepository {
         saldoBancario: Number(x.saldoBancario),
         saldoContabil: Number(x.saldoContabil),
       })),
+      saldoFundoFixo: Number(prestacao.saldoFundoFixo),
 
       descontos: descontos.map((x) => ({ data: paraDataISO(x.data), descricao: x.descricao, valor: Number(x.valor) })),
       devolucoes: devolucoes.map((x) => ({ data: paraDataISO(x.data), naturezaDevolucaoTipo: x.naturezaDevolucaoTipo, valor: Number(x.valor) })),
@@ -332,6 +344,49 @@ export class PrismaMontadorRepository implements IMontadorRepository {
             inclusaoPagamentos: (ajustesSaldoRow.inclusaoPagamentos as unknown as AjustesSaldoBloco['inclusaoPagamentos']) ?? [],
           }
         : null,
+    };
+  }
+
+  async codigosInexistentes({
+    cbos,
+    classificacoes,
+  }: {
+    cbos: string[];
+    classificacoes: Array<{ codigo: string; exercicio: number }>;
+  }): Promise<CodigosInexistentes> {
+    // Se um exercício inteiro não foi carregado, não há como afirmar que o
+    // código é inválido — nesse caso não acusamos nada (o aviso do montador
+    // continua pedindo a conferência manual).
+    const exercicios = [...new Set(classificacoes.map((c) => c.exercicio))];
+    const carregados = new Set(
+      (
+        await prisma.classificacaoEconomica.findMany({
+          where: { exercicio: { in: exercicios } },
+          distinct: ['exercicio'],
+          select: { exercicio: true },
+        })
+      ).map((l) => l.exercicio),
+    );
+    const verificaveis = classificacoes.filter((c) => carregados.has(c.exercicio));
+
+    const [cbosEncontrados, classificacoesEncontradas] = await Promise.all([
+      cbos.length
+        ? prisma.cbo.findMany({ where: { codigo: { in: cbos } }, select: { codigo: true } })
+        : Promise.resolve([]),
+      verificaveis.length
+        ? prisma.classificacaoEconomica.findMany({
+            where: { OR: verificaveis.map((c) => ({ exercicio: c.exercicio, codigo: c.codigo })) },
+            select: { codigo: true, exercicio: true },
+          })
+        : Promise.resolve([]),
+    ]);
+
+    const cbosOk = new Set(cbosEncontrados.map((c) => c.codigo));
+    const classificacoesOk = new Set(classificacoesEncontradas.map((c) => `${c.exercicio}|${c.codigo}`));
+
+    return {
+      cbos: cbos.filter((c) => !cbosOk.has(c)),
+      classificacoes: verificaveis.filter((c) => !classificacoesOk.has(`${c.exercicio}|${c.codigo}`)),
     };
   }
 }

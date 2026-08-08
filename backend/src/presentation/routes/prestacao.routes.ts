@@ -75,6 +75,9 @@ prestacaoRoutes.delete('/:prestacaoId/pagamentos/:id', (req, res, next) => pagam
 // --- Blocos simples ---
 bloco('receitas', receitas);
 bloco('disponibilidades', disponibilidades);
+// Valor único do bloco Disponibilidades (não é um item da lista de saldos).
+prestacaoRoutes.get('/:prestacaoId/saldo-fundo-fixo', (req, res, next) => disponibilidades.obterSaldoFundoFixo(req, res, next));
+prestacaoRoutes.put('/:prestacaoId/saldo-fundo-fixo', (req, res, next) => disponibilidades.definirSaldoFundoFixo(req, res, next));
 bloco('descontos', descontos);
 bloco('devolucoes', devolucoes);
 bloco('glosas', new GlosaController());

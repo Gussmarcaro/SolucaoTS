@@ -3,6 +3,8 @@ import { Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
+import { SelectDominio } from '@/components/ui/SelectDominio';
+import { NATUREZA_DEVOLUCAO, rotulo } from '@/lib/dominiosFaseV';
 import { apenasDigitos, dataBr, formatarMoeda, mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
 import { extrairMensagemErro } from '@/services/http';
 import { devolucoesApi } from '@/services/prestacaoBlocos2.service';
@@ -47,7 +49,7 @@ export function DevolucoesTab({ prestacaoId }: { prestacaoId: string }) {
           <thead>
             <tr className="border-b border-ink-100 text-xs font-semibold text-ink-500 dark:border-ink-800 dark:text-ink-400">
               <th className="px-4 py-2.5">Data</th>
-              <th className="px-4 py-2.5">Natureza (código)</th>
+              <th className="px-4 py-2.5">Natureza</th>
               <th className="px-4 py-2.5 text-right">Valor</th>
               <th className="px-4 py-2.5 text-center">Ações</th>
             </tr>
@@ -63,7 +65,7 @@ export function DevolucoesTab({ prestacaoId }: { prestacaoId: string }) {
               lista.map((i) => (
                 <tr key={i.id} className="hover:bg-ink-50/70 dark:hover:bg-ink-800/40">
                   <td className="px-4 py-2.5 text-ink-600 dark:text-ink-300">{dataBr(i.data)}</td>
-                  <td className="px-4 py-2.5 text-ink-700 dark:text-ink-200">{i.naturezaDevolucaoTipo}</td>
+                  <td className="px-4 py-2.5 text-ink-700 dark:text-ink-200">{rotulo(NATUREZA_DEVOLUCAO, i.naturezaDevolucaoTipo)}</td>
                   <td className="px-4 py-2.5 text-right tabular-nums text-ink-700 dark:text-ink-200">{formatarMoeda(i.valor)}</td>
                   <td className="px-4 py-2.5">
                     <div className="flex items-center justify-center gap-1">
@@ -122,7 +124,7 @@ function DevForm({ prestacaoId, item, onSuccess, onCancel }: { prestacaoId: stri
       {erro && <AlertaErro msg={erro} />}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input label="Data *" name="data" type="date" value={data} onChange={(e) => setData(e.target.value)} />
-        <Input label="Natureza (código) *" name="natureza" value={apenasDigitos(natureza)} onChange={(e) => setNatureza(e.target.value)} inputMode="numeric" />
+        <SelectDominio label="Natureza *" name="natureza" value={apenasDigitos(natureza)} onChange={setNatureza} options={NATUREZA_DEVOLUCAO} />
         <div className="sm:col-span-2">
           <Input label="Valor (R$) *" name="valor" value={valor} onChange={(e) => setValor(mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
         </div>

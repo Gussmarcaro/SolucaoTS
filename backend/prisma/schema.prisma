@@ -562,6 +562,9 @@ model PrestacaoContas {
   ano             Int // >= 2025
   mes             Int
   status          StatusPrestacao @default(EM_ELABORACAO)
+  // Bloco Disponibilidades: irmão de `saldos` no JSON e OBRIGATÓRIO no schema.
+  // Fica aqui por ser um valor único da prestação, não de cada conta.
+  saldoFundoFixo  Decimal         @default(0) @db.Decimal(15, 2)
   protocolo       String? // retornado pela API do TCESP
   ehRetificacao   Boolean         @default(false)
   dataEnvio       DateTime?
@@ -1044,4 +1047,55 @@ model Tarefa {
 
   @@index([projetoId])
   @@index([prazoLegal])
+}
+
+// ============================================================================
+// TABELAS DE DOMÍNIO OFICIAIS (somente leitura — carregadas por seed)
+// ============================================================================
+// Códigos publicados pelo TCESP/MTE. NÃO são editáveis pela aplicação: são
+// recarregados pelo seed (`npm run seed:dominios`) a partir dos arquivos em
+// `Documentação/`. Informar código inexistente causa rejeição no envio, por
+// isso os formulários consultam estas tabelas em vez de aceitar texto livre.
+
+// Código Brasileiro de Ocupações (CBO 2002) — campo `cbo` da Relação de
+// Empregados. O subgrupo 225 identifica médicos, para quem o CNS é exigido.
+model Cbo {
+  codigo     String @id @db.VarChar(6)
+  titulo     String
+  buscaTexto String // título normalizado (sem acento/caixa) para busca
+
+  @@index([buscaTexto])
+}
+
+// Tabela Auxiliar "Classificação Econômica da Despesa" do TCESP — campo
+// `classificacao_economica_tipo` dos Empenhos. A validade é por exercício e
+// por esfera do ente (E=Estado, M=Municípios, C=Consórcios).
+model ClassificacaoEconomica {
+  codigo       String  @db.VarChar(8) // categoria+grupo+modalidade+elemento+subelemento
+  exercicio    Int
+  categoria    String  @db.VarChar(1)
+  grupo        String  @db.VarChar(1)
+  modalidade   String  @db.VarChar(2)
+  elemento     String  @db.VarChar(2)
+  subelemento  String  @db.VarChar(2)
+  nome         String
+  escrituracao String? // 'E' = obrigatório na execução · 'O' = só orçamento
+  entes        String // combinação de E/M/C conforme a planilha
+  situacao     String? // INCLUSAO/ALTERACAO nesta edição (excluídos não são carregados)
+  buscaTexto   String
+
+  @@id([exercicio, codigo])
+  @@index([buscaTexto])
+}
+
+// Tabelas auxiliares que compõem a classificação econômica (mesmas planilhas).
+// `tipo` distingue: CATEGORIA_ECONOMICA, GRUPO_NATUREZA, MODALIDADE_APLICACAO,
+// ELEMENTO_DESPESA.
+model ComponenteDespesa {
+  tipo       String
+  codigo     String @db.VarChar(2)
+  nome       String
+  buscaTexto String
+
+  @@id([tipo, codigo])
 }

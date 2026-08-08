@@ -3,6 +3,9 @@ import { Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
+import { BuscaClassificacao } from '@/components/ui/BuscaClassificacao';
+import { SelectDominio } from '@/components/ui/SelectDominio';
+import { FONTE_RECURSO } from '@/lib/dominiosFaseV';
 import { apenasDigitos, dataBr, formatarMoeda, mascaraCpfCnpj, mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
 import { isCpfValido } from '@/lib/validators';
 import { extrairCodigoErro, extrairMensagemErro } from '@/services/http';
@@ -105,6 +108,10 @@ function EmpenhoForm({ prestacaoId, item, onSuccess, onCancel }: { prestacaoId: 
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
+  // A classificação econômica vale por exercício (§17 #2): o do empenho é o
+  // ano da emissão. Sem data ainda, a API oferece a edição mais recente.
+  const exercicioEmpenho = /^\d{4}-/.test(dataEmissao) ? Number(dataEmissao.slice(0, 4)) : undefined;
+
   async function submeter(e: React.FormEvent) {
     e.preventDefault();
     setErro(null);
@@ -143,8 +150,8 @@ function EmpenhoForm({ prestacaoId, item, onSuccess, onCancel }: { prestacaoId: 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input label="Número *" name="numero" value={numero} onChange={(e) => setNumero(e.target.value)} />
         <Input label="Data de Emissão *" name="dataEmissao" type="date" value={dataEmissao} onChange={(e) => setDataEmissao(e.target.value)} />
-        <Input label="Classificação Econômica *" name="classificacao" value={classificacao} onChange={(e) => setClassificacao(e.target.value)} placeholder="ex.: 3.3.90.39" />
-        <Input label="Fonte de Recurso (código) *" name="fonte" value={apenasDigitos(fonte)} onChange={(e) => setFonte(e.target.value)} inputMode="numeric" />
+        <BuscaClassificacao name="classificacao" label="Classificação Econômica *" value={classificacao} onChange={setClassificacao} exercicio={exercicioEmpenho} hint={exercicioEmpenho ? `Códigos válidos para ${exercicioEmpenho}.` : undefined} />
+        <SelectDominio label="Fonte de Recurso *" name="fonte" value={apenasDigitos(fonte)} onChange={setFonte} options={FONTE_RECURSO} />
         <Input label="Valor (R$) *" name="valor" value={valor} onChange={(e) => setValor(mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
         <Input label="CPF do Ordenador *" name="cpf" value={mascaraCpfCnpj(cpf)} onChange={(e) => setCpf(e.target.value)} placeholder="000.000.000-00" inputMode="numeric" />
         <div className="sm:col-span-2">

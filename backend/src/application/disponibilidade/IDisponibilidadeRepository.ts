@@ -8,4 +8,11 @@ export interface IDisponibilidadeRepository {
   criar(prestacaoId: string, dados: DadosDisponibilidade): Promise<Disponibilidade>;
   atualizar(id: string, dados: DadosDisponibilidade): Promise<Disponibilidade>;
   excluir(id: string): Promise<void>;
+
+  /**
+   * Saldo do fundo fixo — valor único da prestação, irmão de `saldos` no bloco
+   * Disponibilidades do JSON e obrigatório no schema do TCESP.
+   */
+  obterSaldoFundoFixo(prestacaoId: string): Promise<number>;
+  definirSaldoFundoFixo(prestacaoId: string, valor: number): Promise<number>;
 }

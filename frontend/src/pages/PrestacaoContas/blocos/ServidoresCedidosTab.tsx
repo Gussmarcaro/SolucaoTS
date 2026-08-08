@@ -6,6 +6,7 @@ import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
 import { apenasDigitos, dataBr, mascaraCpfCnpj, mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
 import { MESES } from '@/lib/dominios';
+import { ONUS_PAGAMENTO } from '@/lib/dominiosFaseV';
 import { isCpfValido } from '@/lib/validators';
 import { extrairCodigoErro, extrairMensagemErro } from '@/services/http';
 import { servidoresApi } from '@/services/prestacaoBlocos2.service';
@@ -13,11 +14,7 @@ import type { ServidorPrestacao, ServidorPrestacaoPayload } from '@/types/presta
 import { ConfirmarExclusao } from '@/pages/Ajustes/tabs/TermosAditivosTab';
 import { AlertaErro, IconBtn } from './_ui';
 
-// Melhor esforço até termos a tabela de domínio oficial do TCESP.
-const ONUS = [
-  { value: '1', label: 'Com ônus (cedente)' },
-  { value: '2', label: 'Sem ônus (cessionária)' },
-];
+
 
 type ModalState = { tipo: 'fechado' } | { tipo: 'form'; item: ServidorPrestacao | null } | { tipo: 'excluir'; item: ServidorPrestacao };
 type LinhaPeriodo = { mes: string; carga: string; remun: string };
@@ -154,7 +151,7 @@ function ServForm({ prestacaoId, item, onSuccess, onCancel }: { prestacaoId: str
       {erro && <AlertaErro msg={erro} />}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input label="CPF *" name="cpf" value={mascaraCpfCnpj(cpf)} onChange={(e) => setCpf(e.target.value)} inputMode="numeric" />
-        <Select label="Ônus do Pagamento *" name="onus" value={onus} onChange={(e) => setOnus(e.target.value)} options={ONUS} />
+        <Select label="Ônus do Pagamento *" name="onus" value={onus} onChange={(e) => setOnus(e.target.value)} options={ONUS_PAGAMENTO} />
         <Input label="Início da Cessão *" name="dataInicial" type="date" value={dataInicial} onChange={(e) => setDataInicial(e.target.value)} />
         <Input label="Fim da Cessão" name="dataFinal" type="date" value={dataFinal} onChange={(e) => setDataFinal(e.target.value)} hint="Em branco = ainda em curso." />
         <Input label="Cargo Público *" name="cargo" value={cargo} onChange={(e) => setCargo(e.target.value)} />

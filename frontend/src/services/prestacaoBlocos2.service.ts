@@ -44,6 +44,23 @@ import type { AfericaoMeta, AfericaoMetaPayload } from '@/types/prestacaoBlocos6
 
 export const receitasApi = crud<Receita, ReceitaPayload>('receitas');
 export const disponibilidadesApi = crud<Disponibilidade, DisponibilidadePayload>('disponibilidades');
+
+/**
+ * Saldo do fundo fixo — valor único do bloco Disponibilidades (irmão de
+ * `saldos` no JSON), obrigatório no schema do TCESP.
+ */
+export const saldoFundoFixoApi = {
+  async obter(prestacaoId: string): Promise<number> {
+    const { data } = await http.get<{ saldoFundoFixo: number }>(`/prestacoes/${prestacaoId}/saldo-fundo-fixo`);
+    return data.saldoFundoFixo;
+  },
+  async salvar(prestacaoId: string, saldoFundoFixo: number): Promise<number> {
+    const { data } = await http.put<{ saldoFundoFixo: number }>(`/prestacoes/${prestacaoId}/saldo-fundo-fixo`, {
+      saldoFundoFixo,
+    });
+    return data.saldoFundoFixo;
+  },
+};
 export const descontosApi = crud<Desconto, DescontoPayload>('descontos');
 export const devolucoesApi = crud<Devolucao, DevolucaoPayload>('devolucoes');
 export const glosasApi = crud<Glosa, GlosaPayload>('glosas');

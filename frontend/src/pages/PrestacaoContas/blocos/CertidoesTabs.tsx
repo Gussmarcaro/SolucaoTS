@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { CheckCircle2, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { apenasDigitos } from '@/lib/masks';
 import { extrairMensagemErro } from '@/services/http';
 import { dadosGeraisApi, responsaveisApi } from '@/services/certidoesPrestacao.service';
 import type { TipoAjuste } from '@/types/ajuste';
@@ -95,11 +96,17 @@ function BlocoCertidoes({
                 name={c.chave}
                 value={valores[c.chave] ?? ''}
                 onChange={(e) => {
-                  setValores((v) => ({ ...v, [c.chave]: e.target.value }));
+                  // O schema exige exatamente 10 dígitos (^[0-9]{10}$).
+                  setValores((v) => ({ ...v, [c.chave]: apenasDigitos(e.target.value).slice(0, 10) }));
                   setSalvo(false);
                 }}
-                placeholder="Identificação da certidão (Audesp)"
+                placeholder="0000000000"
                 inputMode="numeric"
+                error={
+                  (valores[c.chave] ?? '').length > 0 && (valores[c.chave] ?? '').length !== 10
+                    ? 'A identificação da certidão tem 10 dígitos.'
+                    : undefined
+                }
               />
               {c.ajuda && <p className="mt-1 text-xs text-ink-400">{c.ajuda}</p>}
             </div>

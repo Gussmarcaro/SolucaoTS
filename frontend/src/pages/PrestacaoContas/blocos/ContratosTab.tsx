@@ -3,6 +3,14 @@ import { Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
+import { MultiSelectDominio, SelectDominio } from '@/components/ui/SelectDominio';
+import {
+  CRITERIO_SELECAO,
+  CRITERIO_SELECAO_OUTROS,
+  NATUREZA_CONTRATACAO,
+  NATUREZA_CONTRATACAO_OUTROS,
+  VALOR_TIPO,
+} from '@/lib/dominiosFaseV';
 import { Modal } from '@/components/ui/Modal';
 import { apenasDigitos, dataBr, formatarMoeda, mascaraCpfCnpj, mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
 import { extrairMensagemErro } from '@/services/http';
@@ -118,7 +126,7 @@ function ContratoForm({ prestacaoId, item, onSuccess, onCancel }: { prestacaoId:
   const [vigInicial, setVigInicial] = useState(item?.vigenciaDataInicial ?? '');
   const [vigFinal, setVigFinal] = useState(item?.vigenciaDataFinal ?? '');
   const [objeto, setObjeto] = useState(item?.objeto ?? '');
-  const [naturezaTexto, setNaturezaTexto] = useState(item ? item.naturezaContratacao.join(', ') : '');
+  const [natureza, setNatureza] = useState<number[]>(item?.naturezaContratacao ?? []);
   const [naturezaOutro, setNaturezaOutro] = useState(item?.naturezaOutro ?? '');
   const [criterio, setCriterio] = useState(item?.criterioSelecao != null ? String(item.criterioSelecao) : '');
   const [criterioOutro, setCriterioOutro] = useState(item?.criterioSelecaoOutro ?? '');
@@ -128,7 +136,6 @@ function ContratoForm({ prestacaoId, item, onSuccess, onCancel }: { prestacaoId:
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
-  const natureza = naturezaTexto.split(',').map((s) => Number(apenasDigitos(s))).filter((n) => Number.isInteger(n) && n > 0);
   const ehRne = credorTipoDoc === 'RNE';
 
   async function submeter(e: React.FormEvent) {
@@ -195,15 +202,15 @@ function ContratoForm({ prestacaoId, item, onSuccess, onCancel }: { prestacaoId:
           <textarea value={objeto} onChange={(e) => setObjeto(e.target.value)} rows={2} className="focus-ring w-full rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm text-ink-800 dark:border-ink-700 dark:bg-ink-900 dark:text-ink-100" />
         </div>
 
-        <Input label="Natureza da contratação (códigos, ex.: 5, 23)" name="natureza" value={naturezaTexto} onChange={(e) => setNaturezaTexto(e.target.value)} inputMode="numeric" />
-        {natureza.includes(23) && <Input label="Descrição de outros serviços (natureza 23) *" name="natOutro" value={naturezaOutro} onChange={(e) => setNaturezaOutro(e.target.value)} />}
+        <MultiSelectDominio label="Natureza da contratação" value={natureza} onChange={setNatureza} options={NATUREZA_CONTRATACAO} />
+        {natureza.includes(NATUREZA_CONTRATACAO_OUTROS) && <Input label={`Descrição de outros serviços (natureza ${NATUREZA_CONTRATACAO_OUTROS}) *`} name="natOutro" value={naturezaOutro} onChange={(e) => setNaturezaOutro(e.target.value)} />}
 
-        <Input label="Critério de seleção (código)" name="criterio" value={apenasDigitos(criterio)} onChange={(e) => setCriterio(e.target.value)} inputMode="numeric" />
-        {Number(criterio) === 4 && <Input label="Descrição de outro critério (critério 4) *" name="critOutro" value={criterioOutro} onChange={(e) => setCriterioOutro(e.target.value)} />}
+        <SelectDominio label="Critério de seleção" name="criterio" value={apenasDigitos(criterio)} onChange={setCriterio} options={CRITERIO_SELECAO} />
+        {Number(criterio) === CRITERIO_SELECAO_OUTROS && <Input label={`Descrição de outro critério (critério ${CRITERIO_SELECAO_OUTROS}) *`} name="critOutro" value={criterioOutro} onChange={(e) => setCriterioOutro(e.target.value)} />}
 
         <Input label="Artigo do regulamento de compras" name="artigo" value={artigo} onChange={(e) => setArtigo(e.target.value)} placeholder="Obrigatório p/ Contrato de Gestão e Termo de Parceria" />
         <Input label="Valor do contrato (R$) *" name="valor" value={valor} onChange={(e) => setValor(mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
-        <Input label="Tipo de valor (código)" name="valorTipo" value={apenasDigitos(valorTipo)} onChange={(e) => setValorTipo(e.target.value)} inputMode="numeric" />
+        <SelectDominio label="Tipo de valor" name="valorTipo" value={apenasDigitos(valorTipo)} onChange={setValorTipo} options={VALOR_TIPO} />
       </div>
 
       <div className="flex items-center justify-end gap-2 pt-1">

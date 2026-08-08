@@ -2,11 +2,17 @@
  * Tabelas de domínio da Fase V.
  *
  * As tabelas **pequenas e estáveis** abaixo vêm de enums/normas conhecidas e são
- * usadas como opções de Select. As tabelas **grandes e oficiais** (categoria de
- * despesa, fonte de recurso, classificação econômica, CBO completo) NÃO estão
- * aqui de propósito: os códigos oficiais precisam ser carregados das planilhas do
- * TCESP — inventar códigos causa rejeição no envio (ver §12). Enquanto não
- * tivermos esses arquivos, os campos correspondentes seguem como entrada numérica.
+ * usadas como opções de Select.
+ *
+ * As tabelas **grandes e oficiais** não ficam aqui: são carregadas no banco por
+ * seed e consultadas pela API (`/dominios`, ver `services/dominios.service.ts`),
+ * com os componentes `BuscaCbo` e `BuscaClassificacao`. Hoje temos **CBO 2002** e
+ * **classificação econômica da despesa**.
+ *
+ * Ainda **sem fonte oficial**: `categoria_despesas_tipo` (Documentos Fiscais) e
+ * `fonte_recurso_tipo` — são tabelas próprias do TCESP, publicadas apenas no JSON
+ * Schema oficial do Audesp, que ainda não temos. Seguem como entrada numérica;
+ * inventar código causa rejeição no envio (ver §12).
  */
 
 export type Opcao = { value: string; label: string };

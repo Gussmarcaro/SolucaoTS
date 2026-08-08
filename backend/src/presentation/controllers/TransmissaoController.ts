@@ -2,12 +2,13 @@ import type { Request, Response, NextFunction } from 'express';
 import { MontarPrestacaoUseCase } from '@/application/montador/MontarPrestacaoUseCase';
 import { PrismaMontadorRepository } from '@/infrastructure/database/PrismaMontadorRepository';
 import { TcespHttpGateway } from '@/infrastructure/tcesp/TcespHttpGateway';
+import { AjvValidadorSchema } from '@/infrastructure/tcesp/AjvValidadorSchema';
 import { PrismaTransmissaoRepository } from '@/infrastructure/database/PrismaTransmissaoRepository';
 import { TransmitirPrestacaoUseCase } from '@/application/transmissao/TransmitirPrestacaoUseCase';
 import { ConsultarStatusUseCase } from '@/application/transmissao/ConsultarStatusUseCase';
 import type { Ambiente } from '@/application/transmissao/dtos';
 
-const montador = new MontarPrestacaoUseCase(new PrismaMontadorRepository());
+const montador = new MontarPrestacaoUseCase(new PrismaMontadorRepository(), new AjvValidadorSchema());
 const gateway = new TcespHttpGateway();
 const repo = new PrismaTransmissaoRepository();
 const transmitir = new TransmitirPrestacaoUseCase(montador, gateway, repo);

@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
 import { Badge } from '@/components/ui/Badge';
+import { SelectDominio } from '@/components/ui/SelectDominio';
+import { BANCO, TIPO_DOCUMENTO_BANCARIO, TIPO_DOCUMENTO_BANCARIO_OUTROS } from '@/lib/dominiosFaseV';
 import { apenasDigitos, dataBr, formatarMoeda, mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
 import { extrairMensagemErro } from '@/services/http';
 import { empenhosApi, repassesApi } from '@/services/prestacaoBlocos2.service';
@@ -109,10 +111,13 @@ function RepasseForm({ prestacaoId, item, empenhos, onSuccess, onCancel }: { pre
   const [agencia, setAgencia] = useState(item?.agencia != null ? String(item.agencia) : '');
   const [conta, setConta] = useState(item?.conta ?? '');
   const [numeroDoc, setNumeroDoc] = useState(item?.numeroDocumento ?? '');
+  const [tipoDoc, setTipoDoc] = useState(item?.tipoDocumentoBancario != null ? String(item.tipoDocumentoBancario) : '');
+  const [descricaoOutros, setDescricaoOutros] = useState(item?.descricaoOutros ?? '');
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
   const difere = moedaParaNumero(valorPrevisto) !== moedaParaNumero(valorRepasse);
+  const ehOutros = Number(tipoDoc) === TIPO_DOCUMENTO_BANCARIO_OUTROS;
 
   async function submeter(e: React.FormEvent) {
     e.preventDefault();
@@ -121,6 +126,11 @@ function RepasseForm({ prestacaoId, item, empenhos, onSuccess, onCancel }: { pre
     if (!dataRepasse) return setErro('Informe a data do repasse.');
     if (moedaParaNumero(valorRepasse) <= 0) return setErro('Informe o valor repassado.');
     if (difere && !justificativa.trim()) return setErro('Previsto difere do repassado: informe a justificativa.');
+    // O schema do TCESP exige estes campos no bloco de repasses.
+    if (!tipoDoc) return setErro('Informe o tipo de documento bancário.');
+    if (ehOutros && !descricaoOutros.trim()) return setErro('Descreva o documento bancário ("Outros").');
+    if (!numeroDoc.trim() || !banco || !agencia.trim() || !conta.trim())
+      return setErro('Informe nº do documento, banco, agência e conta (obrigatórios no envio).');
 
     const payload: RepassePayload = {
       empenhoId: empenhoId === SEM ? null : empenhoId,
@@ -129,6 +139,8 @@ function RepasseForm({ prestacaoId, item, empenhos, onSuccess, onCancel }: { pre
       valorPrevisto: moedaParaNumero(valorPrevisto),
       valorRepasse: moedaParaNumero(valorRepasse),
       justificativaDiferenca: difere ? justificativa.trim() : null,
+      tipoDocumentoBancario: Number(tipoDoc),
+      descricaoOutros: ehOutros ? descricaoOutros.trim() : null,
       numeroDocumento: numeroDoc.trim() || null,
       banco: banco ? Number(apenasDigitos(banco)) : null,
       agencia: agencia ? Number(apenasDigitos(agencia)) : null,
@@ -164,11 +176,17 @@ function RepasseForm({ prestacaoId, item, empenhos, onSuccess, onCancel }: { pre
       {difere && (
         <Input label="Justificativa da diferença *" name="justificativa" value={justificativa} onChange={(e) => setJustificativa(e.target.value)} hint="Obrigatória quando o previsto difere do repassado." />
       )}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <SelectDominio label="Tipo de documento bancário *" name="tipoDoc" value={tipoDoc} onChange={setTipoDoc} options={TIPO_DOCUMENTO_BANCARIO} />
+        {ehOutros && (
+          <Input label="Descrição do documento *" name="descricaoOutros" value={descricaoOutros} onChange={(e) => setDescricaoOutros(e.target.value)} hint='Obrigatória quando o tipo é "Outros".' />
+        )}
+      </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-        <Input label="Nº Documento" name="numeroDoc" value={numeroDoc} onChange={(e) => setNumeroDoc(e.target.value)} />
-        <Input label="Banco" name="banco" value={apenasDigitos(banco)} onChange={(e) => setBanco(e.target.value)} inputMode="numeric" />
-        <Input label="Agência" name="agencia" value={apenasDigitos(agencia)} onChange={(e) => setAgencia(e.target.value)} inputMode="numeric" />
-        <Input label="Conta" name="conta" value={conta} onChange={(e) => setConta(e.target.value)} />
+        <Input label="Nº Documento *" name="numeroDoc" value={numeroDoc} onChange={(e) => setNumeroDoc(e.target.value)} />
+        <SelectDominio label="Banco *" name="banco" value={apenasDigitos(banco)} onChange={setBanco} options={BANCO} />
+        <Input label="Agência *" name="agencia" value={apenasDigitos(agencia)} onChange={(e) => setAgencia(e.target.value)} inputMode="numeric" />
+        <Input label="Conta *" name="conta" value={conta} onChange={(e) => setConta(e.target.value)} />
       </div>
       <div className="flex items-center justify-end gap-2 pt-1">
         <Button type="button" variant="secondary" onClick={onCancel} disabled={salvando}>Cancelar</Button>

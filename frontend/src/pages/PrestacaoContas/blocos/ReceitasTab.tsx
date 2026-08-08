@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
+import { SelectDominio } from '@/components/ui/SelectDominio';
+import { FONTE_RECURSO } from '@/lib/dominiosFaseV';
 import { apenasDigitos, dataBr, formatarMoeda, mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
 import { extrairMensagemErro } from '@/services/http';
 import { receitasApi } from '@/services/prestacaoBlocos2.service';
@@ -143,7 +145,7 @@ function ReceitaForm({ prestacaoId, item, onSuccess, onCancel }: { prestacaoId: 
         <Input label="Valor (R$) *" name="valor" value={valor} onChange={(e) => setValor(mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
         <Input label="Data do Repasse" name="dataRepasse" type="date" value={dataRepasse} onChange={(e) => setDataRepasse(e.target.value)} />
         <Input label="Data Prevista" name="dataPrevista" type="date" value={dataPrevista} onChange={(e) => setDataPrevista(e.target.value)} />
-        <Input label="Fonte de Recurso (código)" name="fonte" value={apenasDigitos(fonte)} onChange={(e) => setFonte(e.target.value)} inputMode="numeric" />
+        <SelectDominio label="Fonte de Recurso" name="fonte" value={apenasDigitos(fonte)} onChange={setFonte} options={FONTE_RECURSO} />
         <div className="sm:col-span-2">
           <Input label="Descrição" name="descricao" value={descricao} onChange={(e) => setDescricao(e.target.value)} />
         </div>

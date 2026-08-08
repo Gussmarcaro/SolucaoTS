@@ -11,6 +11,7 @@ import { ajusteRoutes } from './ajuste.routes';
 import { prestacaoRoutes } from './prestacao.routes';
 import { grupoRoutes } from './grupo.routes';
 import { clienteRoutes } from './cliente.routes';
+import { dominioRoutes } from './dominio.routes';
 import { authRoutes } from './auth.routes';
 
 const routes = Router();
@@ -29,5 +30,6 @@ routes.use('/ajustes', ajusteRoutes);
 routes.use('/prestacoes', prestacaoRoutes);
 routes.use('/grupos', grupoRoutes);
 routes.use('/orgaos', clienteRoutes);
+routes.use('/dominios', dominioRoutes);
 
 export { routes };

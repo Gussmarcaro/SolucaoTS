@@ -7,6 +7,8 @@ export interface DadosMontagem {
   codigoAjuste: string;
   municipio: number | null;
   entidade: number | null;
+  /** Valor global do ajuste ± o que os termos aditivos alteraram; teto de descontos e devoluções. */
+  valorAtualizadoAjuste: number | null;
 
   empregados: Array<{
     cpf: string;
@@ -73,6 +75,8 @@ export interface DadosMontagem {
     saldoBancario: number;
     saldoContabil: number;
   }>;
+  /** Irmão de `saldos` no bloco Disponibilidades; obrigatório no schema. */
+  saldoFundoFixo: number;
 
   descontos: Array<{ data: string; descricao: string; valor: number }>;
   devolucoes: Array<{ data: string; naturezaDevolucaoTipo: number; valor: number }>;
@@ -271,4 +275,14 @@ export interface ResultadoMontagem {
   documento: Record<string, unknown>;
   avisos: string[];
   erros: string[]; // regras de negócio que devem ser corrigidas ANTES de transmitir
+}
+
+/**
+ * Códigos usados na prestação que não constam das tabelas de domínio oficiais.
+ * Levantado pelo repositório (que tem acesso às tabelas) e repassado à
+ * validação, que segue sendo uma função pura.
+ */
+export interface CodigosInexistentes {
+  cbos: string[];
+  classificacoes: Array<{ codigo: string; exercicio: number }>;
 }

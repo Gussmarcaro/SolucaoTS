@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
 import { Badge } from '@/components/ui/Badge';
+import { BuscaCbo } from '@/components/ui/BuscaCbo';
 import { apenasDigitos, dataBr, formatarMoeda, mascaraCpfCnpj, mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
 import { MESES, ehMedico } from '@/lib/dominios';
 import { isCpfValido } from '@/lib/validators';
@@ -156,7 +157,7 @@ function EmpForm({ prestacaoId, item, onSuccess, onCancel }: { prestacaoId: stri
         <Input label="Salário Contratual (R$) *" name="salario" value={salario} onChange={(e) => setSalario(mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
         <Input label="Data de Admissão *" name="dataAdmissao" type="date" value={dataAdmissao} onChange={(e) => setDataAdmissao(e.target.value)} />
         <Input label="Data de Demissão" name="dataDemissao" type="date" value={dataDemissao} onChange={(e) => setDataDemissao(e.target.value)} />
-        <Input label="CBO *" name="cbo" value={apenasDigitos(cbo).slice(0, 6)} onChange={(e) => setCbo(e.target.value)} placeholder="000000" inputMode="numeric" hint={medico ? 'CBO de médico — CNS obrigatório.' : undefined} />
+        <BuscaCbo label="CBO *" name="cbo" value={apenasDigitos(cbo).slice(0, 6)} onChange={setCbo} hint={medico ? 'CBO de médico — CNS obrigatório.' : undefined} />
         <Input label={`CNS${medico ? ' *' : ''}`} name="cns" value={apenasDigitos(cns).slice(0, 15)} onChange={(e) => setCns(e.target.value)} placeholder="000000000000000" inputMode="numeric" />
       </div>
 

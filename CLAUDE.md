@@ -10,11 +10,12 @@ O idioma do domínio e do código é **português** (nomes de entidades, campos 
 
 ## Estado atual do repositório
 
-Projeto **greenfield / em modelagem**. Ainda **não há** `package.json`, build ou testes. O que existe hoje:
-- `Documentação/` — manuais oficiais do TCESP, arquivos de exemplo (CSV/JSON), schema JSON de empenho, seed de órgãos e a síntese de regras.
-- `backend/prisma/schema.prisma` — modelo de dados já revisado para o domínio real da Fase V.
+Backend e frontend **existem e rodam** (deploy: API no Render, front na Vercel). Já entregues: os cadastros (grid+form+CRUD), o dossiê do Ajuste com as 3 importações de CSV, e a **Prestação de Contas completa** — todos os blocos do manual v1.19, montador do `documentoJSON`, validações espelhadas no core e o adapter de transmissão ao Audesp (estruturado, **ainda não testado contra o piloto real**).
 
-Antes de assumir que um comando/dependência existe, verifique — a maior parte da stack abaixo é o **alvo planejado**, não algo já instalado.
+- `Documentação/` — manuais oficiais do TCESP, tabelas de domínio, arquivos de exemplo (CSV/JSON) e a síntese de regras.
+- `backend/` — Express + Prisma em Clean Architecture · `frontend/` — React + Vite + Tailwind.
+
+Ainda **não há testes automatizados**. Antes de assumir que um comando existe, confira o `package.json` correspondente.
 
 ## Leitura obrigatória antes de codar o domínio
 
@@ -60,6 +61,44 @@ Três importações (`PlanoAplicacaoItem`, `CronogramaDesembolsoItem`, `BemCedid
 - valores em **padrão brasileiro** (`1.522.632,45`);
 - **linhas duplicadas** (deduplicar/somar conforme o bloco).
 
+## Tabelas de domínio oficiais
+
+Códigos publicados pelo TCESP/MTE, carregados no banco por seed e **somente lidos** pela aplicação. Inventar código causa rejeição no envio, então os formulários selecionam da tabela em vez de aceitar digitação livre (`BuscaCbo` / `BuscaClassificacao` no front, rotas `/dominios` no back).
+
+| Tabela | Model | Fonte em `Documentação/` |
+|---|---|---|
+| CBO 2002 (campo `cbo`) | `Cbo` | `cbo2002-ocupacao.csv` |
+| Classificação econômica da despesa (campo `classificacao_economica_tipo`) | `ClassificacaoEconomica` | `TABELA-NATUREZA-DA-DESPESA-<ano>.xlsx`, aba `ND <ano>` |
+| Categoria econômica / grupo / modalidade / elemento | `ComponenteDespesa` | mesmas abas auxiliares do xlsx |
+
+Fluxo: `npm run dominios:gerar` lê as publicações originais e escreve NDJSON **versionado** em `backend/prisma/seeds/data/`; `npm run dominios:seed` (ou o startup da API, se as tabelas estiverem vazias) carrega no banco. O leitor de .xlsx é próprio (`infrastructure/parsers/xlsx.ts`, ZIP via `zlib.inflateRaw`) — sem dependência externa.
+
+A classificação econômica vale **por exercício e por esfera do ente** (E/M/C): o exercício do empenho é o ano da **emissão**, não o da prestação (§17 #2). `MontarPrestacaoUseCase` confronta CBO e classificação com as tabelas e transforma código inexistente em **erro bloqueante** antes de transmitir.
+
+### JSON Schema oficial (v1.14) — fonte canônica
+
+`backend/src/infrastructure/tcesp/schemas/` guarda os schemas oficiais do Audesp (os 5 tipos de ajuste + Declaração Negativa), publicados em *"AUDESP - Repasses ao Terceiro Setor - JSON/Schemas"*. Eles são a **validação estrutural que o TCESP aplica no envio** — documento fora do schema é rejeitado antes das regras de negócio. Duas consequências:
+
+1. **As tabelas de domínio são geradas deles.** `npm run dominios:fase-v` lê os schemas e reescreve `frontend/src/lib/dominiosFaseV.ts` (códigos + rótulos, dos `examples`) e `backend/src/core/dominio/tabelasFaseV.ts` (só os códigos). **Os dois são gerados — não edite à mão.** Cobre `categoria_despesas_tipo` (88), `fonte_recurso_tipo` (16), `banco` (400), `estado_emissor`, `natureza_contratacao`, `criterio_selecao`, `onus_pagamento`, `conta_tipo`, `valor_tipo`, `vigencia_tipo`, `tipo_documento_bancario`. Código fora delas é **erro bloqueante** (`validarDominios.ts`).
+2. **O documento montado é validado localmente** por `AjvValidadorSchema` antes de transmitir, com o caminho exato do campo. Cuidados do adapter: os schemas declaram `$schema` como `https://…/draft-07/schema` (sem `#`), que o Ajv não resolve — registramos o meta-schema sob esse `$id`; e é preciso `multipleOfPrecision: 2`, senão `multipleOf: 0.01` reprova valores como `4.56` por ponto flutuante. Falha ao compilar **não** bloqueia o envio, mas vira aviso explícito — validação que não roda não pode passar por documento válido.
+
+3. **`npm run verificar:montador` é a rede de proteção.** Monta um `DadosMontagem` sintético com todos os blocos preenchidos, roda o montador e valida com o Ajv nos 5 tipos de ajuste; depois quebra o documento de 15 formas diferentes e confere que cada regra de negócio barra. Não precisa de banco. **Rode sempre que mexer no montador ou em `validarPrestacao`** — foi ele que revelou `saldo_fundo_fixo` e `empresas_pertencentes` faltando.
+
+Ao atualizar de versão: substitua os `.json`, ajuste `VERSAO_SCHEMA` em `schemas/index.ts`, rode `npm run dominios:fase-v`, o `verificar:montador` e o typecheck dos dois projetos.
+
+**Campos obrigatórios fáceis de esquecer** (o `limpo()` do montador remove nulos, então um campo não preenchido some do JSON e vira rejeição): `disponibilidades.saldo_fundo_fixo`; em `repasses`, o `tipo_documento_bancario`, `numero_documento`, `banco`, `agencia` e `conta`; em `declaracoes.empresas_pertencentes`, **os dois** campos (CNPJ da empresa **e** CPF do dirigente). Identificações de certidão têm formato fixo `^[0-9]{10}$`.
+
+### XSDs das Tabelas Auxiliares (Fase I/II/III) — quase nada serve aqui
+
+`Documentação/Tabelas Auxiliares/` traz XSDs do Audesp **contábil/orçamentário**, não da Fase V. Praticamente tudo ali está fora do nosso escopo (classificação de receita, plano de contas detalhado, funções e subfunções de governo, tipos de licitação/convênio). Duas observações que importam:
+
+- **`ClassificacaoDespesaExecutiva_t`** (XSD 2024) é a **classificação econômica do exercício 2024** — 1.458 códigos de 8 dígitos com os nomes nos comentários. Hoje só carregamos **2025**. Vale carregar quando surgir a necessidade: a §17 #2 permite empenho emitido antes do período na *primeira* prestação do ajuste, então a prestação de 2025 pode conter empenho de 2024. A tabela já é por exercício (PK `exercicio+codigo`), então é só estender o gerador e o seed — sem mudança de schema. Enquanto isso, `codigosInexistentes` não valida exercício não carregado, o que evita bloqueio indevido.
+- **`CodigoFonteRecursos_t` tem 17 valores, incluindo `19 = RECURSOS EXTRA-ORÇAMENTÁRIOS`. NÃO adicione o 19** à tabela da Fase V: ele não existe no schema v1.14 e seria rejeitado. Os outros 16 batem exatamente com os nossos.
+
+Esse cruzamento também confirmou que a extração da ND 2025 está fiel: 1717 linhas na planilha, 1709 carregadas, e as 8 de diferença são exatamente as marcadas como EXCLUSÃO.
+
+Armadilhas já verificadas: a spec em PDF (v1.1) está **defasada** — `categoria_despesas_tipo` foi renumerada por inteiro entre a v1.1 e a v1.14, então código capturado por aquela lista está errado. A planilha da STN ("Fonte ou Destinação de Recursos") é a tabela **nacional** e não corresponde ao `fonte_recurso_tipo` do TCESP. E o PDF erra ao dizer "3 – Outros" em `tipo_documento_bancario`: o schema define `2 = Outros` e `3 = Cheque`.
+
 ## Prazos legais (regra que dirige o Workflow)
 
 A Fase V tem **4 prazos distintos** que o Workflow deve controlar:
@@ -72,9 +111,15 @@ Ou seja, a periodicidade Quadrimestral/Anual do `Fase_V_entidades` dirige o praz
 
 ## Comandos (após a inicialização do backend)
 
-Ainda não configurados. Ao inicializar, os fluxos esperados de Prisma são:
-- `npx prisma validate` / `npx prisma format` — validar/formatar o schema.
-- `npx prisma migrate dev` — criar/aplicar migrations em desenvolvimento.
-- `npx prisma generate` — gerar o client tipado.
+No `backend/`:
+- `npm run dev` / `npm start` — sobe a API (`/api`, healthcheck em `/api/health`).
+- `npm run typecheck` — `tsc --noEmit`.
+- `npx prisma format` / `npx prisma generate` — formatar o schema / gerar o client tipado.
+- `npm run db:push` — aplicar o schema no banco (é o que o Render roda no deploy).
+- `npm run dominios:gerar` / `npm run dominios:seed` — regerar e carregar CBO e classificação econômica (tabelas grandes, no banco).
+- `npm run dominios:fase-v` — regerar as tabelas de domínio do JSON Schema (front + back).
+- `npm run verificar:montador` — conferir o montador contra o schema e as regras de negócio (sem banco).
 
-Atualize esta seção com os scripts reais de build/lint/test assim que o `package.json` existir.
+No `frontend/`: `npm run dev` (Vite em :5173) e `npm run build`.
+
+Não há framework de testes ainda; `verificar:montador` é a única checagem automatizada e roda como script.

@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
+import { SelectDominio } from '@/components/ui/SelectDominio';
+import { BANCO, FONTE_RECURSO } from '@/lib/dominiosFaseV';
 import { Badge } from '@/components/ui/Badge';
 import { apenasDigitos, dataBr, formatarMoeda, mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
 import { extrairMensagemErro } from '@/services/http';
@@ -206,12 +208,12 @@ function PgForm({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input label="Data do Pagamento *" name="dataPagamento" type="date" value={dataPagamento} onChange={(e) => setDataPagamento(e.target.value)} />
         <Input label="Valor (R$) *" name="valor" value={valor} onChange={(e) => setValor(mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
-        <Input label="Fonte de Recurso (código) *" name="fonte" value={apenasDigitos(fonte)} onChange={(e) => setFonte(e.target.value)} inputMode="numeric" />
+        <SelectDominio label="Fonte de Recurso *" name="fonte" value={apenasDigitos(fonte)} onChange={setFonte} options={FONTE_RECURSO} />
         <Select label="Meio de Pagamento *" name="meio" value={meio} onChange={(e) => setMeio(e.target.value as MeioPagamento)} options={[{ value: 'BANCO', label: 'Banco' }, { value: 'FUNDO_FIXO', label: 'Fundo fixo' }]} />
       </div>
       {meio === 'BANCO' && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <Input label="Banco *" name="banco" value={apenasDigitos(banco)} onChange={(e) => setBanco(e.target.value)} inputMode="numeric" />
+          <SelectDominio label="Banco *" name="banco" value={apenasDigitos(banco)} onChange={setBanco} options={BANCO} />
           <Input label="Agência *" name="agencia" value={apenasDigitos(agencia)} onChange={(e) => setAgencia(e.target.value)} inputMode="numeric" />
           <Input label="Conta Corrente *" name="conta" value={conta} onChange={(e) => setConta(e.target.value)} />
         </div>

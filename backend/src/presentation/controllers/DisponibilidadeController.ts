@@ -41,4 +41,21 @@ export class DisponibilidadeController {
       return next(e);
     }
   }
+
+  async obterSaldoFundoFixo(req: Request, res: Response, next: NextFunction) {
+    try {
+      return res.json({ saldoFundoFixo: await casos.obterSaldoFundoFixo(req.params.prestacaoId) });
+    } catch (e) {
+      return next(e);
+    }
+  }
+
+  async definirSaldoFundoFixo(req: Request, res: Response, next: NextFunction) {
+    try {
+      const valor = await casos.definirSaldoFundoFixo(req.params.prestacaoId, req.body?.saldoFundoFixo);
+      return res.json({ saldoFundoFixo: valor });
+    } catch (e) {
+      return next(e);
+    }
+  }
 }

@@ -45,6 +45,8 @@ export interface RepassePayload {
   valorPrevisto: number;
   valorRepasse: number;
   justificativaDiferenca?: string | null;
+  tipoDocumentoBancario?: number | null;
+  descricaoOutros?: string | null;
   numeroDocumento?: string | null;
   banco?: number | null;
   agencia?: number | null;

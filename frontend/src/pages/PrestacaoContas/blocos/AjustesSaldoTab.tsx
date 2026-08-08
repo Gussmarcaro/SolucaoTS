@@ -1,6 +1,9 @@
 import { Plus, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { SelectDominio } from '@/components/ui/SelectDominio';
+import type { Opcao } from '@/lib/dominios';
+import { DOCUMENTO_TIPO_COD, FONTE_RECURSO, MEIO_PAGAMENTO_COD } from '@/lib/dominiosFaseV';
 import { apenasDigitos, mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
 import { ajustesSaldoApi } from '@/services/contratosPrestacao.service';
 import type {
@@ -33,6 +36,23 @@ function Moeda({ label, value, onChange }: { label: string; value: number | null
 function NumCodigo({ label, value, onChange }: { label: string; value: number | null; onChange: (n: number | null) => void }) {
   return (
     <Input label={label} value={value != null ? String(value) : ''} onChange={(e) => { const d = apenasDigitos(e.target.value); onChange(d ? Number(d) : null); }} inputMode="numeric" />
+  );
+}
+
+/** Igual ao NumCodigo, mas escolhendo numa tabela de domínio (grava número). */
+function SelCodigo({ label, value, onChange, options }: {
+  label: string;
+  value: number | null;
+  onChange: (n: number | null) => void;
+  options: Opcao[];
+}) {
+  return (
+    <SelectDominio
+      label={label}
+      value={value != null ? String(value) : ''}
+      onChange={(c) => onChange(c ? Number(c) : null)}
+      options={options}
+    />
   );
 }
 
@@ -85,7 +105,7 @@ export function AjustesSaldoTab({ prestacaoId }: { prestacaoId: string }) {
           <>
             <Input label="Data prevista" type="date" value={it.dataPrevista ?? ''} onChange={(e) => upd({ dataPrevista: e.target.value })} />
             <Input label="Data do repasse" type="date" value={it.dataRepasse ?? ''} onChange={(e) => upd({ dataRepasse: e.target.value })} />
-            <NumCodigo label="Fonte de recurso" value={it.fonteRecursoTipo} onChange={(n) => upd({ fonteRecursoTipo: n })} />
+            <SelCodigo label="Fonte de recurso" value={it.fonteRecursoTipo} onChange={(n) => upd({ fonteRecursoTipo: n })} options={FONTE_RECURSO} />
             <Moeda label="Valor retificado" value={it.valorRetificado} onChange={(n) => upd({ valorRetificado: n })} />
           </>
         )}
@@ -102,7 +122,7 @@ export function AjustesSaldoTab({ prestacaoId }: { prestacaoId: string }) {
             <Input label="Data prevista" type="date" value={it.dataPrevista ?? ''} onChange={(e) => upd({ dataPrevista: e.target.value })} />
             <Input label="Data do repasse" type="date" value={it.dataRepasse ?? ''} onChange={(e) => upd({ dataRepasse: e.target.value })} />
             <Moeda label="Valor" value={it.valor} onChange={(n) => upd({ valor: n })} />
-            <NumCodigo label="Fonte de recurso" value={it.fonteRecursoTipo} onChange={(n) => upd({ fonteRecursoTipo: n })} />
+            <SelCodigo label="Fonte de recurso" value={it.fonteRecursoTipo} onChange={(n) => upd({ fonteRecursoTipo: n })} options={FONTE_RECURSO} />
           </>
         )}
       </Secao>
@@ -117,11 +137,11 @@ export function AjustesSaldoTab({ prestacaoId }: { prestacaoId: string }) {
         {(it, upd) => (
           <>
             <Input label="Nº doc. fiscal" value={it.docNumero ?? ''} onChange={(e) => upd({ docNumero: e.target.value })} />
-            <NumCodigo label="Credor tipo (1/2/3)" value={it.docCredorTipo} onChange={(n) => upd({ docCredorTipo: n })} />
+            <SelCodigo label="Credor tipo" value={it.docCredorTipo} onChange={(n) => upd({ docCredorTipo: n })} options={DOCUMENTO_TIPO_COD} />
             <Input label="Credor nº doc." value={it.docCredorNumero ?? ''} onChange={(e) => upd({ docCredorNumero: e.target.value })} inputMode="numeric" />
             <Input label="Data do pagamento" type="date" value={it.pagamentoData ?? ''} onChange={(e) => upd({ pagamentoData: e.target.value })} />
             <Moeda label="Valor original" value={it.pagamentoValor} onChange={(n) => upd({ pagamentoValor: n })} />
-            <NumCodigo label="Fonte de recurso" value={it.fonteRecursoTipo} onChange={(n) => upd({ fonteRecursoTipo: n })} />
+            <SelCodigo label="Fonte de recurso" value={it.fonteRecursoTipo} onChange={(n) => upd({ fonteRecursoTipo: n })} options={FONTE_RECURSO} />
             <Moeda label="Valor retificado" value={it.valorRetificado} onChange={(n) => upd({ valorRetificado: n })} />
           </>
         )}
@@ -136,12 +156,12 @@ export function AjustesSaldoTab({ prestacaoId }: { prestacaoId: string }) {
         {(it, upd) => (
           <>
             <Input label="Nº doc. fiscal" value={it.docNumero ?? ''} onChange={(e) => upd({ docNumero: e.target.value })} />
-            <NumCodigo label="Credor tipo (1/2/3)" value={it.docCredorTipo} onChange={(n) => upd({ docCredorTipo: n })} />
+            <SelCodigo label="Credor tipo" value={it.docCredorTipo} onChange={(n) => upd({ docCredorTipo: n })} options={DOCUMENTO_TIPO_COD} />
             <Input label="Credor nº doc." value={it.docCredorNumero ?? ''} onChange={(e) => upd({ docCredorNumero: e.target.value })} inputMode="numeric" />
             <Input label="Data do pagamento" type="date" value={it.pagamentoData ?? ''} onChange={(e) => upd({ pagamentoData: e.target.value })} />
             <Moeda label="Valor" value={it.pagamentoValor} onChange={(n) => upd({ pagamentoValor: n })} />
-            <NumCodigo label="Fonte de recurso" value={it.fonteRecursoTipo} onChange={(n) => upd({ fonteRecursoTipo: n })} />
-            <NumCodigo label="Meio pgto (1=Banco)" value={it.meioPagamento} onChange={(n) => upd({ meioPagamento: n })} />
+            <SelCodigo label="Fonte de recurso" value={it.fonteRecursoTipo} onChange={(n) => upd({ fonteRecursoTipo: n })} options={FONTE_RECURSO} />
+            <SelCodigo label="Meio de pagamento" value={it.meioPagamento} onChange={(n) => upd({ meioPagamento: n })} options={MEIO_PAGAMENTO_COD} />
             <NumCodigo label="Banco" value={it.banco} onChange={(n) => upd({ banco: n })} />
             <NumCodigo label="Agência" value={it.agencia} onChange={(n) => upd({ agencia: n })} />
             <Input label="Conta corrente" value={it.contaCorrente ?? ''} onChange={(e) => upd({ contaCorrente: e.target.value })} />

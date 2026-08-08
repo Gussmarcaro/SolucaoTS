@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { BuscaCbo } from '@/components/ui/BuscaCbo';
 import { apenasDigitos, mascaraCpfCnpj, mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
 import { isCpfValido } from '@/lib/validators';
 import { atualizarColaborador, criarColaborador } from '@/services/colaboradores.service';
@@ -121,15 +122,12 @@ export function ColaboradorForm({ colaborador, onSuccess, onCancel }: Props) {
         />
         <Input label="Cargo / Função *" name="cargo" value={form.cargo} onChange={(e) => set('cargo', e.target.value)} error={erros.cargo} />
 
-        <Input
-          label="CBO"
+        <BuscaCbo
           name="cbo"
           value={apenasDigitos(form.cbo).slice(0, 6)}
-          onChange={(e) => set('cbo', e.target.value)}
+          onChange={(codigo) => set('cbo', codigo)}
           error={erros.cbo}
-          hint="Classificação Brasileira de Ocupações (6 dígitos)."
-          placeholder="000000"
-          inputMode="numeric"
+          hint="Classificação Brasileira de Ocupações (CBO 2002)."
         />
         <Input
           label="CNS"

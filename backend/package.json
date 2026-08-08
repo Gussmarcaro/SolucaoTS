@@ -14,10 +14,16 @@
     "db:push": "prisma db push",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "dominios:gerar": "tsx scripts/gerarDominios.ts",
+    "dominios:seed": "tsx prisma/seeds/dominios.ts",
+    "dominios:fase-v": "tsx scripts/gerarDominiosFaseV.ts",
+    "verificar:montador": "tsx scripts/verificarMontador.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.19.1",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "express": "^4.19.2",

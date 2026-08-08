@@ -58,4 +58,21 @@ export class PrismaDisponibilidadeRepository implements IDisponibilidadeReposito
   async excluir(id: string): Promise<void> {
     await prisma.disponibilidade.delete({ where: { id } });
   }
+
+  async obterSaldoFundoFixo(prestacaoId: string): Promise<number> {
+    const row = await prisma.prestacaoContas.findUnique({
+      where: { id: prestacaoId },
+      select: { saldoFundoFixo: true },
+    });
+    return Number(row?.saldoFundoFixo ?? 0);
+  }
+
+  async definirSaldoFundoFixo(prestacaoId: string, valor: number): Promise<number> {
+    const row = await prisma.prestacaoContas.update({
+      where: { id: prestacaoId },
+      data: { saldoFundoFixo: valor },
+      select: { saldoFundoFixo: true },
+    });
+    return Number(row.saldoFundoFixo);
+  }
 }
