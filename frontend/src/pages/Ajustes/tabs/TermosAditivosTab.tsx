@@ -55,14 +55,14 @@ export function TermosAditivosTab({ ajusteId }: { ajusteId: string }) {
       </div>
 
       <div className="overflow-hidden rounded-xl border border-ink-200/70 dark:border-ink-800/70">
-        <table className="w-full text-left text-sm">
+        <table className="w-full text-left text-[13px]">
           <thead>
             <tr className="border-b border-ink-100 text-xs font-semibold text-ink-500 dark:border-ink-800 dark:text-ink-400">
-              <th className="px-4 py-2.5">Número</th>
-              <th className="px-4 py-2.5">Assinatura</th>
-              <th className="px-4 py-2.5 text-right">Acréscimo</th>
-              <th className="px-4 py-2.5 text-right">Supressão</th>
-              <th className="px-4 py-2.5 text-center">Ações</th>
+              <th className="px-4 py-2">Número</th>
+              <th className="px-4 py-2">Assinatura</th>
+              <th className="px-4 py-2 text-right">Acréscimo</th>
+              <th className="px-4 py-2 text-right">Supressão</th>
+              <th className="px-4 py-2 text-center">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
@@ -85,15 +85,15 @@ export function TermosAditivosTab({ ajusteId }: { ajusteId: string }) {
             ) : (
               lista.map((t) => (
                 <tr key={t.id} className="hover:bg-ink-50/70 dark:hover:bg-ink-800/40">
-                  <td className="px-4 py-2.5 font-medium text-ink-800 dark:text-ink-100">{t.numero}</td>
-                  <td className="px-4 py-2.5 text-ink-600 dark:text-ink-300">{dataBr(t.dataAssinatura)}</td>
-                  <td className="px-4 py-2.5 text-right text-emerald-600 dark:text-emerald-400">
+                  <td className="px-4 py-2 font-medium text-ink-800 dark:text-ink-100">{t.numero}</td>
+                  <td className="px-4 py-2 text-ink-600 dark:text-ink-300">{dataBr(t.dataAssinatura)}</td>
+                  <td className="px-4 py-2 text-right text-emerald-600 dark:text-emerald-400">
                     {t.valorAcrescido != null ? formatarMoeda(t.valorAcrescido) : '—'}
                   </td>
-                  <td className="px-4 py-2.5 text-right text-red-500 dark:text-red-400">
+                  <td className="px-4 py-2 text-right text-red-500 dark:text-red-400">
                     {t.valorSuprimido != null ? formatarMoeda(t.valorSuprimido) : '—'}
                   </td>
-                  <td className="px-4 py-2.5">
+                  <td className="px-4 py-2">
                     <div className="flex items-center justify-center gap-1">
                       <IconBtn title="Editar" onClick={() => setModal({ tipo: 'form', termo: t })}>
                         <Pencil className="h-4 w-4" />

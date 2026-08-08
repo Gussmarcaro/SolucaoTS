@@ -143,7 +143,7 @@ export function GruposList({ refreshKey, onVisualizar, onEditar, onAlternarStatu
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm" style={{ tableLayout: 'fixed', minWidth: totalWidth }}>
+        <table className="w-full text-left text-[13px]" style={{ tableLayout: 'fixed', minWidth: totalWidth }}>
           <ResizableHead colunas={colunas} widths={widths} startResize={startResize} sort={sort} onSort={handleSort} onReorder={reordenar} />
           <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
             {carregando ? (
@@ -156,7 +156,7 @@ export function GruposList({ refreshKey, onVisualizar, onEditar, onAlternarStatu
               data.map((g) => (
                 <tr key={g.id} onDoubleClick={() => onEditar(g)} title="Duplo-clique para editar" className="transition-colors hover:bg-ink-50/70 dark:hover:bg-ink-800/40">
                   {colunas.map((c) => (
-                    <td key={c.key} className={cn('px-4 py-3', c.align === 'right' && 'text-right', c.align === 'center' && 'text-center')}>
+                    <td key={c.key} className={cn('px-4 py-2', c.align === 'right' && 'text-right', c.align === 'center' && 'text-center')}>
                       {renderCell(c.key, g)}
                     </td>
                   ))}

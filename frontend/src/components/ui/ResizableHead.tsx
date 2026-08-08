@@ -84,7 +84,7 @@ export function ResizableHead({ colunas, widths, startResize, sort, onSort, onRe
                   setAlvo(null);
                 }}
                 className={cn(
-                  'group/th relative select-none px-4 py-3 font-semibold transition-colors',
+                  'group/th relative select-none px-4 py-2 font-semibold transition-colors',
                   c.align === 'right' && 'text-right',
                   c.align === 'center' && 'text-center',
                   alvo === c.key && 'bg-brand-50 dark:bg-brand-500/10',

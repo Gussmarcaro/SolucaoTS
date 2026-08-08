@@ -181,7 +181,7 @@ export function UsuariosList({ refreshKey, onVisualizar, onEditar, onAlternarSta
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm" style={{ tableLayout: 'fixed', minWidth: totalWidth }}>
+        <table className="w-full text-left text-[13px]" style={{ tableLayout: 'fixed', minWidth: totalWidth }}>
           <ResizableHead
             colunas={colunas}
             widths={widths}
@@ -224,7 +224,7 @@ export function UsuariosList({ refreshKey, onVisualizar, onEditar, onAlternarSta
                     <td
                       key={c.key}
                       className={cn(
-                        'px-4 py-3',
+                        'px-4 py-2',
                         c.align === 'right' && 'text-right',
                         c.align === 'center' && 'text-center',
                       )}

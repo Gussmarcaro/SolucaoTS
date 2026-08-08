@@ -44,14 +44,14 @@ export function DisponibilidadesTab({ prestacaoId }: { prestacaoId: string }) {
       <FundoFixo prestacaoId={prestacaoId} />
 
       <div className="overflow-x-auto rounded-xl border border-ink-200/70 dark:border-ink-800/70">
-        <table className="w-full min-w-[560px] text-left text-sm">
+        <table className="w-full min-w-[560px] text-left text-[13px]">
           <thead>
             <tr className="border-b border-ink-100 text-xs font-semibold text-ink-500 dark:border-ink-800 dark:text-ink-400">
-              <th className="px-4 py-2.5">Banco / Agência</th>
-              <th className="px-4 py-2.5">Conta</th>
-              <th className="px-4 py-2.5 text-right">Saldo bancário</th>
-              <th className="px-4 py-2.5 text-right">Saldo contábil</th>
-              <th className="px-4 py-2.5 text-center">Ações</th>
+              <th className="px-4 py-2">Banco / Agência</th>
+              <th className="px-4 py-2">Conta</th>
+              <th className="px-4 py-2 text-right">Saldo bancário</th>
+              <th className="px-4 py-2 text-right">Saldo contábil</th>
+              <th className="px-4 py-2 text-center">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
@@ -64,11 +64,11 @@ export function DisponibilidadesTab({ prestacaoId }: { prestacaoId: string }) {
             ) : (
               lista.map((i) => (
                 <tr key={i.id} className="hover:bg-ink-50/70 dark:hover:bg-ink-800/40">
-                  <td className="px-4 py-2.5 text-ink-700 dark:text-ink-200">{i.banco} / {i.agencia}</td>
-                  <td className="px-4 py-2.5 font-mono text-xs text-ink-600 dark:text-ink-300">{i.conta} <span className="text-ink-400">({rotulo(CONTA_TIPO, i.contaTipo)})</span></td>
-                  <td className="px-4 py-2.5 text-right tabular-nums text-ink-700 dark:text-ink-200">{formatarMoeda(i.saldoBancario)}</td>
-                  <td className="px-4 py-2.5 text-right tabular-nums text-ink-500 dark:text-ink-400">{formatarMoeda(i.saldoContabil)}</td>
-                  <td className="px-4 py-2.5">
+                  <td className="px-4 py-2 text-ink-700 dark:text-ink-200">{i.banco} / {i.agencia}</td>
+                  <td className="px-4 py-2 font-mono text-xs text-ink-600 dark:text-ink-300">{i.conta} <span className="text-ink-400">({rotulo(CONTA_TIPO, i.contaTipo)})</span></td>
+                  <td className="px-4 py-2 text-right tabular-nums text-ink-700 dark:text-ink-200">{formatarMoeda(i.saldoBancario)}</td>
+                  <td className="px-4 py-2 text-right tabular-nums text-ink-500 dark:text-ink-400">{formatarMoeda(i.saldoContabil)}</td>
+                  <td className="px-4 py-2">
                     <div className="flex items-center justify-center gap-1">
                       <IconBtn title="Editar" onClick={() => setModal({ tipo: 'form', item: i })}><Pencil className="h-4 w-4" /></IconBtn>
                       <IconBtn title="Excluir" danger onClick={() => setModal({ tipo: 'excluir', item: i })}><Trash2 className="h-4 w-4" /></IconBtn>

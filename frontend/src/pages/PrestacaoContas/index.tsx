@@ -97,14 +97,14 @@ export function PrestacaoContas() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] text-left text-sm">
+          <table className="w-full min-w-[760px] text-left text-[13px]">
             <thead>
               <tr className="border-b border-ink-100 text-xs font-semibold text-ink-500 dark:border-ink-800 dark:text-ink-400">
-                <th className="px-4 py-3">Ajuste</th>
-                <th className="px-4 py-3">Entidade</th>
-                <th className="px-4 py-3">Exercício</th>
-                <th className="px-4 py-3">Protocolo</th>
-                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-2">Ajuste</th>
+                <th className="px-4 py-2">Entidade</th>
+                <th className="px-4 py-2">Exercício</th>
+                <th className="px-4 py-2">Protocolo</th>
+                <th className="px-4 py-2">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
@@ -121,14 +121,14 @@ export function PrestacaoContas() {
                     onClick={() => navigate(`/prestacao-contas/${p.id}`)}
                     className="cursor-pointer transition-colors hover:bg-ink-50/70 dark:hover:bg-ink-800/40"
                   >
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-2.5">
                       <p className="font-mono text-xs text-ink-700 dark:text-ink-200">{p.ajusteCodigo}</p>
                       <p className="text-xs text-ink-400">{TIPO_AJUSTE_LABEL[p.ajusteTipo] ?? p.tipoDocumento}</p>
                     </td>
-                    <td className="px-4 py-3.5 text-ink-600 dark:text-ink-300">{p.entidadeNome}</td>
-                    <td className="px-4 py-3.5 text-ink-500 dark:text-ink-400">{p.ano} / mês {p.mes}{p.ehRetificacao && <Badge tone="neutral">retificação</Badge>}</td>
-                    <td className="px-4 py-3.5 font-mono text-xs text-ink-500 dark:text-ink-400">{p.protocolo ?? '—'}</td>
-                    <td className="px-4 py-3.5"><Badge tone={STATUS_PRESTACAO_TONE[p.status]}>{STATUS_PRESTACAO_LABEL[p.status]}</Badge></td>
+                    <td className="px-4 py-2.5 text-ink-600 dark:text-ink-300">{p.entidadeNome}</td>
+                    <td className="px-4 py-2.5 text-ink-500 dark:text-ink-400">{p.ano} / mês {p.mes}{p.ehRetificacao && <Badge tone="neutral">retificação</Badge>}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-ink-500 dark:text-ink-400">{p.protocolo ?? '—'}</td>
+                    <td className="px-4 py-2.5"><Badge tone={STATUS_PRESTACAO_TONE[p.status]}>{STATUS_PRESTACAO_LABEL[p.status]}</Badge></td>
                   </tr>
                 ))
               )}

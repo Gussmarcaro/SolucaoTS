@@ -51,12 +51,12 @@ export function CronogramaTab({ ajusteId }: { ajusteId: string }) {
       </div>
 
       <div className="overflow-hidden rounded-xl border border-ink-200/70 dark:border-ink-800/70">
-        <table className="w-full text-left text-sm">
+        <table className="w-full text-left text-[13px]">
           <thead>
             <tr className="border-b border-ink-100 text-xs font-semibold text-ink-500 dark:border-ink-800 dark:text-ink-400">
-              <th className="px-4 py-2.5">Ano</th>
-              <th className="px-4 py-2.5">Mês</th>
-              <th className="px-4 py-2.5 text-right">Valor</th>
+              <th className="px-4 py-2">Ano</th>
+              <th className="px-4 py-2">Mês</th>
+              <th className="px-4 py-2 text-right">Valor</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
@@ -79,9 +79,9 @@ export function CronogramaTab({ ajusteId }: { ajusteId: string }) {
             ) : (
               lista.map((i) => (
                 <tr key={i.id} className="hover:bg-ink-50/70 dark:hover:bg-ink-800/40">
-                  <td className="px-4 py-2.5 text-ink-600 dark:text-ink-300">{i.ano}</td>
-                  <td className="px-4 py-2.5 text-ink-700 dark:text-ink-200">{nomeMes(i.mes)}</td>
-                  <td className="px-4 py-2.5 text-right tabular-nums text-ink-700 dark:text-ink-200">{formatarMoeda(i.valor)}</td>
+                  <td className="px-4 py-2 text-ink-600 dark:text-ink-300">{i.ano}</td>
+                  <td className="px-4 py-2 text-ink-700 dark:text-ink-200">{nomeMes(i.mes)}</td>
+                  <td className="px-4 py-2 text-right tabular-nums text-ink-700 dark:text-ink-200">{formatarMoeda(i.valor)}</td>
                 </tr>
               ))
             )}

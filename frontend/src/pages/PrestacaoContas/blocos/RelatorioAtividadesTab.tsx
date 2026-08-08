@@ -54,15 +54,15 @@ export function RelatorioAtividadesTab({ prestacaoId, ajusteId }: { prestacaoId:
       )}
 
       <div className="overflow-x-auto rounded-xl border border-ink-200/70 dark:border-ink-800/70">
-        <table className="w-full min-w-[680px] text-left text-sm">
+        <table className="w-full min-w-[680px] text-left text-[13px]">
           <thead>
             <tr className="border-b border-ink-100 text-xs font-semibold text-ink-500 dark:border-ink-800 dark:text-ink-400">
-              <th className="px-4 py-2.5">Programa</th>
-              <th className="px-4 py-2.5">Meta</th>
-              <th className="px-4 py-2.5 text-center">Período</th>
-              <th className="px-4 py-2.5">Realizado / Resultado</th>
-              <th className="px-4 py-2.5 text-center">Atendida</th>
-              <th className="px-4 py-2.5 text-center">Ações</th>
+              <th className="px-4 py-2">Programa</th>
+              <th className="px-4 py-2">Meta</th>
+              <th className="px-4 py-2 text-center">Período</th>
+              <th className="px-4 py-2">Realizado / Resultado</th>
+              <th className="px-4 py-2 text-center">Atendida</th>
+              <th className="px-4 py-2 text-center">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
@@ -75,16 +75,16 @@ export function RelatorioAtividadesTab({ prestacaoId, ajusteId }: { prestacaoId:
             ) : (
               lista.map((a) => (
                 <tr key={a.id} className="hover:bg-ink-50/70 dark:hover:bg-ink-800/40">
-                  <td className="px-4 py-2.5 text-ink-700 dark:text-ink-200" title={a.nomePrograma}>{a.nomePrograma}</td>
-                  <td className="px-4 py-2.5 font-mono text-xs text-ink-600 dark:text-ink-300">{a.codigoMeta}</td>
-                  <td className="px-4 py-2.5 text-center text-ink-600 dark:text-ink-300">{a.periodo}</td>
-                  <td className="px-4 py-2.5 text-ink-600 dark:text-ink-300">
+                  <td className="px-4 py-2 text-ink-700 dark:text-ink-200" title={a.nomePrograma}>{a.nomePrograma}</td>
+                  <td className="px-4 py-2 font-mono text-xs text-ink-600 dark:text-ink-300">{a.codigoMeta}</td>
+                  <td className="px-4 py-2 text-center text-ink-600 dark:text-ink-300">{a.periodo}</td>
+                  <td className="px-4 py-2 text-ink-600 dark:text-ink-300">
                     {a.quantidadeRealizada != null ? a.quantidadeRealizada : a.resultadoMeta ? RESULTADO_META_LABEL[a.resultadoMeta] : '—'}
                   </td>
-                  <td className="px-4 py-2.5 text-center">
+                  <td className="px-4 py-2 text-center">
                     {a.metaAtendida == null ? <span className="text-ink-400">—</span> : <Badge tone={a.metaAtendida ? 'success' : 'danger'}>{a.metaAtendida ? 'Sim' : 'Não'}</Badge>}
                   </td>
-                  <td className="px-4 py-2.5">
+                  <td className="px-4 py-2">
                     <div className="flex items-center justify-center gap-1">
                       <IconBtn title="Editar" onClick={() => setModal({ tipo: 'form', item: a })}><Pencil className="h-4 w-4" /></IconBtn>
                       <IconBtn title="Excluir" danger onClick={() => setModal({ tipo: 'excluir', item: a })}><Trash2 className="h-4 w-4" /></IconBtn>

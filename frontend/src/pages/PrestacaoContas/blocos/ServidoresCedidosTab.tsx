@@ -47,14 +47,14 @@ export function ServidoresCedidosTab({ prestacaoId }: { prestacaoId: string }) {
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-ink-200/70 dark:border-ink-800/70">
-        <table className="w-full min-w-[600px] text-left text-sm">
+        <table className="w-full min-w-[600px] text-left text-[13px]">
           <thead>
             <tr className="border-b border-ink-100 text-xs font-semibold text-ink-500 dark:border-ink-800 dark:text-ink-400">
-              <th className="px-4 py-2.5">CPF</th>
-              <th className="px-4 py-2.5">Cargo público</th>
-              <th className="px-4 py-2.5">Cessão</th>
-              <th className="px-4 py-2.5 text-center">Períodos</th>
-              <th className="px-4 py-2.5 text-center">Ações</th>
+              <th className="px-4 py-2">CPF</th>
+              <th className="px-4 py-2">Cargo público</th>
+              <th className="px-4 py-2">Cessão</th>
+              <th className="px-4 py-2 text-center">Períodos</th>
+              <th className="px-4 py-2 text-center">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
@@ -67,11 +67,11 @@ export function ServidoresCedidosTab({ prestacaoId }: { prestacaoId: string }) {
             ) : (
               lista.map((s) => (
                 <tr key={s.id} className="hover:bg-ink-50/70 dark:hover:bg-ink-800/40">
-                  <td className="px-4 py-2.5 font-mono text-xs text-ink-800 dark:text-ink-100">{mascaraCpfCnpj(s.cpf)}</td>
-                  <td className="px-4 py-2.5 text-ink-600 dark:text-ink-300" title={s.cargoPublico}>{s.cargoPublico}</td>
-                  <td className="px-4 py-2.5 text-ink-600 dark:text-ink-300">{dataBr(s.dataInicialCessao)} — {s.dataFinalCessao ? dataBr(s.dataFinalCessao) : 'em curso'}</td>
-                  <td className="px-4 py-2.5 text-center text-ink-500 dark:text-ink-400">{s.periodos.length}</td>
-                  <td className="px-4 py-2.5">
+                  <td className="px-4 py-2 font-mono text-xs text-ink-800 dark:text-ink-100">{mascaraCpfCnpj(s.cpf)}</td>
+                  <td className="px-4 py-2 text-ink-600 dark:text-ink-300" title={s.cargoPublico}>{s.cargoPublico}</td>
+                  <td className="px-4 py-2 text-ink-600 dark:text-ink-300">{dataBr(s.dataInicialCessao)} — {s.dataFinalCessao ? dataBr(s.dataFinalCessao) : 'em curso'}</td>
+                  <td className="px-4 py-2 text-center text-ink-500 dark:text-ink-400">{s.periodos.length}</td>
+                  <td className="px-4 py-2">
                     <div className="flex items-center justify-center gap-1">
                       <IconBtn title="Editar" onClick={() => setModal({ tipo: 'form', item: s })}><Pencil className="h-4 w-4" /></IconBtn>
                       <IconBtn title="Excluir" danger onClick={() => setModal({ tipo: 'excluir', item: s })}><Trash2 className="h-4 w-4" /></IconBtn>

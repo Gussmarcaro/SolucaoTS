@@ -168,7 +168,7 @@ export function ContratosList({ refreshKey, onVisualizar, onEditar, onAlternarSt
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm" style={{ tableLayout: 'fixed', minWidth: totalWidth }}>
+        <table className="w-full text-left text-[13px]" style={{ tableLayout: 'fixed', minWidth: totalWidth }}>
           <ResizableHead colunas={colunas} widths={widths} startResize={startResize} sort={sort} onSort={handleSort} onReorder={reordenar} />
           <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
             {carregando ? (
@@ -200,7 +200,7 @@ export function ContratosList({ refreshKey, onVisualizar, onEditar, onAlternarSt
                   className="transition-colors hover:bg-ink-50/70 dark:hover:bg-ink-800/40"
                 >
                   {colunas.map((col) => (
-                    <td key={col.key} className={cn('px-4 py-3', col.align === 'right' && 'text-right', col.align === 'center' && 'text-center')}>
+                    <td key={col.key} className={cn('px-4 py-2', col.align === 'right' && 'text-right', col.align === 'center' && 'text-center')}>
                       {renderCell(col.key, c)}
                     </td>
                   ))}

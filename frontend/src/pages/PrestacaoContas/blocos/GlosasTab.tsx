@@ -55,13 +55,13 @@ export function GlosasTab({ prestacaoId }: { prestacaoId: string }) {
       )}
 
       <div className="overflow-hidden rounded-xl border border-ink-200/70 dark:border-ink-800/70">
-        <table className="w-full text-left text-sm">
+        <table className="w-full text-left text-[13px]">
           <thead>
             <tr className="border-b border-ink-100 text-xs font-semibold text-ink-500 dark:border-ink-800 dark:text-ink-400">
-              <th className="px-4 py-2.5">Vínculo</th>
-              <th className="px-4 py-2.5">Resultado</th>
-              <th className="px-4 py-2.5 text-right">Valor glosado</th>
-              <th className="px-4 py-2.5 text-center">Ações</th>
+              <th className="px-4 py-2">Vínculo</th>
+              <th className="px-4 py-2">Resultado</th>
+              <th className="px-4 py-2 text-right">Valor glosado</th>
+              <th className="px-4 py-2 text-center">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
@@ -74,16 +74,16 @@ export function GlosasTab({ prestacaoId }: { prestacaoId: string }) {
             ) : (
               lista.map((g) => (
                 <tr key={g.id} className="hover:bg-ink-50/70 dark:hover:bg-ink-800/40">
-                  <td className="px-4 py-2.5 text-ink-700 dark:text-ink-200">
+                  <td className="px-4 py-2 text-ink-700 dark:text-ink-200">
                     {g.documentoNumero ? <span className="font-mono text-xs">Doc. nº {g.documentoNumero}</span> : <Badge tone="warning">Folha {g.pagamentoData ? dataBr(g.pagamentoData) : ''}</Badge>}
                   </td>
-                  <td className="px-4 py-2.5">
+                  <td className="px-4 py-2">
                     <Badge tone={g.resultadoAnalise === 'APROVADO' ? 'success' : g.resultadoAnalise === 'REPROVADO' ? 'danger' : 'warning'}>
                       {RESULTADO_ANALISE_LABEL[g.resultadoAnalise]}
                     </Badge>
                   </td>
-                  <td className="px-4 py-2.5 text-right tabular-nums text-ink-700 dark:text-ink-200">{g.valorGlosa != null ? formatarMoeda(g.valorGlosa) : '—'}</td>
-                  <td className="px-4 py-2.5">
+                  <td className="px-4 py-2 text-right tabular-nums text-ink-700 dark:text-ink-200">{g.valorGlosa != null ? formatarMoeda(g.valorGlosa) : '—'}</td>
+                  <td className="px-4 py-2">
                     <div className="flex items-center justify-center gap-1">
                       <IconBtn title="Editar" onClick={() => setModal({ tipo: 'form', item: g })}><Pencil className="h-4 w-4" /></IconBtn>
                       <IconBtn title="Excluir" danger onClick={() => setModal({ tipo: 'excluir', item: g })}><Trash2 className="h-4 w-4" /></IconBtn>

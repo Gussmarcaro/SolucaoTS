@@ -46,15 +46,15 @@ export function BensTab({ prestacaoId }: { prestacaoId: string }) {
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-ink-200/70 dark:border-ink-800/70">
-        <table className="w-full min-w-[680px] text-left text-sm">
+        <table className="w-full min-w-[680px] text-left text-[13px]">
           <thead>
             <tr className="border-b border-ink-100 text-xs font-semibold text-ink-500 dark:border-ink-800 dark:text-ink-400">
-              <th className="px-4 py-2.5">Categoria</th>
-              <th className="px-4 py-2.5">Patrimônio</th>
-              <th className="px-4 py-2.5">Descrição</th>
-              <th className="px-4 py-2.5">Data</th>
-              <th className="px-4 py-2.5 text-right">Valor</th>
-              <th className="px-4 py-2.5 text-center">Ações</th>
+              <th className="px-4 py-2">Categoria</th>
+              <th className="px-4 py-2">Patrimônio</th>
+              <th className="px-4 py-2">Descrição</th>
+              <th className="px-4 py-2">Data</th>
+              <th className="px-4 py-2 text-right">Valor</th>
+              <th className="px-4 py-2 text-center">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
@@ -67,12 +67,12 @@ export function BensTab({ prestacaoId }: { prestacaoId: string }) {
             ) : (
               lista.map((b) => (
                 <tr key={b.id} className="hover:bg-ink-50/70 dark:hover:bg-ink-800/40">
-                  <td className="px-4 py-2.5 text-ink-700 dark:text-ink-200">{CATEGORIA_BEM_LABEL[b.categoria]}</td>
-                  <td className="px-4 py-2.5 font-mono text-xs text-ink-600 dark:text-ink-300">{b.numeroPatrimonio ?? '—'}</td>
-                  <td className="px-4 py-2.5 text-ink-600 dark:text-ink-300" title={b.descricao}>{b.descricao}</td>
-                  <td className="px-4 py-2.5 text-ink-600 dark:text-ink-300">{dataBr(b.data)}</td>
-                  <td className="px-4 py-2.5 text-right tabular-nums text-ink-700 dark:text-ink-200">{b.valor != null ? formatarMoeda(b.valor) : '—'}</td>
-                  <td className="px-4 py-2.5">
+                  <td className="px-4 py-2 text-ink-700 dark:text-ink-200">{CATEGORIA_BEM_LABEL[b.categoria]}</td>
+                  <td className="px-4 py-2 font-mono text-xs text-ink-600 dark:text-ink-300">{b.numeroPatrimonio ?? '—'}</td>
+                  <td className="px-4 py-2 text-ink-600 dark:text-ink-300" title={b.descricao}>{b.descricao}</td>
+                  <td className="px-4 py-2 text-ink-600 dark:text-ink-300">{dataBr(b.data)}</td>
+                  <td className="px-4 py-2 text-right tabular-nums text-ink-700 dark:text-ink-200">{b.valor != null ? formatarMoeda(b.valor) : '—'}</td>
+                  <td className="px-4 py-2">
                     <div className="flex items-center justify-center gap-1">
                       <IconBtn title="Editar" onClick={() => setModal({ tipo: 'form', item: b })}><Pencil className="h-4 w-4" /></IconBtn>
                       <IconBtn title="Excluir" danger onClick={() => setModal({ tipo: 'excluir', item: b })}><Trash2 className="h-4 w-4" /></IconBtn>
