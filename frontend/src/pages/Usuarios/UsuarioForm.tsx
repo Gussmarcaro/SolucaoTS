@@ -123,7 +123,7 @@ export function UsuarioForm({ usuario, onSuccess, onCancel }: UsuarioFormProps) 
 
   function validar(): boolean {
     const novos: Partial<Record<keyof Campos, string>> = {};
-    if (form.nome.trim().length < 3) novos.nome = 'Informe o nome completo / razão social.';
+    if (form.nome.trim().length < 3) novos.nome = 'Informe o nome completo.';
     if (!isDocumentoValido(form.documento)) novos.documento = 'CPF/CNPJ inválido.';
     if (apenasDigitos(form.cep).length !== 8) novos.cep = 'CEP inválido.';
     if (!form.logradouro.trim()) novos.logradouro = 'Informe o endereço.';
@@ -192,7 +192,7 @@ export function UsuarioForm({ usuario, onSuccess, onCancel }: UsuarioFormProps) 
 
   return (
     <FormularioNovo novo={!editando}>
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-4">
         {alerta && (
           <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -200,58 +200,57 @@ export function UsuarioForm({ usuario, onSuccess, onCancel }: UsuarioFormProps) 
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="sm:col-span-2">
+        {/* Grade de 12 colunas: cada campo ocupa a largura que precisa, em vez
+            de esticar até o fim da linha. Deixa o formulário em 5 faixas. */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
+          <div className="sm:col-span-7">
             <Input
-              label="Nome Completo"
+              label="Nome Completo *"
               name="nome"
               value={form.nome}
               onChange={(e) => set('nome', e.target.value)}
               error={erros.nome}
-              placeholder="Ex.: Instituto Vida e Saúde"
+              placeholder="Ex.: Maria Silva de Souza"
+            />
+          </div>
+          <div className="sm:col-span-5">
+            <Input
+              label="CPF / CNPJ *"
+              name="documento"
+              value={mascaraCpfCnpj(form.documento)}
+              onChange={(e) => set('documento', e.target.value)}
+              error={erros.documento}
+              placeholder="000.000.000-00"
+              inputMode="numeric"
             />
           </div>
 
-          <Input
-            label="CPF / CNPJ"
-            name="documento"
-            value={mascaraCpfCnpj(form.documento)}
-            onChange={(e) => set('documento', e.target.value)}
-            error={erros.documento}
-            placeholder="000.000.000-00"
-            inputMode="numeric"
-          />
-
-          <Input
-            label="CEP"
-            name="cep"
-            value={mascaraCep(form.cep)}
-            onChange={(e) => set('cep', e.target.value)}
-            onBlur={handleCepBlur}
-            error={erros.cep}
-            placeholder="00000-000"
-            inputMode="numeric"
-            hint="Preenche o endereço automaticamente"
-            rightSlot={
-              buscandoCep ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Search className="h-4 w-4" />
-              )
-            }
-          />
-
-          <div className="grid grid-cols-1 gap-4 sm:col-span-2 sm:grid-cols-3">
-            <div className="sm:col-span-2">
-              <Input
-                label="Endereço (Logradouro)"
-                name="logradouro"
-                value={form.logradouro}
-                onChange={(e) => set('logradouro', e.target.value)}
-                error={erros.logradouro}
-                placeholder="Rua, Avenida..."
-              />
-            </div>
+          <div className="sm:col-span-3">
+            <Input
+              label="CEP *"
+              name="cep"
+              value={mascaraCep(form.cep)}
+              onChange={(e) => set('cep', e.target.value)}
+              onBlur={handleCepBlur}
+              error={erros.cep}
+              placeholder="00000-000"
+              inputMode="numeric"
+              rightSlot={
+                buscandoCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />
+              }
+            />
+          </div>
+          <div className="sm:col-span-6">
+            <Input
+              label="Endereço (Logradouro) *"
+              name="logradouro"
+              value={form.logradouro}
+              onChange={(e) => set('logradouro', e.target.value)}
+              error={erros.logradouro}
+              placeholder="Rua, Avenida..."
+            />
+          </div>
+          <div className="sm:col-span-3">
             <Input
               label="Número"
               name="numero"
@@ -261,7 +260,7 @@ export function UsuarioForm({ usuario, onSuccess, onCancel }: UsuarioFormProps) 
             />
           </div>
 
-          <div className="sm:col-span-2">
+          <div className="sm:col-span-6">
             <Input
               label="Complemento"
               name="complemento"
@@ -270,27 +269,28 @@ export function UsuarioForm({ usuario, onSuccess, onCancel }: UsuarioFormProps) 
               placeholder="Apartamento, bloco, sala... (opcional)"
             />
           </div>
+          <div className="sm:col-span-6">
+            <Input
+              label="Bairro *"
+              name="bairro"
+              value={form.bairro}
+              onChange={(e) => set('bairro', e.target.value)}
+              error={erros.bairro}
+            />
+          </div>
 
-          <Input
-            label="Bairro"
-            name="bairro"
-            value={form.bairro}
-            onChange={(e) => set('bairro', e.target.value)}
-            error={erros.bairro}
-          />
-
-          <div className="grid grid-cols-3 gap-3">
-            <div className="col-span-2">
-              <Input
-                label="Cidade"
-                name="cidade"
-                value={form.cidade}
-                onChange={(e) => set('cidade', e.target.value)}
-                error={erros.cidade}
-              />
-            </div>
+          <div className="sm:col-span-5">
+            <Input
+              label="Cidade *"
+              name="cidade"
+              value={form.cidade}
+              onChange={(e) => set('cidade', e.target.value)}
+              error={erros.cidade}
+            />
+          </div>
+          <div className="sm:col-span-2">
             <Select
-              label="UF"
+              label="UF *"
               name="uf"
               value={form.uf}
               onChange={(e) => set('uf', e.target.value)}
@@ -299,28 +299,30 @@ export function UsuarioForm({ usuario, onSuccess, onCancel }: UsuarioFormProps) 
               placeholder="—"
             />
           </div>
+          <div className="sm:col-span-5">
+            <Input
+              label="E-mail *"
+              name="email"
+              type="email"
+              value={form.email}
+              onChange={(e) => set('email', e.target.value)}
+              error={erros.email}
+              placeholder="contato@exemplo.com.br"
+            />
+          </div>
 
-          <Input
-            label="E-mail"
-            name="email"
-            type="email"
-            value={form.email}
-            onChange={(e) => set('email', e.target.value)}
-            error={erros.email}
-            placeholder="contato@exemplo.com.br"
-          />
-
-          <Input
-            label="Celular"
-            name="celular"
-            value={mascaraCelular(form.celular)}
-            onChange={(e) => set('celular', e.target.value)}
-            error={erros.celular}
-            placeholder="(00) 00000-0000"
-            inputMode="numeric"
-          />
-
-          <div className="sm:col-span-2">
+          <div className="sm:col-span-4">
+            <Input
+              label="Celular *"
+              name="celular"
+              value={mascaraCelular(form.celular)}
+              onChange={(e) => set('celular', e.target.value)}
+              error={erros.celular}
+              placeholder="(00) 00000-0000"
+              inputMode="numeric"
+            />
+          </div>
+          <div className="sm:col-span-8">
             <Combobox
               label="Grupo de Usuários"
               name="grupoUsuarioId"
@@ -328,14 +330,14 @@ export function UsuarioForm({ usuario, onSuccess, onCancel }: UsuarioFormProps) 
               onChange={(v) => set('grupoUsuarioId', v)}
               options={grupos}
               placeholder="Selecione um grupo (opcional)"
-              hint="Apenas grupos ativos são exibidos. Define o perfil de acesso do usuário."
+              hint="Define o perfil de acesso."
             />
           </div>
         </div>
 
         {/* Credenciais de acesso (o e-mail acima é o login) */}
-        <div className="rounded-xl border border-ink-100 bg-ink-50/50 p-4 dark:border-ink-800 dark:bg-ink-800/30">
-          <p className="mb-3 text-sm font-medium text-ink-700 dark:text-ink-200">
+        <div className="rounded-xl border border-ink-100 bg-ink-50/50 p-3 dark:border-ink-800 dark:bg-ink-800/30">
+          <p className="mb-2 text-sm font-medium text-ink-700 dark:text-ink-200">
             Credenciais de acesso
             {editando && (
               <span className="ml-1 font-normal text-ink-400">
@@ -343,10 +345,10 @@ export function UsuarioForm({ usuario, onSuccess, onCancel }: UsuarioFormProps) 
               </span>
             )}
           </p>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <PasswordInput
-                label="Senha"
+                label={editando ? 'Senha' : 'Senha *'}
                 name="senha"
                 autoComplete="new-password"
                 value={form.senha}
@@ -356,7 +358,7 @@ export function UsuarioForm({ usuario, onSuccess, onCancel }: UsuarioFormProps) 
               <PasswordStrength senha={form.senha} />
             </div>
             <PasswordInput
-              label="Confirmar senha"
+              label={editando ? 'Confirmar senha' : 'Confirmar senha *'}
               name="confirmarSenha"
               autoComplete="new-password"
               value={form.confirmarSenha}
