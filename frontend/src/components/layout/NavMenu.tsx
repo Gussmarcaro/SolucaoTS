@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
-import { navigation, type NavNode } from '@/lib/navigation';
+import { filtrarPorGrupo, navigation, type NavNode } from '@/lib/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/cn';
 
 interface Props {
@@ -95,13 +96,17 @@ function Sanfona({ aberto, children }: { aberto: boolean; children: React.ReactN
 
 export function NavMenu({ collapsed, onNavigate, onExpandSidebar }: Props) {
   const { pathname } = useLocation();
+  const { usuario } = useAuth();
+  // Itens restritos somem para quem não é do grupo. É só a interface — o
+  // backend barra a rota de qualquer forma.
+  const menu = useMemo(() => filtrarPorGrupo(navigation, usuario?.grupo ?? null), [usuario?.grupo]);
   const [abertos, setAbertos] = useState<Set<string>>(() => new Set(caminhoAtivo(navigation, pathname) ?? []));
 
   // Ao navegar, garante que o ramo da rota ativa esteja aberto.
   useEffect(() => {
-    const ramo = caminhoAtivo(navigation, pathname);
+    const ramo = caminhoAtivo(menu, pathname);
     if (ramo?.length) setAbertos((prev) => new Set([...prev, ...ramo]));
-  }, [pathname]);
+  }, [pathname, menu]);
 
   const toggle = (label: string) =>
     setAbertos((prev) => {
@@ -114,7 +119,7 @@ export function NavMenu({ collapsed, onNavigate, onExpandSidebar }: Props) {
   if (collapsed) {
     return (
       <ul className="hidden space-y-1 lg:block">
-        {navigation.map((node) => (
+        {menu.map((node) => (
           <li key={node.label}>
             {node.to ? (
               <NavLink
@@ -199,7 +204,7 @@ export function NavMenu({ collapsed, onNavigate, onExpandSidebar }: Props) {
 
   return (
     <ul className="space-y-1">
-      {navigation.map((node) => (
+      {menu.map((node) => (
         <li key={node.label}>{renderNode(node)}</li>
       ))}
     </ul>

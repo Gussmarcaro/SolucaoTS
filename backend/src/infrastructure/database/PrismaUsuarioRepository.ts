@@ -126,9 +126,16 @@ export class PrismaUsuarioRepository implements IUsuarioRepository {
   async buscarAuthPorEmail(email: string): Promise<UsuarioAuth | null> {
     const row = await prisma.usuario.findUnique({
       where: { email: email.trim().toLowerCase() },
-      select: { id: true, nome: true, email: true, senhaHash: true, ativo: true },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        senhaHash: true,
+        ativo: true,
+        grupoUsuario: { select: { nome: true } },
+      },
     });
-    return row;
+    return row ? { ...row, grupoNome: row.grupoUsuario?.nome ?? null } : null;
   }
 
   async definirResetToken(id: string, tokenHash: string, expiresAt: Date): Promise<void> {

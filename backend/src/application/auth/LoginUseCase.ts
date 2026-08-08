@@ -34,10 +34,13 @@ export class LoginUseCase {
     }
 
     const token = assinarToken(
-      { sub: usuario.id, nome: usuario.nome, email: usuario.email },
+      { sub: usuario.id, nome: usuario.nome, email: usuario.email, grupo: usuario.grupoNome },
       !!lembrar,
     );
 
-    return { token, usuario: { id: usuario.id, nome: usuario.nome, email: usuario.email } };
+    return {
+      token,
+      usuario: { id: usuario.id, nome: usuario.nome, email: usuario.email, grupo: usuario.grupoNome },
+    };
   }
 }

@@ -48,7 +48,8 @@ export function Login() {
   function entrarModoDemo() {
     entrar(
       'demo-token',
-      { id: 'demo', nome: 'Usuário Demonstração', email: 'demo@solucaots.local' },
+      // Grupo de administrador para o modo demo mostrar o menu completo.
+      { id: 'demo', nome: 'Usuário Demonstração', email: 'demo@solucaots.local', grupo: 'Administrador' },
       false,
     );
     navigate(destino, { replace: true });

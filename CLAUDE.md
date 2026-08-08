@@ -116,6 +116,19 @@ A trilha guarda também uma **descrição legível** do registro (`registroDescr
 
 `npm run verificar:auditoria` confere as regras puras (diff, omissão de campos sensíveis e a descrição) sem precisar de banco.
 
+### Restrição por grupo
+
+A auditoria é restrita aos grupos **Administrador** e **Suporte** (`GRUPOS_ADMIN`). São três camadas, e as três importam:
+
+1. `exigirGrupo('Administrador', 'Suporte')` na rota do backend — **a única que protege de fato**;
+2. `filtrarPorGrupo` no `NavMenu`, que some com o item;
+3. `<RequerGrupo>` no router, para a URL digitada à mão não abrir a tela.
+
+O grupo vem no **token JWT** (`payload.grupo`), preenchido no login a partir de `Usuario.grupoUsuarioId → GrupoUsuario.nome`. Duas consequências operacionais:
+
+- **Tokens antigos não têm o grupo.** Quem já estava logado precisa sair e entrar de novo, senão recebe 403.
+- Os grupos são **cadastro livre** (`GrupoUsuario.nome`), não enum, e nenhum seed os cria. Se não existir um grupo "Administrador" ou "Suporte" com usuários vinculados, **ninguém** vê a auditoria. A comparação ignora acento e caixa.
+
 ## Prazos legais (regra que dirige o Workflow)
 
 A Fase V tem **4 prazos distintos** que o Workflow deve controlar:

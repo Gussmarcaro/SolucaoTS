@@ -63,6 +63,8 @@ export interface UsuarioAuth {
   email: string;
   senhaHash: string | null;
   ativo: boolean;
+  /** Nome do grupo de acesso — vai para o token e decide o que o usuário vê. */
+  grupoNome: string | null;
 }
 
 /** Filtros de listagem — todos os campos são pesquisáveis. */

@@ -12,6 +12,8 @@ import { PrestacaoDetalhe } from '@/pages/PrestacaoContas/PrestacaoDetalhe';
 import { Usuarios } from '@/pages/Usuarios';
 import { Grupos } from '@/pages/Grupos';
 import { Auditoria } from '@/pages/Auditoria';
+import { RequerGrupo } from '@/components/auth/RequerGrupo';
+import { GRUPOS_ADMIN } from '@/lib/navigation';
 import { Orgaos } from '@/pages/Orgaos';
 import { Empresas } from '@/pages/Empresas';
 import { Entidades } from '@/pages/Entidades';
@@ -66,7 +68,14 @@ export default function App() {
           <Route path="/orgaos" element={<Orgaos />} />
           <Route path="/usuarios" element={<Usuarios />} />
           <Route path="/grupos" element={<Grupos />} />
-          <Route path="/auditoria" element={<Auditoria />} />
+          <Route
+            path="/auditoria"
+            element={
+              <RequerGrupo grupos={GRUPOS_ADMIN}>
+                <Auditoria />
+              </RequerGrupo>
+            }
+          />
 
           <Route path="*" element={<Placeholder title="Página não encontrada" />} />
         </Route>

@@ -8,6 +8,15 @@ export interface TokenPayload {
   sub: string; // id do usuário
   nome: string;
   email: string;
+  /**
+   * Nome do grupo de acesso. Vai no token para o front decidir o que exibir
+   * sem uma ida extra ao servidor — mas quem barra o acesso é o middleware
+   * `exigirGrupo`, não a interface.
+   *
+   * Ausente em tokens emitidos antes desta versão: quem estiver logado precisa
+   * entrar de novo para o grupo passar a valer.
+   */
+  grupo?: string | null;
 }
 
 /** Assina um JWT. Com "lembrar de mim", usa expiração estendida. */

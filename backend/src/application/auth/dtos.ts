@@ -6,7 +6,7 @@ export interface LoginDTO {
 
 export interface LoginResultado {
   token: string;
-  usuario: { id: string; nome: string; email: string };
+  usuario: { id: string; nome: string; email: string; grupo: string | null };
 }
 
 export interface SolicitarRecuperacaoDTO {

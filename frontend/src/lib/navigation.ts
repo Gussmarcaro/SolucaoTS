@@ -18,6 +18,30 @@ export interface NavNode {
   to?: string;
   children?: NavNode[];
   badge?: string;
+  /**
+   * Grupos que enxergam o item. Ausente = visível para todos.
+   * Isto é conveniência de interface — quem barra o acesso é o backend.
+   */
+  grupos?: string[];
+}
+
+/** Grupos com acesso às telas administrativas. */
+export const GRUPOS_ADMIN = ['Administrador', 'Suporte'];
+
+/** Compara nomes de grupo ignorando acento e caixa. */
+const normalizar = (v: string) => v.normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase();
+
+export function podeVer(node: NavNode, grupo: string | null): boolean {
+  if (!node.grupos) return true;
+  return !!grupo && node.grupos.some((g) => normalizar(g) === normalizar(grupo));
+}
+
+/** Remove os itens que o grupo não enxerga, e os ramos que ficaram vazios. */
+export function filtrarPorGrupo(nodes: NavNode[], grupo: string | null): NavNode[] {
+  return nodes
+    .filter((n) => podeVer(n, grupo))
+    .map((n) => (n.children ? { ...n, children: filtrarPorGrupo(n.children, grupo) } : n))
+    .filter((n) => !n.children || n.children.length > 0);
 }
 
 export const navigation: NavNode[] = [
@@ -66,7 +90,7 @@ export const navigation: NavNode[] = [
       { label: 'Órgãos', to: '/orgaos' },
       { label: 'Usuários', to: '/usuarios' },
       { label: 'Grupos de Usuários', to: '/grupos' },
-      { label: 'Auditoria', to: '/auditoria' },
+      { label: 'Auditoria', to: '/auditoria', grupos: GRUPOS_ADMIN },
     ],
   },
 ];
