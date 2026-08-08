@@ -112,7 +112,9 @@ A trilha é gravada por uma **extension do Prisma Client** (`extensaoAuditoria.t
 - Fora da trilha: tabelas de domínio (`Cbo`, `ClassificacaoEconomica`, `ComponenteDespesa`) e a própria `RegistroAuditoria` — que é **append-only** e se auditar-se-ia em laço infinito.
 - Falha ao gravar a trilha **não derruba** a operação de negócio; vai para o log do servidor.
 
-`npm run verificar:auditoria` confere as regras puras (diff e omissão de campos sensíveis) sem precisar de banco.
+A trilha guarda também uma **descrição legível** do registro (`registroDescricao`) — razão social, nome ou número, capturada na hora do evento, porque depois de uma exclusão não há mais onde lê-la. Sem ela o log diria "alteraram um Fornecedor" sem dizer qual.
+
+`npm run verificar:auditoria` confere as regras puras (diff, omissão de campos sensíveis e a descrição) sem precisar de banco.
 
 ## Prazos legais (regra que dirige o Workflow)
 

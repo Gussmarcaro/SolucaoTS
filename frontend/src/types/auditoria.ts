@@ -14,6 +14,8 @@ export interface RegistroAuditoria {
   /** Nome do model afetado, ex.: "Fornecedor". */
   entidade: string;
   registroId: string;
+  /** Rótulo do registro no momento do evento (razão social, nome, número). */
+  registroDescricao: string | null;
   acao: AcaoAuditoria;
   /**
    * ALTERACAO: `{ campo: { de, para } }` · EXCLUSAO: o registro completo ·

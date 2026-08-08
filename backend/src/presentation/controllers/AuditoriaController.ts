@@ -15,6 +15,7 @@ export class AuditoriaController {
           entidade: texto(q.entidade),
           registroId: texto(q.registroId),
           usuarioId: texto(q.usuarioId),
+          busca: texto(q.busca),
           acao: texto(q.acao),
           de: texto(q.de),
           ate: texto(q.ate),

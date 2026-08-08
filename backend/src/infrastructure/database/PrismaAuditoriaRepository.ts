@@ -13,6 +13,7 @@ function montarWhere(f: FiltrosAuditoria): Prisma.RegistroAuditoriaWhereInput {
     registroId: f.registroId,
     usuarioId: f.usuarioId,
     acao: f.acao,
+    registroDescricao: f.busca ? { contains: f.busca, mode: 'insensitive' } : undefined,
   };
   if (f.de || f.ate) {
     where.ocorridoEm = {

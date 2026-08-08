@@ -4,6 +4,8 @@ export interface FiltrosAuditoria {
   entidade?: string;
   registroId?: string;
   usuarioId?: string;
+  /** Busca parcial na descrição do registro. */
+  busca?: string;
   acao?: AcaoAuditoria;
   /** Início e fim do período, em 'YYYY-MM-DD'. */
   de?: string;

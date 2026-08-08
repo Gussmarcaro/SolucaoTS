@@ -92,6 +92,7 @@ async function registrar(params: {
   registroId: string;
   acao: Acao;
   alteracoes?: Registro;
+  registroDescricao?: string | null;
 }): Promise<void> {
   const ctx = contextoAtual();
   try {
@@ -101,6 +102,7 @@ async function registrar(params: {
         usuarioNome: ctx?.usuarioNome ?? '(sistema)',
         entidade: params.entidade,
         registroId: params.registroId,
+        registroDescricao: params.registroDescricao ?? null,
         acao: params.acao,
         alteracoes: (params.alteracoes ?? {}) as Prisma.InputJsonValue,
         rota: ctx?.rota ?? null,
@@ -124,6 +126,49 @@ async function estadoAnterior(model: string, where: unknown): Promise<Registro |
 }
 
 const idDe = (r: unknown): string => String((r as Registro | null)?.id ?? '(desconhecido)');
+
+/**
+ * Campos que servem de rótulo, em ordem de preferência. O primeiro preenchido
+ * vence — cobre a maioria dos models sem caso especial.
+ */
+const CAMPOS_DESCRITIVOS = [
+  'razaoSocial',
+  'nome',
+  'nomePrograma',
+  'descricao',
+  'codigoAjuste',
+  'codigoMeta',
+  'numero',
+  'conta',
+  'cpf',
+];
+
+/** Models cujo rótulo fica melhor com um prefixo. */
+const PREFIXO: Record<string, string> = {
+  ContratoFirmado: 'Contrato nº ',
+  Contrato: 'Contrato nº ',
+  DocumentoFiscal: 'Doc. fiscal nº ',
+  EmpenhoCadastro: 'Empenho nº ',
+  EmpenhoPrestacao: 'Empenho nº ',
+  TermoAditivo: 'Termo aditivo nº ',
+};
+
+/**
+ * Descrição legível do registro, guardada junto do log.
+ *
+ * Sem isso a trilha diz "alteraram um Fornecedor" sem dizer qual — e depois de
+ * uma exclusão não há mais como descobrir, porque o registro deixou de existir.
+ */
+export function descrever(model: string, registro: Registro | null): string | null {
+  if (!registro) return null;
+  for (const campo of CAMPOS_DESCRITIVOS) {
+    const valor = registro[campo];
+    if (valor != null && String(valor).trim() !== '') {
+      return `${PREFIXO[model] ?? ''}${String(valor)}`.slice(0, 200);
+    }
+  }
+  return null;
+}
 
 /**
  * Extension do Prisma Client: preenche `criadoPor` e mantém a trilha de
@@ -150,6 +195,7 @@ export const extensaoAuditoria = Prisma.defineExtension({
           await registrar({
             entidade: model,
             registroId: idDe(resultado),
+            registroDescricao: descrever(model, resultado as Registro),
             acao: 'CRIACAO',
             alteracoes: limpar(resultado as Registro),
           });
@@ -168,7 +214,13 @@ export const extensaoAuditoria = Prisma.defineExtension({
           // Soft delete é um update, mas o usuário lê como exclusão.
           const ativo = mudou.ativo as { de: unknown; para: unknown } | undefined;
           const acao: Acao = ativo ? (ativo.para === false ? 'INATIVACAO' : 'REATIVACAO') : 'ALTERACAO';
-          await registrar({ entidade: model, registroId: idDe(resultado), acao, alteracoes: mudou });
+          await registrar({
+            entidade: model,
+            registroId: idDe(resultado),
+            registroDescricao: descrever(model, resultado as Registro),
+            acao,
+            alteracoes: mudou,
+          });
         }
         return resultado;
       },
@@ -182,6 +234,8 @@ export const extensaoAuditoria = Prisma.defineExtension({
         await registrar({
           entidade: model,
           registroId: idDe(resultado),
+          // Da foto anterior: o registro já não existe para ser consultado.
+          registroDescricao: descrever(model, antes),
           acao: 'EXCLUSAO',
           alteracoes: antes,
         });

@@ -4,7 +4,7 @@
  *
  *   npm run verificar:auditoria
  */
-import { diferenca, limpar } from '../src/infrastructure/database/extensaoAuditoria';
+import { descrever, diferenca, limpar } from '../src/infrastructure/database/extensaoAuditoria';
 
 let falhas = 0;
 const ok = (cond: boolean, msg: string) => {
@@ -43,6 +43,15 @@ ok((dAtivo.ativo as { para: unknown }).para === false, 'inativação é detectá
 
 const dNulo = diferenca({ obs: null }, { obs: 'algo' });
 ok(JSON.stringify(dNulo.obs) === JSON.stringify({ de: null, para: 'algo' }), 'null -> valor é registrado');
+
+console.log('\n--- descrição do registro afetado ---');
+ok(descrever('Fornecedor', { nome: 'Papelaria Central' }) === 'Papelaria Central', 'usa o nome quando existe');
+ok(descrever('Empresa', { razaoSocial: 'ACME Ltda', nome: 'x' }) === 'ACME Ltda', 'razaoSocial tem prioridade sobre nome');
+ok(descrever('DocumentoFiscal', { numero: '123' }) === 'Doc. fiscal nº 123', 'prefixo por model');
+ok(descrever('ContratoFirmado', { numero: '77' }) === 'Contrato nº 77', 'prefixo do contrato');
+ok(descrever('Pagamento', {}) === null, 'sem campo descritivo devolve null');
+ok(descrever('Fornecedor', null) === null, 'registro nulo devolve null');
+ok((descrever('BemCedido', { descricao: 'x'.repeat(300) }) ?? '').length <= 200, 'descrição longa é truncada');
 
 console.log(falhas ? `\n${falhas} FALHA(S)` : '\nTudo ok.');
 process.exit(falhas ? 1 : 0);

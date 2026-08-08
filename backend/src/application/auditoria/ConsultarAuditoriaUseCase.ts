@@ -17,6 +17,7 @@ export class ConsultarAuditoriaUseCase {
     entidade?: string;
     registroId?: string;
     usuarioId?: string;
+    busca?: string;
     acao?: string;
     de?: string;
     ate?: string;
@@ -27,6 +28,7 @@ export class ConsultarAuditoriaUseCase {
     if (params.entidade?.trim()) filtros.entidade = params.entidade.trim();
     if (params.registroId?.trim()) filtros.registroId = params.registroId.trim();
     if (params.usuarioId?.trim()) filtros.usuarioId = params.usuarioId.trim();
+    if (params.busca?.trim()) filtros.busca = params.busca.trim();
     if (params.acao && ACOES.includes(params.acao as AcaoAuditoria)) filtros.acao = params.acao as AcaoAuditoria;
     if (params.de && DATA_ISO.test(params.de)) filtros.de = params.de;
     if (params.ate && DATA_ISO.test(params.ate)) filtros.ate = params.ate;

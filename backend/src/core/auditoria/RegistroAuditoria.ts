@@ -15,6 +15,8 @@ export interface RegistroAuditoria {
   usuarioNome: string;
   entidade: string;
   registroId: string;
+  /** Rótulo do registro no momento do evento (razão social, nome, número). */
+  registroDescricao: string | null;
   acao: AcaoAuditoria;
   alteracoes: unknown;
   rota: string | null;

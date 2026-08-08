@@ -5,6 +5,7 @@ import type { Paginado } from '@/types/empresa';
 export interface FiltrosAuditoria {
   entidade?: string;
   usuarioId?: string;
+  busca?: string;
   acao?: string;
   de?: string;
   ate?: string;

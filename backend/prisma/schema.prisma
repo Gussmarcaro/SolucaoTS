@@ -1137,6 +1137,9 @@ model RegistroAuditoria {
   usuarioNome String        @default("(sistema)")
   entidade    String // nome do model, ex.: "Fornecedor"
   registroId  String // id do registro afetado
+  // Descrição legível do registro no momento do evento (razão social, nome,
+  // número). Capturada aqui porque, após a exclusão, não há mais onde lê-la.
+  registroDescricao String?
   acao        AcaoAuditoria
   // ALTERACAO: só os campos que mudaram, como { campo: { de, para } }.
   // EXCLUSAO: o registro completo, é a última chance de saber o que havia.
