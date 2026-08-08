@@ -8,7 +8,6 @@ import {
   Power,
   Search,
   ServerCrash,
-  Landmark,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -183,8 +182,7 @@ export function EntidadesList({ refreshKey, onVisualizar, onEditar, onAlternarSt
             ) : data.length === 0 ? (
               <tr>
                 <td colSpan={colunas.length} className="py-16 text-center">
-                  <Landmark className="mx-auto h-8 w-8 text-ink-300" />
-                  <p className="mt-2 text-sm text-ink-500 dark:text-ink-400">Nenhuma entidade encontrada.</p>
+                  <p className="text-sm text-ink-500 dark:text-ink-400">Nenhuma entidade encontrada.</p>
                 </td>
               </tr>
             ) : (

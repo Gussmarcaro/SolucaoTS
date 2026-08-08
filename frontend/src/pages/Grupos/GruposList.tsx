@@ -9,7 +9,6 @@ import {
   Search,
   ServerCrash,
   Trash2,
-  Users,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -152,7 +151,7 @@ export function GruposList({ refreshKey, onVisualizar, onEditar, onAlternarStatu
             ) : erro ? (
               <tr><td colSpan={colunas.length} className="py-16 text-center"><ServerCrash className="mx-auto h-8 w-8 text-red-400" /><p className="mt-2 text-sm font-medium text-ink-600 dark:text-ink-300">{erro}</p></td></tr>
             ) : data.length === 0 ? (
-              <tr><td colSpan={colunas.length} className="py-16 text-center"><Users className="mx-auto h-8 w-8 text-ink-300" /><p className="mt-2 text-sm text-ink-500 dark:text-ink-400">Nenhum grupo encontrado.</p></td></tr>
+              <tr><td colSpan={colunas.length} className="py-16 text-center"><p className="text-sm text-ink-500 dark:text-ink-400">Nenhum grupo encontrado.</p></td></tr>
             ) : (
               data.map((g) => (
                 <tr key={g.id} onDoubleClick={() => onEditar(g)} title="Duplo-clique para editar" className="transition-colors hover:bg-ink-50/70 dark:hover:bg-ink-800/40">

@@ -69,7 +69,6 @@ export function ProgramasMetasTab({ ajusteId }: { ajusteId: string }) {
         <p className="py-8 text-center text-sm text-red-500">{erro}</p>
       ) : programas.length === 0 ? (
         <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-ink-300 py-12 text-center dark:border-ink-700">
-          <Target className="h-8 w-8 text-ink-300" />
           <p className="text-sm text-ink-400">Nenhum programa cadastrado.</p>
         </div>
       ) : (

@@ -3,7 +3,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
-  Landmark,
   Loader2,
   Pencil,
   Power,
@@ -156,7 +155,7 @@ export function OrgaosList({ refreshKey, onVisualizar, onEditar, onAlternarStatu
             ) : erro ? (
               <tr><td colSpan={colunas.length} className="py-16 text-center"><ServerCrash className="mx-auto h-8 w-8 text-red-400" /><p className="mt-2 text-sm font-medium text-ink-600 dark:text-ink-300">{erro}</p></td></tr>
             ) : data.length === 0 ? (
-              <tr><td colSpan={colunas.length} className="py-16 text-center"><Landmark className="mx-auto h-8 w-8 text-ink-300" /><p className="mt-2 text-sm text-ink-500 dark:text-ink-400">Nenhum órgão encontrado.</p></td></tr>
+              <tr><td colSpan={colunas.length} className="py-16 text-center"><p className="text-sm text-ink-500 dark:text-ink-400">Nenhum órgão encontrado.</p></td></tr>
             ) : (
               data.map((o) => (
                 <tr key={o.id} onDoubleClick={() => onEditar(o)} title="Duplo-clique para editar" className="transition-colors hover:bg-ink-50/70 dark:hover:bg-ink-800/40">

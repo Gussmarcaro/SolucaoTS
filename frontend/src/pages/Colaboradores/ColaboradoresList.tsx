@@ -8,7 +8,6 @@ import {
   Power,
   Search,
   ServerCrash,
-  UserRound,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -186,8 +185,7 @@ export function ColaboradoresList({ refreshKey, onVisualizar, onEditar, onAltern
             ) : data.length === 0 ? (
               <tr>
                 <td colSpan={colunas.length} className="py-16 text-center">
-                  <UserRound className="mx-auto h-8 w-8 text-ink-300" />
-                  <p className="mt-2 text-sm text-ink-500 dark:text-ink-400">Nenhum colaborador encontrado.</p>
+                  <p className="text-sm text-ink-500 dark:text-ink-400">Nenhum colaborador encontrado.</p>
                 </td>
               </tr>
             ) : (

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, ChevronLeft, ChevronRight, FileText, Loader2, Plus, Search, ServerCrash } from 'lucide-react';
+import { AlertCircle, ChevronLeft, ChevronRight, Loader2, Plus, Search, ServerCrash } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -113,7 +113,7 @@ export function PrestacaoContas() {
               ) : erro ? (
                 <tr><td colSpan={5} className="py-16 text-center"><ServerCrash className="mx-auto h-8 w-8 text-red-400" /><p className="mt-2 text-sm font-medium text-ink-600 dark:text-ink-300">{erro}</p></td></tr>
               ) : data.length === 0 ? (
-                <tr><td colSpan={5} className="py-16 text-center"><FileText className="mx-auto h-8 w-8 text-ink-300" /><p className="mt-2 text-sm text-ink-500 dark:text-ink-400">Nenhuma prestação. Crie a primeira.</p></td></tr>
+                <tr><td colSpan={5} className="py-16 text-center"><p className="text-sm text-ink-500 dark:text-ink-400">Nenhuma prestação. Crie a primeira.</p></td></tr>
               ) : (
                 data.map((p) => (
                   <tr

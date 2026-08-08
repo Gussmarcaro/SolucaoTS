@@ -3,7 +3,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
-  Inbox,
   Loader2,
   Pencil,
   Power,
@@ -210,8 +209,7 @@ export function UsuariosList({ refreshKey, onVisualizar, onEditar, onAlternarSta
             ) : data.length === 0 ? (
               <tr>
                 <td colSpan={colunas.length} className="py-16 text-center">
-                  <Inbox className="mx-auto h-8 w-8 text-ink-300" />
-                  <p className="mt-2 text-sm text-ink-500 dark:text-ink-400">Nenhum usuário encontrado.</p>
+                  <p className="text-sm text-ink-500 dark:text-ink-400">Nenhum usuário encontrado.</p>
                 </td>
               </tr>
             ) : (

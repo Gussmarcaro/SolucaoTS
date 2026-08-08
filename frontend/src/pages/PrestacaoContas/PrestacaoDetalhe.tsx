@@ -385,7 +385,6 @@ export function PrestacaoDetalhe() {
             <TermoBensCedidosTab prestacaoId={prestacao.id} />
           ) : (
             <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
-              <Circle className="h-8 w-8 text-ink-300" />
               <p className="text-sm font-medium text-ink-600 dark:text-ink-300">
                 {blocos.find((b) => b.chave === blocoAtivo)?.nome}
               </p>

@@ -3,7 +3,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
-  FileText,
   Loader2,
   Pencil,
   Power,
@@ -189,8 +188,7 @@ export function ContratosList({ refreshKey, onVisualizar, onEditar, onAlternarSt
             ) : data.length === 0 ? (
               <tr>
                 <td colSpan={colunas.length} className="py-16 text-center">
-                  <FileText className="mx-auto h-8 w-8 text-ink-300" />
-                  <p className="mt-2 text-sm text-ink-500 dark:text-ink-400">Nenhum contrato encontrado.</p>
+                  <p className="text-sm text-ink-500 dark:text-ink-400">Nenhum contrato encontrado.</p>
                 </td>
               </tr>
             ) : (
