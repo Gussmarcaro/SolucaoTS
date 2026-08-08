@@ -17,7 +17,7 @@ import { ResizableHead, type SortState } from '@/components/ui/ResizableHead';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useResizableColumns, type ColunaDef } from '@/hooks/useResizableColumns';
 import { useAuth } from '@/contexts/AuthContext';
-import { listarEmpresas, resolverUrlLogo } from '@/services/empresas.service';
+import { listarEmpresas } from '@/services/empresas.service';
 import { extrairMensagemErro } from '@/services/http';
 import { mascaraCpfCnpj } from '@/lib/masks';
 import { cn } from '@/lib/cn';
@@ -117,22 +117,12 @@ export function EmpresasList({ refreshKey, onVisualizar, onEditar, onAlternarSta
           </div>
         );
       case 'empresa': {
-        const logo = resolverUrlLogo(emp.logoUrl);
         return (
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-ink-50 dark:bg-ink-800">
-              {logo ? (
-                <img src={logo} alt="" className="h-full w-full object-contain" />
-              ) : (
-                <Building2 className="h-4 w-4 text-ink-300" />
-              )}
-            </div>
-            <div className="min-w-0">
-              <p className="truncate font-medium text-ink-800 dark:text-ink-100" title={emp.razaoSocial}>
-                {emp.razaoSocial}
-              </p>
-              {emp.nomeFantasia && <p className="truncate text-xs text-ink-400">{emp.nomeFantasia}</p>}
-            </div>
+          <div className="min-w-0">
+            <p className="truncate font-medium text-ink-800 dark:text-ink-100" title={emp.razaoSocial}>
+              {emp.razaoSocial}
+            </p>
+            {emp.nomeFantasia && <p className="truncate text-xs text-ink-400">{emp.nomeFantasia}</p>}
           </div>
         );
       }

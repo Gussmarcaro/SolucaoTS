@@ -1,7 +1,5 @@
-import { Building2 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { mascaraCep, mascaraCelular, mascaraCpfCnpj, mascaraTelefoneFixo } from '@/lib/masks';
-import { resolverUrlLogo } from '@/services/empresas.service';
 import type { Empresa } from '@/types/empresa';
 
 function Campo({ label, valor }: { label: string; valor?: string | null }) {
@@ -14,29 +12,19 @@ function Campo({ label, valor }: { label: string; valor?: string | null }) {
 }
 
 export function EmpresaView({ empresa }: { empresa: Empresa }) {
-  const logo = resolverUrlLogo(empresa.logoUrl);
   const endereco = [empresa.logradouro, empresa.numero, empresa.complemento]
     .filter(Boolean)
     .join(', ');
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl bg-ink-50 dark:bg-ink-800">
-          {logo ? (
-            <img src={logo} alt="Logo" className="h-full w-full object-contain" />
-          ) : (
-            <Building2 className="h-7 w-7 text-ink-300" />
-          )}
-        </div>
-        <div>
-          <h3 className="text-base font-semibold text-ink-900 dark:text-ink-50">{empresa.razaoSocial}</h3>
-          {empresa.nomeFantasia && <p className="text-sm text-ink-500">{empresa.nomeFantasia}</p>}
-          <div className="mt-1">
-            <Badge tone={empresa.ativo ? 'success' : 'neutral'}>
-              {empresa.ativo ? 'Ativo' : 'Inativo'}
-            </Badge>
-          </div>
+      <div>
+        <h3 className="text-base font-semibold text-ink-900 dark:text-ink-50">{empresa.razaoSocial}</h3>
+        {empresa.nomeFantasia && <p className="text-sm text-ink-500">{empresa.nomeFantasia}</p>}
+        <div className="mt-1">
+          <Badge tone={empresa.ativo ? 'success' : 'neutral'}>
+            {empresa.ativo ? 'Ativo' : 'Inativo'}
+          </Badge>
         </div>
       </div>
 
