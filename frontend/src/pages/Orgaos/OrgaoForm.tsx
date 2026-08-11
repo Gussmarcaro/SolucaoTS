@@ -117,8 +117,8 @@ export function OrgaoForm({ orgao, onSuccess, onCancel }: Props) {
           <Select label="Tipo de Órgão *" name="tipoOrgao" value={form.tipoOrgao} onChange={(e) => set('tipoOrgao', e.target.value)} error={erros.tipoOrgao} options={opcoesDe(TIPO_ORGAO_LABEL)} placeholder="Selecione..." />
           <Select label="Periodicidade (Declaração Negativa) *" name="periodicidade" value={form.periodicidade} onChange={(e) => set('periodicidade', e.target.value)} error={erros.periodicidade} options={opcoesDe(PERIODICIDADE_LABEL)} placeholder="Selecione..." />
 
-          <Input label="Código do Município (TCESP) *" name="codigoMunicipio" value={form.codigoMunicipio} onChange={(e) => set('codigoMunicipio', apenasDigitos(e.target.value).slice(0, 4))} error={erros.codigoMunicipio} placeholder="1–9999" inputMode="numeric" />
-          <Input label="Código da Entidade (TCESP) *" name="codigoEntidade" value={form.codigoEntidade} onChange={(e) => set('codigoEntidade', apenasDigitos(e.target.value).slice(0, 5))} error={erros.codigoEntidade} placeholder="1–99999" inputMode="numeric" />
+          <Input label="Código Município *" name="codigoMunicipio" value={form.codigoMunicipio} onChange={(e) => set('codigoMunicipio', apenasDigitos(e.target.value).slice(0, 4))} error={erros.codigoMunicipio} placeholder="1–9999" inputMode="numeric" />
+          <Input label="Código Entidade *" name="codigoEntidade" value={form.codigoEntidade} onChange={(e) => set('codigoEntidade', apenasDigitos(e.target.value).slice(0, 5))} error={erros.codigoEntidade} placeholder="1–99999" inputMode="numeric" />
 
           <div className="sm:col-span-2">
             <Input label="CNPJ *" name="cnpj" value={form.cnpj} onChange={(e) => set('cnpj', mascaraCpfCnpj(e.target.value))} error={erros.cnpj} placeholder="00.000.000/0000-00" inputMode="numeric" />

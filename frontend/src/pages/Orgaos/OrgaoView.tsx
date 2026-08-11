@@ -24,8 +24,8 @@ export function OrgaoView({ orgao }: { orgao: Orgao }) {
       </div>
 
       <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Campo rotulo="Código do Município (TCESP)" valor={String(orgao.codigoMunicipio)} />
-        <Campo rotulo="Código da Entidade (TCESP)" valor={String(orgao.codigoEntidade)} />
+        <Campo rotulo="Código Município" valor={String(orgao.codigoMunicipio)} />
+        <Campo rotulo="Código Entidade" valor={String(orgao.codigoEntidade)} />
         <Campo rotulo="Periodicidade (Declaração Negativa)" valor={PERIODICIDADE_LABEL[orgao.periodicidade] ?? orgao.periodicidade} />
         <Campo rotulo="CNPJ" valor={mascaraCpfCnpj(orgao.cnpj)} />
       </dl>
