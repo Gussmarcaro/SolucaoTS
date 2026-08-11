@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(cd c:\\\\SolucaoTS; git ls-files --others --exclude-standard -z | ForEach-Object { $_ } | Out-Null; Get-ChildItem -LiteralPath \"c:\\\\SolucaoTS\\\\Documentação\" -File | Where-Object { $_.Name -match 'mto2026|livro-1|Fonte ou|Arquivo JSON|Manual da Prest' } | Select-Object @{n='MB';e={[math]::Round\\($_.Length/1MB,2\\)}}, Name; Get-ChildItem -LiteralPath \"c:\\\\SolucaoTS\\\\Documentação\\\\Tabelas Auxiliares\" -Recurse -File | Measure-Object -Property Length -Sum | ForEach-Object { \"Tabelas Auxiliares: {0} arquivos, {1} MB\" -f $_.Count, [math]::Round\\($_.Sum/1MB,2\\) })"
+    ]
+  }
+}
