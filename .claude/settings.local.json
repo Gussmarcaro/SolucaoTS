@@ -15,7 +15,15 @@
       "Bash(node -e ' *)",
       "PowerShell($env:Path = \"$env:ProgramFiles\\\\nodejs;\" + $env:Path; cd C:\\\\SolucaoTS\\\\backend; npx tsc --noEmit)",
       "PowerShell($env:Path = \"$env:ProgramFiles\\\\nodejs;\" + $env:Path; cd C:\\\\SolucaoTS\\\\frontend; npm run build 2>&1 | Select-String -Pattern \"error|built|transformed\")",
-      "PowerShell($env:Path = \"$env:ProgramFiles\\\\nodejs;\" + $env:Path; cd C:\\\\SolucaoTS\\\\backend; npx tsc --noEmit 2>&1 | Select-String -Pattern \"error\" | Select-Object -First 30; if \\($?\\) { \"tsc concluido\" })"
+      "PowerShell($env:Path = \"$env:ProgramFiles\\\\nodejs;\" + $env:Path; cd C:\\\\SolucaoTS\\\\backend; npx tsc --noEmit 2>&1 | Select-String -Pattern \"error\" | Select-Object -First 30; if \\($?\\) { \"tsc concluido\" })",
+      "PowerShell($env:Path = \"$env:ProgramFiles\\\\nodejs;\" + $env:Path; cd C:\\\\SolucaoTS\\\\backend; npx tsx src/_validar-fase-d.ts)",
+      "PowerShell($env:Path = \"$env:ProgramFiles\\\\nodejs;\" + $env:Path; cd C:\\\\SolucaoTS\\\\backend; npx tsx src/_validar-fase-d.ts 2>&1 | Select-String -Pattern \"RESULTADO|✗\")",
+      "PowerShell($env:Path = \"$env:ProgramFiles\\\\nodejs;\" + $env:Path; cd C:\\\\SolucaoTS\\\\backend; npx tsc --noEmit 2>&1 | Select-String -Pattern \"error\" | Select-Object -First 20; if \\($?\\) { \"backend tsc OK\" })",
+      "PowerShell($env:Path = \"$env:ProgramFiles\\\\nodejs;\" + $env:Path; cd C:\\\\SolucaoTS\\\\backend; $env:DATABASE_URL = \"postgresql://u:p@localhost:5432/db\"; npx prisma format 2>&1 | Select-String -Pattern \"error|valid\"; npx prisma generate 2>&1 | Select-String -Pattern \"Generated|error\")",
+      "Bash(awk '{print $6,$7,$8}')",
+      "Bash(git commit -q -m '@ *)",
+      "Bash(git commit *)",
+      "Bash(git add *)"
     ]
   }
 }
