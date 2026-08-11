@@ -15,3 +15,18 @@ export const uploadCsv = multer({
     cb(null, true);
   },
 }).single('file');
+
+/**
+ * Upload do PDF do estatuto (campo "arquivo"), até 5 MB. Também fica em memória:
+ * o buffer vai direto para o banco, porque o disco do Render é efêmero.
+ */
+export const uploadPdf = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype !== 'application/pdf' || !/\.pdf$/i.test(file.originalname)) {
+      return cb(new BusinessError('Envie um arquivo .pdf.'));
+    }
+    cb(null, true);
+  },
+}).single('arquivo');

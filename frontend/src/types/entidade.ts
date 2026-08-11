@@ -6,6 +6,14 @@ export interface Entidade {
   inscricaoEstadual: string | null;
   inscricaoMunicipal: string | null;
   dataConstituicao: string | null;
+  finalidadeDescricao: string | null;
+  finalidadeArtigo: string | null;
+  dataUltimaAlteracao: string | null;
+  /** Metadados do PDF do estatuto — o conteúdo vem pela rota de download. */
+  estatutoArquivoNome: string | null;
+  estatutoArquivoTamanho: number | null;
+  estatutoDataInicial: string | null;
+  estatutoDataAlteracao: string | null;
   cep: string;
   logradouro: string;
   numero: string | null;
@@ -28,6 +36,11 @@ export interface EntidadePayload {
   inscricaoEstadual?: string | null;
   inscricaoMunicipal?: string | null;
   dataConstituicao?: string | null;
+  finalidadeDescricao?: string | null;
+  finalidadeArtigo?: string | null;
+  dataUltimaAlteracao?: string | null;
+  estatutoDataInicial?: string | null;
+  estatutoDataAlteracao?: string | null;
   cep: string;
   logradouro: string;
   numero?: string | null;

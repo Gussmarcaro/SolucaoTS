@@ -5,6 +5,11 @@ export interface CriarEntidadeDTO {
   inscricaoEstadual?: string | null;
   inscricaoMunicipal?: string | null;
   dataConstituicao?: string | null; // ISO (YYYY-MM-DD)
+  finalidadeDescricao?: string | null;
+  finalidadeArtigo?: string | null;
+  dataUltimaAlteracao?: string | null; // ISO (YYYY-MM-DD)
+  estatutoDataInicial?: string | null; // ISO (YYYY-MM-DD)
+  estatutoDataAlteracao?: string | null; // ISO (YYYY-MM-DD)
   cep: string;
   logradouro: string;
   numero?: string | null;
@@ -27,6 +32,11 @@ export interface DadosEntidade {
   inscricaoEstadual: string | null;
   inscricaoMunicipal: string | null;
   dataConstituicao: Date | null;
+  finalidadeDescricao: string | null;
+  finalidadeArtigo: string | null;
+  dataUltimaAlteracao: Date | null;
+  estatutoDataInicial: Date | null;
+  estatutoDataAlteracao: Date | null;
   cep: string;
   logradouro: string;
   numero: string | null;
@@ -37,6 +47,13 @@ export interface DadosEntidade {
   email: string;
   telefoneFixo: string | null;
   whatsapp: string | null;
+}
+
+/** PDF do estatuto vindo do upload (multipart), pronto para persistir. */
+export interface ArquivoEstatuto {
+  nome: string;
+  tamanho: number;
+  conteudo: Buffer;
 }
 
 export interface FiltrosEntidade {

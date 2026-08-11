@@ -389,21 +389,37 @@ model EntidadeBeneficiaria {
   inscricaoEstadual  String?   @db.VarChar(20)
   inscricaoMunicipal String?   @db.VarChar(20)
   dataConstituicao   DateTime? @db.Date
-  cep                String    @db.VarChar(8)
-  logradouro         String
-  numero             String?   @db.VarChar(20)
-  complemento        String?
-  bairro             String
-  cidade             String
-  uf                 String    @db.VarChar(2)
-  email              String
-  telefoneFixo       String?   @db.VarChar(11)
-  whatsapp           String?   @db.VarChar(11)
-  buscaTexto         String    @default("") // texto normalizado para busca global
-  ativo              Boolean   @default(true) // soft delete
-  criadoPor          String?   @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
-  criadoEm           DateTime  @default(now())
-  atualizadoEm       DateTime  @updatedAt
+
+  // Finalidade estatutária
+  finalidadeDescricao String? // o que o estatuto define como finalidade da OSC
+  finalidadeArtigo    String? @db.VarChar(120) // artigo do estatuto que a define
+
+  dataUltimaAlteracao DateTime? @db.Date // última alteração sofrida pelo estatuto
+
+  // Estatuto — o PDF mora no próprio banco (não há storage externo no projeto).
+  // `estatutoArquivo` NUNCA entra no select padrão nem na trilha de auditoria:
+  // é o único campo do schema que pode ter megabytes.
+  estatutoArquivo        Bytes?
+  estatutoArquivoNome    String?
+  estatutoArquivoTamanho Int? // bytes, para exibir sem carregar o conteúdo
+  estatutoDataInicial    DateTime? @db.Date
+  estatutoDataAlteracao  DateTime? @db.Date
+
+  cep          String   @db.VarChar(8)
+  logradouro   String
+  numero       String?  @db.VarChar(20)
+  complemento  String?
+  bairro       String
+  cidade       String
+  uf           String   @db.VarChar(2)
+  email        String
+  telefoneFixo String?  @db.VarChar(11)
+  whatsapp     String?  @db.VarChar(11)
+  buscaTexto   String   @default("") // texto normalizado para busca global
+  ativo        Boolean  @default(true) // soft delete
+  criadoPor    String?  @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
 
   cliente   Cliente?   @relation(fields: [clienteId], references: [id])
   ajustes   Ajuste[]

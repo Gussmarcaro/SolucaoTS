@@ -1,7 +1,12 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
 import type { IEntidadeRepository } from '@/application/entidade/IEntidadeRepository';
-import type { DadosEntidade, ListarEntidadesParams, Paginado } from '@/application/entidade/dtos';
+import type {
+  ArquivoEstatuto,
+  DadosEntidade,
+  ListarEntidadesParams,
+  Paginado,
+} from '@/application/entidade/dtos';
 import type { EntidadeBeneficiaria } from '@/core/entidade/EntidadeBeneficiaria';
 import { apenasDigitos } from '@/shared/validators/documento';
 import { normalizarTexto } from '@/shared/normalizar';
@@ -15,6 +20,15 @@ const selecao = {
   inscricaoEstadual: true,
   inscricaoMunicipal: true,
   dataConstituicao: true,
+  finalidadeDescricao: true,
+  finalidadeArtigo: true,
+  dataUltimaAlteracao: true,
+  // Só os metadados do estatuto — `estatutoArquivo` fica de fora de propósito,
+  // senão toda listagem traria os PDFs junto.
+  estatutoArquivoNome: true,
+  estatutoArquivoTamanho: true,
+  estatutoDataInicial: true,
+  estatutoDataAlteracao: true,
   cep: true,
   logradouro: true,
   numero: true,
@@ -59,6 +73,39 @@ export class PrismaEntidadeRepository implements IEntidadeRepository {
 
   definirAtivo(id: string, ativo: boolean): Promise<EntidadeBeneficiaria> {
     return prisma.entidadeBeneficiaria.update({ where: { id }, data: { ativo }, select: selecao });
+  }
+
+  salvarEstatuto(id: string, arquivo: ArquivoEstatuto): Promise<EntidadeBeneficiaria> {
+    return prisma.entidadeBeneficiaria.update({
+      where: { id },
+      data: {
+        estatutoArquivo: arquivo.conteudo,
+        estatutoArquivoNome: arquivo.nome,
+        estatutoArquivoTamanho: arquivo.tamanho,
+      },
+      select: selecao,
+    });
+  }
+
+  async obterEstatuto(id: string): Promise<ArquivoEstatuto | null> {
+    const row = await prisma.entidadeBeneficiaria.findUnique({
+      where: { id },
+      select: { estatutoArquivo: true, estatutoArquivoNome: true, estatutoArquivoTamanho: true },
+    });
+    if (!row?.estatutoArquivo) return null;
+    return {
+      conteudo: Buffer.from(row.estatutoArquivo),
+      nome: row.estatutoArquivoNome ?? 'estatuto.pdf',
+      tamanho: row.estatutoArquivoTamanho ?? row.estatutoArquivo.length,
+    };
+  }
+
+  removerEstatuto(id: string): Promise<EntidadeBeneficiaria> {
+    return prisma.entidadeBeneficiaria.update({
+      where: { id },
+      data: { estatutoArquivo: null, estatutoArquivoNome: null, estatutoArquivoTamanho: null },
+      select: selecao,
+    });
   }
 
   async listar({

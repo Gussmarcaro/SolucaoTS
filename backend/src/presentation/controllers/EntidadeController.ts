@@ -78,4 +78,45 @@ export class EntidadeController {
       return next(e);
     }
   }
+
+  /** Anexa (ou substitui) o PDF do estatuto. Multipart, campo "arquivo". */
+  async enviarEstatuto(req: Request, res: Response, next: NextFunction) {
+    try {
+      const file = req.file;
+      if (!file) throw new BusinessError('Selecione o PDF do estatuto.');
+      const entidade = await gerenciar.salvarEstatuto(req.params.id, {
+        nome: file.originalname,
+        tamanho: file.size,
+        conteudo: file.buffer,
+      });
+      return res.json(entidade);
+    } catch (e) {
+      return next(e);
+    }
+  }
+
+  /** Baixa o PDF do estatuto. */
+  async baixarEstatuto(req: Request, res: Response, next: NextFunction) {
+    try {
+      const arquivo = await gerenciar.obterEstatuto(req.params.id);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Length', arquivo.tamanho);
+      // `inline` para abrir na aba; o nome só vale se o usuário salvar.
+      res.setHeader(
+        'Content-Disposition',
+        `inline; filename="${encodeURIComponent(arquivo.nome)}"`,
+      );
+      return res.end(arquivo.conteudo);
+    } catch (e) {
+      return next(e);
+    }
+  }
+
+  async removerEstatuto(req: Request, res: Response, next: NextFunction) {
+    try {
+      return res.json(await gerenciar.removerEstatuto(req.params.id));
+    } catch (e) {
+      return next(e);
+    }
+  }
 }

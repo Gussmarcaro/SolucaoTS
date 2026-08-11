@@ -44,6 +44,9 @@ const CAMPOS_OMITIDOS = new Set([
   'resetTokenExpiresAt',
   'buscaTexto',
   'atualizadoEm',
+  // Conteúdo binário do PDF do estatuto: logá-lo gravaria megabytes por evento
+  // na trilha. O nome e o tamanho do arquivo continuam sendo auditados.
+  'estatutoArquivo',
 ]);
 
 /**
@@ -113,13 +116,39 @@ async function registrar(params: {
   }
 }
 
+/**
+ * Campos binários grandes. `estadoAnterior` lê o registro inteiro para montar o
+ * diff, e sem isto uma edição de entidade traria o PDF do estatuto (até 5 MB) do
+ * banco só para descartá-lo em `limpar()`.
+ */
+const CAMPOS_PESADOS = new Set(['estatutoArquivo']);
+
+/** Cache do select por model: `undefined` = pode ler tudo. */
+const selecaoLeveCache = new Map<string, Record<string, boolean> | undefined>();
+
+function selecaoLeve(model: string): Record<string, boolean> | undefined {
+  if (selecaoLeveCache.has(model)) return selecaoLeveCache.get(model);
+  const meta = Prisma.dmmf.datamodel.models.find((m) => m.name === model);
+  const temPesado = meta?.fields.some((f) => CAMPOS_PESADOS.has(f.name)) ?? false;
+  const select = temPesado
+    ? Object.fromEntries(
+        meta!.fields
+          .filter((f) => f.kind === 'scalar' && !CAMPOS_PESADOS.has(f.name))
+          .map((f) => [f.name, true]),
+      )
+    : undefined;
+  selecaoLeveCache.set(model, select);
+  return select;
+}
+
 /** Lê o registro antes da operação, para compor o diff / o snapshot. */
 async function estadoAnterior(model: string, where: unknown): Promise<Registro | null> {
   try {
     const delegate = (cliente as unknown as Record<string, { findFirst: (a: unknown) => Promise<Registro | null> }>)[
       model.charAt(0).toLowerCase() + model.slice(1)
     ];
-    return (await delegate?.findFirst({ where })) ?? null;
+    const select = selecaoLeve(model);
+    return (await delegate?.findFirst(select ? { where, select } : { where })) ?? null;
   } catch {
     return null;
   }

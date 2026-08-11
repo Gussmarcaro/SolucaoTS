@@ -18,13 +18,26 @@ export function normalizarEValidarEntidade(input: CriarEntidadeDTO): DadosEntida
   const telefoneFixo = input.telefoneFixo ? apenasDigitos(input.telefoneFixo) : null;
   const whatsapp = input.whatsapp ? apenasDigitos(input.whatsapp) : null;
 
-  let dataConstituicao: Date | null = null;
-  if (input.dataConstituicao) {
-    const d = new Date(input.dataConstituicao);
-    if (Number.isNaN(d.getTime())) throw new BusinessError('Data de constituição inválida.');
-    if (d.getTime() > Date.now()) throw new BusinessError('Data de constituição não pode ser futura.');
-    dataConstituicao = d;
-  }
+  /** Data opcional em ISO — recusa formato inválido e data no futuro. */
+  const dataPassada = (valor: string | null | undefined, rotulo: string): Date | null => {
+    if (!valor) return null;
+    const d = new Date(valor);
+    if (Number.isNaN(d.getTime())) throw new BusinessError(`${rotulo} inválida.`);
+    if (d.getTime() > Date.now()) throw new BusinessError(`${rotulo} não pode ser futura.`);
+    return d;
+  };
+
+  const dataConstituicao = dataPassada(input.dataConstituicao, 'Data de constituição');
+  const dataUltimaAlteracao = dataPassada(input.dataUltimaAlteracao, 'Data da última alteração');
+  const estatutoDataInicial = dataPassada(input.estatutoDataInicial, 'Data inicial do estatuto');
+  const estatutoDataAlteracao = dataPassada(input.estatutoDataAlteracao, 'Data de alteração do estatuto');
+
+  if (
+    estatutoDataInicial &&
+    estatutoDataAlteracao &&
+    estatutoDataAlteracao.getTime() < estatutoDataInicial.getTime()
+  )
+    throw new BusinessError('A data de alteração do estatuto não pode ser anterior à data inicial.');
 
   if (razaoSocial.length < 2) throw new BusinessError('Informe a razão social.');
   if (!isCNPJValido(cnpj)) throw new BusinessError('CNPJ inválido.');
@@ -46,6 +59,11 @@ export function normalizarEValidarEntidade(input: CriarEntidadeDTO): DadosEntida
     inscricaoEstadual: input.inscricaoEstadual?.trim() || null,
     inscricaoMunicipal: input.inscricaoMunicipal?.trim() || null,
     dataConstituicao,
+    finalidadeDescricao: input.finalidadeDescricao?.trim() || null,
+    finalidadeArtigo: input.finalidadeArtigo?.trim() || null,
+    dataUltimaAlteracao,
+    estatutoDataInicial,
+    estatutoDataAlteracao,
     cep,
     logradouro,
     numero: input.numero?.trim() || null,

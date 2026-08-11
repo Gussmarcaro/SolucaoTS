@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { AlertCircle, Loader2, Search } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { AlertCircle, ExternalLink, FileText, Loader2, Search, Trash2, Upload } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
@@ -15,7 +15,13 @@ import {
 } from '@/lib/masks';
 import { isCnpjValido, isEmailValido } from '@/lib/validators';
 import { consultarCep } from '@/services/viacep.service';
-import { atualizarEntidade, criarEntidade } from '@/services/entidades.service';
+import {
+  abrirEstatuto,
+  atualizarEntidade,
+  criarEntidade,
+  enviarEstatuto,
+  removerEstatuto,
+} from '@/services/entidades.service';
 import { extrairCodigoErro, extrairMensagemErro } from '@/services/http';
 import type { Entidade, EntidadePayload } from '@/types/entidade';
 
@@ -25,6 +31,14 @@ interface Props {
   onCancel: () => void;
 }
 
+/** Espelha o limite do backend (multer + use case). */
+const MAX_ESTATUTO = 5 * 1024 * 1024;
+
+function tamanhoLegivel(bytes: number): string {
+  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
+
 type Campos = {
   razaoSocial: string;
   nomeFantasia: string;
@@ -32,6 +46,11 @@ type Campos = {
   inscricaoEstadual: string;
   inscricaoMunicipal: string;
   dataConstituicao: string;
+  finalidadeDescricao: string;
+  finalidadeArtigo: string;
+  dataUltimaAlteracao: string;
+  estatutoDataInicial: string;
+  estatutoDataAlteracao: string;
   cep: string;
   logradouro: string;
   numero: string;
@@ -52,6 +71,11 @@ function estadoInicial(e?: Entidade | null): Campos {
     inscricaoEstadual: e?.inscricaoEstadual ?? '',
     inscricaoMunicipal: e?.inscricaoMunicipal ?? '',
     dataConstituicao: e?.dataConstituicao ? e.dataConstituicao.slice(0, 10) : '',
+    finalidadeDescricao: e?.finalidadeDescricao ?? '',
+    finalidadeArtigo: e?.finalidadeArtigo ?? '',
+    dataUltimaAlteracao: e?.dataUltimaAlteracao ? e.dataUltimaAlteracao.slice(0, 10) : '',
+    estatutoDataInicial: e?.estatutoDataInicial ? e.estatutoDataInicial.slice(0, 10) : '',
+    estatutoDataAlteracao: e?.estatutoDataAlteracao ? e.estatutoDataAlteracao.slice(0, 10) : '',
     cep: e?.cep ?? '',
     logradouro: e?.logradouro ?? '',
     numero: e?.numero ?? '',
@@ -73,11 +97,51 @@ export function EntidadeForm({ entidade, onSuccess, onCancel }: Props) {
   const [buscandoCep, setBuscandoCep] = useState(false);
   const [salvando, setSalvando] = useState(false);
 
+  // Estatuto: `arquivo` é o PDF recém-escolhido, ainda não enviado — o upload só
+  // acontece depois de salvar, porque a rota precisa do id da entidade.
+  const [arquivo, setArquivo] = useState<File | null>(null);
+  const [anexado, setAnexado] = useState<{ nome: string; tamanho: number } | null>(
+    entidade?.estatutoArquivoNome
+      ? { nome: entidade.estatutoArquivoNome, tamanho: entidade.estatutoArquivoTamanho ?? 0 }
+      : null,
+  );
+  const [erroArquivo, setErroArquivo] = useState<string | null>(null);
+  const inputArquivo = useRef<HTMLInputElement>(null);
+
   const set = (campo: keyof Campos, valor: string) => {
     setForm((prev) => ({ ...prev, [campo]: valor }));
     setErros((prev) => ({ ...prev, [campo]: undefined }));
     setAlerta(null);
   };
+
+  function escolherArquivo(f: File | null) {
+    setErroArquivo(null);
+    if (!f) return setArquivo(null);
+    if (f.type !== 'application/pdf' && !/\.pdf$/i.test(f.name)) {
+      setArquivo(null);
+      return setErroArquivo('O estatuto precisa ser um arquivo PDF.');
+    }
+    if (f.size > MAX_ESTATUTO) {
+      setArquivo(null);
+      return setErroArquivo('O estatuto excede o limite de 5 MB.');
+    }
+    setArquivo(f);
+  }
+
+  async function handleRemoverEstatuto() {
+    setErroArquivo(null);
+    // Só há o que apagar no servidor se a entidade já existe e tinha anexo.
+    if (editando && anexado) {
+      try {
+        await removerEstatuto(entidade!.id);
+      } catch (e) {
+        return setErroArquivo(extrairMensagemErro(e, 'Não foi possível remover o estatuto.'));
+      }
+    }
+    setAnexado(null);
+    setArquivo(null);
+    if (inputArquivo.current) inputArquivo.current.value = '';
+  }
 
   async function handleCepBlur() {
     if (apenasDigitos(form.cep).length !== 8) return;
@@ -128,6 +192,11 @@ export function EntidadeForm({ entidade, onSuccess, onCancel }: Props) {
       inscricaoEstadual: form.inscricaoEstadual.trim() || null,
       inscricaoMunicipal: form.inscricaoMunicipal.trim() || null,
       dataConstituicao: form.dataConstituicao || null,
+      finalidadeDescricao: form.finalidadeDescricao.trim() || null,
+      finalidadeArtigo: form.finalidadeArtigo.trim() || null,
+      dataUltimaAlteracao: form.dataUltimaAlteracao || null,
+      estatutoDataInicial: form.estatutoDataInicial || null,
+      estatutoDataAlteracao: form.estatutoDataAlteracao || null,
       cep: apenasDigitos(form.cep),
       logradouro: form.logradouro.trim(),
       numero: form.numero.trim() || null,
@@ -142,8 +211,22 @@ export function EntidadeForm({ entidade, onSuccess, onCancel }: Props) {
 
     setSalvando(true);
     try {
-      if (editando) await atualizarEntidade(entidade!.id, payload);
-      else await criarEntidade(payload);
+      const salva = editando
+        ? await atualizarEntidade(entidade!.id, payload)
+        : await criarEntidade(payload);
+
+      // Upload em seguida: a rota do estatuto precisa do id, que no cadastro
+      // novo só existe agora. Falhar aqui não desfaz o cadastro já gravado.
+      if (arquivo) {
+        try {
+          await enviarEstatuto(salva.id, arquivo);
+        } catch (e) {
+          setSalvando(false);
+          return setAlerta(
+            `Cadastro salvo, mas o estatuto não foi anexado: ${extrairMensagemErro(e, 'falha no envio')}.`,
+          );
+        }
+      }
       onSuccess();
     } catch (error) {
       const codigo = extrairCodigoErro(error);
@@ -182,6 +265,75 @@ export function EntidadeForm({ entidade, onSuccess, onCancel }: Props) {
           <Input label="Inscrição Estadual" name="inscricaoEstadual" value={mascaraInscricao(form.inscricaoEstadual)} onChange={(e) => set('inscricaoEstadual', e.target.value)} placeholder="Isento ou nº" />
           <Input label="Inscrição Municipal" name="inscricaoMunicipal" value={mascaraInscricao(form.inscricaoMunicipal)} onChange={(e) => set('inscricaoMunicipal', e.target.value)} />
           <Input label="Data de Constituição" name="dataConstituicao" type="date" value={form.dataConstituicao} onChange={(e) => set('dataConstituicao', e.target.value)} />
+
+          {/* Finalidade estatutária */}
+          <fieldset className="rounded-xl border border-ink-200 p-4 dark:border-ink-700 sm:col-span-2">
+            <legend className="px-1 text-sm font-medium text-ink-700 dark:text-ink-200">Finalidade Estatutária</legend>
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="finalidadeDescricao" className="mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-300">Descrição</label>
+                <textarea
+                  id="finalidadeDescricao"
+                  name="finalidadeDescricao"
+                  value={form.finalidadeDescricao}
+                  onChange={(e) => set('finalidadeDescricao', e.target.value)}
+                  rows={3}
+                  className="focus-ring w-full rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm text-ink-800 placeholder:text-ink-400 transition-colors dark:border-ink-700 dark:bg-ink-900 dark:text-ink-100"
+                  placeholder="Finalidade da entidade conforme o estatuto."
+                />
+              </div>
+              <Input label="Artigo Estatuto" name="finalidadeArtigo" value={form.finalidadeArtigo} onChange={(e) => set('finalidadeArtigo', e.target.value)} placeholder="ex.: Art. 3º, inciso II" />
+            </div>
+          </fieldset>
+
+          <Input label="Data da última alteração" name="dataUltimaAlteracao" type="date" value={form.dataUltimaAlteracao} onChange={(e) => set('dataUltimaAlteracao', e.target.value)} />
+
+          {/* Estatuto */}
+          <fieldset className="rounded-xl border border-ink-200 p-4 dark:border-ink-700 sm:col-span-2">
+            <legend className="px-1 text-sm font-medium text-ink-700 dark:text-ink-200">Estatuto</legend>
+            <div className="space-y-4">
+              <div>
+                <span className="mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-300">Upload Estatuto</span>
+                {anexado && !arquivo ? (
+                  <div className="flex items-center gap-2 rounded-xl border border-ink-200 bg-ink-50/60 px-3 py-2 text-sm dark:border-ink-700 dark:bg-ink-800/40">
+                    <FileText className="h-4 w-4 shrink-0 text-ink-400" />
+                    <span className="flex-1 truncate text-ink-700 dark:text-ink-200" title={anexado.nome}>{anexado.nome}</span>
+                    {anexado.tamanho > 0 && <span className="text-xs text-ink-400">{tamanhoLegivel(anexado.tamanho)}</span>}
+                    {editando && (
+                      <button type="button" title="Abrir PDF" onClick={() => abrirEstatuto(entidade!.id).catch(() => setErroArquivo('Não foi possível abrir o PDF.'))} className="focus-ring rounded-lg p-1.5 text-ink-400 transition-colors hover:bg-ink-100 hover:text-ink-700 dark:hover:bg-ink-800">
+                        <ExternalLink className="h-4 w-4" />
+                      </button>
+                    )}
+                    <button type="button" title="Remover" onClick={handleRemoverEstatuto} className="focus-ring rounded-lg p-1.5 text-ink-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="focus-within:ring-2 flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-ink-300 px-3 py-2 text-sm text-ink-500 transition-colors hover:border-brand-400 hover:text-ink-700 dark:border-ink-600 dark:text-ink-400 dark:hover:text-ink-200">
+                    <Upload className="h-4 w-4 shrink-0" />
+                    <span className="flex-1 truncate">{arquivo ? arquivo.name : 'Selecionar o PDF do estatuto...'}</span>
+                    {arquivo && <span className="text-xs text-ink-400">{tamanhoLegivel(arquivo.size)}</span>}
+                    <input
+                      ref={inputArquivo}
+                      type="file"
+                      accept="application/pdf,.pdf"
+                      className="sr-only"
+                      onChange={(e) => escolherArquivo(e.target.files?.[0] ?? null)}
+                    />
+                  </label>
+                )}
+                {erroArquivo && <p className="mt-1 text-sm font-medium text-red-500">{erroArquivo}</p>}
+                <p className="mt-1 text-xs text-ink-400">
+                  Somente PDF, até 5 MB.{!editando && ' O anexo é enviado assim que o cadastro for salvo.'}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Input label="Data Inicial" name="estatutoDataInicial" type="date" value={form.estatutoDataInicial} onChange={(e) => set('estatutoDataInicial', e.target.value)} />
+                <Input label="Data Alteração" name="estatutoDataAlteracao" type="date" value={form.estatutoDataAlteracao} onChange={(e) => set('estatutoDataAlteracao', e.target.value)} />
+              </div>
+            </div>
+          </fieldset>
 
           <Input
             label="CEP *"
