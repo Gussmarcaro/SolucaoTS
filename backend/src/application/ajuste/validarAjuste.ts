@@ -19,11 +19,11 @@ export function normalizarEValidarAjuste(input: CriarAjusteDTO): DadosAjuste {
   const entidadeBeneficiariaId = input.entidadeBeneficiariaId?.trim() ?? '';
   const codigoAjuste = input.codigoAjuste?.trim() ?? '';
   const objeto = input.objeto?.trim() ?? '';
-  const nomeResumido = input.nomeResumido?.trim() || null;
+  const descricaoResumida = input.descricaoResumida?.trim() || null;
 
   // Espelha o VarChar(80) do schema: cortar no banco viraria erro genérico.
-  if (nomeResumido && nomeResumido.length > 80)
-    throw new BusinessError('O nome resumido deve ter no máximo 80 caracteres.');
+  if (descricaoResumida && descricaoResumida.length > 80)
+    throw new BusinessError('A descrição resumida deve ter no máximo 80 caracteres.');
 
   if (!entidadeBeneficiariaId) throw new BusinessError('Selecione a entidade beneficiária.');
   if (!TIPOS.includes(input.tipoAjuste)) throw new BusinessError('Tipo de ajuste inválido.');
@@ -70,7 +70,7 @@ export function normalizarEValidarAjuste(input: CriarAjusteDTO): DadosAjuste {
     clienteId,
     entidadeBeneficiariaId,
     tipoAjuste: input.tipoAjuste,
-    nomeResumido,
+    descricaoResumida,
     codigoAjuste,
     numero: input.numero?.trim() || null,
     objeto,

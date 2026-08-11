@@ -33,7 +33,7 @@ type Campos = {
   clienteId: string;
   entidadeBeneficiariaId: string;
   tipoAjuste: string;
-  nomeResumido: string;
+  descricaoResumida: string;
   codigoAjuste: string;
   numero: string;
   objeto: string;
@@ -50,7 +50,7 @@ function estadoInicial(a?: Ajuste | null): Campos {
     clienteId: a?.clienteId ?? '',
     entidadeBeneficiariaId: a?.entidadeBeneficiariaId ?? '',
     tipoAjuste: a?.tipoAjuste ?? '',
-    nomeResumido: a?.nomeResumido ?? '',
+    descricaoResumida: a?.descricaoResumida ?? '',
     codigoAjuste: a?.codigoAjuste ?? '',
     numero: a?.numero ?? '',
     objeto: a?.objeto ?? '',
@@ -132,7 +132,7 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
       clienteId: form.clienteId || null,
       entidadeBeneficiariaId: form.entidadeBeneficiariaId,
       tipoAjuste: form.tipoAjuste as TipoAjuste,
-      nomeResumido: form.nomeResumido.trim() || null,
+      descricaoResumida: form.descricaoResumida.trim() || null,
       codigoAjuste: form.codigoAjuste.trim(),
       numero: form.numero.trim() || null,
       objeto: form.objeto.trim(),
@@ -222,13 +222,13 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
 
           <div className="sm:col-span-2">
             <Input
-              label="Nome Resumido"
-              name="nomeResumido"
-              value={form.nomeResumido}
-              onChange={(e) => set('nomeResumido', e.target.value.slice(0, 80))}
-              error={erros.nomeResumido}
+              label="Descrição Resumida"
+              name="descricaoResumida"
+              value={form.descricaoResumida}
+              onChange={(e) => set('descricaoResumida', e.target.value.slice(0, 80))}
+              error={erros.descricaoResumida}
               placeholder="ex.: Creche Vila Nova — 2025"
-              hint="Apelido curto para identificar o ajuste nas telas. Não é enviado ao TCESP."
+              hint="Descrição curta para identificar o ajuste nas telas. Não é enviada ao TCESP."
             />
           </div>
 

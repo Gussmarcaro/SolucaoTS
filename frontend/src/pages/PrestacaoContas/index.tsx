@@ -181,7 +181,7 @@ function NovaPrestacaoForm({ onCancel, onSuccess }: { onCancel: () => void; onSu
     listarAjustes({ page: 1, pageSize: 100, orderBy: 'codigoAjuste', orderDir: 'asc' })
       .then((r) => vivo && setAjustes(r.data.map((a) => ({
         value: a.id,
-        label: `${a.nomeResumido ?? a.codigoAjuste} — ${a.entidadeNome}`,
+        label: `${a.descricaoResumida ?? a.codigoAjuste} — ${a.entidadeNome}`,
       }))))
       .catch(() => vivo && setAjustes([]))
       .finally(() => vivo && setCarregandoAjustes(false));

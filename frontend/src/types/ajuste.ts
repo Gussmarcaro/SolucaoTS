@@ -33,7 +33,7 @@ export interface Ajuste {
   entidadeBeneficiariaId: string;
   entidadeNome: string;
   tipoAjuste: TipoAjuste;
-  nomeResumido: string | null;
+  descricaoResumida: string | null;
   codigoAjuste: string;
   numero: string | null;
   objeto: string;
@@ -51,7 +51,7 @@ export interface AjustePayload {
   clienteId?: string | null;
   entidadeBeneficiariaId: string;
   tipoAjuste: TipoAjuste;
-  nomeResumido?: string | null;
+  descricaoResumida?: string | null;
   codigoAjuste: string;
   numero?: string | null;
   objeto: string;

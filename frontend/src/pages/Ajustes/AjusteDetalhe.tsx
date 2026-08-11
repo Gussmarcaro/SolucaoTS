@@ -85,10 +85,10 @@ export function AjusteDetalhe() {
         </Link>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            {ajuste.nomeResumido ? (
+            {ajuste.descricaoResumida ? (
               <>
                 <h1 className="text-xl font-bold tracking-tight text-ink-900 dark:text-ink-50">
-                  {ajuste.nomeResumido}
+                  {ajuste.descricaoResumida}
                 </h1>
                 <p className="font-mono text-xs text-ink-400">{ajuste.codigoAjuste}</p>
               </>

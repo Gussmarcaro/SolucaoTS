@@ -27,9 +27,9 @@ export function AjusteView({ ajuste }: { ajuste: Ajuste }) {
   return (
     <div className="space-y-6">
       <div>
-        {ajuste.nomeResumido ? (
+        {ajuste.descricaoResumida ? (
           <>
-            <h3 className="text-base font-semibold text-ink-900 dark:text-ink-50">{ajuste.nomeResumido}</h3>
+            <h3 className="text-base font-semibold text-ink-900 dark:text-ink-50">{ajuste.descricaoResumida}</h3>
             <p className="font-mono text-xs text-ink-400">{ajuste.codigoAjuste}</p>
           </>
         ) : (

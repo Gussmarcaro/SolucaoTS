@@ -131,15 +131,15 @@ export function AjustesList({ refreshKey, onVisualizar, onEditar }: Props) {
       case 'ajuste':
         return (
           <div className="min-w-0">
-            {/* O nome resumido vira o rótulo principal quando existe; o código
-                fica de subtítulo, mas nunca some — é ele que casa com o TCESP. */}
-            {a.nomeResumido ? (
-              <p className="truncate font-medium text-ink-800 dark:text-ink-100" title={a.nomeResumido}>{a.nomeResumido}</p>
+            {/* A descrição resumida vira o rótulo principal quando existe; o
+                código fica de subtítulo, mas nunca some — é ele que casa com o TCESP. */}
+            {a.descricaoResumida ? (
+              <p className="truncate font-medium text-ink-800 dark:text-ink-100" title={a.descricaoResumida}>{a.descricaoResumida}</p>
             ) : (
               <p className="truncate font-mono text-xs text-ink-700 dark:text-ink-200" title={a.codigoAjuste}>{a.codigoAjuste}</p>
             )}
             <p className="truncate text-xs text-ink-400">
-              {a.nomeResumido && <span className="font-mono">{a.codigoAjuste} · </span>}
+              {a.descricaoResumida && <span className="font-mono">{a.codigoAjuste} · </span>}
               {TIPO_AJUSTE_LABEL[a.tipoAjuste]}
             </p>
           </div>
