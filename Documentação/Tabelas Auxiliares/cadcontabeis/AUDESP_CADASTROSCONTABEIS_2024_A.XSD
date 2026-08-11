@@ -1,0 +1,417 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://www.tce.sp.gov.br/audesp/xml/cadastroscontabeis" version="1.0" xml:lang="pt-BR"
+	xmlns:aux="http://www.tce.sp.gov.br/audesp/xml/auxiliar" xmlns:cadc="http://www.tce.sp.gov.br/audesp/xml/cadastroscontabeis" xmlns:gen="http://www.tce.sp.gov.br/audesp/xml/generico"
+	xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<xs:import namespace="http://www.tce.sp.gov.br/audesp/xml/generico" schemaLocation="../generico/AUDESP_TIPOSGENERICOS_2024_A.XSD"/>
+	<xs:import namespace="http://www.tce.sp.gov.br/audesp/xml/auxiliar" schemaLocation="../auxiliar/AUDESP_TABELASAUXILIARES_2024_A.XSD"/>
+	<!-- Namespaces: cadcontabeis - prefixo: cadc   Conteudo: validação dos valores dos Cadastros Contabeis -->
+	<!-- ========================================================================= -->
+	<xs:annotation>
+		<xs:documentation>
+			<Data>2024-02-26</Data>
+			<VersaoRevisaoAnterior/>
+			<VersaoRevisaoNova>2024_A</VersaoRevisaoNova>
+			<Descricao>Base-Line para 2024</Descricao>
+			<Justificativa>Modelo para inicio de 2024</Justificativa>
+			<Autor>DSIS</Autor>
+		</xs:documentation>
+	</xs:annotation> 
+	<!-- ======================================================================== -->
+	<!-- utlima atualização 2024-02-27  -->
+	<!-- ======================================================================== -->
+	<!-- CODIGO DE APLICACAO ==  parte fixa dos códigos que aceitam extensão pela entidade -->
+	<!-- nas alterações, alterar tambem a definição no arquivo AUDeSP_TabelasAuxiliares  -->
+	<xs:complexType name="CodigoAplicacao_t">
+		<xs:sequence>
+			<xs:choice>
+				<xs:sequence>
+					<xs:element name="CodigoAplicacaoFixo">
+						<xs:simpleType>
+							<xs:restriction base="xs:integer">
+								<xs:enumeration value="100"/>
+								<xs:enumeration value="112"/>  <!-- Incluído em 2022 -->
+								<xs:enumeration value="130"/>
+								<xs:enumeration value="190"/>
+								<xs:enumeration value="200"/>
+								<xs:enumeration value="201"/>
+								<xs:enumeration value="202"/>
+								<xs:enumeration value="203"/>
+								<xs:enumeration value="204"/>
+								<xs:enumeration value="205"/>
+								<xs:enumeration value="206"/>
+								<xs:enumeration value="207"/>
+								<xs:enumeration value="210"/>
+								<xs:enumeration value="212"/>
+								<xs:enumeration value="213"/>
+								<xs:enumeration value="220"/>
+								<xs:enumeration value="230"/>
+								<xs:enumeration value="232"/>
+								<xs:enumeration value="233"/>
+								<xs:enumeration value="240"/>
+								<xs:enumeration value="242"/>
+								<xs:enumeration value="243"/>
+								<xs:enumeration value="260"/>
+								<xs:enumeration value="280"/>
+								<xs:enumeration value="281"/>
+								<xs:enumeration value="282"/>
+								<xs:enumeration value="283"/>
+								<xs:enumeration value="284"/>
+								<xs:enumeration value="285"/>
+								<xs:enumeration value="286"/>
+								<xs:enumeration value="287"/>
+								<xs:enumeration value="288"/>
+								<xs:enumeration value="291"/>
+								<xs:enumeration value="292"/>
+								<xs:enumeration value="293"/>
+								<xs:enumeration value="294"/>
+								<xs:enumeration value="295"/>
+								<xs:enumeration value="296"/>
+								<xs:enumeration value="297"/>
+								<xs:enumeration value="298"/>
+								<xs:enumeration value="299"/>
+								<xs:enumeration value="300"/>
+								<xs:enumeration value="301"/>
+								<xs:enumeration value="302"/>
+								<xs:enumeration value="303"/>
+								<xs:enumeration value="304"/>
+								<xs:enumeration value="305"/>
+								<xs:enumeration value="307"/>
+								<xs:enumeration value="308"/>
+								<xs:enumeration value="309"/>							
+								<xs:enumeration value="312"/>							
+								<xs:enumeration value="370"/>							
+								<xs:enumeration value="400"/>
+								<xs:enumeration value="500"/>
+								<xs:enumeration value="700"/>
+								<xs:enumeration value="800"/>
+								<xs:enumeration value="801"/>
+								<xs:enumeration value="900"/>
+								<xs:enumeration value="901"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="CodigoAplicacaoVariavel">
+						<xs:simpleType>
+							<xs:restriction base="xs:integer">
+								<xs:minInclusive value="1"/>
+								<xs:maxInclusive value="9999"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+				</xs:sequence>
+				<xs:sequence>
+					<xs:element name="CodigoAplicacaoFixoFUNDEB">
+						<xs:simpleType>
+							<xs:restriction base="xs:integer">
+								<xs:enumeration value="264"/>
+								<xs:enumeration value="265"/>
+								<xs:enumeration value="266"/>
+								<xs:enumeration value="267"/>
+								<xs:enumeration value="268"/>
+								<xs:enumeration value="269"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="CodigoAplicacaoVariavelFUNDEB">
+						<xs:simpleType>
+							<xs:restriction base="xs:integer">
+								<xs:enumeration value="0121"/>
+								<xs:enumeration value="0221"/>
+								<xs:enumeration value="0321"/>
+								<xs:enumeration value="0122"/>
+								<xs:enumeration value="0222"/>
+								<xs:enumeration value="0322"/>
+								<xs:enumeration value="0123"/>
+								<xs:enumeration value="0223"/>
+								<xs:enumeration value="0323"/>
+								<xs:enumeration value="2008"/>
+								<xs:enumeration value="2009"/>
+								<xs:enumeration value="2010"/>
+								<xs:enumeration value="2011"/>
+								<xs:enumeration value="2012"/>
+								<xs:enumeration value="2013"/>
+								<xs:enumeration value="2014"/>
+								<xs:enumeration value="2015"/>
+								<xs:enumeration value="2016"/>
+								<xs:enumeration value="2017"/>
+								<xs:enumeration value="2018"/>
+								<xs:enumeration value="2019"/>
+								<xs:enumeration value="2020"/>
+								<xs:enumeration value="2021"/>
+								<xs:enumeration value="2022"/>
+								<xs:enumeration value="2023"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+				</xs:sequence>
+			</xs:choice>
+			<xs:element name="NomeCodigoAplicacao">
+				<!-- Nome do convenio, entidade ou fundo deorigem/destinacao dos recursos.-->
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="5"/>
+						<xs:maxLength value="200"/>
+						<!-- alterado de 100 para 200 -->
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element minOccurs="0" name="OperacaoCadastro" type="gen:OperacaoCadastro_t"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- ========================================================================= -->
+	<!-- DOMICILIO BANCARIO -->
+	<xs:complexType name="DomicilioBancario_t">
+		<xs:sequence>
+			<xs:element name="CodigoBanco" type="gen:CodigoBanco_t"/>
+			<xs:element name="CodigoAgencia" type="gen:CodigoAgenciaBancaria_t"/>
+			<xs:element minOccurs="0" name="DVCodigoAgencia" type="gen:DigitoVerificador_t"/>
+			<xs:element name="NomeAgencia">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="0"/>
+						<xs:maxLength value="50"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="ContaCorrente" type="gen:NumeroContaCorrenteBancaria_t"/>
+			<xs:element minOccurs="0" name="DVContaCorrente" type="gen:DigitoVerificador_t"/>
+			<xs:element name="TipoContaCorrente" type="aux:CodigoTipoContaCorrenteBancaria_t"/>
+			<xs:element name="NomeContaCorrente">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="0"/>
+						<xs:maxLength value="50"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<!-- Fonte de Recurso e CodigoAplicacao serao opcionais para 2018 -->
+			<xs:element minOccurs="0" name="CodigoFonteRecursos" type="aux:CodigoFonteRecursos_t"/>
+			<xs:element minOccurs="0" name="CodigoAplicacao" type="aux:CodigoAplicacao_t"/>
+			<!--nao aceita zeros-->
+			<xs:element minOccurs="0" name="OperacaoCadastro" type="gen:OperacaoCadastro_t"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- ========================================================================= -->
+	<!-- CREDOR/FORNECEDOR/IDENTIFICACAO ESPECIAL  -->
+	<xs:complexType name="Credor_t">
+		<xs:sequence>
+			<!-- <xs:element name="Identificacao" type="gen:IdentificacaoCadastral_t"/>  -->
+			<xs:element name="Identificacao" type="gen:IdentificacaoIndividual_t"/>
+			<xs:element name="Nome">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="5"/>
+						<xs:maxLength value="100"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element minOccurs="0" name="Endereco" type="gen:Endereco_t"/>
+			<xs:element minOccurs="0" name="Telefone" type="gen:Telefone_t"/>
+			<!--<xs:element name="Tipo">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="F"/>
+						<xs:enumeration value="C"/>
+					</xs:restriction>
+				</xs:simpleType>
+				</xs:element> -->
+			<!-- tag Fornecimento: deve ser preenchido apenas para fornecedor, com os materiais/serviços fornecidos -->
+			<xs:element minOccurs="0" name="Fornecimento">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="5"/>
+						<xs:maxLength value="100"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element maxOccurs="unbounded" minOccurs="0" name="ContaCorrente" type="gen:ContaCorrenteBancaria_t"/>
+			<xs:element minOccurs="0" name="OperacaoCadastro" type="gen:OperacaoCadastro_t"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- ========================================================================= -->
+	<!-- INSCRICAO GENERICA   -->
+	<xs:complexType name="InscricaoGenerica_t">
+		<xs:sequence>
+			<xs:element name="InscricaoGenerica" type="gen:IdentificacaoInscricaoGenerica_t"/>
+			<xs:element name="Nome">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="5"/>
+						<xs:maxLength value="100"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element minOccurs="0" name="OperacaoCadastro" type="gen:OperacaoCadastro_t"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- ========================================================================= -->
+	<!-- HISTORICO DO EMPENHO    -->
+	<xs:complexType name="HistoricoEmpenho_t">
+		<xs:sequence>
+			<xs:element name="NumeroEmpenho" type="gen:NumeroEmpenho_t"/>
+			<xs:element name="UnidadeOrcamentaria" type="gen:CodigoEntidadeContabil_t"/>
+			<xs:element name="UnidadeExecutora" type="gen:CodigoEntidadeContabil_t"/>
+			<xs:element minOccurs="0" name="NumeroContrato" type="gen:NumeroContrato_t"/>
+			<xs:element minOccurs="0" name="NumeroProcessoNoOrgao" type="gen:NumeroProcessoNoOrgao_t"/>
+			<xs:element name="Historico">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="5"/>
+						<xs:maxLength value="1000"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element minOccurs="0" name="OperacaoCadastro" type="gen:OperacaoCadastro_t"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- ========================================================================= -->
+	<!-- CONVENIO INICIAL  -->
+	<xs:complexType name="ConvenioInicial_t">
+		<xs:sequence>
+			<xs:element name="Numero" type="gen:NumeroConvenio_t"/>
+			<xs:element name="TipoConvenio" type="aux:CodigoTipoConvenio_t"/>
+			<xs:element name="OrgaoConcedente">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="5"/>
+						<xs:maxLength value="100"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element minOccurs="0" name="FonteRecursos" type="aux:CodigoFonteRecursos_t"/>
+			<xs:element minOccurs="0" name="CodigoAplicacao" type="aux:CodigoAplicacao_t"/>
+			<!-- aceita zeros -->
+			<xs:element name="IdentificacaoFavorecido" type="gen:Identificacao_t"/>
+			<!-- alterado para aceitar de 1 a 9 -->
+			<xs:element minOccurs="0" name="Legislacao" type="aux:Legislacao_t"/>
+			<xs:element minOccurs="0" name="NumeroProcessoNoOrgao" type="gen:NumeroProcessoNoOrgao_t"/>
+			<xs:element name="DataAssinatura" type="gen:DataValida_t"/>
+			<xs:element minOccurs="0" name="DataTermino" type="gen:DataValida_t"/>
+			<xs:element name="Objeto">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="5"/>
+						<xs:maxLength value="1000"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="ValorConvenioInicial">
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:minInclusive value="0"/>
+						<xs:maxInclusive value="9999999999999.00"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element minOccurs="0" name="OperacaoCadastro" type="gen:OperacaoCadastro_t"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- ========================================================================= -->
+	<!-- TERMOS ADITIVOS DE CONVENIO   -->
+	<xs:complexType name="TermosAditivosConvenio_t">
+		<xs:sequence>
+			<xs:element name="NumeroTermo" type="gen:NumeroTermoAditivoConvenio_t"/>
+			<xs:element name="AnoEmissao" type="gen:Ano_t"/>
+			<xs:element name="NumeroConvenio" type="gen:NumeroConvenio_t"/>
+			<xs:element name="DescricaoAlteracao">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="5"/>
+						<xs:maxLength value="1000"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="DataAssinatura" type="gen:DataValida_t"/>
+			<xs:element name="ValorTermoAditivoConvenio" type="gen:DecimalValido_t"/>
+			<xs:element minOccurs="0" name="OperacaoCadastro" type="gen:OperacaoCadastro_t"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- ========================================================================= -->
+	<!-- CONTRATO INICIAL   -->
+	<xs:complexType name="ContratoInicial_t">
+		<xs:sequence>
+			<xs:element name="Numero" type="gen:NumeroContrato_t"/>
+			<xs:element name="TipoContratacao" type="aux:CodigoTipoContratacao_t"/>
+			<xs:element name="IdentificacaoContratado" type="gen:Identificacao_t"/>
+			<!-- alterado para aceitar de 1 a 9 -->
+			<xs:element minOccurs="0" name="NumeroProcessoNoOrgao" type="gen:NumeroProcessoNoOrgao_t"/>
+			<xs:element name="Objeto">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="5"/>
+						<xs:maxLength value="1000"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element minOccurs="0" name="ValorGarantia">
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:minInclusive value="0"/>
+						<xs:maxInclusive value="9999999999999.00"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="DataAssinatura" type="gen:DataValida_t"/>
+			<xs:element minOccurs="0" name="DataTermino" type="gen:DataValida_t"/>
+			<xs:element name="ValorContratoInicial">
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:minInclusive value="0"/>
+						<xs:maxInclusive value="9999999999999.00"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:choice>
+				<xs:element name="DespesaComLicitacao" type="aux:DespesaComLicitacao_t"/>
+				<xs:element name="DespesaSemLicitacao" type="aux:DespesaSemLicitacao_t"/>
+			</xs:choice>
+			<xs:element minOccurs="0" name="OperacaoCadastro" type="gen:OperacaoCadastro_t"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- ========================================================================= -->
+	<!-- TERMOS ADITIVOS DE CONTRATO    -->
+	<xs:complexType name="TermosAditivosContrato_t">
+		<xs:sequence>
+			<xs:element name="NumeroTermo" type="gen:NumeroTermoAditivoContrato_t"/>
+			<xs:element name="AnoEmissao" type="gen:Ano_t"/>
+			<xs:element name="NumeroContrato" type="gen:NumeroContrato_t"/>
+			<xs:element name="DescricaoAlteracao">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="5"/>
+						<xs:maxLength value="1000"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="DataAssinatura" type="gen:DataValida_t"/>
+			<xs:element name="ValorTermoAditivoContrato" type="gen:DecimalValido_t" />
+			<xs:element minOccurs="0" name="OperacaoCadastro" type="gen:OperacaoCadastro_t"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- ========================================================================= -->
+	<!-- CADASTROS -->
+	<xs:complexType name="ListaCadastros_t">
+		<xs:choice maxOccurs="unbounded" minOccurs="0">
+			<xs:element name="CodigoAplicacao" type="cadc:CodigoAplicacao_t"/>
+			<xs:element name="DomicilioBancario" type="cadc:DomicilioBancario_t"/>
+			<xs:element name="CredorFornecedorDevedor" type="cadc:Credor_t"/>
+			<xs:element name="InscricaoGenerica" type="cadc:InscricaoGenerica_t"/>
+			<xs:element name="HistoricoEmpenho" type="cadc:HistoricoEmpenho_t"/>
+			<xs:element name="ConvenioInicial" type="cadc:ConvenioInicial_t"/>
+			<xs:element name="TermosAditivosConvenio" type="cadc:TermosAditivosConvenio_t"/>
+			<xs:element name="ContratoInicial" type="cadc:ContratoInicial_t"/>
+			<xs:element name="TermosAditivosContrato" type="cadc:TermosAditivosContrato_t"/>
+		</xs:choice>
+	</xs:complexType>
+	<!-- ========================================================================= -->
+	<!-- root  -->
+	<xs:complexType name="CadastrosContabeis_t">
+		<xs:sequence>
+			<xs:element name="Descritor" type="gen:Descritor_t"/>
+			<xs:element name="ListaCadastros" type="cadc:ListaCadastros_t"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:element name="CadastrosContabeis" type="cadc:CadastrosContabeis_t"/>
+	<!-- /roo -->
+	<!-- ========================================================================= -->
+</xs:schema>
