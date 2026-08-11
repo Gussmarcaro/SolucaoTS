@@ -335,9 +335,6 @@ export function EntidadeForm({ entidade, onSuccess, onCancel }: Props) {
                   </label>
                 )}
                 {erroArquivo && <p className="mt-1 text-xs font-medium text-red-500">{erroArquivo}</p>}
-                <p className="mt-1 text-xs text-ink-400">
-                  PDF, até 5 MB.{!editando && ' Enviado ao salvar o cadastro.'}
-                </p>
               </div>
               <div className="sm:col-span-3">
                 <Input label="Data Inicial" name="estatutoDataInicial" type="date" value={form.estatutoDataInicial} onChange={(e) => set('estatutoDataInicial', e.target.value)} />
