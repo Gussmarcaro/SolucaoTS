@@ -342,13 +342,12 @@ export function EntidadeForm({ entidade, onSuccess, onCancel }: Props) {
               {/* Somente leitura: o sistema carimba a data quando o estatuto muda. */}
               <div className="sm:col-span-3">
                 <Input
-                  label="Data Alteração"
+                  label="Data Alteração (Automática)"
                   name="estatutoDataAlteracao"
                   value={dataAlteracaoEstatuto}
                   readOnly
                   tabIndex={-1}
                   className="cursor-default bg-ink-50 text-ink-500 dark:bg-ink-800/40 dark:text-ink-400"
-                  hint="Automática."
                 />
               </div>
             </div>
