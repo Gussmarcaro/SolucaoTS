@@ -15,6 +15,10 @@ Backend e frontend **existem e rodam** (deploy: API no Render, front na Vercel).
 - `Documentação/` — manuais oficiais do TCESP, tabelas de domínio, arquivos de exemplo (CSV/JSON) e a síntese de regras.
 - `backend/` — Express + Prisma em Clean Architecture · `frontend/` — React + Vite + Tailwind.
 
+O cadastro de **Empresas** está **suspenso** (11/08/2026): saiu do menu em `navigation.ts`, mas a rota `/empresas`, a página e a API continuam registradas para o retorno custar uma linha. **Alterações em lote nos cadastros** (padrão de grade, máscaras, rótulos, validações comuns) **devem pular Empresas.**
+
+O **usuário do sistema é sempre pessoa física**: `Usuario.documento` é CPF, sem `documentoTipo`. Fornecedor, Contrato e DocumentoFiscal continuam aceitando PF ou PJ — é lá que vive o enum `TipoDocumento`.
+
 Ainda **não há testes automatizados**. Antes de assumir que um comando existe, confira o `package.json` correspondente.
 
 ## Leitura obrigatória antes de codar o domínio
