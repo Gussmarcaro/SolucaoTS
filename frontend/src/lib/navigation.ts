@@ -86,7 +86,8 @@ export const navigation: NavNode[] = [
     label: 'Configurações',
     icon: Settings,
     children: [
-      { label: 'Empresas', to: '/empresas' },
+      // 'Empresas' fora do menu por ora — cadastro sem uso no fluxo atual.
+      // A rota /empresas segue registrada em App.tsx.
       { label: 'Órgãos', to: '/orgaos' },
       { label: 'Usuários', to: '/usuarios' },
       { label: 'Grupos de Usuários', to: '/grupos' },
