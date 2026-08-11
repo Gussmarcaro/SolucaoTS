@@ -4,17 +4,26 @@ import { LabelCampo, temValor } from './LabelCampo';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
+  /** Observação curta ao lado do rótulo, em fonte menor — ver `LabelCampo`. */
+  anotacao?: string;
   error?: string;
   hint?: string;
   rightSlot?: ReactNode;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, hint, rightSlot, className, id, ...props }, ref) => {
+  ({ label, anotacao, error, hint, rightSlot, className, id, ...props }, ref) => {
     const inputId = id ?? props.name;
     return (
       <div className="w-full">
-        {label && <LabelCampo texto={label} preenchido={temValor(props.value)} htmlFor={inputId} />}
+        {label && (
+          <LabelCampo
+            texto={label}
+            anotacao={anotacao}
+            preenchido={temValor(props.value)}
+            htmlFor={inputId}
+          />
+        )}
         <div className="relative">
           <input
             ref={ref}

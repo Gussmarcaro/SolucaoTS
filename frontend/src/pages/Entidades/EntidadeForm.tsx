@@ -342,7 +342,8 @@ export function EntidadeForm({ entidade, onSuccess, onCancel }: Props) {
               {/* Somente leitura: o sistema carimba a data quando o estatuto muda. */}
               <div className="sm:col-span-3">
                 <Input
-                  label="Data Alteração (Automática)"
+                  label="Data Alteração"
+                  anotacao="(Automática)"
                   name="estatutoDataAlteracao"
                   value={dataAlteracaoEstatuto}
                   readOnly

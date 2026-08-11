@@ -22,6 +22,15 @@ export function temValor(valor: unknown): boolean {
 interface Props {
   /** Texto do rótulo; um `*` no fim indica campo obrigatório. */
   texto: string;
+  /**
+   * Observação curta sobre o comportamento do campo — ex.: `(Automática)` num
+   * campo que o sistema preenche sozinho. Sai ao lado do rótulo, em fonte
+   * menor e apagada: informa sem competir com o nome do campo.
+   *
+   * É o padrão do projeto para campos somente-leitura; use-o em vez de
+   * embutir o parêntese no `texto` ou de repetir a explicação num `hint`.
+   */
+  anotacao?: string;
   /** Se o campo já tem valor — desliga o destaque. */
   preenchido: boolean;
   htmlFor?: string;
@@ -35,22 +44,20 @@ const BASE = 'mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-300';
  * estiver vazio numa inclusão, e volta ao tom do rótulo assim que preenchido.
  * Rótulos sem `*` são renderizados como estão.
  */
-export function LabelCampo({ texto, preenchido, htmlFor, className }: Props) {
+export function LabelCampo({ texto, anotacao, preenchido, htmlFor, className }: Props) {
   const ehNovo = useContext(FormularioNovoContext);
   const obrigatorio = /^(.*?)\s*\*$/.exec(texto);
 
-  if (!obrigatorio) {
-    return (
-      <label htmlFor={htmlFor} className={cn(BASE, className)}>
-        {texto}
-      </label>
-    );
-  }
-
   return (
     <label htmlFor={htmlFor} className={cn(BASE, className)}>
-      {obrigatorio[1]}{' '}
-      <span className={ehNovo && !preenchido ? 'font-semibold text-red-500' : undefined}>*</span>
+      {obrigatorio ? obrigatorio[1] : texto}
+      {obrigatorio && (
+        <>
+          {' '}
+          <span className={ehNovo && !preenchido ? 'font-semibold text-red-500' : undefined}>*</span>
+        </>
+      )}
+      {anotacao && <span className="ml-1 text-xs font-normal text-ink-400">{anotacao}</span>}
     </label>
   );
 }

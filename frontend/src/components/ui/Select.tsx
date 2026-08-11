@@ -5,17 +5,26 @@ import { LabelCampo, temValor } from './LabelCampo';
 
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
+  /** Observação curta ao lado do rótulo, em fonte menor — ver `LabelCampo`. */
+  anotacao?: string;
   error?: string;
   options: { value: string; label: string }[];
   placeholder?: string;
 }
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ label, error, options, placeholder, className, id, ...props }, ref) => {
+  ({ label, anotacao, error, options, placeholder, className, id, ...props }, ref) => {
     const selectId = id ?? props.name;
     return (
       <div className="w-full">
-        {label && <LabelCampo texto={label} preenchido={temValor(props.value)} htmlFor={selectId} />}
+        {label && (
+          <LabelCampo
+            texto={label}
+            anotacao={anotacao}
+            preenchido={temValor(props.value)}
+            htmlFor={selectId}
+          />
+        )}
         <div className="relative">
           <select
             ref={ref}
