@@ -43,7 +43,7 @@ export const ACAO_TONE: Record<AcaoAuditoria, 'brand' | 'success' | 'warning' | 
 
 /** Nome amigável do model, para a tela não expor o jargão do schema. */
 export const ENTIDADE_LABEL: Record<string, string> = {
-  Cliente: 'Órgão',
+  Cliente: 'Órgão Concessor',
   Usuario: 'Usuário',
   Empresa: 'Empresa',
   Fornecedor: 'Fornecedor',

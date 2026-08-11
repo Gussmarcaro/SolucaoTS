@@ -28,7 +28,7 @@ const vazio: Paginado<Orgao> = { data: [], total: 0, page: 1, pageSize: PAGE_SIZ
 const COLUNAS: ColunaDef[] = [
   { key: 'acoes', label: 'Ações', width: 130, minWidth: 120, align: 'center' },
   { key: 'status', label: 'Status', width: 110, sortKey: 'ativo' },
-  { key: 'nome', label: 'Órgão', width: 280, sortKey: 'nome' },
+  { key: 'nome', label: 'Órgão Concessor', width: 280, sortKey: 'nome' },
   { key: 'tipoOrgao', label: 'Tipo', width: 180, sortKey: 'tipoOrgao' },
   { key: 'codigos', label: 'Mun. / Ent.', width: 130, align: 'center' },
   { key: 'periodicidade', label: 'Periodicidade', width: 130 },

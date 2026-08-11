@@ -111,7 +111,7 @@ export function OrgaoForm({ orgao, onSuccess, onCancel }: Props) {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <Input label="Nome do Órgão *" name="nome" value={form.nome} onChange={(e) => set('nome', e.target.value)} error={erros.nome} placeholder="ex.: PREFEITURA MUNICIPAL DE ADAMANTINA" autoFocus />
+            <Input label="Nome do Órgão Concessor *" name="nome" value={form.nome} onChange={(e) => set('nome', e.target.value)} error={erros.nome} placeholder="ex.: PREFEITURA MUNICIPAL DE ADAMANTINA" autoFocus />
           </div>
 
           <Select label="Tipo de Órgão *" name="tipoOrgao" value={form.tipoOrgao} onChange={(e) => set('tipoOrgao', e.target.value)} error={erros.tipoOrgao} options={opcoesDe(TIPO_ORGAO_LABEL)} placeholder="Selecione..." />
@@ -129,7 +129,7 @@ export function OrgaoForm({ orgao, onSuccess, onCancel }: Props) {
           <Button type="button" variant="secondary" onClick={onCancel} disabled={salvando}>Cancelar</Button>
           <Button type="submit" disabled={salvando}>
             {salvando && <Loader2 className="h-4 w-4 animate-spin" />}
-            {salvando ? 'Salvando...' : editando ? 'Salvar Alterações' : 'Cadastrar Órgão'}
+            {salvando ? 'Salvando...' : editando ? 'Salvar Alterações' : 'Cadastrar Órgão Concessor'}
           </Button>
         </div>
       </form>

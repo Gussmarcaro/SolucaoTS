@@ -47,12 +47,12 @@ export function Orgaos() {
   return (
     <>
       <PageHeader
-        title="Órgãos"
-        subtitle="Órgãos prestadores (Prefeitura, Câmara, Autarquia…) com seus códigos de município e entidade no TCESP."
+        title="Órgãos Concessores"
+        subtitle="Órgãos que concedem o repasse (Prefeitura, Câmara, Autarquia…) com seus códigos de município e entidade no TCESP."
         actions={
           <Button variant="success" onClick={() => setModal({ tipo: 'novo' })}>
             <Plus className="h-4 w-4" />
-            Novo Órgão
+            Novo Órgão Concessor
           </Button>
         }
       />
@@ -68,7 +68,7 @@ export function Orgaos() {
       <Modal
         open={modal.tipo === 'novo' || modal.tipo === 'editar'}
         onClose={fechar}
-        title={modal.tipo === 'editar' ? 'Editar Órgão' : 'Novo Órgão'}
+        title={modal.tipo === 'editar' ? 'Editar Órgão Concessor' : 'Novo Órgão Concessor'}
         size="lg"
       >
         {(modal.tipo === 'novo' || modal.tipo === 'editar') && (
@@ -77,7 +77,7 @@ export function Orgaos() {
       </Modal>
 
       {/* Visualização */}
-      <Modal open={modal.tipo === 'ver'} onClose={fechar} title="Dados do Órgão" size="lg">
+      <Modal open={modal.tipo === 'ver'} onClose={fechar} title="Dados do Órgão Concessor" size="lg">
         {modal.tipo === 'ver' && <OrgaoView orgao={modal.orgao} />}
       </Modal>
 
@@ -85,7 +85,7 @@ export function Orgaos() {
       <Modal
         open={modal.tipo === 'status'}
         onClose={fechar}
-        title={modal.tipo === 'status' && modal.orgao.ativo ? 'Inativar órgão' : 'Reativar órgão'}
+        title={modal.tipo === 'status' && modal.orgao.ativo ? 'Inativar órgão concessor' : 'Reativar órgão concessor'}
         size="md"
         footer={
           <>
@@ -100,11 +100,11 @@ export function Orgaos() {
         {modal.tipo === 'status' && (
           <div className="space-y-3">
             <p className="text-sm text-ink-600 dark:text-ink-300">
-              Deseja realmente {modal.orgao.ativo ? 'inativar' : 'reativar'} o órgão{' '}
+              Deseja realmente {modal.orgao.ativo ? 'inativar' : 'reativar'} o órgão concessor{' '}
               <span className="font-semibold text-ink-900 dark:text-ink-50">{modal.orgao.nome}</span>?
             </p>
             {modal.orgao.ativo && (
-              <p className="text-xs text-ink-400">Órgãos inativos não aparecem para seleção em novos ajustes; os já vinculados permanecem.</p>
+              <p className="text-xs text-ink-400">Órgãos concessores inativos não aparecem para seleção em novos ajustes; os já vinculados permanecem.</p>
             )}
             {erroAcao && <p className="text-sm font-medium text-red-500">{erroAcao}</p>}
           </div>

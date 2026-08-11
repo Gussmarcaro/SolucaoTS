@@ -177,14 +177,14 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <Select
-              label="Órgão prestador (município/entidade TCESP)"
+              label="Órgão concessor (município/entidade TCESP)"
               name="clienteId"
               value={form.clienteId}
               onChange={(e) => set('clienteId', e.target.value)}
               options={orgaos}
               placeholder={carregandoOrgaos ? 'Carregando...' : orgaos.length ? 'Selecione o órgão (opcional)' : 'Nenhum órgão cadastrado'}
             />
-            <p className="mt-1 text-xs text-ink-400">Define o código de município e entidade no descritor da prestação. Cadastre em Configurações › Órgãos.</p>
+            <p className="mt-1 text-xs text-ink-400">Define o código de município e entidade no descritor da prestação. Cadastre em Configurações › Órgãos Concessores.</p>
           </div>
           <div className="sm:col-span-2">
             <Select
