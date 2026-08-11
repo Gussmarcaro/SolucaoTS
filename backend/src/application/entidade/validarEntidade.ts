@@ -1,12 +1,12 @@
 import { BusinessError } from '@/shared/errors';
 import { apenasDigitos, isCNPJValido } from '@/shared/validators/documento';
-import type { CriarEntidadeDTO, DadosEntidade } from './dtos';
+import type { CriarEntidadeDTO, DadosEntidadeEntrada } from './dtos';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const UF_REGEX = /^[A-Z]{2}$/;
 
 /** Normaliza e valida os dados da entidade (reutilizado em criar/atualizar). */
-export function normalizarEValidarEntidade(input: CriarEntidadeDTO): DadosEntidade {
+export function normalizarEValidarEntidade(input: CriarEntidadeDTO): DadosEntidadeEntrada {
   const razaoSocial = input.razaoSocial?.trim() ?? '';
   const cnpj = apenasDigitos(input.cnpj);
   const cep = apenasDigitos(input.cep);
@@ -30,14 +30,6 @@ export function normalizarEValidarEntidade(input: CriarEntidadeDTO): DadosEntida
   const dataConstituicao = dataPassada(input.dataConstituicao, 'Data de constituição');
   const dataUltimaAlteracao = dataPassada(input.dataUltimaAlteracao, 'Data da última alteração');
   const estatutoDataInicial = dataPassada(input.estatutoDataInicial, 'Data inicial do estatuto');
-  const estatutoDataAlteracao = dataPassada(input.estatutoDataAlteracao, 'Data de alteração do estatuto');
-
-  if (
-    estatutoDataInicial &&
-    estatutoDataAlteracao &&
-    estatutoDataAlteracao.getTime() < estatutoDataInicial.getTime()
-  )
-    throw new BusinessError('A data de alteração do estatuto não pode ser anterior à data inicial.');
 
   if (razaoSocial.length < 2) throw new BusinessError('Informe a razão social.');
   if (!isCNPJValido(cnpj)) throw new BusinessError('CNPJ inválido.');
@@ -63,7 +55,6 @@ export function normalizarEValidarEntidade(input: CriarEntidadeDTO): DadosEntida
     finalidadeArtigo: input.finalidadeArtigo?.trim() || null,
     dataUltimaAlteracao,
     estatutoDataInicial,
-    estatutoDataAlteracao,
     cep,
     logradouro,
     numero: input.numero?.trim() || null,

@@ -9,7 +9,8 @@ export interface CriarEntidadeDTO {
   finalidadeArtigo?: string | null;
   dataUltimaAlteracao?: string | null; // ISO (YYYY-MM-DD)
   estatutoDataInicial?: string | null; // ISO (YYYY-MM-DD)
-  estatutoDataAlteracao?: string | null; // ISO (YYYY-MM-DD)
+  // `estatutoDataAlteracao` não entra aqui de propósito: é carimbada pelo
+  // sistema quando o estatuto muda, não informada por quem cadastra.
   cep: string;
   logradouro: string;
   numero?: string | null;
@@ -24,7 +25,10 @@ export interface CriarEntidadeDTO {
 
 export type AtualizarEntidadeDTO = CriarEntidadeDTO;
 
-/** Dados normalizados/validados prontos para persistência. */
+/**
+ * Dados normalizados/validados prontos para persistência.
+ * `estatutoDataAlteracao` é decidida pelo caso de uso — ver `DadosEntidadeEntrada`.
+ */
 export interface DadosEntidade {
   razaoSocial: string;
   nomeFantasia: string | null;
@@ -48,6 +52,9 @@ export interface DadosEntidade {
   telefoneFixo: string | null;
   whatsapp: string | null;
 }
+
+/** O que a validação devolve: tudo menos o carimbo de alteração do estatuto. */
+export type DadosEntidadeEntrada = Omit<DadosEntidade, 'estatutoDataAlteracao'>;
 
 /** PDF do estatuto vindo do upload (multipart), pronto para persistir. */
 export interface ArquivoEstatuto {

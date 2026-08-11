@@ -18,6 +18,8 @@ export class CriarEntidadeUseCase {
       );
     }
 
-    return this.repo.criar(dados);
+    // Cadastro inicial não é alteração — a data só é carimbada quando o
+    // estatuto muda depois.
+    return this.repo.criar({ ...dados, estatutoDataAlteracao: null });
   }
 }

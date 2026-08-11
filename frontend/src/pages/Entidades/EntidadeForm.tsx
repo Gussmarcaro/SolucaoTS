@@ -50,7 +50,6 @@ type Campos = {
   finalidadeArtigo: string;
   dataUltimaAlteracao: string;
   estatutoDataInicial: string;
-  estatutoDataAlteracao: string;
   cep: string;
   logradouro: string;
   numero: string;
@@ -75,7 +74,6 @@ function estadoInicial(e?: Entidade | null): Campos {
     finalidadeArtigo: e?.finalidadeArtigo ?? '',
     dataUltimaAlteracao: e?.dataUltimaAlteracao ? e.dataUltimaAlteracao.slice(0, 10) : '',
     estatutoDataInicial: e?.estatutoDataInicial ? e.estatutoDataInicial.slice(0, 10) : '',
-    estatutoDataAlteracao: e?.estatutoDataAlteracao ? e.estatutoDataAlteracao.slice(0, 10) : '',
     cep: e?.cep ?? '',
     logradouro: e?.logradouro ?? '',
     numero: e?.numero ?? '',
@@ -107,6 +105,11 @@ export function EntidadeForm({ entidade, onSuccess, onCancel }: Props) {
   );
   const [erroArquivo, setErroArquivo] = useState<string | null>(null);
   const inputArquivo = useRef<HTMLInputElement>(null);
+
+  // Carimbada pelo backend quando o estatuto muda — aqui só é exibida.
+  const dataAlteracaoEstatuto = entidade?.estatutoDataAlteracao
+    ? new Date(entidade.estatutoDataAlteracao).toLocaleDateString('pt-BR')
+    : '—';
 
   const set = (campo: keyof Campos, valor: string) => {
     setForm((prev) => ({ ...prev, [campo]: valor }));
@@ -196,7 +199,6 @@ export function EntidadeForm({ entidade, onSuccess, onCancel }: Props) {
       finalidadeArtigo: form.finalidadeArtigo.trim() || null,
       dataUltimaAlteracao: form.dataUltimaAlteracao || null,
       estatutoDataInicial: form.estatutoDataInicial || null,
-      estatutoDataAlteracao: form.estatutoDataAlteracao || null,
       cep: apenasDigitos(form.cep),
       logradouro: form.logradouro.trim(),
       numero: form.numero.trim() || null,
@@ -330,7 +332,16 @@ export function EntidadeForm({ entidade, onSuccess, onCancel }: Props) {
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Input label="Data Inicial" name="estatutoDataInicial" type="date" value={form.estatutoDataInicial} onChange={(e) => set('estatutoDataInicial', e.target.value)} />
-                <Input label="Data Alteração" name="estatutoDataAlteracao" type="date" value={form.estatutoDataAlteracao} onChange={(e) => set('estatutoDataAlteracao', e.target.value)} />
+                {/* Somente leitura: o sistema carimba a data quando o estatuto muda. */}
+                <Input
+                  label="Data Alteração"
+                  name="estatutoDataAlteracao"
+                  value={dataAlteracaoEstatuto}
+                  readOnly
+                  tabIndex={-1}
+                  className="cursor-default bg-ink-50 text-ink-500 dark:bg-ink-800/40 dark:text-ink-400"
+                  hint="Preenchida automaticamente quando o estatuto é alterado."
+                />
               </div>
             </div>
           </fieldset>

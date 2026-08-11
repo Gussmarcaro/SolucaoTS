@@ -22,14 +22,16 @@ export class GerenciarEntidadeUseCase {
   }
 
   async salvarEstatuto(id: string, arquivo: ArquivoEstatuto): Promise<EntidadeBeneficiaria> {
-    await this.buscar(id);
+    const atual = await this.buscar(id);
     if (!arquivo.tamanho) throw new BusinessError('O arquivo do estatuto está vazio.');
     if (arquivo.tamanho > TAMANHO_MAXIMO_ESTATUTO)
       throw new BusinessError('O estatuto excede o limite de 5 MB.');
     // Assinatura do PDF (%PDF-): a extensão sozinha não prova o formato.
     if (arquivo.conteudo.subarray(0, 5).toString('latin1') !== '%PDF-')
       throw new BusinessError('O arquivo enviado não é um PDF válido.');
-    return this.repo.salvarEstatuto(id, arquivo);
+    // Substituir um estatuto que já existia é alteração; o primeiro envio, não.
+    const substituindo = !!atual.estatutoArquivoNome;
+    return this.repo.salvarEstatuto(id, arquivo, substituindo ? new Date() : undefined);
   }
 
   async obterEstatuto(id: string): Promise<ArquivoEstatuto> {
@@ -40,7 +42,7 @@ export class GerenciarEntidadeUseCase {
   }
 
   async removerEstatuto(id: string): Promise<EntidadeBeneficiaria> {
-    await this.buscar(id);
-    return this.repo.removerEstatuto(id);
+    const atual = await this.buscar(id);
+    return this.repo.removerEstatuto(id, atual.estatutoArquivoNome ? new Date() : undefined);
   }
 }

@@ -75,13 +75,18 @@ export class PrismaEntidadeRepository implements IEntidadeRepository {
     return prisma.entidadeBeneficiaria.update({ where: { id }, data: { ativo }, select: selecao });
   }
 
-  salvarEstatuto(id: string, arquivo: ArquivoEstatuto): Promise<EntidadeBeneficiaria> {
+  salvarEstatuto(
+    id: string,
+    arquivo: ArquivoEstatuto,
+    dataAlteracao?: Date,
+  ): Promise<EntidadeBeneficiaria> {
     return prisma.entidadeBeneficiaria.update({
       where: { id },
       data: {
         estatutoArquivo: arquivo.conteudo,
         estatutoArquivoNome: arquivo.nome,
         estatutoArquivoTamanho: arquivo.tamanho,
+        ...(dataAlteracao ? { estatutoDataAlteracao: dataAlteracao } : {}),
       },
       select: selecao,
     });
@@ -100,10 +105,15 @@ export class PrismaEntidadeRepository implements IEntidadeRepository {
     };
   }
 
-  removerEstatuto(id: string): Promise<EntidadeBeneficiaria> {
+  removerEstatuto(id: string, dataAlteracao?: Date): Promise<EntidadeBeneficiaria> {
     return prisma.entidadeBeneficiaria.update({
       where: { id },
-      data: { estatutoArquivo: null, estatutoArquivoNome: null, estatutoArquivoTamanho: null },
+      data: {
+        estatutoArquivo: null,
+        estatutoArquivoNome: null,
+        estatutoArquivoTamanho: null,
+        ...(dataAlteracao ? { estatutoDataAlteracao: dataAlteracao } : {}),
+      },
       select: selecao,
     });
   }

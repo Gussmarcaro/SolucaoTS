@@ -40,7 +40,7 @@ export interface EntidadePayload {
   finalidadeArtigo?: string | null;
   dataUltimaAlteracao?: string | null;
   estatutoDataInicial?: string | null;
-  estatutoDataAlteracao?: string | null;
+  // `estatutoDataAlteracao` não vai no payload: quem preenche é o backend.
   cep: string;
   logradouro: string;
   numero?: string | null;
