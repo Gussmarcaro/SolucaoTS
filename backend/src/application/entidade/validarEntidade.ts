@@ -28,7 +28,6 @@ export function normalizarEValidarEntidade(input: CriarEntidadeDTO): DadosEntida
   };
 
   const dataConstituicao = dataPassada(input.dataConstituicao, 'Data de constituição');
-  const dataUltimaAlteracao = dataPassada(input.dataUltimaAlteracao, 'Data da última alteração');
   const estatutoDataInicial = dataPassada(input.estatutoDataInicial, 'Data inicial do estatuto');
 
   if (razaoSocial.length < 2) throw new BusinessError('Informe a razão social.');
@@ -53,7 +52,6 @@ export function normalizarEValidarEntidade(input: CriarEntidadeDTO): DadosEntida
     dataConstituicao,
     finalidadeDescricao: input.finalidadeDescricao?.trim() || null,
     finalidadeArtigo: input.finalidadeArtigo?.trim() || null,
-    dataUltimaAlteracao,
     estatutoDataInicial,
     cep,
     logradouro,

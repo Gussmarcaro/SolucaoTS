@@ -394,8 +394,6 @@ model EntidadeBeneficiaria {
   finalidadeDescricao String? // o que o estatuto define como finalidade da OSC
   finalidadeArtigo    String? @db.VarChar(120) // artigo do estatuto que a define
 
-  dataUltimaAlteracao DateTime? @db.Date // última alteração sofrida pelo estatuto
-
   // Estatuto — o PDF mora no próprio banco (não há storage externo no projeto).
   // `estatutoArquivo` NUNCA entra no select padrão nem na trilha de auditoria:
   // é o único campo do schema que pode ter megabytes.

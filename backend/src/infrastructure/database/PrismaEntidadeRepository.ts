@@ -22,7 +22,6 @@ const selecao = {
   dataConstituicao: true,
   finalidadeDescricao: true,
   finalidadeArtigo: true,
-  dataUltimaAlteracao: true,
   // Só os metadados do estatuto — `estatutoArquivo` fica de fora de propósito,
   // senão toda listagem traria os PDFs junto.
   estatutoArquivoNome: true,

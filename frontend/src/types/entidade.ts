@@ -8,7 +8,6 @@ export interface Entidade {
   dataConstituicao: string | null;
   finalidadeDescricao: string | null;
   finalidadeArtigo: string | null;
-  dataUltimaAlteracao: string | null;
   /** Metadados do PDF do estatuto — o conteúdo vem pela rota de download. */
   estatutoArquivoNome: string | null;
   estatutoArquivoTamanho: number | null;
@@ -38,7 +37,6 @@ export interface EntidadePayload {
   dataConstituicao?: string | null;
   finalidadeDescricao?: string | null;
   finalidadeArtigo?: string | null;
-  dataUltimaAlteracao?: string | null;
   estatutoDataInicial?: string | null;
   // `estatutoDataAlteracao` não vai no payload: quem preenche é o backend.
   cep: string;

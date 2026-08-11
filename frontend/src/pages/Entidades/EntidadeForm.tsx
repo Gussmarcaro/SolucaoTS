@@ -48,7 +48,6 @@ type Campos = {
   dataConstituicao: string;
   finalidadeDescricao: string;
   finalidadeArtigo: string;
-  dataUltimaAlteracao: string;
   estatutoDataInicial: string;
   cep: string;
   logradouro: string;
@@ -72,7 +71,6 @@ function estadoInicial(e?: Entidade | null): Campos {
     dataConstituicao: e?.dataConstituicao ? e.dataConstituicao.slice(0, 10) : '',
     finalidadeDescricao: e?.finalidadeDescricao ?? '',
     finalidadeArtigo: e?.finalidadeArtigo ?? '',
-    dataUltimaAlteracao: e?.dataUltimaAlteracao ? e.dataUltimaAlteracao.slice(0, 10) : '',
     estatutoDataInicial: e?.estatutoDataInicial ? e.estatutoDataInicial.slice(0, 10) : '',
     cep: e?.cep ?? '',
     logradouro: e?.logradouro ?? '',
@@ -197,7 +195,6 @@ export function EntidadeForm({ entidade, onSuccess, onCancel }: Props) {
       dataConstituicao: form.dataConstituicao || null,
       finalidadeDescricao: form.finalidadeDescricao.trim() || null,
       finalidadeArtigo: form.finalidadeArtigo.trim() || null,
-      dataUltimaAlteracao: form.dataUltimaAlteracao || null,
       estatutoDataInicial: form.estatutoDataInicial || null,
       cep: apenasDigitos(form.cep),
       logradouro: form.logradouro.trim(),
@@ -302,10 +299,6 @@ export function EntidadeForm({ entidade, onSuccess, onCancel }: Props) {
               </div>
             </div>
           </fieldset>
-
-          <div className="sm:col-span-3">
-            <Input label="Data da última alteração" name="dataUltimaAlteracao" type="date" value={form.dataUltimaAlteracao} onChange={(e) => set('dataUltimaAlteracao', e.target.value)} />
-          </div>
 
           {/* Estatuto */}
           <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 dark:border-ink-700 sm:col-span-12">

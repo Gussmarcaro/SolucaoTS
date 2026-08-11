@@ -9,7 +9,6 @@ export interface EntidadeBeneficiaria {
   dataConstituicao: Date | null;
   finalidadeDescricao: string | null;
   finalidadeArtigo: string | null;
-  dataUltimaAlteracao: Date | null;
   /** Metadados do estatuto — o conteúdo do PDF é lido à parte, sob demanda. */
   estatutoArquivoNome: string | null;
   estatutoArquivoTamanho: number | null;

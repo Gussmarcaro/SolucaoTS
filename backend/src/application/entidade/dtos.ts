@@ -7,7 +7,6 @@ export interface CriarEntidadeDTO {
   dataConstituicao?: string | null; // ISO (YYYY-MM-DD)
   finalidadeDescricao?: string | null;
   finalidadeArtigo?: string | null;
-  dataUltimaAlteracao?: string | null; // ISO (YYYY-MM-DD)
   estatutoDataInicial?: string | null; // ISO (YYYY-MM-DD)
   // `estatutoDataAlteracao` não entra aqui de propósito: é carimbada pelo
   // sistema quando o estatuto muda, não informada por quem cadastra.
@@ -38,7 +37,6 @@ export interface DadosEntidade {
   dataConstituicao: Date | null;
   finalidadeDescricao: string | null;
   finalidadeArtigo: string | null;
-  dataUltimaAlteracao: Date | null;
   estatutoDataInicial: Date | null;
   estatutoDataAlteracao: Date | null;
   cep: string;

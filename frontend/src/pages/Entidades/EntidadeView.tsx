@@ -59,10 +59,6 @@ export function EntidadeView({ entidade }: { entidade: Entidade }) {
         </dl>
       </div>
 
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
-        <Campo label="Data da última alteração" valor={data(entidade.dataUltimaAlteracao)} />
-      </dl>
-
       <div className="rounded-xl border border-ink-200 p-4 dark:border-ink-700">
         <h4 className="mb-3 text-sm font-medium text-ink-700 dark:text-ink-200">Estatuto</h4>
         <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
