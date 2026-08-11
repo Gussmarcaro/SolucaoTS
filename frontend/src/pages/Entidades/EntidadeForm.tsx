@@ -242,7 +242,7 @@ export function EntidadeForm({ entidade, onSuccess, onCancel }: Props) {
 
   return (
     <FormularioNovo novo={!editando}>
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-4">
         {alerta && (
           <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -250,51 +250,68 @@ export function EntidadeForm({ entidade, onSuccess, onCancel }: Props) {
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="sm:col-span-2">
+        {/* Grade de 12 colunas: cada campo ocupa só a largura que precisa,
+            em vez de esticar até o fim da linha. */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
+          <div className="sm:col-span-7">
             <Input label="Razão Social *" name="razaoSocial" value={form.razaoSocial} onChange={(e) => set('razaoSocial', e.target.value)} error={erros.razaoSocial} />
           </div>
-          <Input label="Nome Fantasia" name="nomeFantasia" value={form.nomeFantasia} onChange={(e) => set('nomeFantasia', e.target.value)} />
-          <Input
-            label="CNPJ *"
-            name="cnpj"
-            value={mascaraCpfCnpj(form.cnpj)}
-            onChange={(e) => set('cnpj', e.target.value)}
-            error={erros.cnpj}
-            placeholder="00.000.000/0000-00"
-            inputMode="numeric"
-          />
-          <Input label="Inscrição Estadual" name="inscricaoEstadual" value={mascaraInscricao(form.inscricaoEstadual)} onChange={(e) => set('inscricaoEstadual', e.target.value)} placeholder="Isento ou nº" />
-          <Input label="Inscrição Municipal" name="inscricaoMunicipal" value={mascaraInscricao(form.inscricaoMunicipal)} onChange={(e) => set('inscricaoMunicipal', e.target.value)} />
-          <Input label="Data de Constituição" name="dataConstituicao" type="date" value={form.dataConstituicao} onChange={(e) => set('dataConstituicao', e.target.value)} />
+          <div className="sm:col-span-5">
+            <Input
+              label="CNPJ *"
+              name="cnpj"
+              value={mascaraCpfCnpj(form.cnpj)}
+              onChange={(e) => set('cnpj', e.target.value)}
+              error={erros.cnpj}
+              placeholder="00.000.000/0000-00"
+              inputMode="numeric"
+            />
+          </div>
+
+          <div className="sm:col-span-5">
+            <Input label="Nome Fantasia" name="nomeFantasia" value={form.nomeFantasia} onChange={(e) => set('nomeFantasia', e.target.value)} />
+          </div>
+          <div className="sm:col-span-2">
+            <Input label="Insc. Estadual" name="inscricaoEstadual" value={mascaraInscricao(form.inscricaoEstadual)} onChange={(e) => set('inscricaoEstadual', e.target.value)} placeholder="Isento ou nº" />
+          </div>
+          <div className="sm:col-span-2">
+            <Input label="Insc. Municipal" name="inscricaoMunicipal" value={mascaraInscricao(form.inscricaoMunicipal)} onChange={(e) => set('inscricaoMunicipal', e.target.value)} />
+          </div>
+          <div className="sm:col-span-3">
+            <Input label="Data de Constituição" name="dataConstituicao" type="date" value={form.dataConstituicao} onChange={(e) => set('dataConstituicao', e.target.value)} />
+          </div>
 
           {/* Finalidade estatutária */}
-          <fieldset className="rounded-xl border border-ink-200 p-4 dark:border-ink-700 sm:col-span-2">
+          <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 dark:border-ink-700 sm:col-span-12">
             <legend className="px-1 text-sm font-medium text-ink-700 dark:text-ink-200">Finalidade Estatutária</legend>
-            <div className="space-y-4">
-              <div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
+              <div className="sm:col-span-8">
                 <label htmlFor="finalidadeDescricao" className="mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-300">Descrição</label>
                 <textarea
                   id="finalidadeDescricao"
                   name="finalidadeDescricao"
                   value={form.finalidadeDescricao}
                   onChange={(e) => set('finalidadeDescricao', e.target.value)}
-                  rows={3}
+                  rows={2}
                   className="focus-ring w-full rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm text-ink-800 placeholder:text-ink-400 transition-colors dark:border-ink-700 dark:bg-ink-900 dark:text-ink-100"
                   placeholder="Finalidade da entidade conforme o estatuto."
                 />
               </div>
-              <Input label="Artigo Estatuto" name="finalidadeArtigo" value={form.finalidadeArtigo} onChange={(e) => set('finalidadeArtigo', e.target.value)} placeholder="ex.: Art. 3º, inciso II" />
+              <div className="sm:col-span-4">
+                <Input label="Artigo Estatuto" name="finalidadeArtigo" value={form.finalidadeArtigo} onChange={(e) => set('finalidadeArtigo', e.target.value)} placeholder="ex.: Art. 3º, II" />
+              </div>
             </div>
           </fieldset>
 
-          <Input label="Data da última alteração" name="dataUltimaAlteracao" type="date" value={form.dataUltimaAlteracao} onChange={(e) => set('dataUltimaAlteracao', e.target.value)} />
+          <div className="sm:col-span-3">
+            <Input label="Data da última alteração" name="dataUltimaAlteracao" type="date" value={form.dataUltimaAlteracao} onChange={(e) => set('dataUltimaAlteracao', e.target.value)} />
+          </div>
 
           {/* Estatuto */}
-          <fieldset className="rounded-xl border border-ink-200 p-4 dark:border-ink-700 sm:col-span-2">
+          <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 dark:border-ink-700 sm:col-span-12">
             <legend className="px-1 text-sm font-medium text-ink-700 dark:text-ink-200">Estatuto</legend>
-            <div className="space-y-4">
-              <div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
+              <div className="sm:col-span-6">
                 <span className="mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-300">Upload Estatuto</span>
                 {anexado && !arquivo ? (
                   <div className="flex items-center gap-2 rounded-xl border border-ink-200 bg-ink-50/60 px-3 py-2 text-sm dark:border-ink-700 dark:bg-ink-800/40">
@@ -324,15 +341,16 @@ export function EntidadeForm({ entidade, onSuccess, onCancel }: Props) {
                     />
                   </label>
                 )}
-                {erroArquivo && <p className="mt-1 text-sm font-medium text-red-500">{erroArquivo}</p>}
+                {erroArquivo && <p className="mt-1 text-xs font-medium text-red-500">{erroArquivo}</p>}
                 <p className="mt-1 text-xs text-ink-400">
-                  Somente PDF, até 5 MB.{!editando && ' O anexo é enviado assim que o cadastro for salvo.'}
+                  PDF, até 5 MB.{!editando && ' Enviado ao salvar o cadastro.'}
                 </p>
               </div>
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-3">
                 <Input label="Data Inicial" name="estatutoDataInicial" type="date" value={form.estatutoDataInicial} onChange={(e) => set('estatutoDataInicial', e.target.value)} />
-                {/* Somente leitura: o sistema carimba a data quando o estatuto muda. */}
+              </div>
+              {/* Somente leitura: o sistema carimba a data quando o estatuto muda. */}
+              <div className="sm:col-span-3">
                 <Input
                   label="Data Alteração"
                   name="estatutoDataAlteracao"
@@ -340,42 +358,55 @@ export function EntidadeForm({ entidade, onSuccess, onCancel }: Props) {
                   readOnly
                   tabIndex={-1}
                   className="cursor-default bg-ink-50 text-ink-500 dark:bg-ink-800/40 dark:text-ink-400"
-                  hint="Preenchida automaticamente quando o estatuto é alterado."
+                  hint="Automática."
                 />
               </div>
             </div>
           </fieldset>
 
-          <Input
-            label="CEP *"
-            name="cep"
-            value={mascaraCep(form.cep)}
-            onChange={(e) => set('cep', e.target.value)}
-            onBlur={handleCepBlur}
-            error={erros.cep}
-            placeholder="00000-000"
-            inputMode="numeric"
-            rightSlot={buscandoCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-          />
-          <div className="grid grid-cols-1 gap-4 sm:col-span-1 sm:grid-cols-3">
-            <div className="sm:col-span-2">
-              <Input label="Endereço *" name="logradouro" value={form.logradouro} onChange={(e) => set('logradouro', e.target.value)} error={erros.logradouro} />
-            </div>
-            <Input label="Número" name="numero" value={form.numero} onChange={(e) => set('numero', e.target.value)} />
+          {/* Endereço: CEP, logradouro, número e complemento numa linha só. */}
+          <div className="sm:col-span-2">
+            <Input
+              label="CEP *"
+              name="cep"
+              value={mascaraCep(form.cep)}
+              onChange={(e) => set('cep', e.target.value)}
+              onBlur={handleCepBlur}
+              error={erros.cep}
+              placeholder="00000-000"
+              inputMode="numeric"
+              rightSlot={buscandoCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+            />
+          </div>
+          <div className="sm:col-span-5">
+            <Input label="Endereço *" name="logradouro" value={form.logradouro} onChange={(e) => set('logradouro', e.target.value)} error={erros.logradouro} />
+          </div>
+          <div className="sm:col-span-2">
+            <Input label="Número" name="numero" value={form.numero} onChange={(e) => set('numero', e.target.value)} placeholder="nº" />
+          </div>
+          <div className="sm:col-span-3">
+            <Input label="Complemento" name="complemento" value={form.complemento} onChange={(e) => set('complemento', e.target.value)} placeholder="Sala, bloco..." />
           </div>
 
-          <Input label="Complemento" name="complemento" value={form.complemento} onChange={(e) => set('complemento', e.target.value)} />
-          <Input label="Bairro *" name="bairro" value={form.bairro} onChange={(e) => set('bairro', e.target.value)} error={erros.bairro} />
-          <div className="grid grid-cols-3 gap-3">
-            <div className="col-span-2">
-              <Input label="Cidade *" name="cidade" value={form.cidade} onChange={(e) => set('cidade', e.target.value)} error={erros.cidade} />
-            </div>
+          <div className="sm:col-span-4">
+            <Input label="Bairro *" name="bairro" value={form.bairro} onChange={(e) => set('bairro', e.target.value)} error={erros.bairro} />
+          </div>
+          <div className="sm:col-span-6">
+            <Input label="Cidade *" name="cidade" value={form.cidade} onChange={(e) => set('cidade', e.target.value)} error={erros.cidade} />
+          </div>
+          <div className="sm:col-span-2">
             <Select label="UF *" name="uf" value={form.uf} onChange={(e) => set('uf', e.target.value)} error={erros.uf} options={UF_OPTIONS} placeholder="—" />
           </div>
 
-          <Input label="E-mail *" name="email" type="email" value={form.email} onChange={(e) => set('email', e.target.value)} error={erros.email} />
-          <Input label="Telefone Fixo" name="telefoneFixo" value={mascaraTelefoneFixo(form.telefoneFixo)} onChange={(e) => set('telefoneFixo', e.target.value)} placeholder="(00) 0000-0000" inputMode="numeric" />
-          <Input label="Celular / WhatsApp" name="whatsapp" value={mascaraCelular(form.whatsapp)} onChange={(e) => set('whatsapp', e.target.value)} placeholder="(00) 00000-0000" inputMode="numeric" />
+          <div className="sm:col-span-6">
+            <Input label="E-mail *" name="email" type="email" value={form.email} onChange={(e) => set('email', e.target.value)} error={erros.email} />
+          </div>
+          <div className="sm:col-span-3">
+            <Input label="Telefone Fixo" name="telefoneFixo" value={mascaraTelefoneFixo(form.telefoneFixo)} onChange={(e) => set('telefoneFixo', e.target.value)} placeholder="(00) 0000-0000" inputMode="numeric" />
+          </div>
+          <div className="sm:col-span-3">
+            <Input label="Celular / WhatsApp" name="whatsapp" value={mascaraCelular(form.whatsapp)} onChange={(e) => set('whatsapp', e.target.value)} placeholder="(00) 00000-0000" inputMode="numeric" />
+          </div>
         </div>
 
         <div className="flex items-center justify-end gap-2 pt-2">
