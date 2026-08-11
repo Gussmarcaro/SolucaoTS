@@ -85,9 +85,18 @@ export function AjusteDetalhe() {
         </Link>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="font-mono text-xl font-bold tracking-tight text-ink-900 dark:text-ink-50">
-              {ajuste.codigoAjuste}
-            </h1>
+            {ajuste.nomeResumido ? (
+              <>
+                <h1 className="text-xl font-bold tracking-tight text-ink-900 dark:text-ink-50">
+                  {ajuste.nomeResumido}
+                </h1>
+                <p className="font-mono text-xs text-ink-400">{ajuste.codigoAjuste}</p>
+              </>
+            ) : (
+              <h1 className="font-mono text-xl font-bold tracking-tight text-ink-900 dark:text-ink-50">
+                {ajuste.codigoAjuste}
+              </h1>
+            )}
             <p className="mt-1 text-sm text-ink-500 dark:text-ink-400">{ajuste.entidadeNome}</p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <Badge tone="brand">{TIPO_AJUSTE_LABEL[ajuste.tipoAjuste]}</Badge>

@@ -16,6 +16,8 @@ export interface Ajuste {
   entidadeBeneficiariaId: string;
   entidadeNome: string; // razão social da beneficiária (join p/ exibição)
   tipoAjuste: TipoAjuste;
+  /** Apelido curto para identificar o ajuste nas telas — não vai ao TCESP. */
+  nomeResumido: string | null;
   codigoAjuste: string;
   numero: string | null;
   objeto: string;

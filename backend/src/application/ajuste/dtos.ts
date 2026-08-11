@@ -4,6 +4,7 @@ export interface CriarAjusteDTO {
   clienteId?: string | null;
   entidadeBeneficiariaId: string;
   tipoAjuste: TipoAjuste;
+  nomeResumido?: string | null;
   codigoAjuste: string;
   numero?: string | null;
   objeto: string;
@@ -22,6 +23,7 @@ export interface DadosAjuste {
   clienteId: string | null;
   entidadeBeneficiariaId: string;
   tipoAjuste: TipoAjuste;
+  nomeResumido: string | null;
   codigoAjuste: string;
   numero: string | null;
   objeto: string;

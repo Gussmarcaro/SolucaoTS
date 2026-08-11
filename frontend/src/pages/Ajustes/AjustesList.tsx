@@ -131,8 +131,17 @@ export function AjustesList({ refreshKey, onVisualizar, onEditar }: Props) {
       case 'ajuste':
         return (
           <div className="min-w-0">
-            <p className="truncate font-mono text-xs text-ink-700 dark:text-ink-200" title={a.codigoAjuste}>{a.codigoAjuste}</p>
-            <p className="truncate text-xs text-ink-400">{TIPO_AJUSTE_LABEL[a.tipoAjuste]}</p>
+            {/* O nome resumido vira o rótulo principal quando existe; o código
+                fica de subtítulo, mas nunca some — é ele que casa com o TCESP. */}
+            {a.nomeResumido ? (
+              <p className="truncate font-medium text-ink-800 dark:text-ink-100" title={a.nomeResumido}>{a.nomeResumido}</p>
+            ) : (
+              <p className="truncate font-mono text-xs text-ink-700 dark:text-ink-200" title={a.codigoAjuste}>{a.codigoAjuste}</p>
+            )}
+            <p className="truncate text-xs text-ink-400">
+              {a.nomeResumido && <span className="font-mono">{a.codigoAjuste} · </span>}
+              {TIPO_AJUSTE_LABEL[a.tipoAjuste]}
+            </p>
           </div>
         );
       case 'entidade':
@@ -156,7 +165,7 @@ export function AjustesList({ refreshKey, onVisualizar, onEditar }: Props) {
           <input
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            placeholder="Buscar por código, entidade, objeto..."
+            placeholder="Buscar por nome, código, entidade, objeto..."
             className="focus-ring h-9 w-full rounded-lg border border-ink-200 bg-ink-50 pl-9 pr-3 text-sm text-ink-800 placeholder:text-ink-400 dark:border-ink-800 dark:bg-ink-900 dark:text-ink-100"
           />
         </div>

@@ -27,7 +27,14 @@ export function AjusteView({ ajuste }: { ajuste: Ajuste }) {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="font-mono text-base font-semibold text-ink-900 dark:text-ink-50">{ajuste.codigoAjuste}</h3>
+        {ajuste.nomeResumido ? (
+          <>
+            <h3 className="text-base font-semibold text-ink-900 dark:text-ink-50">{ajuste.nomeResumido}</h3>
+            <p className="font-mono text-xs text-ink-400">{ajuste.codigoAjuste}</p>
+          </>
+        ) : (
+          <h3 className="font-mono text-base font-semibold text-ink-900 dark:text-ink-50">{ajuste.codigoAjuste}</h3>
+        )}
         <p className="text-sm text-ink-500">{ajuste.entidadeNome}</p>
         <div className="mt-1 flex gap-2">
           <Badge tone="brand">{TIPO_AJUSTE_LABEL[ajuste.tipoAjuste]}</Badge>

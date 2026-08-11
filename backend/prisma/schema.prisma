@@ -451,6 +451,7 @@ model Ajuste {
   clienteId              String?       @db.Uuid // opcional até o multi-tenant/auth (Fase 1)
   entidadeBeneficiariaId String        @db.Uuid
   tipoAjuste             TipoAjuste
+  nomeResumido           String?       @db.VarChar(80) // apelido do ajuste, para identificar na tela (o TCESP não recebe)
   codigoAjuste           String        @unique @db.VarChar(30) // código único do TCESP (trava de duplicidade — voltará a ser composto com clienteId no multi-tenant)
   numero                 String?
   objeto                 String

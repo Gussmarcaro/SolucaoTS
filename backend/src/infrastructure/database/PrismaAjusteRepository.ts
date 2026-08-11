@@ -10,6 +10,7 @@ const selecao = {
   clienteId: true,
   entidadeBeneficiariaId: true,
   tipoAjuste: true,
+  nomeResumido: true,
   codigoAjuste: true,
   numero: true,
   objeto: true,
@@ -35,6 +36,7 @@ function toDomain(row: Row): Ajuste {
     entidadeBeneficiariaId: row.entidadeBeneficiariaId,
     entidadeNome: row.entidadeBeneficiaria?.razaoSocial ?? '',
     tipoAjuste: row.tipoAjuste as TipoAjuste,
+    nomeResumido: row.nomeResumido,
     codigoAjuste: row.codigoAjuste,
     numero: row.numero,
     objeto: row.objeto,
@@ -55,6 +57,7 @@ function toData(dados: DadosAjuste) {
     clienteId: dados.clienteId,
     entidadeBeneficiariaId: dados.entidadeBeneficiariaId,
     tipoAjuste: dados.tipoAjuste,
+    nomeResumido: dados.nomeResumido,
     codigoAjuste: dados.codigoAjuste,
     numero: dados.numero,
     objeto: dados.objeto,
@@ -118,6 +121,7 @@ export class PrismaAjusteRepository implements IAjusteRepository {
     if (busca) {
       where.OR = [
         { codigoAjuste: { contains: busca, mode: 'insensitive' } },
+        { nomeResumido: { contains: busca, mode: 'insensitive' } },
         { numero: { contains: busca, mode: 'insensitive' } },
         { objeto: { contains: busca, mode: 'insensitive' } },
         { entidadeBeneficiaria: { razaoSocial: { contains: busca, mode: 'insensitive' } } },
