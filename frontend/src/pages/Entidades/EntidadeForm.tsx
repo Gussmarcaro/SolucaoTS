@@ -250,10 +250,13 @@ export function EntidadeForm({ entidade, onSuccess, onCancel }: Props) {
         {/* Grade de 12 colunas: cada campo ocupa só a largura que precisa,
             em vez de esticar até o fim da linha. */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
-          <div className="sm:col-span-7">
+          <div className="sm:col-span-5">
             <Input label="Razão Social *" name="razaoSocial" value={form.razaoSocial} onChange={(e) => set('razaoSocial', e.target.value)} error={erros.razaoSocial} />
           </div>
-          <div className="sm:col-span-5">
+          <div className="sm:col-span-4">
+            <Input label="Nome Fantasia" name="nomeFantasia" value={form.nomeFantasia} onChange={(e) => set('nomeFantasia', e.target.value)} />
+          </div>
+          <div className="sm:col-span-3">
             <Input
               label="CNPJ *"
               name="cnpj"
@@ -265,16 +268,13 @@ export function EntidadeForm({ entidade, onSuccess, onCancel }: Props) {
             />
           </div>
 
-          <div className="sm:col-span-5">
-            <Input label="Nome Fantasia" name="nomeFantasia" value={form.nomeFantasia} onChange={(e) => set('nomeFantasia', e.target.value)} />
+          <div className="sm:col-span-4">
+            <Input label="Inscrição Estadual" name="inscricaoEstadual" value={mascaraInscricao(form.inscricaoEstadual)} onChange={(e) => set('inscricaoEstadual', e.target.value)} placeholder="Isento ou nº" />
           </div>
-          <div className="sm:col-span-2">
-            <Input label="Insc. Estadual" name="inscricaoEstadual" value={mascaraInscricao(form.inscricaoEstadual)} onChange={(e) => set('inscricaoEstadual', e.target.value)} placeholder="Isento ou nº" />
+          <div className="sm:col-span-4">
+            <Input label="Inscrição Municipal" name="inscricaoMunicipal" value={mascaraInscricao(form.inscricaoMunicipal)} onChange={(e) => set('inscricaoMunicipal', e.target.value)} />
           </div>
-          <div className="sm:col-span-2">
-            <Input label="Insc. Municipal" name="inscricaoMunicipal" value={mascaraInscricao(form.inscricaoMunicipal)} onChange={(e) => set('inscricaoMunicipal', e.target.value)} />
-          </div>
-          <div className="sm:col-span-3">
+          <div className="sm:col-span-4">
             <Input label="Data de Constituição" name="dataConstituicao" type="date" value={form.dataConstituicao} onChange={(e) => set('dataConstituicao', e.target.value)} />
           </div>
 
@@ -357,7 +357,7 @@ export function EntidadeForm({ entidade, onSuccess, onCancel }: Props) {
             </div>
           </fieldset>
 
-          {/* Endereço: CEP, logradouro, número e complemento numa linha só. */}
+          {/* CEP e número ocupam o mínimo; o Endereço absorve o que sobra da linha. */}
           <div className="sm:col-span-2">
             <Input
               label="CEP *"
@@ -371,20 +371,20 @@ export function EntidadeForm({ entidade, onSuccess, onCancel }: Props) {
               rightSlot={buscandoCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
             />
           </div>
-          <div className="sm:col-span-5">
+          <div className="sm:col-span-8">
             <Input label="Endereço *" name="logradouro" value={form.logradouro} onChange={(e) => set('logradouro', e.target.value)} error={erros.logradouro} />
           </div>
           <div className="sm:col-span-2">
             <Input label="Número" name="numero" value={form.numero} onChange={(e) => set('numero', e.target.value)} placeholder="nº" />
           </div>
+
           <div className="sm:col-span-3">
             <Input label="Complemento" name="complemento" value={form.complemento} onChange={(e) => set('complemento', e.target.value)} placeholder="Sala, bloco..." />
           </div>
-
-          <div className="sm:col-span-4">
+          <div className="sm:col-span-3">
             <Input label="Bairro *" name="bairro" value={form.bairro} onChange={(e) => set('bairro', e.target.value)} error={erros.bairro} />
           </div>
-          <div className="sm:col-span-6">
+          <div className="sm:col-span-4">
             <Input label="Cidade *" name="cidade" value={form.cidade} onChange={(e) => set('cidade', e.target.value)} error={erros.cidade} />
           </div>
           <div className="sm:col-span-2">
