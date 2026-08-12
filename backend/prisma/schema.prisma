@@ -461,9 +461,38 @@ model Ajuste {
   vigenciaFinal          DateTime?     @db.Date
   periodicidade          Periodicidade
   status                 StatusAjuste  @default(EM_ELABORACAO)
-  criadoPor              String?       @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
-  criadoEm               DateTime      @default(now())
-  atualizadoEm           DateTime      @updatedAt
+
+  // Previsão por fontes de recursos — quanto do valor global vem de cada esfera
+  previsaoFederal   Decimal? @db.Decimal(15, 2)
+  previsaoEstadual  Decimal? @db.Decimal(15, 2)
+  previsaoMunicipal Decimal? @db.Decimal(15, 2)
+
+  // Responsável pelo ajuste e sua vigência
+  responsavelNome           String?
+  responsavelCpf            String?   @db.VarChar(11) // só dígitos
+  responsavelDataNascimento DateTime? @db.Date
+  responsavelEndereco       String? // endereço completo, em texto livre
+  responsavelEmail          String?
+  responsavelTelefone       String?   @db.VarChar(11) // DDD + número, só dígitos
+  responsavelCargo          String?
+  responsavelDataEntrada    DateTime? @db.Date
+  responsavelDataSaida      DateTime? @db.Date
+
+  // Termo de Ciência e Notificação — PDF no próprio banco, como o estatuto da
+  // EntidadeBeneficiaria: `termoCienciaArquivo` fica fora do select padrão e da
+  // trilha de auditoria.
+  termoCienciaArquivo        Bytes?
+  termoCienciaArquivoNome    String?
+  termoCienciaArquivoTamanho Int?
+
+  // Publicação do ajuste
+  publicacaoLocal String?
+  publicacaoLink  String?
+  publicacaoData  DateTime? @db.Date
+
+  criadoPor    String?  @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
 
   cliente              Cliente?             @relation(fields: [clienteId], references: [id])
   entidadeBeneficiaria EntidadeBeneficiaria @relation(fields: [entidadeBeneficiariaId], references: [id])

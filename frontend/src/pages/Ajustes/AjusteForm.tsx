@@ -1,11 +1,25 @@
-import { useEffect, useState } from 'react';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { AlertCircle, ExternalLink, FileText, Loader2, Trash2, Upload } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import { FormularioNovo } from '@/components/ui/LabelCampo';
-import { mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
-import { atualizarAjuste, criarAjuste } from '@/services/ajustes.service';
+import {
+  apenasDigitos,
+  mascaraCelular,
+  mascaraCpf,
+  mascaraMoeda,
+  moedaParaNumero,
+  numeroParaMascaraMoeda,
+} from '@/lib/masks';
+import { isCpfValido, isEmailValido } from '@/lib/validators';
+import {
+  abrirTermoCiencia,
+  atualizarAjuste,
+  criarAjuste,
+  enviarTermoCiencia,
+  removerTermoCiencia,
+} from '@/services/ajustes.service';
 import { listarEntidades } from '@/services/entidades.service';
 import { listarOrgaos } from '@/services/orgaos.service';
 import { extrairCodigoErro, extrairMensagemErro } from '@/services/http';
@@ -43,7 +57,30 @@ type Campos = {
   dataAssinatura: string;
   vigenciaInicial: string;
   vigenciaFinal: string;
+  previsaoFederal: string;
+  previsaoEstadual: string;
+  previsaoMunicipal: string;
+  responsavelNome: string;
+  responsavelCpf: string;
+  responsavelDataNascimento: string;
+  responsavelEndereco: string;
+  responsavelEmail: string;
+  responsavelTelefone: string;
+  responsavelCargo: string;
+  responsavelDataEntrada: string;
+  responsavelDataSaida: string;
+  publicacaoLocal: string;
+  publicacaoLink: string;
+  publicacaoData: string;
 };
+
+/** Espelha o limite do backend (multer + use case). */
+const MAX_TERMO = 5 * 1024 * 1024;
+
+function tamanhoLegivel(bytes: number): string {
+  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
 
 function estadoInicial(a?: Ajuste | null): Campos {
   return {
@@ -60,6 +97,22 @@ function estadoInicial(a?: Ajuste | null): Campos {
     dataAssinatura: a?.dataAssinatura ?? '',
     vigenciaInicial: a?.vigenciaInicial ?? '',
     vigenciaFinal: a?.vigenciaFinal ?? '',
+    previsaoFederal: a?.previsaoFederal != null ? numeroParaMascaraMoeda(a.previsaoFederal) : '',
+    previsaoEstadual: a?.previsaoEstadual != null ? numeroParaMascaraMoeda(a.previsaoEstadual) : '',
+    previsaoMunicipal:
+      a?.previsaoMunicipal != null ? numeroParaMascaraMoeda(a.previsaoMunicipal) : '',
+    responsavelNome: a?.responsavelNome ?? '',
+    responsavelCpf: a?.responsavelCpf ?? '',
+    responsavelDataNascimento: a?.responsavelDataNascimento ?? '',
+    responsavelEndereco: a?.responsavelEndereco ?? '',
+    responsavelEmail: a?.responsavelEmail ?? '',
+    responsavelTelefone: a?.responsavelTelefone ?? '',
+    responsavelCargo: a?.responsavelCargo ?? '',
+    responsavelDataEntrada: a?.responsavelDataEntrada ?? '',
+    responsavelDataSaida: a?.responsavelDataSaida ?? '',
+    publicacaoLocal: a?.publicacaoLocal ?? '',
+    publicacaoLink: a?.publicacaoLink ?? '',
+    publicacaoData: a?.publicacaoData ?? '',
   };
 }
 
@@ -73,6 +126,45 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
   const [carregandoEntidades, setCarregandoEntidades] = useState(true);
   const [orgaos, setOrgaos] = useState<{ value: string; label: string }[]>([]);
   const [carregandoOrgaos, setCarregandoOrgaos] = useState(true);
+
+  // Termo de Ciência: o PDF escolhido só sobe depois de salvar, porque a rota
+  // precisa do id do ajuste.
+  const [arquivo, setArquivo] = useState<File | null>(null);
+  const [anexado, setAnexado] = useState<{ nome: string; tamanho: number } | null>(
+    ajuste?.termoCienciaArquivoNome
+      ? { nome: ajuste.termoCienciaArquivoNome, tamanho: ajuste.termoCienciaArquivoTamanho ?? 0 }
+      : null,
+  );
+  const [erroArquivo, setErroArquivo] = useState<string | null>(null);
+  const inputArquivo = useRef<HTMLInputElement>(null);
+
+  function escolherArquivo(f: File | null) {
+    setErroArquivo(null);
+    if (!f) return setArquivo(null);
+    if (f.type !== 'application/pdf' && !/\.pdf$/i.test(f.name)) {
+      setArquivo(null);
+      return setErroArquivo('O termo precisa ser um arquivo PDF.');
+    }
+    if (f.size > MAX_TERMO) {
+      setArquivo(null);
+      return setErroArquivo('O termo excede o limite de 5 MB.');
+    }
+    setArquivo(f);
+  }
+
+  async function handleRemoverTermo() {
+    setErroArquivo(null);
+    if (editando && anexado) {
+      try {
+        await removerTermoCiencia(ajuste!.id);
+      } catch (e) {
+        return setErroArquivo(extrairMensagemErro(e, 'Não foi possível remover o termo.'));
+      }
+    }
+    setAnexado(null);
+    setArquivo(null);
+    if (inputArquivo.current) inputArquivo.current.value = '';
+  }
 
   useEffect(() => {
     let vivo = true;
@@ -119,6 +211,20 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
     if (!form.dataAssinatura) novos.dataAssinatura = 'Informe a data de assinatura.';
     if (form.vigenciaFinal && form.vigenciaInicial && form.vigenciaFinal < form.vigenciaInicial)
       novos.vigenciaFinal = 'O fim não pode ser anterior ao início.';
+    if (form.responsavelCpf && !isCpfValido(form.responsavelCpf))
+      novos.responsavelCpf = 'CPF inválido.';
+    if (form.responsavelEmail && !isEmailValido(form.responsavelEmail))
+      novos.responsavelEmail = 'E-mail inválido.';
+    if (form.responsavelTelefone && apenasDigitos(form.responsavelTelefone).length < 10)
+      novos.responsavelTelefone = 'Telefone inválido.';
+    if (
+      form.responsavelDataSaida &&
+      form.responsavelDataEntrada &&
+      form.responsavelDataSaida < form.responsavelDataEntrada
+    )
+      novos.responsavelDataSaida = 'A saída não pode ser anterior à entrada.';
+    if (form.publicacaoLink && !/^https?:\/\/\S+$/i.test(form.publicacaoLink.trim()))
+      novos.publicacaoLink = 'O link deve começar com http:// ou https://.';
     setErros(novos);
     return Object.keys(novos).length === 0;
   }
@@ -142,12 +248,44 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
       vigenciaFinal: form.vigenciaFinal || null,
       periodicidade: form.periodicidade as Periodicidade,
       status: form.status as StatusAjuste,
+
+      previsaoFederal: form.previsaoFederal ? moedaParaNumero(form.previsaoFederal) : null,
+      previsaoEstadual: form.previsaoEstadual ? moedaParaNumero(form.previsaoEstadual) : null,
+      previsaoMunicipal: form.previsaoMunicipal ? moedaParaNumero(form.previsaoMunicipal) : null,
+
+      responsavelNome: form.responsavelNome.trim() || null,
+      responsavelCpf: form.responsavelCpf ? apenasDigitos(form.responsavelCpf) : null,
+      responsavelDataNascimento: form.responsavelDataNascimento || null,
+      responsavelEndereco: form.responsavelEndereco.trim() || null,
+      responsavelEmail: form.responsavelEmail.trim().toLowerCase() || null,
+      responsavelTelefone: form.responsavelTelefone ? apenasDigitos(form.responsavelTelefone) : null,
+      responsavelCargo: form.responsavelCargo.trim() || null,
+      responsavelDataEntrada: form.responsavelDataEntrada || null,
+      responsavelDataSaida: form.responsavelDataSaida || null,
+
+      publicacaoLocal: form.publicacaoLocal.trim() || null,
+      publicacaoLink: form.publicacaoLink.trim() || null,
+      publicacaoData: form.publicacaoData || null,
     };
 
     setSalvando(true);
     try {
-      if (editando) await atualizarAjuste(ajuste!.id, payload);
-      else await criarAjuste(payload);
+      const salvo = editando
+        ? await atualizarAjuste(ajuste!.id, payload)
+        : await criarAjuste(payload);
+
+      // Upload em seguida: a rota do termo precisa do id, que no cadastro novo
+      // só existe agora. Falhar aqui não desfaz o ajuste já gravado.
+      if (arquivo) {
+        try {
+          await enviarTermoCiencia(salvo.id, arquivo);
+        } catch (e) {
+          setSalvando(false);
+          return setAlerta(
+            `Ajuste salvo, mas o termo não foi anexado: ${extrairMensagemErro(e, 'falha no envio')}.`,
+          );
+        }
+      }
       onSuccess();
     } catch (error) {
       const codigo = extrairCodigoErro(error);
@@ -251,6 +389,120 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
             onChange={(e) => set('status', e.target.value)}
             options={opcoesDe(STATUS_AJUSTE_LABEL)}
           />
+
+          {/* Previsão por fontes de recursos */}
+          <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 dark:border-ink-700 sm:col-span-2">
+            <legend className="px-1 text-sm font-medium text-ink-700 dark:text-ink-200">Previsão por Fontes de Recursos</legend>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <Input label="Federal (R$)" name="previsaoFederal" value={form.previsaoFederal} onChange={(e) => set('previsaoFederal', mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
+              <Input label="Estadual (R$)" name="previsaoEstadual" value={form.previsaoEstadual} onChange={(e) => set('previsaoEstadual', mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
+              <Input label="Municipal (R$)" name="previsaoMunicipal" value={form.previsaoMunicipal} onChange={(e) => set('previsaoMunicipal', mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
+            </div>
+          </fieldset>
+
+          {/* Responsável pelo Ajuste */}
+          <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 dark:border-ink-700 sm:col-span-2">
+            <legend className="px-1 text-sm font-medium text-ink-700 dark:text-ink-200">Responsável pelo Ajuste</legend>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
+              <div className="sm:col-span-5">
+                <Input label="Nome" name="responsavelNome" value={form.responsavelNome} onChange={(e) => set('responsavelNome', e.target.value)} />
+              </div>
+              <div className="sm:col-span-3">
+                <Input label="CPF" name="responsavelCpf" value={mascaraCpf(form.responsavelCpf)} onChange={(e) => set('responsavelCpf', e.target.value)} error={erros.responsavelCpf} placeholder="000.000.000-00" inputMode="numeric" />
+              </div>
+              <div className="sm:col-span-4">
+                <Input label="Data de Nascimento" name="responsavelDataNascimento" type="date" value={form.responsavelDataNascimento} onChange={(e) => set('responsavelDataNascimento', e.target.value)} />
+              </div>
+
+              <div className="sm:col-span-12">
+                <Input label="Endereço completo" name="responsavelEndereco" value={form.responsavelEndereco} onChange={(e) => set('responsavelEndereco', e.target.value)} placeholder="Rua, nº, bairro, cidade/UF, CEP" />
+              </div>
+
+              <div className="sm:col-span-5">
+                <Input label="E-mail" name="responsavelEmail" type="email" value={form.responsavelEmail} onChange={(e) => set('responsavelEmail', e.target.value)} error={erros.responsavelEmail} />
+              </div>
+              <div className="sm:col-span-3">
+                <Input label="Telefone / Celular" name="responsavelTelefone" value={mascaraCelular(form.responsavelTelefone)} onChange={(e) => set('responsavelTelefone', e.target.value)} error={erros.responsavelTelefone} placeholder="(00) 00000-0000" inputMode="numeric" />
+              </div>
+              <div className="sm:col-span-4">
+                <Input label="Função / Cargo" name="responsavelCargo" value={form.responsavelCargo} onChange={(e) => set('responsavelCargo', e.target.value)} />
+              </div>
+            </div>
+          </fieldset>
+
+          {/* Vigência do Responsável */}
+          <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 dark:border-ink-700 sm:col-span-2">
+            <legend className="px-1 text-sm font-medium text-ink-700 dark:text-ink-200">Vigência do Responsável</legend>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Input label="Data Entrada" name="responsavelDataEntrada" type="date" value={form.responsavelDataEntrada} onChange={(e) => set('responsavelDataEntrada', e.target.value)} />
+              <Input label="Data Saída" name="responsavelDataSaida" type="date" value={form.responsavelDataSaida} onChange={(e) => set('responsavelDataSaida', e.target.value)} error={erros.responsavelDataSaida} />
+            </div>
+          </fieldset>
+
+          {/* Termo de Ciência e Notificação */}
+          <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 dark:border-ink-700 sm:col-span-2">
+            <legend className="px-1 text-sm font-medium text-ink-700 dark:text-ink-200">Termo de Ciência e Notificação</legend>
+            <span className="mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-300">Anexar arquivo PDF</span>
+            {anexado && !arquivo ? (
+              <div className="flex items-center gap-2 rounded-xl border border-ink-200 bg-ink-50/60 px-3 py-2 text-sm dark:border-ink-700 dark:bg-ink-800/40">
+                <FileText className="h-4 w-4 shrink-0 text-ink-400" />
+                <span className="flex-1 truncate text-ink-700 dark:text-ink-200" title={anexado.nome}>{anexado.nome}</span>
+                {anexado.tamanho > 0 && <span className="text-xs text-ink-400">{tamanhoLegivel(anexado.tamanho)}</span>}
+                {editando && (
+                  <button type="button" title="Abrir PDF" onClick={() => abrirTermoCiencia(ajuste!.id).catch(() => setErroArquivo('Não foi possível abrir o PDF.'))} className="focus-ring rounded-lg p-1.5 text-ink-400 transition-colors hover:bg-ink-100 hover:text-ink-700 dark:hover:bg-ink-800">
+                    <ExternalLink className="h-4 w-4" />
+                  </button>
+                )}
+                <button type="button" title="Remover" onClick={handleRemoverTermo} className="focus-ring rounded-lg p-1.5 text-ink-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-ink-300 px-3 py-2 text-sm text-ink-500 transition-colors hover:border-brand-400 hover:text-ink-700 dark:border-ink-600 dark:text-ink-400 dark:hover:text-ink-200">
+                <Upload className="h-4 w-4 shrink-0" />
+                <span className="flex-1 truncate">{arquivo ? arquivo.name : 'Selecionar o PDF do termo...'}</span>
+                {arquivo && <span className="text-xs text-ink-400">{tamanhoLegivel(arquivo.size)}</span>}
+                <input ref={inputArquivo} type="file" accept="application/pdf,.pdf" className="sr-only" onChange={(e) => escolherArquivo(e.target.files?.[0] ?? null)} />
+              </label>
+            )}
+            {erroArquivo && <p className="mt-1 text-xs font-medium text-red-500">{erroArquivo}</p>}
+          </fieldset>
+
+          {/* Publicação do ajuste */}
+          <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 dark:border-ink-700 sm:col-span-2">
+            <legend className="px-1 text-sm font-medium text-ink-700 dark:text-ink-200">Publicação do Ajuste</legend>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
+              <div className="sm:col-span-4">
+                <Input label="Local" name="publicacaoLocal" value={form.publicacaoLocal} onChange={(e) => set('publicacaoLocal', e.target.value)} placeholder="ex.: Diário Oficial do Município" />
+              </div>
+              <div className="sm:col-span-5">
+                <Input
+                  label="Link"
+                  name="publicacaoLink"
+                  value={form.publicacaoLink}
+                  onChange={(e) => set('publicacaoLink', e.target.value)}
+                  error={erros.publicacaoLink}
+                  placeholder="https://..."
+                  rightSlot={
+                    /^https?:\/\/\S+$/i.test(form.publicacaoLink.trim()) ? (
+                      <a
+                        href={form.publicacaoLink.trim()}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Abrir em nova aba"
+                        className="focus-ring pointer-events-auto block rounded text-ink-400 hover:text-brand-500"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    ) : undefined
+                  }
+                />
+              </div>
+              <div className="sm:col-span-3">
+                <Input label="Data" name="publicacaoData" type="date" value={form.publicacaoData} onChange={(e) => set('publicacaoData', e.target.value)} />
+              </div>
+            </div>
+          </fieldset>
 
           <Input label="Data de Assinatura *" name="dataAssinatura" type="date" value={form.dataAssinatura} onChange={(e) => set('dataAssinatura', e.target.value)} error={erros.dataAssinatura} />
           <div className="grid grid-cols-2 gap-3">

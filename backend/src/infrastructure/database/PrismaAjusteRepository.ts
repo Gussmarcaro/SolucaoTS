@@ -1,7 +1,12 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
 import type { IAjusteRepository } from '@/application/ajuste/IAjusteRepository';
-import type { DadosAjuste, ListarAjustesParams, Paginado } from '@/application/ajuste/dtos';
+import type {
+  ArquivoTermoCiencia,
+  DadosAjuste,
+  ListarAjustesParams,
+  Paginado,
+} from '@/application/ajuste/dtos';
 import type { Ajuste, Periodicidade, StatusAjuste, TipoAjuste } from '@/core/ajuste/Ajuste';
 import { paraDataISO } from '@/shared/datas';
 
@@ -20,6 +25,24 @@ const selecao = {
   vigenciaFinal: true,
   periodicidade: true,
   status: true,
+  previsaoFederal: true,
+  previsaoEstadual: true,
+  previsaoMunicipal: true,
+  responsavelNome: true,
+  responsavelCpf: true,
+  responsavelDataNascimento: true,
+  responsavelEndereco: true,
+  responsavelEmail: true,
+  responsavelTelefone: true,
+  responsavelCargo: true,
+  responsavelDataEntrada: true,
+  responsavelDataSaida: true,
+  // Só os metadados do termo — `termoCienciaArquivo` fica de fora de propósito.
+  termoCienciaArquivoNome: true,
+  termoCienciaArquivoTamanho: true,
+  publicacaoLocal: true,
+  publicacaoLink: true,
+  publicacaoData: true,
   criadoEm: true,
   atualizadoEm: true,
   entidadeBeneficiaria: { select: { razaoSocial: true } },
@@ -46,6 +69,32 @@ function toDomain(row: Row): Ajuste {
     vigenciaFinal: row.vigenciaFinal ? paraDataISO(row.vigenciaFinal) : null,
     periodicidade: row.periodicidade as Periodicidade,
     status: row.status as StatusAjuste,
+
+    previsaoFederal: row.previsaoFederal === null ? null : Number(row.previsaoFederal),
+    previsaoEstadual: row.previsaoEstadual === null ? null : Number(row.previsaoEstadual),
+    previsaoMunicipal: row.previsaoMunicipal === null ? null : Number(row.previsaoMunicipal),
+
+    responsavelNome: row.responsavelNome,
+    responsavelCpf: row.responsavelCpf,
+    responsavelDataNascimento: row.responsavelDataNascimento
+      ? paraDataISO(row.responsavelDataNascimento)
+      : null,
+    responsavelEndereco: row.responsavelEndereco,
+    responsavelEmail: row.responsavelEmail,
+    responsavelTelefone: row.responsavelTelefone,
+    responsavelCargo: row.responsavelCargo,
+    responsavelDataEntrada: row.responsavelDataEntrada
+      ? paraDataISO(row.responsavelDataEntrada)
+      : null,
+    responsavelDataSaida: row.responsavelDataSaida ? paraDataISO(row.responsavelDataSaida) : null,
+
+    termoCienciaArquivoNome: row.termoCienciaArquivoNome,
+    termoCienciaArquivoTamanho: row.termoCienciaArquivoTamanho,
+
+    publicacaoLocal: row.publicacaoLocal,
+    publicacaoLink: row.publicacaoLink,
+    publicacaoData: row.publicacaoData ? paraDataISO(row.publicacaoData) : null,
+
     criadoEm: row.criadoEm,
     atualizadoEm: row.atualizadoEm,
   };
@@ -67,6 +116,24 @@ function toData(dados: DadosAjuste) {
     vigenciaFinal: dados.vigenciaFinal,
     periodicidade: dados.periodicidade,
     status: dados.status,
+
+    previsaoFederal: dados.previsaoFederal,
+    previsaoEstadual: dados.previsaoEstadual,
+    previsaoMunicipal: dados.previsaoMunicipal,
+
+    responsavelNome: dados.responsavelNome,
+    responsavelCpf: dados.responsavelCpf,
+    responsavelDataNascimento: dados.responsavelDataNascimento,
+    responsavelEndereco: dados.responsavelEndereco,
+    responsavelEmail: dados.responsavelEmail,
+    responsavelTelefone: dados.responsavelTelefone,
+    responsavelCargo: dados.responsavelCargo,
+    responsavelDataEntrada: dados.responsavelDataEntrada,
+    responsavelDataSaida: dados.responsavelDataSaida,
+
+    publicacaoLocal: dados.publicacaoLocal,
+    publicacaoLink: dados.publicacaoLink,
+    publicacaoData: dados.publicacaoData,
   };
 }
 
@@ -101,6 +168,49 @@ export class PrismaAjusteRepository implements IAjusteRepository {
 
   async atualizar(id: string, dados: DadosAjuste): Promise<Ajuste> {
     const row = await prisma.ajuste.update({ where: { id }, data: toData(dados), select: selecao });
+    return toDomain(row);
+  }
+
+  async salvarTermoCiencia(id: string, arquivo: ArquivoTermoCiencia): Promise<Ajuste> {
+    const row = await prisma.ajuste.update({
+      where: { id },
+      data: {
+        termoCienciaArquivo: arquivo.conteudo,
+        termoCienciaArquivoNome: arquivo.nome,
+        termoCienciaArquivoTamanho: arquivo.tamanho,
+      },
+      select: selecao,
+    });
+    return toDomain(row);
+  }
+
+  async obterTermoCiencia(id: string): Promise<ArquivoTermoCiencia | null> {
+    const row = await prisma.ajuste.findUnique({
+      where: { id },
+      select: {
+        termoCienciaArquivo: true,
+        termoCienciaArquivoNome: true,
+        termoCienciaArquivoTamanho: true,
+      },
+    });
+    if (!row?.termoCienciaArquivo) return null;
+    return {
+      conteudo: Buffer.from(row.termoCienciaArquivo),
+      nome: row.termoCienciaArquivoNome ?? 'termo-ciencia.pdf',
+      tamanho: row.termoCienciaArquivoTamanho ?? row.termoCienciaArquivo.length,
+    };
+  }
+
+  async removerTermoCiencia(id: string): Promise<Ajuste> {
+    const row = await prisma.ajuste.update({
+      where: { id },
+      data: {
+        termoCienciaArquivo: null,
+        termoCienciaArquivoNome: null,
+        termoCienciaArquivoTamanho: null,
+      },
+      select: selecao,
+    });
     return toDomain(row);
   }
 

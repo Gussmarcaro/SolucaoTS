@@ -4,6 +4,7 @@ import { AtualizarAjusteUseCase } from '@/application/ajuste/AtualizarAjusteUseC
 import { ListarAjustesUseCase } from '@/application/ajuste/ListarAjustesUseCase';
 import { GerenciarAjusteUseCase } from '@/application/ajuste/GerenciarAjusteUseCase';
 import { PrismaAjusteRepository } from '@/infrastructure/database/PrismaAjusteRepository';
+import { BusinessError } from '@/shared/errors';
 import type { FiltrosAjuste } from '@/application/ajuste/dtos';
 
 const repo = new PrismaAjusteRepository();
@@ -32,6 +33,43 @@ export class AjusteController {
   async buscar(req: Request, res: Response, next: NextFunction) {
     try {
       return res.json(await gerenciar.buscar(req.params.id));
+    } catch (e) {
+      return next(e);
+    }
+  }
+
+  /** Anexa (ou substitui) o PDF do Termo de Ciência. Multipart, campo "arquivo". */
+  async enviarTermoCiencia(req: Request, res: Response, next: NextFunction) {
+    try {
+      const file = req.file;
+      if (!file) throw new BusinessError('Selecione o PDF do termo.');
+      return res.json(
+        await gerenciar.salvarTermoCiencia(req.params.id, {
+          nome: file.originalname,
+          tamanho: file.size,
+          conteudo: file.buffer,
+        }),
+      );
+    } catch (e) {
+      return next(e);
+    }
+  }
+
+  async baixarTermoCiencia(req: Request, res: Response, next: NextFunction) {
+    try {
+      const arquivo = await gerenciar.obterTermoCiencia(req.params.id);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Length', arquivo.tamanho);
+      res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(arquivo.nome)}"`);
+      return res.end(arquivo.conteudo);
+    } catch (e) {
+      return next(e);
+    }
+  }
+
+  async removerTermoCiencia(req: Request, res: Response, next: NextFunction) {
+    try {
+      return res.json(await gerenciar.removerTermoCiencia(req.params.id));
     } catch (e) {
       return next(e);
     }

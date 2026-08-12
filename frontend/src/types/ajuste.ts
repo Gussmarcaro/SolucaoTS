@@ -43,6 +43,29 @@ export interface Ajuste {
   vigenciaFinal: string | null;
   periodicidade: Periodicidade;
   status: StatusAjuste;
+
+  previsaoFederal: number | null;
+  previsaoEstadual: number | null;
+  previsaoMunicipal: number | null;
+
+  responsavelNome: string | null;
+  responsavelCpf: string | null;
+  responsavelDataNascimento: string | null;
+  responsavelEndereco: string | null;
+  responsavelEmail: string | null;
+  responsavelTelefone: string | null;
+  responsavelCargo: string | null;
+  responsavelDataEntrada: string | null;
+  responsavelDataSaida: string | null;
+
+  /** Metadados do PDF do termo — o conteúdo vem pela rota de download. */
+  termoCienciaArquivoNome: string | null;
+  termoCienciaArquivoTamanho: number | null;
+
+  publicacaoLocal: string | null;
+  publicacaoLink: string | null;
+  publicacaoData: string | null;
+
   criadoEm: string;
   atualizadoEm: string;
 }
@@ -61,6 +84,24 @@ export interface AjustePayload {
   vigenciaFinal?: string | null;
   periodicidade: Periodicidade;
   status?: StatusAjuste;
+
+  previsaoFederal?: number | null;
+  previsaoEstadual?: number | null;
+  previsaoMunicipal?: number | null;
+
+  responsavelNome?: string | null;
+  responsavelCpf?: string | null;
+  responsavelDataNascimento?: string | null;
+  responsavelEndereco?: string | null;
+  responsavelEmail?: string | null;
+  responsavelTelefone?: string | null;
+  responsavelCargo?: string | null;
+  responsavelDataEntrada?: string | null;
+  responsavelDataSaida?: string | null;
+
+  publicacaoLocal?: string | null;
+  publicacaoLink?: string | null;
+  publicacaoData?: string | null;
 }
 
 export interface FiltrosAjuste {

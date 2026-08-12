@@ -27,6 +27,32 @@ export interface Ajuste {
   vigenciaFinal: string | null;
   periodicidade: Periodicidade;
   status: StatusAjuste;
+
+  // Previsão por fontes de recursos
+  previsaoFederal: number | null;
+  previsaoEstadual: number | null;
+  previsaoMunicipal: number | null;
+
+  // Responsável pelo ajuste e sua vigência
+  responsavelNome: string | null;
+  responsavelCpf: string | null; // só dígitos
+  responsavelDataNascimento: string | null; // 'YYYY-MM-DD'
+  responsavelEndereco: string | null;
+  responsavelEmail: string | null;
+  responsavelTelefone: string | null; // só dígitos
+  responsavelCargo: string | null;
+  responsavelDataEntrada: string | null;
+  responsavelDataSaida: string | null;
+
+  /** Metadados do Termo de Ciência — o PDF é lido à parte, sob demanda. */
+  termoCienciaArquivoNome: string | null;
+  termoCienciaArquivoTamanho: number | null;
+
+  // Publicação do ajuste
+  publicacaoLocal: string | null;
+  publicacaoLink: string | null;
+  publicacaoData: string | null;
+
   criadoEm: Date;
   atualizadoEm: Date;
 }

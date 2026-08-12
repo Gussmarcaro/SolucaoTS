@@ -1,5 +1,7 @@
+import { ExternalLink, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
-import { dataBr, formatarMoeda } from '@/lib/masks';
+import { dataBr, formatarMoeda, mascaraCelular, mascaraCpf } from '@/lib/masks';
+import { abrirTermoCiencia } from '@/services/ajustes.service';
 import {
   PERIODICIDADE_LABEL,
   STATUS_AJUSTE_LABEL,
@@ -15,6 +17,18 @@ function Campo({ label, valor }: { label: string; valor?: string | null }) {
     </div>
   );
 }
+
+/** Bloco com título, espelhando os painéis do formulário. */
+function Painel({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-ink-200 p-4 dark:border-ink-700">
+      <h4 className="mb-3 text-sm font-medium text-ink-700 dark:text-ink-200">{titulo}</h4>
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">{children}</dl>
+    </div>
+  );
+}
+
+const moeda = (v: number | null) => (v === null ? null : formatarMoeda(v));
 
 export function AjusteView({ ajuste }: { ajuste: Ajuste }) {
   const vigencia =
@@ -59,6 +73,70 @@ export function AjusteView({ ajuste }: { ajuste: Ajuste }) {
           <Campo label="Objeto" valor={ajuste.objeto} />
         </div>
       </dl>
+
+      <Painel titulo="Previsão por Fontes de Recursos">
+        <Campo label="Federal" valor={moeda(ajuste.previsaoFederal)} />
+        <Campo label="Estadual" valor={moeda(ajuste.previsaoEstadual)} />
+        <Campo label="Municipal" valor={moeda(ajuste.previsaoMunicipal)} />
+      </Painel>
+
+      <Painel titulo="Responsável pelo Ajuste">
+        <Campo label="Nome" valor={ajuste.responsavelNome} />
+        <Campo label="CPF" valor={ajuste.responsavelCpf ? mascaraCpf(ajuste.responsavelCpf) : null} />
+        <Campo label="Nascimento" valor={ajuste.responsavelDataNascimento ? dataBr(ajuste.responsavelDataNascimento) : null} />
+        <div className="col-span-2 sm:col-span-3">
+          <Campo label="Endereço completo" valor={ajuste.responsavelEndereco} />
+        </div>
+        <Campo label="E-mail" valor={ajuste.responsavelEmail} />
+        <Campo label="Telefone / Celular" valor={ajuste.responsavelTelefone ? mascaraCelular(ajuste.responsavelTelefone) : null} />
+        <Campo label="Função / Cargo" valor={ajuste.responsavelCargo} />
+        <Campo label="Entrada" valor={ajuste.responsavelDataEntrada ? dataBr(ajuste.responsavelDataEntrada) : null} />
+        <Campo label="Saída" valor={ajuste.responsavelDataSaida ? dataBr(ajuste.responsavelDataSaida) : null} />
+      </Painel>
+
+      <Painel titulo="Termo de Ciência e Notificação">
+        <div className="col-span-2 sm:col-span-3">
+          <dt className="text-xs font-medium uppercase tracking-wider text-ink-400">Arquivo</dt>
+          <dd className="mt-0.5 text-sm text-ink-800 dark:text-ink-100">
+            {ajuste.termoCienciaArquivoNome ? (
+              <button
+                type="button"
+                onClick={() => abrirTermoCiencia(ajuste.id)}
+                className="focus-ring inline-flex items-center gap-1.5 rounded text-brand-600 hover:underline dark:text-brand-400"
+              >
+                <FileText className="h-4 w-4" />
+                <span className="truncate" title={ajuste.termoCienciaArquivoNome}>{ajuste.termoCienciaArquivoNome}</span>
+                <ExternalLink className="h-3.5 w-3.5" />
+              </button>
+            ) : (
+              '—'
+            )}
+          </dd>
+        </div>
+      </Painel>
+
+      <Painel titulo="Publicação do Ajuste">
+        <Campo label="Local" valor={ajuste.publicacaoLocal} />
+        <Campo label="Data" valor={ajuste.publicacaoData ? dataBr(ajuste.publicacaoData) : null} />
+        <div>
+          <dt className="text-xs font-medium uppercase tracking-wider text-ink-400">Link</dt>
+          <dd className="mt-0.5 truncate text-sm text-ink-800 dark:text-ink-100">
+            {ajuste.publicacaoLink ? (
+              <a
+                href={ajuste.publicacaoLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="focus-ring inline-flex max-w-full items-center gap-1.5 rounded text-brand-600 hover:underline dark:text-brand-400"
+              >
+                <span className="truncate" title={ajuste.publicacaoLink}>{ajuste.publicacaoLink}</span>
+                <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+              </a>
+            ) : (
+              '—'
+            )}
+          </dd>
+        </div>
+      </Painel>
     </div>
   );
 }

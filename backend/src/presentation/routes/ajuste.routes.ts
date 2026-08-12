@@ -6,7 +6,7 @@ import { PlanoAplicacaoController } from '@/presentation/controllers/PlanoAplica
 import { CronogramaController } from '@/presentation/controllers/CronogramaController';
 import { BemAjusteController } from '@/presentation/controllers/BemAjusteController';
 import { ProgramaController } from '@/presentation/controllers/ProgramaController';
-import { uploadCsv } from '@/infrastructure/upload/upload';
+import { uploadCsv, uploadPdf } from '@/infrastructure/upload/upload';
 
 const ajusteRoutes = Router();
 const c = new AjusteController();
@@ -21,6 +21,11 @@ ajusteRoutes.get('/', (req, res, next) => c.listar(req, res, next));
 ajusteRoutes.post('/', (req, res, next) => c.criar(req, res, next));
 ajusteRoutes.get('/:id', (req, res, next) => c.buscar(req, res, next));
 ajusteRoutes.put('/:id', (req, res, next) => c.atualizar(req, res, next));
+
+// --- Termo de Ciência e Notificação (PDF) ---
+ajusteRoutes.post('/:id/termo-ciencia', uploadPdf, (req, res, next) => c.enviarTermoCiencia(req, res, next));
+ajusteRoutes.get('/:id/termo-ciencia', (req, res, next) => c.baixarTermoCiencia(req, res, next));
+ajusteRoutes.delete('/:id/termo-ciencia', (req, res, next) => c.removerTermoCiencia(req, res, next));
 
 // --- Termos Aditivos (aninhados ao ajuste) ---
 ajusteRoutes.get('/:ajusteId/termos-aditivos', (req, res, next) => termos.listar(req, res, next));

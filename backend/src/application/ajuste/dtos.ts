@@ -14,6 +14,25 @@ export interface CriarAjusteDTO {
   vigenciaFinal?: string | null;
   periodicidade: Periodicidade;
   status?: StatusAjuste;
+
+  previsaoFederal?: number | string | null;
+  previsaoEstadual?: number | string | null;
+  previsaoMunicipal?: number | string | null;
+
+  responsavelNome?: string | null;
+  responsavelCpf?: string | null;
+  responsavelDataNascimento?: string | null;
+  responsavelEndereco?: string | null;
+  responsavelEmail?: string | null;
+  responsavelTelefone?: string | null;
+  responsavelCargo?: string | null;
+  responsavelDataEntrada?: string | null;
+  responsavelDataSaida?: string | null;
+
+  publicacaoLocal?: string | null;
+  publicacaoLink?: string | null;
+  publicacaoData?: string | null;
+  // O PDF do Termo de Ciência sobe por rota própria (multipart), não por aqui.
 }
 
 export type AtualizarAjusteDTO = CriarAjusteDTO;
@@ -33,6 +52,31 @@ export interface DadosAjuste {
   vigenciaFinal: Date | null;
   periodicidade: Periodicidade;
   status: StatusAjuste;
+
+  previsaoFederal: number | null;
+  previsaoEstadual: number | null;
+  previsaoMunicipal: number | null;
+
+  responsavelNome: string | null;
+  responsavelCpf: string | null;
+  responsavelDataNascimento: Date | null;
+  responsavelEndereco: string | null;
+  responsavelEmail: string | null;
+  responsavelTelefone: string | null;
+  responsavelCargo: string | null;
+  responsavelDataEntrada: Date | null;
+  responsavelDataSaida: Date | null;
+
+  publicacaoLocal: string | null;
+  publicacaoLink: string | null;
+  publicacaoData: Date | null;
+}
+
+/** PDF do Termo de Ciência e Notificação vindo do upload (multipart). */
+export interface ArquivoTermoCiencia {
+  nome: string;
+  tamanho: number;
+  conteudo: Buffer;
 }
 
 export interface FiltrosAjuste {

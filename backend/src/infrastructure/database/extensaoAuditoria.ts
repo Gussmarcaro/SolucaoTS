@@ -44,9 +44,10 @@ const CAMPOS_OMITIDOS = new Set([
   'resetTokenExpiresAt',
   'buscaTexto',
   'atualizadoEm',
-  // Conteúdo binário do PDF do estatuto: logá-lo gravaria megabytes por evento
-  // na trilha. O nome e o tamanho do arquivo continuam sendo auditados.
+  // Conteúdo binário de PDF anexado: logá-lo gravaria megabytes por evento na
+  // trilha. O nome e o tamanho do arquivo continuam sendo auditados.
   'estatutoArquivo',
+  'termoCienciaArquivo',
 ]);
 
 /**
@@ -121,7 +122,7 @@ async function registrar(params: {
  * diff, e sem isto uma edição de entidade traria o PDF do estatuto (até 5 MB) do
  * banco só para descartá-lo em `limpar()`.
  */
-const CAMPOS_PESADOS = new Set(['estatutoArquivo']);
+const CAMPOS_PESADOS = new Set(['estatutoArquivo', 'termoCienciaArquivo']);
 
 /** Cache do select por model: `undefined` = pode ler tudo. */
 const selecaoLeveCache = new Map<string, Record<string, boolean> | undefined>();
