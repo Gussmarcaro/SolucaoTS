@@ -17,6 +17,7 @@ import { GRUPOS_ADMIN } from '@/lib/navigation';
 import { Orgaos } from '@/pages/Orgaos';
 import { Empresas } from '@/pages/Empresas';
 import { Entidades } from '@/pages/Entidades';
+import { EntidadeDetalhe } from '@/pages/Entidades/EntidadeDetalhe';
 import { Fornecedores } from '@/pages/Fornecedores';
 import { Colaboradores } from '@/pages/Colaboradores';
 import { Contratos } from '@/pages/Contratos';
@@ -39,6 +40,7 @@ export default function App() {
 
           {/* Cadastro */}
           <Route path="/cadastro/entidades" element={<Entidades />} />
+          <Route path="/cadastro/entidades/:id" element={<EntidadeDetalhe />} />
           <Route path="/cadastro/ajustes" element={<Ajustes />} />
           <Route path="/cadastro/ajustes/:id" element={<AjusteDetalhe />} />
           <Route path="/cadastro/fornecedores" element={<Fornecedores />} />

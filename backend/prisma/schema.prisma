@@ -423,9 +423,165 @@ model EntidadeBeneficiaria {
   ajustes   Ajuste[]
   certidoes Certidao[]
 
+  membrosDiretoria       MembroDiretoria[]
+  membrosConselho        MembroConselho[]
+  documentosRegularidade DocumentoRegularidade[]
+  atasDiretoria          AtaDiretoriaArquivo[]
+
   @@index([cidade])
   @@index([uf])
   @@index([ativo])
+}
+
+// ---------------------------------------------------------------------------
+// Complementos da Entidade Beneficiária (abas Diretoria, Conselhos e
+// Regularidade Fiscal/Cadastral). Todos existem apenas vinculados a uma
+// entidade — daí o FK obrigatório e o onDelete: Cascade.
+// ---------------------------------------------------------------------------
+
+enum TipoConselho {
+  ADMINISTRACAO
+  FISCAL
+  ESPECIAIS
+}
+
+// Tipos de documento da aba Regularidade Fiscal / Cadastral. Todos são únicos
+// por entidade, exceto OUTRAS, que aceita vários registros.
+enum TipoDocumentoRegularidade {
+  FEDERAL
+  ESTADUAL
+  MUNICIPAL
+  FGTS
+  TRABALHISTA
+  CEBAS
+  UTILIDADE_PUBLICA
+  ENTIDADE_BENEFICENTE
+  OUTRAS
+}
+
+model MembroDiretoria {
+  id                     String    @id @default(uuid()) @db.Uuid
+  entidadeBeneficiariaId String    @db.Uuid
+  nome                   String
+  cpf                    String?   @db.VarChar(11) // só dígitos
+  dataNascimento         DateTime? @db.Date
+  cep                    String?   @db.VarChar(8)
+  logradouro             String?
+  numero                 String?   @db.VarChar(20)
+  complemento            String?
+  bairro                 String?
+  cidade                 String?
+  uf                     String?   @db.VarChar(2)
+  email                  String?
+  telefone               String?   @db.VarChar(11)
+  cargo                  String?
+
+  // Vigência
+  dataEntrada DateTime? @db.Date
+  dataSaida   DateTime? @db.Date // vazia enquanto o membro está ativo
+
+  // Ata de eleição
+  ataDataEleicao   DateTime? @db.Date
+  ataDataRegistro  DateTime? @db.Date
+  ataLocalRegistro String?
+
+  // Remuneração e sua previsão estatutária
+  possuiRemuneracao    Boolean @default(false)
+  remuneracaoDescricao String?
+  remuneracaoArtigo    String?
+  /// Valores da remuneração. Json porque os campos ainda não estão definidos —
+  /// acrescentar um não exige migração.
+  remuneracaoValores   Json?
+
+  criadoPor    String?  @db.Uuid
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  entidade EntidadeBeneficiaria @relation(fields: [entidadeBeneficiariaId], references: [id], onDelete: Cascade)
+
+  @@index([entidadeBeneficiariaId])
+}
+
+// Atas de eleição da diretoria — vários arquivos por entidade, já que uma ata
+// elege a composição inteira, não um membro isolado.
+model AtaDiretoriaArquivo {
+  id                     String   @id @default(uuid()) @db.Uuid
+  entidadeBeneficiariaId String   @db.Uuid
+  arquivoNome            String
+  arquivoTamanho         Int
+  arquivo                Bytes // fora do select padrão e da auditoria
+  criadoPor              String?  @db.Uuid
+  criadoEm               DateTime @default(now())
+
+  entidade EntidadeBeneficiaria @relation(fields: [entidadeBeneficiariaId], references: [id], onDelete: Cascade)
+
+  @@index([entidadeBeneficiariaId])
+}
+
+model MembroConselho {
+  id                     String       @id @default(uuid()) @db.Uuid
+  entidadeBeneficiariaId String       @db.Uuid
+  tipoConselho           TipoConselho
+  nome                   String
+  cpf                    String?      @db.VarChar(11)
+  dataNascimento         DateTime?    @db.Date
+  cep                    String?      @db.VarChar(8)
+  logradouro             String?
+  numero                 String?      @db.VarChar(20)
+  complemento            String?
+  bairro                 String?
+  cidade                 String?
+  uf                     String?      @db.VarChar(2)
+  email                  String?
+  telefone               String?      @db.VarChar(11)
+  cargo                  String?
+
+  // Vigência
+  dataEntrada DateTime? @db.Date
+  dataSaida   DateTime? @db.Date
+
+  // Ata de nomeação (com o PDF anexo)
+  ataDataNomeacao   DateTime? @db.Date
+  ataDataRegistro   DateTime? @db.Date
+  ataLocalRegistro  String?
+  ataArquivo        Bytes? // fora do select padrão e da auditoria
+  ataArquivoNome    String?
+  ataArquivoTamanho Int?
+
+  criadoPor    String?  @db.Uuid
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  entidade EntidadeBeneficiaria @relation(fields: [entidadeBeneficiariaId], references: [id], onDelete: Cascade)
+
+  @@index([entidadeBeneficiariaId])
+  @@index([tipoConselho])
+}
+
+model DocumentoRegularidade {
+  id                     String                    @id @default(uuid()) @db.Uuid
+  entidadeBeneficiariaId String                    @db.Uuid
+  tipo                   TipoDocumentoRegularidade
+
+  arquivoNome    String? // nome exibido; vem do arquivo quando não informado
+  arquivo        Bytes? // fora do select padrão e da auditoria
+  arquivoTamanho Int?
+
+  dataGeracao    DateTime? @db.Date
+  dataVencimento DateTime? @db.Date
+  publicacao     String? // CEBAS e Outras
+  orgaoEmissor   String? // Utilidade Pública, Entidade Beneficente
+  legislacao     String?
+  data           DateTime? @db.Date
+
+  criadoPor    String?  @db.Uuid
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  entidade EntidadeBeneficiaria @relation(fields: [entidadeBeneficiariaId], references: [id], onDelete: Cascade)
+
+  @@index([entidadeBeneficiariaId])
+  @@index([tipo])
 }
 
 // Documento eletrônico que cadastra responsáveis e beneficiária no momento da assinatura.

@@ -48,6 +48,8 @@ const CAMPOS_OMITIDOS = new Set([
   // trilha. O nome e o tamanho do arquivo continuam sendo auditados.
   'estatutoArquivo',
   'termoCienciaArquivo',
+  'ataArquivo',
+  'arquivo',
 ]);
 
 /**
@@ -122,7 +124,12 @@ async function registrar(params: {
  * diff, e sem isto uma edição de entidade traria o PDF do estatuto (até 5 MB) do
  * banco só para descartá-lo em `limpar()`.
  */
-const CAMPOS_PESADOS = new Set(['estatutoArquivo', 'termoCienciaArquivo']);
+const CAMPOS_PESADOS = new Set([
+  'estatutoArquivo',
+  'termoCienciaArquivo',
+  'ataArquivo',
+  'arquivo',
+]);
 
 /** Cache do select por model: `undefined` = pode ler tudo. */
 const selecaoLeveCache = new Map<string, Record<string, boolean> | undefined>();

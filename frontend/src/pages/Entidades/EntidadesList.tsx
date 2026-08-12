@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   ChevronLeft,
   ChevronRight,
   Eye,
+  FolderOpen,
   Loader2,
   Pencil,
   Power,
@@ -26,7 +28,7 @@ const PAGE_SIZE = 10;
 const vazio: Paginado<Entidade> = { data: [], total: 0, page: 1, pageSize: PAGE_SIZE, totalPages: 1 };
 
 const COLUNAS: ColunaDef[] = [
-  { key: 'acoes', label: 'Ações', width: 120, minWidth: 100, align: 'center' },
+  { key: 'acoes', label: 'Ações', width: 150, minWidth: 130, align: 'center' },
   { key: 'status', label: 'Status', width: 120, sortKey: 'ativo' },
   { key: 'entidade', label: 'Entidade', width: 320, sortKey: 'razaoSocial' },
   { key: 'cnpj', label: 'CNPJ', width: 170, sortKey: 'cnpj' },
@@ -43,6 +45,7 @@ interface Props {
 type StatusFiltro = '' | 'ativos' | 'inativos';
 
 export function EntidadesList({ refreshKey, onVisualizar, onEditar, onAlternarStatus }: Props) {
+  const navigate = useNavigate();
   const { usuario: logado } = useAuth();
   const [busca, setBusca] = useState('');
   const [status, setStatus] = useState<StatusFiltro>('');
@@ -104,6 +107,9 @@ export function EntidadesList({ refreshKey, onVisualizar, onEditar, onAlternarSt
       case 'acoes':
         return (
           <div className="flex items-center justify-center gap-1">
+            <IconBtn title="Abrir (abas)" onClick={() => navigate(`/cadastro/entidades/${ent.id}`)}>
+              <FolderOpen className="h-4 w-4" />
+            </IconBtn>
             <IconBtn title="Visualizar" onClick={() => onVisualizar(ent)}>
               <Eye className="h-4 w-4" />
             </IconBtn>
