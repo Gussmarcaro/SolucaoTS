@@ -1,5 +1,6 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
+import { enterComoTab } from '@/lib/enterComoTab';
 
 /**
  * Marca a árvore como um formulário de **inclusão**. Só nele o asterisco dos
@@ -8,8 +9,18 @@ import { cn } from '@/lib/cn';
  */
 const FormularioNovoContext = createContext(false);
 
+/**
+ * Envolve os formulários de cadastro. Além do contexto acima, é aqui que o
+ * Enter passa a andar para o próximo campo em vez de salvar o registro —
+ * ver `enterComoTab`. Como todo cadastro passa por este componente, a regra
+ * vale para todos de uma vez.
+ */
 export function FormularioNovo({ novo, children }: { novo: boolean; children: ReactNode }) {
-  return <FormularioNovoContext.Provider value={novo}>{children}</FormularioNovoContext.Provider>;
+  return (
+    <FormularioNovoContext.Provider value={novo}>
+      <div onKeyDown={enterComoTab}>{children}</div>
+    </FormularioNovoContext.Provider>
+  );
 }
 
 /** Um campo está preenchido quando tem algo além de espaços. */

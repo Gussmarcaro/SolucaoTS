@@ -155,7 +155,7 @@ export function BuscaDominio({
         </div>
 
         {aberto && !disabled && (
-          <ul className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-xl border border-ink-200 bg-white py-1 shadow-lg dark:border-ink-700 dark:bg-ink-900">
+          <ul role="listbox" className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-xl border border-ink-200 bg-white py-1 shadow-lg dark:border-ink-700 dark:bg-ink-900">
             {carregando && itens.length === 0 ? (
               <li className="px-3 py-2 text-sm text-ink-400">Buscando...</li>
             ) : itens.length === 0 ? (
