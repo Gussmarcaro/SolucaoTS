@@ -95,6 +95,14 @@ export function normalizarEValidarAjuste(input: CriarAjusteDTO): DadosAjuste {
   if (responsavelTelefone && (responsavelTelefone.length < 10 || responsavelTelefone.length > 11))
     throw new BusinessError('Telefone do responsável inválido. Informe DDD + número.');
 
+  const responsavelCep = input.responsavelCep ? apenasDigitos(input.responsavelCep) : null;
+  if (responsavelCep && responsavelCep.length !== 8)
+    throw new BusinessError('CEP do responsável inválido.');
+
+  const responsavelUf = input.responsavelUf?.trim().toUpperCase() || null;
+  if (responsavelUf && !/^[A-Z]{2}$/.test(responsavelUf))
+    throw new BusinessError('UF do responsável inválida.');
+
   /** Data opcional em ISO; `futuroProibido` recusa data adiante de hoje. */
   const dataOpcional = (
     valorIso: string | null | undefined,
@@ -164,7 +172,13 @@ export function normalizarEValidarAjuste(input: CriarAjusteDTO): DadosAjuste {
     responsavelNome: input.responsavelNome?.trim() || null,
     responsavelCpf,
     responsavelDataNascimento,
-    responsavelEndereco: input.responsavelEndereco?.trim() || null,
+    responsavelCep,
+    responsavelLogradouro: input.responsavelLogradouro?.trim() || null,
+    responsavelNumero: input.responsavelNumero?.trim() || null,
+    responsavelComplemento: input.responsavelComplemento?.trim() || null,
+    responsavelBairro: input.responsavelBairro?.trim() || null,
+    responsavelCidade: input.responsavelCidade?.trim() || null,
+    responsavelUf,
     responsavelEmail,
     responsavelTelefone,
     responsavelCargo: input.responsavelCargo?.trim() || null,

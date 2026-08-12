@@ -1,6 +1,6 @@
 import { ExternalLink, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
-import { dataBr, formatarMoeda, mascaraCelular, mascaraCpf } from '@/lib/masks';
+import { dataBr, formatarMoeda, mascaraCelular, mascaraCep, mascaraCpf } from '@/lib/masks';
 import { abrirTermoCiencia } from '@/services/ajustes.service';
 import {
   PERIODICIDADE_LABEL,
@@ -29,6 +29,16 @@ function Painel({ titulo, children }: { titulo: string; children: React.ReactNod
 }
 
 const moeda = (v: number | null) => (v === null ? null : formatarMoeda(v));
+
+/** Junta as partes do endereço do responsável numa linha só. */
+function enderecoResponsavel(a: Ajuste): string | null {
+  const rua = [a.responsavelLogradouro, a.responsavelNumero, a.responsavelComplemento]
+    .filter(Boolean)
+    .join(', ');
+  const cidadeUf = [a.responsavelCidade, a.responsavelUf].filter(Boolean).join('/');
+  const partes = [rua, a.responsavelBairro, cidadeUf].filter(Boolean);
+  return partes.length ? partes.join(' — ') : null;
+}
 
 export function AjusteView({ ajuste }: { ajuste: Ajuste }) {
   const vigencia =
@@ -84,9 +94,10 @@ export function AjusteView({ ajuste }: { ajuste: Ajuste }) {
         <Campo label="Nome" valor={ajuste.responsavelNome} />
         <Campo label="CPF" valor={ajuste.responsavelCpf ? mascaraCpf(ajuste.responsavelCpf) : null} />
         <Campo label="Nascimento" valor={ajuste.responsavelDataNascimento ? dataBr(ajuste.responsavelDataNascimento) : null} />
-        <div className="col-span-2 sm:col-span-3">
-          <Campo label="Endereço completo" valor={ajuste.responsavelEndereco} />
+        <div className="col-span-2 sm:col-span-2">
+          <Campo label="Endereço" valor={enderecoResponsavel(ajuste)} />
         </div>
+        <Campo label="CEP" valor={ajuste.responsavelCep ? mascaraCep(ajuste.responsavelCep) : null} />
         <Campo label="E-mail" valor={ajuste.responsavelEmail} />
         <Campo label="Telefone / Celular" valor={ajuste.responsavelTelefone ? mascaraCelular(ajuste.responsavelTelefone) : null} />
         <Campo label="Função / Cargo" valor={ajuste.responsavelCargo} />

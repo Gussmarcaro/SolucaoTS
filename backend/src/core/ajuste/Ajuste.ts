@@ -37,7 +37,13 @@ export interface Ajuste {
   responsavelNome: string | null;
   responsavelCpf: string | null; // só dígitos
   responsavelDataNascimento: string | null; // 'YYYY-MM-DD'
-  responsavelEndereco: string | null;
+  responsavelCep: string | null; // só dígitos
+  responsavelLogradouro: string | null;
+  responsavelNumero: string | null;
+  responsavelComplemento: string | null;
+  responsavelBairro: string | null;
+  responsavelCidade: string | null;
+  responsavelUf: string | null;
   responsavelEmail: string | null;
   responsavelTelefone: string | null; // só dígitos
   responsavelCargo: string | null;

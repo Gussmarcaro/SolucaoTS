@@ -1,18 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
-import { AlertCircle, ExternalLink, FileText, Loader2, Trash2, Upload } from 'lucide-react';
+import { AlertCircle, ExternalLink, FileText, Loader2, Search, Trash2, Upload } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import { FormularioNovo } from '@/components/ui/LabelCampo';
+import { UF_OPTIONS } from '@/lib/ufs';
 import {
   apenasDigitos,
   mascaraCelular,
+  mascaraCep,
   mascaraCpf,
   mascaraMoeda,
   moedaParaNumero,
   numeroParaMascaraMoeda,
 } from '@/lib/masks';
 import { isCpfValido, isEmailValido } from '@/lib/validators';
+import { consultarCep } from '@/services/viacep.service';
 import {
   abrirTermoCiencia,
   atualizarAjuste,
@@ -63,7 +66,13 @@ type Campos = {
   responsavelNome: string;
   responsavelCpf: string;
   responsavelDataNascimento: string;
-  responsavelEndereco: string;
+  responsavelCep: string;
+  responsavelLogradouro: string;
+  responsavelNumero: string;
+  responsavelComplemento: string;
+  responsavelBairro: string;
+  responsavelCidade: string;
+  responsavelUf: string;
   responsavelEmail: string;
   responsavelTelefone: string;
   responsavelCargo: string;
@@ -104,7 +113,13 @@ function estadoInicial(a?: Ajuste | null): Campos {
     responsavelNome: a?.responsavelNome ?? '',
     responsavelCpf: a?.responsavelCpf ?? '',
     responsavelDataNascimento: a?.responsavelDataNascimento ?? '',
-    responsavelEndereco: a?.responsavelEndereco ?? '',
+    responsavelCep: a?.responsavelCep ?? '',
+    responsavelLogradouro: a?.responsavelLogradouro ?? '',
+    responsavelNumero: a?.responsavelNumero ?? '',
+    responsavelComplemento: a?.responsavelComplemento ?? '',
+    responsavelBairro: a?.responsavelBairro ?? '',
+    responsavelCidade: a?.responsavelCidade ?? '',
+    responsavelUf: a?.responsavelUf ?? '',
     responsavelEmail: a?.responsavelEmail ?? '',
     responsavelTelefone: a?.responsavelTelefone ?? '',
     responsavelCargo: a?.responsavelCargo ?? '',
@@ -150,6 +165,33 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
       return setErroArquivo('O termo excede o limite de 5 MB.');
     }
     setArquivo(f);
+  }
+
+  const [buscandoCep, setBuscandoCep] = useState(false);
+
+  /** Preenche o endereço do responsável a partir do CEP (mesmo fluxo de Usuários). */
+  async function handleCepBlur() {
+    if (apenasDigitos(form.responsavelCep).length !== 8) return;
+    setBuscandoCep(true);
+    try {
+      const endereco = await consultarCep(form.responsavelCep);
+      if (!endereco) {
+        setErros((prev) => ({ ...prev, responsavelCep: 'CEP não encontrado.' }));
+        return;
+      }
+      setForm((prev) => ({
+        ...prev,
+        responsavelLogradouro: endereco.logradouro || prev.responsavelLogradouro,
+        responsavelBairro: endereco.bairro || prev.responsavelBairro,
+        responsavelCidade: endereco.cidade || prev.responsavelCidade,
+        responsavelUf: endereco.uf || prev.responsavelUf,
+      }));
+      setErros((prev) => ({ ...prev, responsavelCep: undefined }));
+    } catch {
+      setErros((prev) => ({ ...prev, responsavelCep: 'Falha ao consultar o CEP.' }));
+    } finally {
+      setBuscandoCep(false);
+    }
   }
 
   async function handleRemoverTermo() {
@@ -256,7 +298,13 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
       responsavelNome: form.responsavelNome.trim() || null,
       responsavelCpf: form.responsavelCpf ? apenasDigitos(form.responsavelCpf) : null,
       responsavelDataNascimento: form.responsavelDataNascimento || null,
-      responsavelEndereco: form.responsavelEndereco.trim() || null,
+      responsavelCep: form.responsavelCep ? apenasDigitos(form.responsavelCep) : null,
+      responsavelLogradouro: form.responsavelLogradouro.trim() || null,
+      responsavelNumero: form.responsavelNumero.trim() || null,
+      responsavelComplemento: form.responsavelComplemento.trim() || null,
+      responsavelBairro: form.responsavelBairro.trim() || null,
+      responsavelCidade: form.responsavelCidade.trim() || null,
+      responsavelUf: form.responsavelUf || null,
       responsavelEmail: form.responsavelEmail.trim().toLowerCase() || null,
       responsavelTelefone: form.responsavelTelefone ? apenasDigitos(form.responsavelTelefone) : null,
       responsavelCargo: form.responsavelCargo.trim() || null,
@@ -414,8 +462,39 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
                 <Input label="Data de Nascimento" name="responsavelDataNascimento" type="date" value={form.responsavelDataNascimento} onChange={(e) => set('responsavelDataNascimento', e.target.value)} />
               </div>
 
-              <div className="sm:col-span-12">
-                <Input label="Endereço completo" name="responsavelEndereco" value={form.responsavelEndereco} onChange={(e) => set('responsavelEndereco', e.target.value)} placeholder="Rua, nº, bairro, cidade/UF, CEP" />
+              {/* Endereço no mesmo formato do cadastro de Usuários, com
+                  preenchimento automático pelo CEP. */}
+              <div className="sm:col-span-2">
+                <Input
+                  label="CEP"
+                  name="responsavelCep"
+                  value={mascaraCep(form.responsavelCep)}
+                  onChange={(e) => set('responsavelCep', e.target.value)}
+                  onBlur={handleCepBlur}
+                  error={erros.responsavelCep}
+                  placeholder="00000-000"
+                  inputMode="numeric"
+                  rightSlot={buscandoCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                />
+              </div>
+              <div className="sm:col-span-8">
+                <Input label="Endereço" name="responsavelLogradouro" value={form.responsavelLogradouro} onChange={(e) => set('responsavelLogradouro', e.target.value)} placeholder="Rua, Avenida..." />
+              </div>
+              <div className="sm:col-span-2">
+                <Input label="Número" name="responsavelNumero" value={form.responsavelNumero} onChange={(e) => set('responsavelNumero', e.target.value)} placeholder="nº" />
+              </div>
+
+              <div className="sm:col-span-3">
+                <Input label="Complemento" name="responsavelComplemento" value={form.responsavelComplemento} onChange={(e) => set('responsavelComplemento', e.target.value)} placeholder="Apto, bloco..." />
+              </div>
+              <div className="sm:col-span-3">
+                <Input label="Bairro" name="responsavelBairro" value={form.responsavelBairro} onChange={(e) => set('responsavelBairro', e.target.value)} />
+              </div>
+              <div className="sm:col-span-4">
+                <Input label="Cidade" name="responsavelCidade" value={form.responsavelCidade} onChange={(e) => set('responsavelCidade', e.target.value)} />
+              </div>
+              <div className="sm:col-span-2">
+                <Select label="UF" name="responsavelUf" value={form.responsavelUf} onChange={(e) => set('responsavelUf', e.target.value)} options={UF_OPTIONS} placeholder="—" />
               </div>
 
               <div className="sm:col-span-5">

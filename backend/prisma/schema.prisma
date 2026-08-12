@@ -471,7 +471,13 @@ model Ajuste {
   responsavelNome           String?
   responsavelCpf            String?   @db.VarChar(11) // só dígitos
   responsavelDataNascimento DateTime? @db.Date
-  responsavelEndereco       String? // endereço completo, em texto livre
+  responsavelCep            String?   @db.VarChar(8)
+  responsavelLogradouro     String?
+  responsavelNumero         String?   @db.VarChar(20)
+  responsavelComplemento    String?
+  responsavelBairro         String?
+  responsavelCidade         String?
+  responsavelUf             String?   @db.VarChar(2)
   responsavelEmail          String?
   responsavelTelefone       String?   @db.VarChar(11) // DDD + número, só dígitos
   responsavelCargo          String?
