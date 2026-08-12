@@ -3,7 +3,9 @@ import { ExternalLink, FileText, Loader2, Pencil, Plus, Trash2, Upload } from 'l
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
+import { GradeSimples } from '@/components/ui/GradeSimples';
 import { SlideButton } from '@/components/ui/SlideButton';
+import type { ColunaDef } from '@/hooks/useResizableColumns';
 import { FormularioNovo } from '@/components/ui/LabelCampo';
 import { IconBtn, AlertaErro } from '@/pages/PrestacaoContas/blocos/_ui';
 import { ConfirmarExclusao } from '@/pages/Ajustes/tabs/TermosAditivosTab';
@@ -39,6 +41,15 @@ type ModalState =
   | { tipo: 'form'; membro: MembroDiretoria | null }
   | { tipo: 'excluir'; membro: MembroDiretoria }
   | { tipo: 'excluirAta'; ata: AtaDiretoriaArquivo };
+
+/** Ações sempre primeiro, como nas demais grades do sistema. */
+const COLUNAS: ColunaDef[] = [
+  { key: 'acoes', label: 'Ações', width: 100, minWidth: 90, align: 'center', movivel: false },
+  { key: 'nome', label: 'Nome', width: 280, sortKey: 'nome' },
+  { key: 'cargo', label: 'Função / Cargo', width: 200, sortKey: 'cargo' },
+  { key: 'vigencia', label: 'Vigência', width: 210, sortKey: 'dataEntrada' },
+  { key: 'remuneracao', label: 'Remuneração', width: 130, align: 'center', sortKey: 'possuiRemuneracao' },
+];
 
 const MAX_PDF = 5 * 1024 * 1024;
 
@@ -91,58 +102,53 @@ export function DiretoriaTab({ entidadeId }: { entidadeId: string }) {
 
       {erro && <AlertaErro msg={erro} />}
 
-      <div className="overflow-hidden rounded-xl border border-ink-200/70 dark:border-ink-800/70">
-        <table className="w-full text-left text-[13px]">
-          <thead>
-            <tr className="border-b border-ink-100 text-xs font-semibold text-ink-500 dark:border-ink-800 dark:text-ink-400">
-              <th className="px-4 py-2">Nome</th>
-              <th className="px-4 py-2">Função / Cargo</th>
-              <th className="px-4 py-2">Vigência</th>
-              <th className="px-4 py-2 text-center">Remuneração</th>
-              <th className="px-4 py-2 text-center">Ações</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
-            {carregando ? (
-              <tr>
-                <td colSpan={5} className="py-10 text-center">
-                  <Loader2 className="mx-auto h-5 w-5 animate-spin text-brand-500" />
-                </td>
-              </tr>
-            ) : lista.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="py-10 text-center text-sm text-ink-400">
-                  Nenhum membro cadastrado.
-                </td>
-              </tr>
-            ) : (
-              lista.map((m) => (
-                <tr key={m.id} className="hover:bg-ink-50/70 dark:hover:bg-ink-800/40">
-                  <td className="px-4 py-2 font-medium text-ink-800 dark:text-ink-100">{m.nome}</td>
-                  <td className="px-4 py-2 text-ink-600 dark:text-ink-300">{m.cargo || '—'}</td>
-                  <td className="px-4 py-2 text-ink-600 dark:text-ink-300">
-                    {m.dataEntrada ? dataBr(m.dataEntrada) : '—'} —{' '}
-                    {m.dataSaida ? dataBr(m.dataSaida) : 'atual'}
-                  </td>
-                  <td className="px-4 py-2 text-center text-ink-600 dark:text-ink-300">
-                    {m.possuiRemuneracao ? 'Sim' : 'Não'}
-                  </td>
-                  <td className="px-4 py-2">
-                    <div className="flex items-center justify-center gap-1">
-                      <IconBtn title="Editar" onClick={() => setModal({ tipo: 'form', membro: m })}>
-                        <Pencil className="h-4 w-4" />
-                      </IconBtn>
-                      <IconBtn title="Excluir" danger onClick={() => setModal({ tipo: 'excluir', membro: m })}>
-                        <Trash2 className="h-4 w-4" />
-                      </IconBtn>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <GradeSimples
+        storageKey="@SolucaoTS:grid:diretoria:v1"
+        colunas={COLUNAS}
+        dados={lista}
+        chave={(m) => m.id}
+        carregando={carregando}
+        vazio="Nenhum membro cadastrado."
+        onDuploClique={(m) => setModal({ tipo: 'form', membro: m })}
+        valorOrdenacao={(campo, m) => {
+          if (campo === 'nome') return m.nome;
+          if (campo === 'cargo') return m.cargo;
+          if (campo === 'dataEntrada') return m.dataEntrada;
+          if (campo === 'possuiRemuneracao') return m.possuiRemuneracao ? 'Sim' : 'Não';
+          return null;
+        }}
+        renderCell={(coluna, m) => {
+          switch (coluna) {
+            case 'acoes':
+              return (
+                <div className="flex items-center justify-center gap-1">
+                  <IconBtn title="Editar" onClick={() => setModal({ tipo: 'form', membro: m })}>
+                    <Pencil className="h-4 w-4" />
+                  </IconBtn>
+                  <IconBtn title="Excluir" danger onClick={() => setModal({ tipo: 'excluir', membro: m })}>
+                    <Trash2 className="h-4 w-4" />
+                  </IconBtn>
+                </div>
+              );
+            case 'nome':
+              return <span className="block truncate font-medium text-ink-800 dark:text-ink-100" title={m.nome}>{m.nome}</span>;
+            case 'cargo':
+              return <span className="block truncate text-ink-600 dark:text-ink-300">{m.cargo || '—'}</span>;
+            case 'vigencia':
+              return (
+                <span className="block truncate text-ink-600 dark:text-ink-300">
+                  {m.dataEntrada ? dataBr(m.dataEntrada) : '—'} — {m.dataSaida ? dataBr(m.dataSaida) : 'atual'}
+                </span>
+              );
+            case 'remuneracao':
+              return (
+                <span className="text-ink-600 dark:text-ink-300">{m.possuiRemuneracao ? 'Sim' : 'Não'}</span>
+              );
+            default:
+              return null;
+          }
+        }}
+      />
 
       <ArquivosAtas
         entidadeId={entidadeId}

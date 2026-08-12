@@ -4,7 +4,9 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
+import { GradeSimples } from '@/components/ui/GradeSimples';
 import { Select } from '@/components/ui/Select';
+import type { ColunaDef } from '@/hooks/useResizableColumns';
 import { FormularioNovo } from '@/components/ui/LabelCampo';
 import { IconBtn, AlertaErro } from '@/pages/PrestacaoContas/blocos/_ui';
 import { ConfirmarExclusao } from '@/pages/Ajustes/tabs/TermosAditivosTab';
@@ -45,6 +47,16 @@ const OPCOES_CONSELHO = (Object.keys(TIPO_CONSELHO_LABEL) as TipoConselho[]).map
   value: v,
   label: TIPO_CONSELHO_LABEL[v],
 }));
+
+/** Ações sempre primeiro, como nas demais grades do sistema. */
+const COLUNAS: ColunaDef[] = [
+  { key: 'acoes', label: 'Ações', width: 100, minWidth: 90, align: 'center', movivel: false },
+  { key: 'conselho', label: 'Conselho', width: 150, sortKey: 'tipoConselho' },
+  { key: 'nome', label: 'Nome', width: 250, sortKey: 'nome' },
+  { key: 'cargo', label: 'Função / Cargo', width: 180, sortKey: 'cargo' },
+  { key: 'vigencia', label: 'Vigência', width: 200, sortKey: 'dataEntrada' },
+  { key: 'ata', label: 'Ata', width: 200, sortKey: 'ataArquivoNome' },
+];
 
 export function ConselhosTab({ entidadeId }: { entidadeId: string }) {
   const [lista, setLista] = useState<MembroConselho[]>([]);
@@ -88,73 +100,65 @@ export function ConselhosTab({ entidadeId }: { entidadeId: string }) {
 
       {erro && <AlertaErro msg={erro} />}
 
-      <div className="overflow-hidden rounded-xl border border-ink-200/70 dark:border-ink-800/70">
-        <table className="w-full text-left text-[13px]">
-          <thead>
-            <tr className="border-b border-ink-100 text-xs font-semibold text-ink-500 dark:border-ink-800 dark:text-ink-400">
-              <th className="px-4 py-2">Conselho</th>
-              <th className="px-4 py-2">Nome</th>
-              <th className="px-4 py-2">Função / Cargo</th>
-              <th className="px-4 py-2">Vigência</th>
-              <th className="px-4 py-2">Ata</th>
-              <th className="px-4 py-2 text-center">Ações</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
-            {carregando ? (
-              <tr>
-                <td colSpan={6} className="py-10 text-center">
-                  <Loader2 className="mx-auto h-5 w-5 animate-spin text-brand-500" />
-                </td>
-              </tr>
-            ) : lista.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="py-10 text-center text-sm text-ink-400">
-                  Nenhum membro cadastrado.
-                </td>
-              </tr>
-            ) : (
-              lista.map((m) => (
-                <tr key={m.id} className="hover:bg-ink-50/70 dark:hover:bg-ink-800/40">
-                  <td className="px-4 py-2">
-                    <Badge tone="brand">{TIPO_CONSELHO_LABEL[m.tipoConselho]}</Badge>
-                  </td>
-                  <td className="px-4 py-2 font-medium text-ink-800 dark:text-ink-100">{m.nome}</td>
-                  <td className="px-4 py-2 text-ink-600 dark:text-ink-300">{m.cargo || '—'}</td>
-                  <td className="px-4 py-2 text-ink-600 dark:text-ink-300">
-                    {m.dataEntrada ? dataBr(m.dataEntrada) : '—'} —{' '}
-                    {m.dataSaida ? dataBr(m.dataSaida) : 'atual'}
-                  </td>
-                  <td className="px-4 py-2">
-                    {m.ataArquivoNome ? (
-                      <button
-                        type="button"
-                        onClick={() => abrirAtaConselho(entidadeId, m.id)}
-                        className="focus-ring inline-flex max-w-[14rem] items-center gap-1 rounded text-brand-600 hover:underline dark:text-brand-400"
-                      >
-                        <FileText className="h-3.5 w-3.5 shrink-0" />
-                        <span className="truncate" title={m.ataArquivoNome}>{m.ataArquivoNome}</span>
-                      </button>
-                    ) : (
-                      <span className="text-ink-400">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2">
-                    <div className="flex items-center justify-center gap-1">
-                      <IconBtn title="Editar" onClick={() => setModal({ tipo: 'form', membro: m })}>
-                        <Pencil className="h-4 w-4" />
-                      </IconBtn>
-                      <IconBtn title="Excluir" danger onClick={() => setModal({ tipo: 'excluir', membro: m })}>
-                        <Trash2 className="h-4 w-4" />
-                      </IconBtn>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <GradeSimples
+        storageKey="@SolucaoTS:grid:conselhos:v1"
+        colunas={COLUNAS}
+        dados={lista}
+        chave={(m) => m.id}
+        carregando={carregando}
+        vazio="Nenhum membro cadastrado."
+        onDuploClique={(m) => setModal({ tipo: 'form', membro: m })}
+        valorOrdenacao={(campo, m) => {
+          if (campo === 'tipoConselho') return TIPO_CONSELHO_LABEL[m.tipoConselho];
+          if (campo === 'nome') return m.nome;
+          if (campo === 'cargo') return m.cargo;
+          if (campo === 'dataEntrada') return m.dataEntrada;
+          if (campo === 'ataArquivoNome') return m.ataArquivoNome;
+          return null;
+        }}
+        renderCell={(coluna, m) => {
+          switch (coluna) {
+            case 'acoes':
+              return (
+                <div className="flex items-center justify-center gap-1">
+                  <IconBtn title="Editar" onClick={() => setModal({ tipo: 'form', membro: m })}>
+                    <Pencil className="h-4 w-4" />
+                  </IconBtn>
+                  <IconBtn title="Excluir" danger onClick={() => setModal({ tipo: 'excluir', membro: m })}>
+                    <Trash2 className="h-4 w-4" />
+                  </IconBtn>
+                </div>
+              );
+            case 'conselho':
+              return <Badge tone="brand">{TIPO_CONSELHO_LABEL[m.tipoConselho]}</Badge>;
+            case 'nome':
+              return <span className="block truncate font-medium text-ink-800 dark:text-ink-100" title={m.nome}>{m.nome}</span>;
+            case 'cargo':
+              return <span className="block truncate text-ink-600 dark:text-ink-300">{m.cargo || '—'}</span>;
+            case 'vigencia':
+              return (
+                <span className="block truncate text-ink-600 dark:text-ink-300">
+                  {m.dataEntrada ? dataBr(m.dataEntrada) : '—'} — {m.dataSaida ? dataBr(m.dataSaida) : 'atual'}
+                </span>
+              );
+            case 'ata':
+              return m.ataArquivoNome ? (
+                <button
+                  type="button"
+                  onClick={() => abrirAtaConselho(entidadeId, m.id)}
+                  className="focus-ring flex w-full min-w-0 items-center gap-1 rounded text-brand-600 hover:underline dark:text-brand-400"
+                >
+                  <FileText className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate" title={m.ataArquivoNome}>{m.ataArquivoNome}</span>
+                </button>
+              ) : (
+                <span className="text-ink-400">—</span>
+              );
+            default:
+              return null;
+          }
+        }}
+      />
 
       <Modal
         open={modal.tipo === 'form'}
