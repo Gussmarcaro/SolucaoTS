@@ -1,6 +1,5 @@
 import { ExternalLink, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
-import { HistoricoRegistro } from '@/pages/Auditoria/HistoricoRegistro';
 import { mascaraCep, mascaraCelular, mascaraCpfCnpj, mascaraTelefoneFixo } from '@/lib/masks';
 import { abrirEstatuto } from '@/services/entidades.service';
 import type { Entidade } from '@/types/entidade';
@@ -83,11 +82,6 @@ export function EntidadeView({ entidade }: { entidade: Entidade }) {
             </dd>
           </div>
         </dl>
-      </div>
-
-      <div>
-        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-400">Histórico de alterações</h4>
-        <HistoricoRegistro entidade="EntidadeBeneficiaria" registroId={entidade.id} />
       </div>
     </div>
   );
