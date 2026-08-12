@@ -15,6 +15,7 @@ import {
   numeroParaMascaraMoeda,
 } from '@/lib/masks';
 import { isCpfValido, isEmailValido } from '@/lib/validators';
+import { capitalizarNome } from '@/lib/nomeProprio';
 import { consultarCep } from '@/services/viacep.service';
 import {
   abrirTermoCiencia,
@@ -453,7 +454,7 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
             <legend className="px-1 text-sm font-medium text-ink-700 dark:text-ink-200">Responsável pelo Ajuste</legend>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
               <div className="sm:col-span-5">
-                <Input label="Nome" name="responsavelNome" value={form.responsavelNome} onChange={(e) => set('responsavelNome', e.target.value)} />
+                <Input label="Nome" name="responsavelNome" value={form.responsavelNome} onChange={(e) => set('responsavelNome', capitalizarNome(e.target.value))} />
               </div>
               <div className="sm:col-span-3">
                 <Input label="CPF" name="responsavelCpf" value={mascaraCpf(form.responsavelCpf)} onChange={(e) => set('responsavelCpf', e.target.value)} error={erros.responsavelCpf} placeholder="000.000.000-00" inputMode="numeric" />

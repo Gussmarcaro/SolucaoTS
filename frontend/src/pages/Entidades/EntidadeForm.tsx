@@ -14,6 +14,7 @@ import {
   mascaraTelefoneFixo,
 } from '@/lib/masks';
 import { isCnpjValido, isEmailValido } from '@/lib/validators';
+import { capitalizarNome } from '@/lib/nomeProprio';
 import { consultarCep } from '@/services/viacep.service';
 import {
   abrirEstatuto,
@@ -254,7 +255,7 @@ export function EntidadeForm({ entidade, onSuccess, onCancel }: Props) {
             <Input label="Razão Social *" name="razaoSocial" value={form.razaoSocial} onChange={(e) => set('razaoSocial', e.target.value)} error={erros.razaoSocial} />
           </div>
           <div className="sm:col-span-4">
-            <Input label="Nome Fantasia" name="nomeFantasia" value={form.nomeFantasia} onChange={(e) => set('nomeFantasia', e.target.value)} />
+            <Input label="Nome Fantasia" name="nomeFantasia" value={form.nomeFantasia} onChange={(e) => set('nomeFantasia', capitalizarNome(e.target.value))} />
           </div>
           <div className="sm:col-span-3">
             <Input

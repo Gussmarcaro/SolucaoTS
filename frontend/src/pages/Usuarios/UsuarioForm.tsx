@@ -11,6 +11,7 @@ import { PasswordStrength } from '@/components/ui/PasswordStrength';
 import { UF_OPTIONS } from '@/lib/ufs';
 import { apenasDigitos, mascaraCelular, mascaraCep, mascaraCpf } from '@/lib/masks';
 import { isCpfValido, isEmailValido, isSenhaForte } from '@/lib/validators';
+import { capitalizarNome } from '@/lib/nomeProprio';
 import { consultarCep } from '@/services/viacep.service';
 import { atualizarUsuario, criarUsuario } from '@/services/usuarios.service';
 import { extrairCodigoErro, extrairMensagemErro } from '@/services/http';
@@ -201,7 +202,7 @@ export function UsuarioForm({ usuario, onSuccess, onCancel }: UsuarioFormProps) 
               label="Nome Completo *"
               name="nome"
               value={form.nome}
-              onChange={(e) => set('nome', e.target.value)}
+              onChange={(e) => set('nome', capitalizarNome(e.target.value))}
               error={erros.nome}
               placeholder="Ex.: Maria Silva de Souza"
             />

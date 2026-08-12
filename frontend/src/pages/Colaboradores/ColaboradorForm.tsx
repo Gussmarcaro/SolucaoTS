@@ -6,6 +6,7 @@ import { FormularioNovo } from '@/components/ui/LabelCampo';
 import { BuscaCbo } from '@/components/ui/BuscaCbo';
 import { apenasDigitos, mascaraCpfCnpj, mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
 import { isCpfValido } from '@/lib/validators';
+import { capitalizarNome } from '@/lib/nomeProprio';
 import { atualizarColaborador, criarColaborador } from '@/services/colaboradores.service';
 import { extrairCodigoErro, extrairMensagemErro } from '@/services/http';
 import type { Colaborador, ColaboradorPayload } from '@/types/colaborador';
@@ -111,7 +112,7 @@ export function ColaboradorForm({ colaborador, onSuccess, onCancel }: Props) {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <Input label="Nome *" name="nome" value={form.nome} onChange={(e) => set('nome', e.target.value)} error={erros.nome} />
+            <Input label="Nome *" name="nome" value={form.nome} onChange={(e) => set('nome', capitalizarNome(e.target.value))} error={erros.nome} />
           </div>
           <Input
             label="CPF *"

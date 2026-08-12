@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { capitalizarNome } from '@/lib/nomeProprio';
 import { FormularioNovo } from '@/components/ui/LabelCampo';
 import { atualizarGrupo, criarGrupo } from '@/services/grupos.service';
 import { extrairCodigoErro, extrairMensagemErro } from '@/services/http';
@@ -55,7 +56,7 @@ export function GrupoForm({ grupo, onSuccess, onCancel }: Props) {
           </div>
         )}
 
-        <Input label="Nome do Grupo *" name="nome" value={nome} onChange={(e) => { setNome(e.target.value); setErros({}); setAlerta(null); }} error={erros.nome} autoFocus />
+        <Input label="Nome do Grupo *" name="nome" value={nome} onChange={(e) => { setNome(capitalizarNome(e.target.value)); setErros({}); setAlerta(null); }} error={erros.nome} autoFocus />
 
         <div>
           <label htmlFor="descricao" className="mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-300">Descrição</label>

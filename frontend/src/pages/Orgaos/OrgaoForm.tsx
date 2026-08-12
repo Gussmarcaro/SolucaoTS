@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { FormularioNovo } from '@/components/ui/LabelCampo';
 import { apenasDigitos, mascaraCpfCnpj } from '@/lib/masks';
 import { isCnpjValido } from '@/lib/validators';
+import { capitalizarNome } from '@/lib/nomeProprio';
 import { atualizarOrgao, criarOrgao } from '@/services/orgaos.service';
 import { extrairCodigoErro, extrairMensagemErro } from '@/services/http';
 import {
@@ -111,7 +112,7 @@ export function OrgaoForm({ orgao, onSuccess, onCancel }: Props) {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <Input label="Nome do Órgão Concessor *" name="nome" value={form.nome} onChange={(e) => set('nome', e.target.value)} error={erros.nome} placeholder="ex.: PREFEITURA MUNICIPAL DE ADAMANTINA" autoFocus />
+            <Input label="Nome do Órgão Concessor *" name="nome" value={form.nome} onChange={(e) => set('nome', capitalizarNome(e.target.value))} error={erros.nome} placeholder="ex.: PREFEITURA MUNICIPAL DE ADAMANTINA" autoFocus />
           </div>
 
           <Select label="Tipo de Órgão *" name="tipoOrgao" value={form.tipoOrgao} onChange={(e) => set('tipoOrgao', e.target.value)} error={erros.tipoOrgao} options={opcoesDe(TIPO_ORGAO_LABEL)} placeholder="Selecione..." />

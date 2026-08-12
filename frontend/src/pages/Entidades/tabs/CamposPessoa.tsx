@@ -5,6 +5,7 @@ import { Select } from '@/components/ui/Select';
 import { UF_OPTIONS } from '@/lib/ufs';
 import { apenasDigitos, mascaraCelular, mascaraCep, mascaraCpf } from '@/lib/masks';
 import { isCpfValido, isEmailValido } from '@/lib/validators';
+import { capitalizarNome } from '@/lib/nomeProprio';
 import { consultarCep } from '@/services/viacep.service';
 import type { PessoaVinculada } from '@/types/entidadeComplementos';
 
@@ -119,7 +120,7 @@ export function CamposPessoa({ valores, erros, set, preencher }: Props) {
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
       <div className="sm:col-span-5">
-        <Input label="Nome *" name="nome" value={valores.nome} onChange={(e) => set('nome', e.target.value)} error={erros.nome} />
+        <Input label="Nome *" name="nome" value={valores.nome} onChange={(e) => set('nome', capitalizarNome(e.target.value))} error={erros.nome} />
       </div>
       <div className="sm:col-span-3">
         <Input label="CPF" name="cpf" value={mascaraCpf(valores.cpf)} onChange={(e) => set('cpf', e.target.value)} error={erros.cpf} placeholder="000.000.000-00" inputMode="numeric" />

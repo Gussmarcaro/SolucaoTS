@@ -13,6 +13,7 @@ import {
   tipoDocumento,
 } from '@/lib/masks';
 import { isDocumentoValido } from '@/lib/validators';
+import { capitalizarNome } from '@/lib/nomeProprio';
 import { atualizarContrato, criarContrato } from '@/services/contratos.service';
 import { extrairCodigoErro, extrairMensagemErro } from '@/services/http';
 import type { Contrato, ContratoPayload } from '@/types/contrato';
@@ -143,7 +144,7 @@ export function ContratoForm({ contrato, onSuccess, onCancel }: Props) {
           />
 
           <div className="sm:col-span-2">
-            <Input label="Credor (Nome / Razão Social) *" name="credorNome" value={form.credorNome} onChange={(e) => set('credorNome', e.target.value)} error={erros.credorNome} />
+            <Input label="Credor (Nome / Razão Social) *" name="credorNome" value={form.credorNome} onChange={(e) => set('credorNome', capitalizarNome(e.target.value))} error={erros.credorNome} />
           </div>
           <Input
             label="CPF / CNPJ do Credor *"

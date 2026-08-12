@@ -15,6 +15,7 @@ import {
   tipoDocumento,
 } from '@/lib/masks';
 import { isDocumentoValido, isEmailValido } from '@/lib/validators';
+import { capitalizarNome } from '@/lib/nomeProprio';
 import { consultarCep } from '@/services/viacep.service';
 import { atualizarFornecedor, criarFornecedor } from '@/services/fornecedores.service';
 import { extrairCodigoErro, extrairMensagemErro } from '@/services/http';
@@ -160,7 +161,7 @@ export function FornecedorForm({ fornecedor, onSuccess, onCancel }: Props) {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <Input label="Nome / Razão Social *" name="nome" value={form.nome} onChange={(e) => set('nome', e.target.value)} error={erros.nome} />
+            <Input label="Nome / Razão Social *" name="nome" value={form.nome} onChange={(e) => set('nome', capitalizarNome(e.target.value))} error={erros.nome} />
           </div>
           <Input
             label="CPF / CNPJ *"
