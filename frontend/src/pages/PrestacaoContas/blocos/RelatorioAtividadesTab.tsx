@@ -4,6 +4,9 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
+import { GradeSimples } from '@/components/ui/GradeSimples';
+import type { ColunaDef } from '@/hooks/useResizableColumns';
+import { enterComoTab } from '@/lib/enterComoTab';
 import { Badge } from '@/components/ui/Badge';
 import { apenasDigitos } from '@/lib/masks';
 import { extrairMensagemErro } from '@/services/http';
@@ -15,6 +18,16 @@ import { ConfirmarExclusao } from '@/pages/Ajustes/tabs/TermosAditivosTab';
 import { AlertaErro, IconBtn } from './_ui';
 
 type ModalState = { tipo: 'fechado' } | { tipo: 'form'; item: AfericaoMeta | null } | { tipo: 'excluir'; item: AfericaoMeta };
+
+/** Ações sempre primeiro, como nas grades dos cadastros. */
+const COLUNAS: ColunaDef[] = [
+  { key: 'acoes', label: 'Ações', width: 100, minWidth: 90, align: 'center', movivel: false },
+  { key: 'programa', label: 'Programa', width: 240, sortKey: 'nomePrograma' },
+  { key: 'meta', label: 'Meta', width: 140, sortKey: 'codigoMeta' },
+  { key: 'periodo', label: 'Período', width: 110, align: 'center', sortKey: 'periodo' },
+  { key: 'realizado', label: 'Realizado / Resultado', width: 200 },
+  { key: 'atendida', label: 'Atendida', width: 120, align: 'center', sortKey: 'metaAtendida' },
+];
 
 const RESULTADOS: { value: ResultadoMeta; label: string }[] = (Object.keys(RESULTADO_META_LABEL) as ResultadoMeta[]).map((r) => ({ value: r, label: RESULTADO_META_LABEL[r] }));
 
@@ -53,49 +66,54 @@ export function RelatorioAtividadesTab({ prestacaoId, ajusteId }: { prestacaoId:
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-xl border border-ink-200/70 dark:border-ink-800/70">
-        <table className="w-full min-w-[680px] text-left text-[13px]">
-          <thead>
-            <tr className="border-b border-ink-100 text-xs font-semibold text-ink-500 dark:border-ink-800 dark:text-ink-400">
-              <th className="px-4 py-2">Programa</th>
-              <th className="px-4 py-2">Meta</th>
-              <th className="px-4 py-2 text-center">Período</th>
-              <th className="px-4 py-2">Realizado / Resultado</th>
-              <th className="px-4 py-2 text-center">Atendida</th>
-              <th className="px-4 py-2 text-center">Ações</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
-            {carregando ? (
-              <tr><td colSpan={6} className="py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-brand-500" /></td></tr>
-            ) : erro ? (
-              <tr><td colSpan={6} className="py-10 text-center text-sm text-red-500">{erro}</td></tr>
-            ) : lista.length === 0 ? (
-              <tr><td colSpan={6} className="py-10 text-center text-sm text-ink-400">Nenhuma aferição cadastrada.</td></tr>
-            ) : (
-              lista.map((a) => (
-                <tr key={a.id} className="hover:bg-ink-50/70 dark:hover:bg-ink-800/40">
-                  <td className="px-4 py-2 text-ink-700 dark:text-ink-200" title={a.nomePrograma}>{a.nomePrograma}</td>
-                  <td className="px-4 py-2 font-mono text-xs text-ink-600 dark:text-ink-300">{a.codigoMeta}</td>
-                  <td className="px-4 py-2 text-center text-ink-600 dark:text-ink-300">{a.periodo}</td>
-                  <td className="px-4 py-2 text-ink-600 dark:text-ink-300">
-                    {a.quantidadeRealizada != null ? a.quantidadeRealizada : a.resultadoMeta ? RESULTADO_META_LABEL[a.resultadoMeta] : '—'}
-                  </td>
-                  <td className="px-4 py-2 text-center">
-                    {a.metaAtendida == null ? <span className="text-ink-400">—</span> : <Badge tone={a.metaAtendida ? 'success' : 'danger'}>{a.metaAtendida ? 'Sim' : 'Não'}</Badge>}
-                  </td>
-                  <td className="px-4 py-2">
-                    <div className="flex items-center justify-center gap-1">
-                      <IconBtn title="Editar" onClick={() => setModal({ tipo: 'form', item: a })}><Pencil className="h-4 w-4" /></IconBtn>
-                      <IconBtn title="Excluir" danger onClick={() => setModal({ tipo: 'excluir', item: a })}><Trash2 className="h-4 w-4" /></IconBtn>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <GradeSimples
+        storageKey="@SolucaoTS:grid:relatorioAtividades:v1"
+        colunas={COLUNAS}
+        dados={lista}
+        chave={(a) => a.id}
+        carregando={carregando}
+        erro={erro}
+        vazio="Nenhuma aferição cadastrada."
+        onDuploClique={(a) => setModal({ tipo: 'form', item: a })}
+        valorOrdenacao={(campo, a) => {
+          if (campo === 'nomePrograma') return a.nomePrograma;
+          if (campo === 'codigoMeta') return a.codigoMeta;
+          if (campo === 'periodo') return a.periodo;
+          if (campo === 'metaAtendida') return a.metaAtendida == null ? null : a.metaAtendida ? 'Sim' : 'Não';
+          return null;
+        }}
+        renderCell={(coluna, a) => {
+          switch (coluna) {
+            case 'acoes':
+              return (
+                <div className="flex items-center justify-center gap-1">
+                  <IconBtn title="Editar" onClick={() => setModal({ tipo: 'form', item: a })}><Pencil className="h-4 w-4" /></IconBtn>
+                  <IconBtn title="Excluir" danger onClick={() => setModal({ tipo: 'excluir', item: a })}><Trash2 className="h-4 w-4" /></IconBtn>
+                </div>
+              );
+            case 'programa':
+              return <span className="block truncate text-ink-700 dark:text-ink-200" title={a.nomePrograma}>{a.nomePrograma}</span>;
+            case 'meta':
+              return <span className="block truncate font-mono text-xs text-ink-600 dark:text-ink-300">{a.codigoMeta}</span>;
+            case 'periodo':
+              return <span className="text-ink-600 dark:text-ink-300">{a.periodo}</span>;
+            case 'realizado':
+              return (
+                <span className="block truncate text-ink-600 dark:text-ink-300">
+                  {a.quantidadeRealizada != null ? a.quantidadeRealizada : a.resultadoMeta ? RESULTADO_META_LABEL[a.resultadoMeta] : '—'}
+                </span>
+              );
+            case 'atendida':
+              return a.metaAtendida == null ? (
+                <span className="text-ink-400">—</span>
+              ) : (
+                <Badge tone={a.metaAtendida ? 'success' : 'danger'}>{a.metaAtendida ? 'Sim' : 'Não'}</Badge>
+              );
+            default:
+              return null;
+          }
+        }}
+      />
 
       <Modal open={modal.tipo === 'form'} onClose={() => setModal({ tipo: 'fechado' })} title={modal.tipo === 'form' && modal.item ? 'Editar Aferição' : 'Nova Aferição de Meta'} size="lg">
         {modal.tipo === 'form' && <AfericaoForm prestacaoId={prestacaoId} programas={programas} item={modal.item} onSuccess={recarregar} onCancel={() => setModal({ tipo: 'fechado' })} />}
@@ -161,7 +179,7 @@ function AfericaoForm({ prestacaoId, programas, item, onSuccess, onCancel }: { p
   }
 
   return (
-    <form onSubmit={submeter} className="space-y-4">
+    <form onSubmit={submeter} onKeyDown={enterComoTab} className="space-y-4">
       {erro && <AlertaErro msg={erro} />}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Select

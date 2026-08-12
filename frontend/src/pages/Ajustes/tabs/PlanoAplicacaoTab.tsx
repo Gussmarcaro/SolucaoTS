@@ -1,12 +1,21 @@
 import { useEffect, useState } from 'react';
-import { Loader2, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { GradeSimples } from '@/components/ui/GradeSimples';
+import type { ColunaDef } from '@/hooks/useResizableColumns';
 import { formatarMoeda, nomeMes } from '@/lib/masks';
 import { extrairMensagemErro } from '@/services/http';
 import { importarPlano, limparPlano, listarPlano } from '@/services/ajusteCsv.service';
 import type { PlanoItem } from '@/types/ajusteCsv';
 import { ImportadorCsv } from './ImportadorCsv';
 import { ConfirmarExclusao } from './TermosAditivosTab';
+
+const COLUNAS: ColunaDef[] = [
+  { key: 'categoria', label: 'Categoria', width: 220, sortKey: 'categoria' },
+  { key: 'subcategoria', label: 'Subcategoria', width: 260, sortKey: 'subcategoria' },
+  { key: 'competencia', label: 'Competência', width: 150, sortKey: 'competencia' },
+  { key: 'valor', label: 'Valor', width: 170, align: 'right', sortKey: 'valor' },
+];
 
 export function PlanoAplicacaoTab({ ajusteId }: { ajusteId: string }) {
   const [lista, setLista] = useState<PlanoItem[]>([]);
@@ -50,49 +59,43 @@ export function PlanoAplicacaoTab({ ajusteId }: { ajusteId: string }) {
         )}
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-ink-200/70 dark:border-ink-800/70">
-        <table className="w-full min-w-[640px] text-left text-[13px]">
-          <thead>
-            <tr className="border-b border-ink-100 text-xs font-semibold text-ink-500 dark:border-ink-800 dark:text-ink-400">
-              <th className="px-4 py-2">Categoria</th>
-              <th className="px-4 py-2">Subcategoria</th>
-              <th className="px-4 py-2">Competência</th>
-              <th className="px-4 py-2 text-right">Valor</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
-            {carregando ? (
-              <tr>
-                <td colSpan={4} className="py-10 text-center">
-                  <Loader2 className="mx-auto h-5 w-5 animate-spin text-brand-500" />
-                </td>
-              </tr>
-            ) : erro ? (
-              <tr>
-                <td colSpan={4} className="py-10 text-center text-sm text-red-500">{erro}</td>
-              </tr>
-            ) : lista.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="py-10 text-center text-sm text-ink-400">
-                  Importe um CSV para preencher o plano de aplicação.
-                </td>
-              </tr>
-            ) : (
-              lista.map((i) => (
-                <tr key={i.id} className="hover:bg-ink-50/70 dark:hover:bg-ink-800/40">
-                  <td className="px-4 py-2 text-ink-700 dark:text-ink-200" title={i.categoria}>{i.categoria}</td>
-                  <td className="px-4 py-2 text-ink-600 dark:text-ink-300" title={i.subcategoria}>
-                    {i.subcategoria}
-                    {i.descricao && <span className="ml-1 text-xs text-ink-400">· {i.descricao}</span>}
-                  </td>
-                  <td className="px-4 py-2 text-ink-600 dark:text-ink-300">{nomeMes(i.mes)}/{i.ano}</td>
-                  <td className="px-4 py-2 text-right tabular-nums text-ink-700 dark:text-ink-200">{formatarMoeda(i.valor)}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      {/* Sem coluna de Ações: o conteúdo vem do CSV e não é editado linha a
+          linha — a única ação é "Limpar tudo", no topo. */}
+      <GradeSimples
+        storageKey="@SolucaoTS:grid:planoAplicacao:v1"
+        colunas={COLUNAS}
+        dados={lista}
+        chave={(i) => i.id}
+        carregando={carregando}
+        erro={erro}
+        vazio="Importe um CSV para preencher o plano de aplicação."
+        valorOrdenacao={(campo, i) => {
+          if (campo === 'categoria') return i.categoria;
+          if (campo === 'subcategoria') return i.subcategoria;
+          if (campo === 'competencia') return i.ano * 100 + i.mes;
+          if (campo === 'valor') return i.valor;
+          return null;
+        }}
+        renderCell={(coluna, i) => {
+          switch (coluna) {
+            case 'categoria':
+              return <span className="block truncate text-ink-700 dark:text-ink-200" title={i.categoria}>{i.categoria}</span>;
+            case 'subcategoria':
+              return (
+                <div className="min-w-0">
+                  <p className="truncate text-ink-600 dark:text-ink-300" title={i.subcategoria}>{i.subcategoria}</p>
+                  {i.descricao && <p className="truncate text-xs text-ink-400" title={i.descricao}>{i.descricao}</p>}
+                </div>
+              );
+            case 'competencia':
+              return <span className="block truncate text-ink-600 dark:text-ink-300">{nomeMes(i.mes)}/{i.ano}</span>;
+            case 'valor':
+              return <span className="block truncate tabular-nums text-ink-700 dark:text-ink-200">{formatarMoeda(i.valor)}</span>;
+            default:
+              return null;
+          }
+        }}
+      />
 
       <ConfirmarExclusao
         aberto={confirmarLimpar}

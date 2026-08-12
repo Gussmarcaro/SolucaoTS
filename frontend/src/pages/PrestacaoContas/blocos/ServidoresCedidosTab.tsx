@@ -4,6 +4,9 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
+import { GradeSimples } from '@/components/ui/GradeSimples';
+import type { ColunaDef } from '@/hooks/useResizableColumns';
+import { enterComoTab } from '@/lib/enterComoTab';
 import { apenasDigitos, dataBr, mascaraCpfCnpj, mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
 import { MESES } from '@/lib/dominios';
 import { ONUS_PAGAMENTO } from '@/lib/dominiosFaseV';
@@ -17,6 +20,15 @@ import { AlertaErro, IconBtn } from './_ui';
 
 
 type ModalState = { tipo: 'fechado' } | { tipo: 'form'; item: ServidorPrestacao | null } | { tipo: 'excluir'; item: ServidorPrestacao };
+
+/** Ações sempre primeiro, como nas grades dos cadastros. */
+const COLUNAS: ColunaDef[] = [
+  { key: 'acoes', label: 'Ações', width: 100, minWidth: 90, align: 'center', movivel: false },
+  { key: 'cpf', label: 'CPF', width: 160, sortKey: 'cpf' },
+  { key: 'cargo', label: 'Cargo público', width: 220, sortKey: 'cargoPublico' },
+  { key: 'cessao', label: 'Cessão', width: 230, sortKey: 'dataInicialCessao' },
+  { key: 'periodos', label: 'Períodos', width: 110, align: 'center', sortKey: 'periodos' },
+];
 type LinhaPeriodo = { mes: string; carga: string; remun: string };
 
 export function ServidoresCedidosTab({ prestacaoId }: { prestacaoId: string }) {
@@ -46,43 +58,48 @@ export function ServidoresCedidosTab({ prestacaoId }: { prestacaoId: string }) {
         <Button size="sm" onClick={() => setModal({ tipo: 'form', item: null })}><Plus className="h-4 w-4" />Adicionar</Button>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-ink-200/70 dark:border-ink-800/70">
-        <table className="w-full min-w-[600px] text-left text-[13px]">
-          <thead>
-            <tr className="border-b border-ink-100 text-xs font-semibold text-ink-500 dark:border-ink-800 dark:text-ink-400">
-              <th className="px-4 py-2">CPF</th>
-              <th className="px-4 py-2">Cargo público</th>
-              <th className="px-4 py-2">Cessão</th>
-              <th className="px-4 py-2 text-center">Períodos</th>
-              <th className="px-4 py-2 text-center">Ações</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
-            {carregando ? (
-              <tr><td colSpan={5} className="py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-brand-500" /></td></tr>
-            ) : erro ? (
-              <tr><td colSpan={5} className="py-10 text-center text-sm text-red-500">{erro}</td></tr>
-            ) : lista.length === 0 ? (
-              <tr><td colSpan={5} className="py-10 text-center text-sm text-ink-400">Nenhum servidor cedido cadastrado.</td></tr>
-            ) : (
-              lista.map((s) => (
-                <tr key={s.id} className="hover:bg-ink-50/70 dark:hover:bg-ink-800/40">
-                  <td className="px-4 py-2 font-mono text-xs text-ink-800 dark:text-ink-100">{mascaraCpfCnpj(s.cpf)}</td>
-                  <td className="px-4 py-2 text-ink-600 dark:text-ink-300" title={s.cargoPublico}>{s.cargoPublico}</td>
-                  <td className="px-4 py-2 text-ink-600 dark:text-ink-300">{dataBr(s.dataInicialCessao)} — {s.dataFinalCessao ? dataBr(s.dataFinalCessao) : 'em curso'}</td>
-                  <td className="px-4 py-2 text-center text-ink-500 dark:text-ink-400">{s.periodos.length}</td>
-                  <td className="px-4 py-2">
-                    <div className="flex items-center justify-center gap-1">
-                      <IconBtn title="Editar" onClick={() => setModal({ tipo: 'form', item: s })}><Pencil className="h-4 w-4" /></IconBtn>
-                      <IconBtn title="Excluir" danger onClick={() => setModal({ tipo: 'excluir', item: s })}><Trash2 className="h-4 w-4" /></IconBtn>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <GradeSimples
+        storageKey="@SolucaoTS:grid:servidoresCedidosPrestacao:v1"
+        colunas={COLUNAS}
+        dados={lista}
+        chave={(s) => s.id}
+        carregando={carregando}
+        erro={erro}
+        vazio="Nenhum servidor cedido cadastrado."
+        onDuploClique={(s) => setModal({ tipo: 'form', item: s })}
+        valorOrdenacao={(campo, s) => {
+          if (campo === 'cpf') return s.cpf;
+          if (campo === 'cargoPublico') return s.cargoPublico;
+          if (campo === 'dataInicialCessao') return s.dataInicialCessao;
+          if (campo === 'periodos') return s.periodos.length;
+          return null;
+        }}
+        renderCell={(coluna, s) => {
+          switch (coluna) {
+            case 'acoes':
+              return (
+                <div className="flex items-center justify-center gap-1">
+                  <IconBtn title="Editar" onClick={() => setModal({ tipo: 'form', item: s })}><Pencil className="h-4 w-4" /></IconBtn>
+                  <IconBtn title="Excluir" danger onClick={() => setModal({ tipo: 'excluir', item: s })}><Trash2 className="h-4 w-4" /></IconBtn>
+                </div>
+              );
+            case 'cpf':
+              return <span className="block truncate font-mono text-xs text-ink-800 dark:text-ink-100">{mascaraCpfCnpj(s.cpf)}</span>;
+            case 'cargo':
+              return <span className="block truncate text-ink-600 dark:text-ink-300" title={s.cargoPublico}>{s.cargoPublico}</span>;
+            case 'cessao':
+              return (
+                <span className="block truncate text-ink-600 dark:text-ink-300">
+                  {dataBr(s.dataInicialCessao)} — {s.dataFinalCessao ? dataBr(s.dataFinalCessao) : 'em curso'}
+                </span>
+              );
+            case 'periodos':
+              return <span className="text-ink-500 dark:text-ink-400">{s.periodos.length}</span>;
+            default:
+              return null;
+          }
+        }}
+      />
 
       <Modal open={modal.tipo === 'form'} onClose={() => setModal({ tipo: 'fechado' })} title={modal.tipo === 'form' && modal.item ? 'Editar Servidor Cedido' : 'Novo Servidor Cedido'} size="2xl">
         {modal.tipo === 'form' && <ServForm prestacaoId={prestacaoId} item={modal.item} onSuccess={recarregar} onCancel={() => setModal({ tipo: 'fechado' })} />}
@@ -147,7 +164,7 @@ function ServForm({ prestacaoId, item, onSuccess, onCancel }: { prestacaoId: str
   }
 
   return (
-    <form onSubmit={submeter} className="space-y-5">
+    <form onSubmit={submeter} onKeyDown={enterComoTab} className="space-y-5">
       {erro && <AlertaErro msg={erro} />}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input label="CPF *" name="cpf" value={mascaraCpfCnpj(cpf)} onChange={(e) => setCpf(e.target.value)} inputMode="numeric" />

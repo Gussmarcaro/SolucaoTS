@@ -3,6 +3,8 @@ import { AlertCircle, Loader2, Pencil, Plus, Target, Trash2 } from 'lucide-react
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
+import { enterComoTab } from '@/lib/enterComoTab';
+import { capitalizarNome } from '@/lib/nomeProprio';
 import { Badge } from '@/components/ui/Badge';
 import { extrairCodigoErro, extrairMensagemErro } from '@/services/http';
 import {
@@ -215,9 +217,9 @@ function ProgramaForm({
   }
 
   return (
-    <form onSubmit={submeter} className="space-y-4">
+    <form onSubmit={submeter} onKeyDown={enterComoTab} className="space-y-4">
       {erro && <Alerta msg={erro} />}
-      <Input label="Nome do Programa *" name="nome" value={nome} onChange={(e) => setNome(e.target.value)} autoFocus />
+      <Input label="Nome do Programa *" name="nome" value={nome} onChange={(e) => setNome(capitalizarNome(e.target.value))} autoFocus />
       <Rodape salvando={salvando} onCancel={onCancel} />
     </form>
   );
@@ -266,7 +268,7 @@ function MetaForm({
   }
 
   return (
-    <form onSubmit={submeter} className="space-y-4">
+    <form onSubmit={submeter} onKeyDown={enterComoTab} className="space-y-4">
       {erro && <Alerta msg={erro} />}
       <Input label="Código da Meta *" name="codigoMeta" value={codigoMeta} onChange={(e) => setCodigoMeta(e.target.value)} autoFocus />
       <Input label="Descrição" name="descricao" value={descricao} onChange={(e) => setDescricao(e.target.value)} />

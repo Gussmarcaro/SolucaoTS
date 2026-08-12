@@ -3,6 +3,9 @@ import { Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
+import { GradeSimples } from '@/components/ui/GradeSimples';
+import type { ColunaDef } from '@/hooks/useResizableColumns';
+import { enterComoTab } from '@/lib/enterComoTab';
 import { SelectDominio } from '@/components/ui/SelectDominio';
 import { BANCO, CONTA_TIPO, rotulo } from '@/lib/dominiosFaseV';
 import { apenasDigitos, formatarMoeda, mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
@@ -13,6 +16,15 @@ import { ConfirmarExclusao } from '@/pages/Ajustes/tabs/TermosAditivosTab';
 import { AlertaErro, IconBtn } from './_ui';
 
 type ModalState = { tipo: 'fechado' } | { tipo: 'form'; item: Disponibilidade | null } | { tipo: 'excluir'; item: Disponibilidade };
+
+/** Ações sempre primeiro, como nas grades dos cadastros. */
+const COLUNAS: ColunaDef[] = [
+  { key: 'acoes', label: 'Ações', width: 100, minWidth: 90, align: 'center', movivel: false },
+  { key: 'banco', label: 'Banco / Agência', width: 180, sortKey: 'banco' },
+  { key: 'conta', label: 'Conta', width: 200, sortKey: 'conta' },
+  { key: 'saldoBancario', label: 'Saldo bancário', width: 170, align: 'right', sortKey: 'saldoBancario' },
+  { key: 'saldoContabil', label: 'Saldo contábil', width: 170, align: 'right', sortKey: 'saldoContabil' },
+];
 
 export function DisponibilidadesTab({ prestacaoId }: { prestacaoId: string }) {
   const [lista, setLista] = useState<Disponibilidade[]>([]);
@@ -43,43 +55,49 @@ export function DisponibilidadesTab({ prestacaoId }: { prestacaoId: string }) {
 
       <FundoFixo prestacaoId={prestacaoId} />
 
-      <div className="overflow-x-auto rounded-xl border border-ink-200/70 dark:border-ink-800/70">
-        <table className="w-full min-w-[560px] text-left text-[13px]">
-          <thead>
-            <tr className="border-b border-ink-100 text-xs font-semibold text-ink-500 dark:border-ink-800 dark:text-ink-400">
-              <th className="px-4 py-2">Banco / Agência</th>
-              <th className="px-4 py-2">Conta</th>
-              <th className="px-4 py-2 text-right">Saldo bancário</th>
-              <th className="px-4 py-2 text-right">Saldo contábil</th>
-              <th className="px-4 py-2 text-center">Ações</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
-            {carregando ? (
-              <tr><td colSpan={5} className="py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-brand-500" /></td></tr>
-            ) : erro ? (
-              <tr><td colSpan={5} className="py-10 text-center text-sm text-red-500">{erro}</td></tr>
-            ) : lista.length === 0 ? (
-              <tr><td colSpan={5} className="py-10 text-center text-sm text-ink-400">Nenhuma disponibilidade cadastrada.</td></tr>
-            ) : (
-              lista.map((i) => (
-                <tr key={i.id} className="hover:bg-ink-50/70 dark:hover:bg-ink-800/40">
-                  <td className="px-4 py-2 text-ink-700 dark:text-ink-200">{i.banco} / {i.agencia}</td>
-                  <td className="px-4 py-2 font-mono text-xs text-ink-600 dark:text-ink-300">{i.conta} <span className="text-ink-400">({rotulo(CONTA_TIPO, i.contaTipo)})</span></td>
-                  <td className="px-4 py-2 text-right tabular-nums text-ink-700 dark:text-ink-200">{formatarMoeda(i.saldoBancario)}</td>
-                  <td className="px-4 py-2 text-right tabular-nums text-ink-500 dark:text-ink-400">{formatarMoeda(i.saldoContabil)}</td>
-                  <td className="px-4 py-2">
-                    <div className="flex items-center justify-center gap-1">
-                      <IconBtn title="Editar" onClick={() => setModal({ tipo: 'form', item: i })}><Pencil className="h-4 w-4" /></IconBtn>
-                      <IconBtn title="Excluir" danger onClick={() => setModal({ tipo: 'excluir', item: i })}><Trash2 className="h-4 w-4" /></IconBtn>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <GradeSimples
+        storageKey="@SolucaoTS:grid:disponibilidades:v1"
+        colunas={COLUNAS}
+        dados={lista}
+        chave={(i) => i.id}
+        carregando={carregando}
+        erro={erro}
+        vazio="Nenhuma disponibilidade cadastrada."
+        onDuploClique={(i) => setModal({ tipo: 'form', item: i })}
+        valorOrdenacao={(campo, i) => {
+          if (campo === 'banco') return i.banco;
+          if (campo === 'conta') return i.conta;
+          if (campo === 'saldoBancario') return i.saldoBancario;
+          if (campo === 'saldoContabil') return i.saldoContabil;
+          return null;
+        }}
+        renderCell={(coluna, i) => {
+          switch (coluna) {
+            case 'acoes':
+              return (
+                <div className="flex items-center justify-center gap-1">
+                  <IconBtn title="Editar" onClick={() => setModal({ tipo: 'form', item: i })}><Pencil className="h-4 w-4" /></IconBtn>
+                  <IconBtn title="Excluir" danger onClick={() => setModal({ tipo: 'excluir', item: i })}><Trash2 className="h-4 w-4" /></IconBtn>
+                </div>
+              );
+            case 'banco':
+              return <span className="block truncate text-ink-700 dark:text-ink-200">{i.banco} / {i.agencia}</span>;
+            case 'conta':
+              return (
+                <div className="min-w-0">
+                  <p className="truncate font-mono text-xs text-ink-600 dark:text-ink-300">{i.conta}</p>
+                  <p className="truncate text-xs text-ink-400">{rotulo(CONTA_TIPO, i.contaTipo)}</p>
+                </div>
+              );
+            case 'saldoBancario':
+              return <span className="block truncate tabular-nums text-ink-700 dark:text-ink-200">{formatarMoeda(i.saldoBancario)}</span>;
+            case 'saldoContabil':
+              return <span className="block truncate tabular-nums text-ink-500 dark:text-ink-400">{formatarMoeda(i.saldoContabil)}</span>;
+            default:
+              return null;
+          }
+        }}
+      />
 
       <Modal open={modal.tipo === 'form'} onClose={() => setModal({ tipo: 'fechado' })} title={modal.tipo === 'form' && modal.item ? 'Editar Disponibilidade' : 'Nova Disponibilidade'} size="lg">
         {modal.tipo === 'form' && <DispForm prestacaoId={prestacaoId} item={modal.item} onSuccess={recarregar} onCancel={() => setModal({ tipo: 'fechado' })} />}
@@ -188,7 +206,7 @@ function DispForm({ prestacaoId, item, onSuccess, onCancel }: { prestacaoId: str
   }
 
   return (
-    <form onSubmit={submeter} className="space-y-4">
+    <form onSubmit={submeter} onKeyDown={enterComoTab} className="space-y-4">
       {erro && <AlertaErro msg={erro} />}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <SelectDominio label="Banco *" name="banco" value={apenasDigitos(banco)} onChange={setBanco} options={BANCO} />

@@ -3,6 +3,7 @@ import { CheckCircle2, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { apenasDigitos } from '@/lib/masks';
+import { enterComoTab } from '@/lib/enterComoTab';
 import { extrairMensagemErro } from '@/services/http';
 import { dadosGeraisApi, responsaveisApi } from '@/services/certidoesPrestacao.service';
 import type { TipoAjuste } from '@/types/ajuste';
@@ -83,7 +84,7 @@ function BlocoCertidoes({
   }
 
   return (
-    <form onSubmit={salvar} className="space-y-4">
+    <form onSubmit={salvar} onKeyDown={enterComoTab} className="space-y-4">
       {intro}
       {erro && <AlertaErro msg={erro} />}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

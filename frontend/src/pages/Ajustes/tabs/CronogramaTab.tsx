@@ -1,12 +1,20 @@
 import { useEffect, useState } from 'react';
-import { Loader2, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { GradeSimples } from '@/components/ui/GradeSimples';
+import type { ColunaDef } from '@/hooks/useResizableColumns';
 import { formatarMoeda, nomeMes } from '@/lib/masks';
 import { extrairMensagemErro } from '@/services/http';
 import { importarCronograma, limparCronograma, listarCronograma } from '@/services/ajusteCsv.service';
 import type { CronogramaItem } from '@/types/ajusteCsv';
 import { ImportadorCsv } from './ImportadorCsv';
 import { ConfirmarExclusao } from './TermosAditivosTab';
+
+const COLUNAS: ColunaDef[] = [
+  { key: 'ano', label: 'Ano', width: 120, sortKey: 'ano' },
+  { key: 'mes', label: 'Mês', width: 180, sortKey: 'mes' },
+  { key: 'valor', label: 'Valor', width: 180, align: 'right', sortKey: 'valor' },
+];
 
 export function CronogramaTab({ ajusteId }: { ajusteId: string }) {
   const [lista, setLista] = useState<CronogramaItem[]>([]);
@@ -50,44 +58,35 @@ export function CronogramaTab({ ajusteId }: { ajusteId: string }) {
         )}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-ink-200/70 dark:border-ink-800/70">
-        <table className="w-full text-left text-[13px]">
-          <thead>
-            <tr className="border-b border-ink-100 text-xs font-semibold text-ink-500 dark:border-ink-800 dark:text-ink-400">
-              <th className="px-4 py-2">Ano</th>
-              <th className="px-4 py-2">Mês</th>
-              <th className="px-4 py-2 text-right">Valor</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
-            {carregando ? (
-              <tr>
-                <td colSpan={3} className="py-10 text-center">
-                  <Loader2 className="mx-auto h-5 w-5 animate-spin text-brand-500" />
-                </td>
-              </tr>
-            ) : erro ? (
-              <tr>
-                <td colSpan={3} className="py-10 text-center text-sm text-red-500">{erro}</td>
-              </tr>
-            ) : lista.length === 0 ? (
-              <tr>
-                <td colSpan={3} className="py-10 text-center text-sm text-ink-400">
-                  Importe um CSV para preencher o cronograma de desembolso.
-                </td>
-              </tr>
-            ) : (
-              lista.map((i) => (
-                <tr key={i.id} className="hover:bg-ink-50/70 dark:hover:bg-ink-800/40">
-                  <td className="px-4 py-2 text-ink-600 dark:text-ink-300">{i.ano}</td>
-                  <td className="px-4 py-2 text-ink-700 dark:text-ink-200">{nomeMes(i.mes)}</td>
-                  <td className="px-4 py-2 text-right tabular-nums text-ink-700 dark:text-ink-200">{formatarMoeda(i.valor)}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      {/* Sem coluna de Ações: o conteúdo vem do CSV e não é editado linha a
+          linha — a única ação é "Limpar tudo", no topo. */}
+      <GradeSimples
+        storageKey="@SolucaoTS:grid:cronograma:v1"
+        colunas={COLUNAS}
+        dados={lista}
+        chave={(i) => i.id}
+        carregando={carregando}
+        erro={erro}
+        vazio="Importe um CSV para preencher o cronograma de desembolso."
+        valorOrdenacao={(campo, i) => {
+          if (campo === 'ano') return i.ano;
+          if (campo === 'mes') return i.ano * 100 + i.mes;
+          if (campo === 'valor') return i.valor;
+          return null;
+        }}
+        renderCell={(coluna, i) => {
+          switch (coluna) {
+            case 'ano':
+              return <span className="block truncate text-ink-600 dark:text-ink-300">{i.ano}</span>;
+            case 'mes':
+              return <span className="block truncate text-ink-700 dark:text-ink-200">{nomeMes(i.mes)}</span>;
+            case 'valor':
+              return <span className="block truncate tabular-nums text-ink-700 dark:text-ink-200">{formatarMoeda(i.valor)}</span>;
+            default:
+              return null;
+          }
+        }}
+      />
 
       <ConfirmarExclusao
         aberto={confirmarLimpar}

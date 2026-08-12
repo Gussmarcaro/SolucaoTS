@@ -4,6 +4,9 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
+import { GradeSimples } from '@/components/ui/GradeSimples';
+import type { ColunaDef } from '@/hooks/useResizableColumns';
+import { enterComoTab } from '@/lib/enterComoTab';
 import { Badge } from '@/components/ui/Badge';
 import { dataBr, formatarMoeda, mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
 import { RESULTADO_ANALISE, RESULTADO_ANALISE_LABEL } from '@/lib/dominios';
@@ -17,6 +20,14 @@ import { AlertaErro, IconBtn } from './_ui';
 
 const FOLHA = 'folha';
 type ModalState = { tipo: 'fechado' } | { tipo: 'form'; item: Glosa | null } | { tipo: 'excluir'; item: Glosa };
+
+/** Ações sempre primeiro, como nas grades dos cadastros. */
+const COLUNAS: ColunaDef[] = [
+  { key: 'acoes', label: 'Ações', width: 100, minWidth: 90, align: 'center', movivel: false },
+  { key: 'vinculo', label: 'Vínculo', width: 220, sortKey: 'vinculo' },
+  { key: 'resultado', label: 'Resultado', width: 200, sortKey: 'resultado' },
+  { key: 'valor', label: 'Valor glosado', width: 170, align: 'right', sortKey: 'valorGlosa' },
+];
 
 export function GlosasTab({ prestacaoId }: { prestacaoId: string }) {
   const [lista, setLista] = useState<Glosa[]>([]);
@@ -54,47 +65,53 @@ export function GlosasTab({ prestacaoId }: { prestacaoId: string }) {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-ink-200/70 dark:border-ink-800/70">
-        <table className="w-full text-left text-[13px]">
-          <thead>
-            <tr className="border-b border-ink-100 text-xs font-semibold text-ink-500 dark:border-ink-800 dark:text-ink-400">
-              <th className="px-4 py-2">Vínculo</th>
-              <th className="px-4 py-2">Resultado</th>
-              <th className="px-4 py-2 text-right">Valor glosado</th>
-              <th className="px-4 py-2 text-center">Ações</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
-            {carregando ? (
-              <tr><td colSpan={4} className="py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-brand-500" /></td></tr>
-            ) : erro ? (
-              <tr><td colSpan={4} className="py-10 text-center text-sm text-red-500">{erro}</td></tr>
-            ) : lista.length === 0 ? (
-              <tr><td colSpan={4} className="py-10 text-center text-sm text-ink-400">Nenhuma análise cadastrada.</td></tr>
-            ) : (
-              lista.map((g) => (
-                <tr key={g.id} className="hover:bg-ink-50/70 dark:hover:bg-ink-800/40">
-                  <td className="px-4 py-2 text-ink-700 dark:text-ink-200">
-                    {g.documentoNumero ? <span className="font-mono text-xs">Doc. nº {g.documentoNumero}</span> : <Badge tone="warning">Folha {g.pagamentoData ? dataBr(g.pagamentoData) : ''}</Badge>}
-                  </td>
-                  <td className="px-4 py-2">
-                    <Badge tone={g.resultadoAnalise === 'APROVADO' ? 'success' : g.resultadoAnalise === 'REPROVADO' ? 'danger' : 'warning'}>
-                      {RESULTADO_ANALISE_LABEL[g.resultadoAnalise]}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-2 text-right tabular-nums text-ink-700 dark:text-ink-200">{g.valorGlosa != null ? formatarMoeda(g.valorGlosa) : '—'}</td>
-                  <td className="px-4 py-2">
-                    <div className="flex items-center justify-center gap-1">
-                      <IconBtn title="Editar" onClick={() => setModal({ tipo: 'form', item: g })}><Pencil className="h-4 w-4" /></IconBtn>
-                      <IconBtn title="Excluir" danger onClick={() => setModal({ tipo: 'excluir', item: g })}><Trash2 className="h-4 w-4" /></IconBtn>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <GradeSimples
+        storageKey="@SolucaoTS:grid:glosas:v1"
+        colunas={COLUNAS}
+        dados={lista}
+        chave={(g) => g.id}
+        carregando={carregando}
+        erro={erro}
+        vazio="Nenhuma análise cadastrada."
+        onDuploClique={(g) => setModal({ tipo: 'form', item: g })}
+        valorOrdenacao={(campo, g) => {
+          if (campo === 'vinculo') return g.documentoNumero ?? g.pagamentoData;
+          if (campo === 'resultado') return RESULTADO_ANALISE_LABEL[g.resultadoAnalise];
+          if (campo === 'valorGlosa') return g.valorGlosa;
+          return null;
+        }}
+        renderCell={(coluna, g) => {
+          switch (coluna) {
+            case 'acoes':
+              return (
+                <div className="flex items-center justify-center gap-1">
+                  <IconBtn title="Editar" onClick={() => setModal({ tipo: 'form', item: g })}><Pencil className="h-4 w-4" /></IconBtn>
+                  <IconBtn title="Excluir" danger onClick={() => setModal({ tipo: 'excluir', item: g })}><Trash2 className="h-4 w-4" /></IconBtn>
+                </div>
+              );
+            case 'vinculo':
+              return g.documentoNumero ? (
+                <span className="block truncate font-mono text-xs text-ink-700 dark:text-ink-200">Doc. nº {g.documentoNumero}</span>
+              ) : (
+                <Badge tone="warning">Folha {g.pagamentoData ? dataBr(g.pagamentoData) : ''}</Badge>
+              );
+            case 'resultado':
+              return (
+                <Badge tone={g.resultadoAnalise === 'APROVADO' ? 'success' : g.resultadoAnalise === 'REPROVADO' ? 'danger' : 'warning'}>
+                  {RESULTADO_ANALISE_LABEL[g.resultadoAnalise]}
+                </Badge>
+              );
+            case 'valor':
+              return (
+                <span className="block truncate tabular-nums text-ink-700 dark:text-ink-200">
+                  {g.valorGlosa != null ? formatarMoeda(g.valorGlosa) : '—'}
+                </span>
+              );
+            default:
+              return null;
+          }
+        }}
+      />
 
       <Modal open={modal.tipo === 'form'} onClose={() => setModal({ tipo: 'fechado' })} title={modal.tipo === 'form' && modal.item ? 'Editar Análise' : 'Nova Análise de Glosa'} size="lg">
         {modal.tipo === 'form' && <GlosaForm prestacaoId={prestacaoId} item={modal.item} docs={docs} onSuccess={recarregar} onCancel={() => setModal({ tipo: 'fechado' })} />}
@@ -147,7 +164,7 @@ function GlosaForm({ prestacaoId, item, docs, onSuccess, onCancel }: { prestacao
   ];
 
   return (
-    <form onSubmit={submeter} className="space-y-4">
+    <form onSubmit={submeter} onKeyDown={enterComoTab} className="space-y-4">
       {erro && <AlertaErro msg={erro} />}
       <Select label="Vínculo *" name="vinculo" value={vinculo} onChange={(e) => setVinculo(e.target.value)} options={opcoes} />
       {vinculo === FOLHA && <Input label="Data do Pagamento (folha) *" name="pagamentoData" type="date" value={pagamentoData} onChange={(e) => setPagamentoData(e.target.value)} />}

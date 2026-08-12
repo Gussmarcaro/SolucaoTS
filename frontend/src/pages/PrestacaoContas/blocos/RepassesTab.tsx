@@ -4,6 +4,9 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
+import { GradeSimples } from '@/components/ui/GradeSimples';
+import type { ColunaDef } from '@/hooks/useResizableColumns';
+import { enterComoTab } from '@/lib/enterComoTab';
 import { Badge } from '@/components/ui/Badge';
 import { SelectDominio } from '@/components/ui/SelectDominio';
 import { BANCO, TIPO_DOCUMENTO_BANCARIO, TIPO_DOCUMENTO_BANCARIO_OUTROS } from '@/lib/dominiosFaseV';
@@ -16,6 +19,15 @@ import { AlertaErro, IconBtn } from './_ui';
 
 const SEM = 'nenhum';
 type ModalState = { tipo: 'fechado' } | { tipo: 'form'; item: Repasse | null } | { tipo: 'excluir'; item: Repasse };
+
+/** Ações sempre primeiro, como nas grades dos cadastros. */
+const COLUNAS: ColunaDef[] = [
+  { key: 'acoes', label: 'Ações', width: 100, minWidth: 90, align: 'center', movivel: false },
+  { key: 'empenho', label: 'Empenho', width: 180, sortKey: 'empenhoNumero' },
+  { key: 'repasse', label: 'Repasse', width: 140, sortKey: 'dataRepasse' },
+  { key: 'previsto', label: 'Previsto', width: 170, align: 'right', sortKey: 'valorPrevisto' },
+  { key: 'repassado', label: 'Repassado', width: 170, align: 'right', sortKey: 'valorRepasse' },
+];
 
 export function RepassesTab({ prestacaoId }: { prestacaoId: string }) {
   const [lista, setLista] = useState<Repasse[]>([]);
@@ -47,45 +59,48 @@ export function RepassesTab({ prestacaoId }: { prestacaoId: string }) {
         <Button size="sm" onClick={() => setModal({ tipo: 'form', item: null })}><Plus className="h-4 w-4" />Adicionar</Button>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-ink-200/70 dark:border-ink-800/70">
-        <table className="w-full min-w-[600px] text-left text-[13px]">
-          <thead>
-            <tr className="border-b border-ink-100 text-xs font-semibold text-ink-500 dark:border-ink-800 dark:text-ink-400">
-              <th className="px-4 py-2">Empenho</th>
-              <th className="px-4 py-2">Repasse</th>
-              <th className="px-4 py-2 text-right">Previsto</th>
-              <th className="px-4 py-2 text-right">Repassado</th>
-              <th className="px-4 py-2 text-center">Ações</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
-            {carregando ? (
-              <tr><td colSpan={5} className="py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-brand-500" /></td></tr>
-            ) : erro ? (
-              <tr><td colSpan={5} className="py-10 text-center text-sm text-red-500">{erro}</td></tr>
-            ) : lista.length === 0 ? (
-              <tr><td colSpan={5} className="py-10 text-center text-sm text-ink-400">Nenhum repasse cadastrado.</td></tr>
-            ) : (
-              lista.map((i) => (
-                <tr key={i.id} className="hover:bg-ink-50/70 dark:hover:bg-ink-800/40">
-                  <td className="px-4 py-2 text-ink-700 dark:text-ink-200">
-                    {i.empenhoNumero ? <span className="font-mono text-xs">Nº {i.empenhoNumero}</span> : <Badge tone="neutral">sem vínculo</Badge>}
-                  </td>
-                  <td className="px-4 py-2 text-ink-600 dark:text-ink-300">{dataBr(i.dataRepasse)}</td>
-                  <td className="px-4 py-2 text-right tabular-nums text-ink-500 dark:text-ink-400">{formatarMoeda(i.valorPrevisto)}</td>
-                  <td className="px-4 py-2 text-right tabular-nums text-ink-700 dark:text-ink-200">{formatarMoeda(i.valorRepasse)}</td>
-                  <td className="px-4 py-2">
-                    <div className="flex items-center justify-center gap-1">
-                      <IconBtn title="Editar" onClick={() => setModal({ tipo: 'form', item: i })}><Pencil className="h-4 w-4" /></IconBtn>
-                      <IconBtn title="Excluir" danger onClick={() => setModal({ tipo: 'excluir', item: i })}><Trash2 className="h-4 w-4" /></IconBtn>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <GradeSimples
+        storageKey="@SolucaoTS:grid:repasses:v1"
+        colunas={COLUNAS}
+        dados={lista}
+        chave={(i) => i.id}
+        carregando={carregando}
+        erro={erro}
+        vazio="Nenhum repasse cadastrado."
+        onDuploClique={(i) => setModal({ tipo: 'form', item: i })}
+        valorOrdenacao={(campo, i) => {
+          if (campo === 'empenhoNumero') return i.empenhoNumero;
+          if (campo === 'dataRepasse') return i.dataRepasse;
+          if (campo === 'valorPrevisto') return i.valorPrevisto;
+          if (campo === 'valorRepasse') return i.valorRepasse;
+          return null;
+        }}
+        renderCell={(coluna, i) => {
+          switch (coluna) {
+            case 'acoes':
+              return (
+                <div className="flex items-center justify-center gap-1">
+                  <IconBtn title="Editar" onClick={() => setModal({ tipo: 'form', item: i })}><Pencil className="h-4 w-4" /></IconBtn>
+                  <IconBtn title="Excluir" danger onClick={() => setModal({ tipo: 'excluir', item: i })}><Trash2 className="h-4 w-4" /></IconBtn>
+                </div>
+              );
+            case 'empenho':
+              return i.empenhoNumero ? (
+                <span className="block truncate font-mono text-xs text-ink-700 dark:text-ink-200">Nº {i.empenhoNumero}</span>
+              ) : (
+                <Badge tone="neutral">sem vínculo</Badge>
+              );
+            case 'repasse':
+              return <span className="block truncate text-ink-600 dark:text-ink-300">{dataBr(i.dataRepasse)}</span>;
+            case 'previsto':
+              return <span className="block truncate tabular-nums text-ink-500 dark:text-ink-400">{formatarMoeda(i.valorPrevisto)}</span>;
+            case 'repassado':
+              return <span className="block truncate tabular-nums text-ink-700 dark:text-ink-200">{formatarMoeda(i.valorRepasse)}</span>;
+            default:
+              return null;
+          }
+        }}
+      />
 
       <Modal open={modal.tipo === 'form'} onClose={() => setModal({ tipo: 'fechado' })} title={modal.tipo === 'form' && modal.item ? 'Editar Repasse' : 'Novo Repasse'} size="lg">
         {modal.tipo === 'form' && <RepasseForm prestacaoId={prestacaoId} item={modal.item} empenhos={empenhos} onSuccess={recarregar} onCancel={() => setModal({ tipo: 'fechado' })} />}
@@ -164,7 +179,7 @@ function RepasseForm({ prestacaoId, item, empenhos, onSuccess, onCancel }: { pre
   ];
 
   return (
-    <form onSubmit={submeter} className="space-y-4">
+    <form onSubmit={submeter} onKeyDown={enterComoTab} className="space-y-4">
       {erro && <AlertaErro msg={erro} />}
       <Select label="Empenho" name="empenhoId" value={empenhoId} onChange={(e) => setEmpenhoId(e.target.value)} options={opcoesEmpenho} />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

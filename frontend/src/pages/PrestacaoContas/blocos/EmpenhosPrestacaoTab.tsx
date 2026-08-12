@@ -3,6 +3,9 @@ import { Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
+import { GradeSimples } from '@/components/ui/GradeSimples';
+import type { ColunaDef } from '@/hooks/useResizableColumns';
+import { enterComoTab } from '@/lib/enterComoTab';
 import { BuscaClassificacao } from '@/components/ui/BuscaClassificacao';
 import { SelectDominio } from '@/components/ui/SelectDominio';
 import { FONTE_RECURSO } from '@/lib/dominiosFaseV';
@@ -15,6 +18,15 @@ import { ConfirmarExclusao } from '@/pages/Ajustes/tabs/TermosAditivosTab';
 import { AlertaErro, IconBtn } from './_ui';
 
 type ModalState = { tipo: 'fechado' } | { tipo: 'form'; item: EmpenhoPrestacao | null } | { tipo: 'excluir'; item: EmpenhoPrestacao };
+
+/** Ações sempre primeiro, como nas grades dos cadastros. */
+const COLUNAS: ColunaDef[] = [
+  { key: 'acoes', label: 'Ações', width: 100, minWidth: 90, align: 'center', movivel: false },
+  { key: 'numero', label: 'Número', width: 170, sortKey: 'numero' },
+  { key: 'emissao', label: 'Emissão', width: 140, sortKey: 'dataEmissao' },
+  { key: 'classificacao', label: 'Classif. econômica', width: 200, sortKey: 'classificacaoEconomica' },
+  { key: 'valor', label: 'Valor', width: 170, align: 'right', sortKey: 'valor' },
+];
 
 export function EmpenhosPrestacaoTab({ prestacaoId }: { prestacaoId: string }) {
   const [lista, setLista] = useState<EmpenhoPrestacao[]>([]);
@@ -46,43 +58,44 @@ export function EmpenhosPrestacaoTab({ prestacaoId }: { prestacaoId: string }) {
         <Button size="sm" onClick={() => setModal({ tipo: 'form', item: null })}><Plus className="h-4 w-4" />Adicionar</Button>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-ink-200/70 dark:border-ink-800/70">
-        <table className="w-full min-w-[640px] text-left text-[13px]">
-          <thead>
-            <tr className="border-b border-ink-100 text-xs font-semibold text-ink-500 dark:border-ink-800 dark:text-ink-400">
-              <th className="px-4 py-2">Número</th>
-              <th className="px-4 py-2">Emissão</th>
-              <th className="px-4 py-2">Classif. econômica</th>
-              <th className="px-4 py-2 text-right">Valor</th>
-              <th className="px-4 py-2 text-center">Ações</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
-            {carregando ? (
-              <tr><td colSpan={5} className="py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-brand-500" /></td></tr>
-            ) : erro ? (
-              <tr><td colSpan={5} className="py-10 text-center text-sm text-red-500">{erro}</td></tr>
-            ) : lista.length === 0 ? (
-              <tr><td colSpan={5} className="py-10 text-center text-sm text-ink-400">Nenhum empenho cadastrado.</td></tr>
-            ) : (
-              lista.map((i) => (
-                <tr key={i.id} className="hover:bg-ink-50/70 dark:hover:bg-ink-800/40">
-                  <td className="px-4 py-2 font-mono text-xs text-ink-800 dark:text-ink-100">{i.numero}</td>
-                  <td className="px-4 py-2 text-ink-600 dark:text-ink-300">{dataBr(i.dataEmissao)}</td>
-                  <td className="px-4 py-2 text-ink-600 dark:text-ink-300">{i.classificacaoEconomica}</td>
-                  <td className="px-4 py-2 text-right tabular-nums text-ink-700 dark:text-ink-200">{formatarMoeda(i.valor)}</td>
-                  <td className="px-4 py-2">
-                    <div className="flex items-center justify-center gap-1">
-                      <IconBtn title="Editar" onClick={() => setModal({ tipo: 'form', item: i })}><Pencil className="h-4 w-4" /></IconBtn>
-                      <IconBtn title="Excluir" danger onClick={() => setModal({ tipo: 'excluir', item: i })}><Trash2 className="h-4 w-4" /></IconBtn>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <GradeSimples
+        storageKey="@SolucaoTS:grid:empenhosPrestacao:v1"
+        colunas={COLUNAS}
+        dados={lista}
+        chave={(i) => i.id}
+        carregando={carregando}
+        erro={erro}
+        vazio="Nenhum empenho cadastrado."
+        onDuploClique={(i) => setModal({ tipo: 'form', item: i })}
+        valorOrdenacao={(campo, i) => {
+          if (campo === 'numero') return i.numero;
+          if (campo === 'dataEmissao') return i.dataEmissao;
+          if (campo === 'classificacaoEconomica') return i.classificacaoEconomica;
+          if (campo === 'valor') return i.valor;
+          return null;
+        }}
+        renderCell={(coluna, i) => {
+          switch (coluna) {
+            case 'acoes':
+              return (
+                <div className="flex items-center justify-center gap-1">
+                  <IconBtn title="Editar" onClick={() => setModal({ tipo: 'form', item: i })}><Pencil className="h-4 w-4" /></IconBtn>
+                  <IconBtn title="Excluir" danger onClick={() => setModal({ tipo: 'excluir', item: i })}><Trash2 className="h-4 w-4" /></IconBtn>
+                </div>
+              );
+            case 'numero':
+              return <span className="block truncate font-mono text-xs text-ink-800 dark:text-ink-100">{i.numero}</span>;
+            case 'emissao':
+              return <span className="block truncate text-ink-600 dark:text-ink-300">{dataBr(i.dataEmissao)}</span>;
+            case 'classificacao':
+              return <span className="block truncate text-ink-600 dark:text-ink-300">{i.classificacaoEconomica}</span>;
+            case 'valor':
+              return <span className="block truncate tabular-nums text-ink-700 dark:text-ink-200">{formatarMoeda(i.valor)}</span>;
+            default:
+              return null;
+          }
+        }}
+      />
 
       <Modal open={modal.tipo === 'form'} onClose={() => setModal({ tipo: 'fechado' })} title={modal.tipo === 'form' && modal.item ? 'Editar Empenho' : 'Novo Empenho'} size="lg">
         {modal.tipo === 'form' && <EmpenhoForm prestacaoId={prestacaoId} item={modal.item} onSuccess={recarregar} onCancel={() => setModal({ tipo: 'fechado' })} />}
@@ -145,7 +158,7 @@ function EmpenhoForm({ prestacaoId, item, onSuccess, onCancel }: { prestacaoId: 
   }
 
   return (
-    <form onSubmit={submeter} className="space-y-4">
+    <form onSubmit={submeter} onKeyDown={enterComoTab} className="space-y-4">
       {erro && <AlertaErro msg={erro} />}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input label="Número *" name="numero" value={numero} onChange={(e) => setNumero(e.target.value)} />

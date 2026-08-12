@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, ChevronLeft, ChevronRight, Loader2, Plus, Search, ServerCrash } from 'lucide-react';
+import { AlertCircle, ChevronLeft, ChevronRight, FolderOpen, Loader2, Plus, Search } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Select } from '@/components/ui/Select';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
+import { GradeSimples } from '@/components/ui/GradeSimples';
+import { IconBtn } from '@/pages/PrestacaoContas/blocos/_ui';
+import type { ColunaDef } from '@/hooks/useResizableColumns';
+import { enterComoTab } from '@/lib/enterComoTab';
 import { useDebounce } from '@/hooks/useDebounce';
 import { criarPrestacao, listarPrestacoes } from '@/services/prestacoes.service';
 import { listarAjustes } from '@/services/ajustes.service';
@@ -22,6 +26,16 @@ import { TIPO_AJUSTE_LABEL } from '@/types/ajuste';
 
 const PAGE_SIZE = 10;
 const vazio: Paginado<Prestacao> = { data: [], total: 0, page: 1, pageSize: PAGE_SIZE, totalPages: 1 };
+
+/** Ações sempre primeiro, como nas grades dos cadastros. */
+const COLUNAS: ColunaDef[] = [
+  { key: 'acoes', label: 'Ações', width: 90, minWidth: 80, align: 'center', movivel: false },
+  { key: 'ajuste', label: 'Ajuste', width: 220, sortKey: 'ajusteCodigo' },
+  { key: 'entidade', label: 'Entidade', width: 260, sortKey: 'entidadeNome' },
+  { key: 'exercicio', label: 'Exercício', width: 190, sortKey: 'ano' },
+  { key: 'protocolo', label: 'Protocolo', width: 170, sortKey: 'protocolo' },
+  { key: 'status', label: 'Status', width: 150, sortKey: 'status' },
+];
 
 export function PrestacaoContas() {
   const navigate = useNavigate();
@@ -96,45 +110,56 @@ export function PrestacaoContas() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] text-left text-[13px]">
-            <thead>
-              <tr className="border-b border-ink-100 text-xs font-semibold text-ink-500 dark:border-ink-800 dark:text-ink-400">
-                <th className="px-4 py-2">Ajuste</th>
-                <th className="px-4 py-2">Entidade</th>
-                <th className="px-4 py-2">Exercício</th>
-                <th className="px-4 py-2">Protocolo</th>
-                <th className="px-4 py-2">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
-              {carregando ? (
-                <tr><td colSpan={5} className="py-16 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin text-brand-500" /></td></tr>
-              ) : erro ? (
-                <tr><td colSpan={5} className="py-16 text-center"><ServerCrash className="mx-auto h-8 w-8 text-red-400" /><p className="mt-2 text-sm font-medium text-ink-600 dark:text-ink-300">{erro}</p></td></tr>
-              ) : data.length === 0 ? (
-                <tr><td colSpan={5} className="py-16 text-center"><p className="text-sm text-ink-500 dark:text-ink-400">Nenhuma prestação. Crie a primeira.</p></td></tr>
-              ) : (
-                data.map((p) => (
-                  <tr
-                    key={p.id}
-                    onClick={() => navigate(`/prestacao-contas/${p.id}`)}
-                    className="cursor-pointer transition-colors hover:bg-ink-50/70 dark:hover:bg-ink-800/40"
-                  >
-                    <td className="px-4 py-2.5">
-                      <p className="font-mono text-xs text-ink-700 dark:text-ink-200">{p.ajusteCodigo}</p>
-                      <p className="text-xs text-ink-400">{TIPO_AJUSTE_LABEL[p.ajusteTipo] ?? p.tipoDocumento}</p>
-                    </td>
-                    <td className="px-4 py-2.5 text-ink-600 dark:text-ink-300">{p.entidadeNome}</td>
-                    <td className="px-4 py-2.5 text-ink-500 dark:text-ink-400">{p.ano} / mês {p.mes}{p.ehRetificacao && <Badge tone="neutral">retificação</Badge>}</td>
-                    <td className="px-4 py-2.5 font-mono text-xs text-ink-500 dark:text-ink-400">{p.protocolo ?? '—'}</td>
-                    <td className="px-4 py-2.5"><Badge tone={STATUS_PRESTACAO_TONE[p.status]}>{STATUS_PRESTACAO_LABEL[p.status]}</Badge></td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <GradeSimples
+          storageKey="@SolucaoTS:grid:prestacoes:v1"
+          colunas={COLUNAS}
+          dados={data}
+          chave={(p) => p.id}
+          carregando={carregando}
+          erro={erro}
+          vazio="Nenhuma prestação. Crie a primeira."
+          onDuploClique={(p) => navigate(`/prestacao-contas/${p.id}`)}
+          valorOrdenacao={(campo, p) => {
+            if (campo === 'ajusteCodigo') return p.ajusteCodigo;
+            if (campo === 'entidadeNome') return p.entidadeNome;
+            if (campo === 'ano') return p.ano;
+            if (campo === 'protocolo') return p.protocolo;
+            if (campo === 'status') return STATUS_PRESTACAO_LABEL[p.status];
+            return null;
+          }}
+          renderCell={(coluna, p) => {
+            switch (coluna) {
+              case 'acoes':
+                return (
+                  <IconBtn title="Abrir prestação" onClick={() => navigate(`/prestacao-contas/${p.id}`)}>
+                    <FolderOpen className="h-4 w-4" />
+                  </IconBtn>
+                );
+              case 'ajuste':
+                return (
+                  <div className="min-w-0">
+                    <p className="truncate font-mono text-xs text-ink-700 dark:text-ink-200">{p.ajusteCodigo}</p>
+                    <p className="truncate text-xs text-ink-400">{TIPO_AJUSTE_LABEL[p.ajusteTipo] ?? p.tipoDocumento}</p>
+                  </div>
+                );
+              case 'entidade':
+                return <span className="block truncate text-ink-600 dark:text-ink-300" title={p.entidadeNome}>{p.entidadeNome}</span>;
+              case 'exercicio':
+                return (
+                  <span className="flex min-w-0 items-center gap-1 text-ink-500 dark:text-ink-400">
+                    <span className="truncate">{p.ano} / mês {p.mes}</span>
+                    {p.ehRetificacao && <Badge tone="neutral">retificação</Badge>}
+                  </span>
+                );
+              case 'protocolo':
+                return <span className="block truncate font-mono text-xs text-ink-500 dark:text-ink-400">{p.protocolo ?? '—'}</span>;
+              case 'status':
+                return <Badge tone={STATUS_PRESTACAO_TONE[p.status]}>{STATUS_PRESTACAO_LABEL[p.status]}</Badge>;
+              default:
+                return null;
+            }
+          }}
+        />
 
         <div className="flex flex-col items-center justify-between gap-3 border-t border-ink-100 px-4 py-3 text-xs text-ink-400 dark:border-ink-800 sm:flex-row">
           <span>{total > 0 ? `${total} prestação(ões)` : 'Sem registros'}</span>
@@ -210,7 +235,7 @@ function NovaPrestacaoForm({ onCancel, onSuccess }: { onCancel: () => void; onSu
   }
 
   return (
-    <form onSubmit={submeter} className="space-y-4">
+    <form onSubmit={submeter} onKeyDown={enterComoTab} className="space-y-4">
       {erro && (
         <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />

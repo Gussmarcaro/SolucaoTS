@@ -1,12 +1,21 @@
 import { useEffect, useState } from 'react';
-import { Loader2, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { GradeSimples } from '@/components/ui/GradeSimples';
+import type { ColunaDef } from '@/hooks/useResizableColumns';
 import { dataBr, formatarMoeda } from '@/lib/masks';
 import { extrairMensagemErro } from '@/services/http';
 import { importarBensAjuste, limparBensAjuste, listarBensAjuste } from '@/services/ajusteCsv.service';
 import type { BemAjuste } from '@/types/ajusteCsv';
 import { ImportadorCsv } from './ImportadorCsv';
 import { ConfirmarExclusao } from './TermosAditivosTab';
+
+const COLUNAS: ColunaDef[] = [
+  { key: 'identificador', label: 'Identificador', width: 220, sortKey: 'identificador' },
+  { key: 'data', label: 'Data', width: 140, sortKey: 'data' },
+  { key: 'codigo', label: 'Código', width: 160, sortKey: 'codigo' },
+  { key: 'valor', label: 'Valor', width: 170, align: 'right', sortKey: 'valor' },
+];
 
 export function BensAjusteTab({ ajusteId }: { ajusteId: string }) {
   const [lista, setLista] = useState<BemAjuste[]>([]);
@@ -50,46 +59,38 @@ export function BensAjusteTab({ ajusteId }: { ajusteId: string }) {
         )}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-ink-200/70 dark:border-ink-800/70">
-        <table className="w-full text-left text-[13px]">
-          <thead>
-            <tr className="border-b border-ink-100 text-xs font-semibold text-ink-500 dark:border-ink-800 dark:text-ink-400">
-              <th className="px-4 py-2">Identificador</th>
-              <th className="px-4 py-2">Data</th>
-              <th className="px-4 py-2">Código</th>
-              <th className="px-4 py-2 text-right">Valor</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
-            {carregando ? (
-              <tr>
-                <td colSpan={4} className="py-10 text-center">
-                  <Loader2 className="mx-auto h-5 w-5 animate-spin text-brand-500" />
-                </td>
-              </tr>
-            ) : erro ? (
-              <tr>
-                <td colSpan={4} className="py-10 text-center text-sm text-red-500">{erro}</td>
-              </tr>
-            ) : lista.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="py-10 text-center text-sm text-ink-400">
-                  Importe um CSV para preencher os bens cedidos deste ajuste.
-                </td>
-              </tr>
-            ) : (
-              lista.map((b) => (
-                <tr key={b.id} className="hover:bg-ink-50/70 dark:hover:bg-ink-800/40">
-                  <td className="px-4 py-2 font-mono text-xs text-ink-800 dark:text-ink-100">{b.identificador}</td>
-                  <td className="px-4 py-2 text-ink-600 dark:text-ink-300">{dataBr(b.data)}</td>
-                  <td className="px-4 py-2 text-ink-600 dark:text-ink-300">{b.codigo}</td>
-                  <td className="px-4 py-2 text-right tabular-nums text-ink-700 dark:text-ink-200">{formatarMoeda(b.valor)}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      {/* Sem coluna de Ações: o conteúdo vem do CSV e não é editado linha a
+          linha — a única ação é "Limpar tudo", no topo. */}
+      <GradeSimples
+        storageKey="@SolucaoTS:grid:bensAjuste:v1"
+        colunas={COLUNAS}
+        dados={lista}
+        chave={(b) => b.id}
+        carregando={carregando}
+        erro={erro}
+        vazio="Importe um CSV para preencher os bens cedidos deste ajuste."
+        valorOrdenacao={(campo, b) => {
+          if (campo === 'identificador') return b.identificador;
+          if (campo === 'data') return b.data;
+          if (campo === 'codigo') return b.codigo;
+          if (campo === 'valor') return b.valor;
+          return null;
+        }}
+        renderCell={(coluna, b) => {
+          switch (coluna) {
+            case 'identificador':
+              return <span className="block truncate font-mono text-xs text-ink-800 dark:text-ink-100">{b.identificador}</span>;
+            case 'data':
+              return <span className="block truncate text-ink-600 dark:text-ink-300">{dataBr(b.data)}</span>;
+            case 'codigo':
+              return <span className="block truncate text-ink-600 dark:text-ink-300">{b.codigo}</span>;
+            case 'valor':
+              return <span className="block truncate tabular-nums text-ink-700 dark:text-ink-200">{formatarMoeda(b.valor)}</span>;
+            default:
+              return null;
+          }
+        }}
+      />
 
       <ConfirmarExclusao
         aberto={confirmarLimpar}
