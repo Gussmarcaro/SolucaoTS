@@ -47,9 +47,13 @@ export function SlideButton({
             checked ? 'bg-brand-500' : 'bg-ink-300 dark:bg-ink-700',
           )}
         >
+          {/* `left-0` é obrigatório: sem uma âncora horizontal, o elemento
+              absoluto cai na "posição estática", que num <button> é o centro
+              (o navegador aplica text-align: center). O deslocamento saía do
+              meio da trilha e a bolinha vazava para fora, por cima do texto. */}
           <span
             className={cn(
-              'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform',
+              'pointer-events-none absolute left-0 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform',
               checked ? 'translate-x-[1.375rem]' : 'translate-x-0.5',
             )}
           />
