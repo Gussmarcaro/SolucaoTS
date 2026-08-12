@@ -440,7 +440,7 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
           />
 
           {/* Previsão por fontes de recursos */}
-          <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 dark:border-ink-700 sm:col-span-2">
+          <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700 sm:col-span-2">
             <legend className="px-1 text-sm font-medium text-ink-700 dark:text-ink-200">Previsão por Fontes de Recursos</legend>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <Input label="Federal (R$)" name="previsaoFederal" value={form.previsaoFederal} onChange={(e) => set('previsaoFederal', mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
@@ -450,7 +450,7 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
           </fieldset>
 
           {/* Responsável pelo Ajuste */}
-          <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 dark:border-ink-700 sm:col-span-2">
+          <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700 sm:col-span-2">
             <legend className="px-1 text-sm font-medium text-ink-700 dark:text-ink-200">Responsável pelo Ajuste</legend>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
               <div className="sm:col-span-5">
@@ -511,7 +511,7 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
           </fieldset>
 
           {/* Vigência do Responsável */}
-          <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 dark:border-ink-700 sm:col-span-2">
+          <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700 sm:col-span-2">
             <legend className="px-1 text-sm font-medium text-ink-700 dark:text-ink-200">Vigência do Responsável</legend>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Input label="Data Entrada" name="responsavelDataEntrada" type="date" value={form.responsavelDataEntrada} onChange={(e) => set('responsavelDataEntrada', e.target.value)} />
@@ -520,7 +520,7 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
           </fieldset>
 
           {/* Termo de Ciência e Notificação */}
-          <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 dark:border-ink-700 sm:col-span-2">
+          <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700 sm:col-span-2">
             <legend className="px-1 text-sm font-medium text-ink-700 dark:text-ink-200">Termo de Ciência e Notificação</legend>
             <span className="mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-300">Anexar arquivo PDF</span>
             {anexado && !arquivo ? (
@@ -549,7 +549,7 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
           </fieldset>
 
           {/* Publicação do ajuste */}
-          <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 dark:border-ink-700 sm:col-span-2">
+          <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700 sm:col-span-2">
             <legend className="px-1 text-sm font-medium text-ink-700 dark:text-ink-200">Publicação do Ajuste</legend>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
               <div className="sm:col-span-4">

@@ -32,7 +32,9 @@ export function SlideButton({
   return (
     <div className="w-full">
       {label && <LabelCampo texto={label} anotacao={anotacao} preenchido={checked} />}
-      <div className="flex items-center gap-2.5">
+      {/* `py-1` dá folga vertical: dentro de um fieldset o botão é o primeiro
+          elemento e encostaria na legenda. */}
+      <div className="flex items-center gap-3 py-1">
         <button
           type="button"
           role="switch"
@@ -52,7 +54,7 @@ export function SlideButton({
             )}
           />
         </button>
-        <span className="text-sm text-ink-700 dark:text-ink-200">
+        <span className="shrink-0 select-none text-sm text-ink-700 dark:text-ink-200">
           {checked ? rotulos.sim : rotulos.nao}
         </span>
       </div>

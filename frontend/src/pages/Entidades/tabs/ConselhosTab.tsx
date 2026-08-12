@@ -317,7 +317,7 @@ function MembroForm({
 
         <PainelVigencia valores={pessoa} erros={erros} set={set} />
 
-        <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 dark:border-ink-700">
+        <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700">
           <legend className="px-1 text-sm font-medium text-ink-700 dark:text-ink-200">Ata de Nomeação</legend>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
             <div className="sm:col-span-3">
