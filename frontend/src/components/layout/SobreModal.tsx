@@ -27,12 +27,16 @@ export function SobreModal({ open, onClose }: Props) {
   return (
     <Modal open={open} onClose={onClose} title="Sobre o sistema" size="md">
       <div className="space-y-4">
-        <div className="flex items-center">
-          <img src="/logo-menu.png" alt="Solução TS" className="h-10 w-auto object-contain dark:hidden" />
+        <div className="flex justify-center py-2">
+          <img
+            src="/logo-menu.png"
+            alt="Solução TS"
+            className="h-20 w-auto max-w-full object-contain dark:hidden"
+          />
           <img
             src="/logo-menu-dark.png"
             alt="Solução TS"
-            className="hidden h-10 w-auto object-contain dark:block"
+            className="hidden h-20 w-auto max-w-full object-contain dark:block"
           />
         </div>
 
