@@ -11,6 +11,18 @@ export const http = axios.create({
 http.interceptors.request.use((config) => {
   const token = obterToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
+
+  // Upload de arquivo: o Content-Type padrão precisa sair daqui.
+  //
+  // O axios olha o header ANTES de montar o corpo: vendo `application/json`
+  // com um FormData, ele serializa o FormData em JSON (`formDataToJSON`) e o
+  // arquivo simplesmente desaparece — o servidor recebe a requisição sem
+  // `req.file` e responde "selecione o arquivo". Removendo o header, o axios
+  // monta o multipart e escreve o boundary correto.
+  if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+    config.headers.setContentType(false);
+  }
+
   return config;
 });
 
