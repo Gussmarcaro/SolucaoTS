@@ -2,11 +2,11 @@ import { Prisma, type PrismaClient } from '@prisma/client';
 import { contextoAtual } from '@/shared/contexto';
 
 /**
- * Cadastros que registram quem incluiu o registro (`criadoPor`).
+ * Cadastros que guardam quem incluiu o registro no campo `criadoPor`.
  *
- * Neles a autoria da inclusão fica no próprio registro, não na trilha: é onde
- * ela é consultada na prática ("quem cadastrou este fornecedor?") e evita uma
- * linha de log por criação. Por isso estes models **não** geram `CRIACAO`.
+ * A extension preenche esse campo na criação. Nenhum model gera linha de
+ * trilha por inclusão — a trilha cobre alteração, exclusão e consulta a dados
+ * pessoais.
  */
 export const MODELS_COM_CRIADO_POR = new Set([
   'Cliente',
@@ -87,7 +87,12 @@ export function diferenca(antes: Registro, depois: Registro): Registro {
   return mudou;
 }
 
-type Acao = 'ALTERACAO' | 'EXCLUSAO' | 'INATIVACAO' | 'REATIVACAO' | 'CRIACAO';
+// `CRIACAO` continua no enum e nos filtros: as linhas gravadas antes desta
+// mudança seguem no banco e precisam ser consultáveis. O que sai é a gravação.
+// Ações que esta extension grava. `VISUALIZACAO` vem de outro caminho (o
+// registro de acesso a dados pessoais), e `CRIACAO` deixou de ser gravada —
+// mas segue no enum e nos filtros, porque as linhas antigas continuam no banco.
+type Acao = 'ALTERACAO' | 'EXCLUSAO' | 'INATIVACAO' | 'REATIVACAO';
 
 /**
  * Grava uma linha da trilha. Nunca lança: uma falha aqui não pode derrubar a
@@ -220,24 +225,24 @@ export const extensaoAuditoria = Prisma.defineExtension({
   name: 'auditoria',
   query: {
     $allModels: {
+      /**
+       * Inclusão **não** entra na trilha.
+       *
+       * A extension continua interceptando a criação por um motivo: preencher
+       * `criadoPor` nos cadastros que têm o campo. É lá que a autoria da
+       * inclusão é consultada na prática ("quem cadastrou este fornecedor?"),
+       * sem custar uma linha de log por registro criado.
+       *
+       * Consequência conhecida: os blocos da prestação não têm `criadoPor`, e
+       * portanto passam a não registrar quem os incluiu — a trilha deles cobre
+       * alteração e exclusão. Se essa autoria fizer falta, o caminho é
+       * acrescentar `criadoPor` a esses models, não devolver o log.
+       */
       async create({ model, args, query }) {
         const ctx = contextoAtual();
         const dados = args.data as Registro;
         if (ctx && MODELS_COM_CRIADO_POR.has(model)) dados.criadoPor ??= ctx.usuarioId;
-
-        const resultado = await query(args);
-
-        // Cadastros não geram CRIACAO — a autoria está em `criadoPor`.
-        if (!NAO_AUDITAR.has(model) && !MODELS_COM_CRIADO_POR.has(model)) {
-          await registrar({
-            entidade: model,
-            registroId: idDe(resultado),
-            registroDescricao: descrever(model, resultado as Registro),
-            acao: 'CRIACAO',
-            alteracoes: limpar(resultado as Registro),
-          });
-        }
-        return resultado;
+        return query(args);
       },
 
       async update({ model, args, query }) {
@@ -309,22 +314,13 @@ export const extensaoAuditoria = Prisma.defineExtension({
         return resultado;
       },
 
+      /** Mesma regra do `create`: só preenche `criadoPor`, não registra. */
       async createMany({ model, args, query }) {
         const ctx = contextoAtual();
         if (ctx && MODELS_COM_CRIADO_POR.has(model) && Array.isArray(args.data)) {
           for (const d of args.data as Registro[]) d.criadoPor ??= ctx.usuarioId;
         }
-        const resultado = (await query(args)) as { count: number };
-
-        if (!NAO_AUDITAR.has(model) && !MODELS_COM_CRIADO_POR.has(model) && resultado.count > 0) {
-          await registrar({
-            entidade: model,
-            registroId: '(vários)',
-            acao: 'CRIACAO',
-            alteracoes: { quantidade: resultado.count },
-          });
-        }
-        return resultado;
+        return query(args);
       },
     },
   },
