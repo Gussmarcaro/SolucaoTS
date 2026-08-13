@@ -12,7 +12,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { StatCard } from '@/components/ui/StatCard';
+import { KpiTile } from '@/components/ui/KpiTile';
 import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -37,7 +37,15 @@ interface PrazoItem {
   dias: number;
 }
 
-type Contagens = Record<string, number | null>;
+/** Total e ativos de um cadastro; `null` enquanto a consulta não volta. */
+interface Contagem {
+  total: number | null;
+  ativos: number | null;
+}
+
+type Contagens = Record<string, Contagem>;
+
+const SEM_CONTAGEM: Contagem = { total: null, ativos: null };
 
 function tempoRelativo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -107,25 +115,35 @@ export function Dashboard() {
 
   useEffect(() => {
     let vivo = true;
+    // Duas consultas por cadastro: o total e só os ativos. `pageSize: 1` porque
+    // interessa apenas o `total` que a API devolve junto da página.
     const um = { page: 1, pageSize: 1 };
+    const soAtivos = { ...um, filtros: { ativo: true } };
     Promise.allSettled([
       listarEntidades(um),
+      listarEntidades(soAtivos),
       listarFornecedores(um),
+      listarFornecedores(soAtivos),
       listarColaboradores(um),
+      listarColaboradores(soAtivos),
       listarContratos(um),
+      listarContratos(soAtivos),
       listarBensCedidos(um),
+      listarBensCedidos(soAtivos),
       listarServidoresCedidos(um),
+      listarServidoresCedidos(soAtivos),
     ]).then((res) => {
       if (!vivo) return;
       const total = (i: number) =>
         res[i].status === 'fulfilled' ? (res[i] as PromiseFulfilledResult<{ total: number }>).value.total : null;
+      const par = (i: number): Contagem => ({ total: total(i), ativos: total(i + 1) });
       setContagens({
-        entidades: total(0),
-        fornecedores: total(1),
-        colaboradores: total(2),
-        contratos: total(3),
-        bens: total(4),
-        servidores: total(5),
+        entidades: par(0),
+        fornecedores: par(2),
+        colaboradores: par(4),
+        contratos: par(6),
+        bens: par(8),
+        servidores: par(10),
       });
     });
     return () => {
@@ -133,19 +151,22 @@ export function Dashboard() {
     };
   }, []);
 
-  const fmt = (chave: string): string => {
-    if (!contagens) return '…';
-    const v = contagens[chave];
-    return v == null ? '—' : String(v);
+  const contagem = (chave: string): Contagem => contagens?.[chave] ?? SEM_CONTAGEM;
+
+  /** Número formatado no padrão brasileiro; '—' quando a consulta falhou. */
+  const fmt = (chave: string): string | null => {
+    const { total } = contagem(chave);
+    if (!contagens) return null;
+    return total == null ? '—' : total.toLocaleString('pt-BR');
   };
 
   const cards = [
-    { chave: 'entidades', label: 'Entidades beneficiárias', icon: Building2, tone: 'brand' as const },
-    { chave: 'fornecedores', label: 'Fornecedores / Prestadores', icon: Truck, tone: 'brand' as const },
-    { chave: 'colaboradores', label: 'Colaboradores', icon: UserRound, tone: 'emerald' as const },
-    { chave: 'contratos', label: 'Contratos firmados', icon: FileText, tone: 'amber' as const },
-    { chave: 'bens', label: 'Bens cedidos', icon: Boxes, tone: 'brand' as const },
-    { chave: 'servidores', label: 'Servidores cedidos', icon: UserCog, tone: 'emerald' as const },
+    { chave: 'entidades', label: 'Entidades beneficiárias', icon: Building2, rota: '/cadastro/entidades' },
+    { chave: 'fornecedores', label: 'Fornecedores / Prestadores', icon: Truck, rota: '/cadastro/fornecedores' },
+    { chave: 'colaboradores', label: 'Colaboradores', icon: UserRound, rota: '/cadastro/colaboradores' },
+    { chave: 'contratos', label: 'Contratos firmados', icon: FileText, rota: '/cadastro/contratos' },
+    { chave: 'bens', label: 'Bens cedidos', icon: Boxes, rota: '/cadastro/bens-cedidos' },
+    { chave: 'servidores', label: 'Servidores cedidos', icon: UserCog, rota: '/cadastro/servidores-cedidos' },
   ];
 
   return (
@@ -162,10 +183,32 @@ export function Dashboard() {
       />
 
       {/* KPIs — contagens reais dos cadastros */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {cards.map((c) => (
-          <StatCard key={c.chave} label={c.label} value={fmt(c.chave)} icon={c.icon} tone={c.tone} />
-        ))}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {cards.map((c, i) => {
+          const { total, ativos } = contagem(c.chave);
+          const inativos = total != null && ativos != null ? total - ativos : null;
+          return (
+            <KpiTile
+              key={c.chave}
+              label={c.label}
+              valor={fmt(c.chave)}
+              icone={c.icon}
+              cor={i}
+              onClick={() => navigate(c.rota)}
+              rodape={
+                ativos == null ? null : (
+                  <>
+                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                    <span className="font-medium text-emerald-700 dark:text-emerald-400">
+                      {ativos.toLocaleString('pt-BR')} ativos
+                    </span>
+                    {!!inativos && <span className="text-ink-400">· {inativos.toLocaleString('pt-BR')} inativos</span>}
+                  </>
+                )
+              }
+            />
+          );
+        })}
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
