@@ -184,7 +184,7 @@ export function Dashboard() {
 
       {/* KPIs — contagens reais dos cadastros */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {cards.map((c, i) => {
+        {cards.map((c) => {
           const { total, ativos } = contagem(c.chave);
           const inativos = total != null && ativos != null ? total - ativos : null;
           return (
@@ -193,7 +193,6 @@ export function Dashboard() {
               label={c.label}
               valor={fmt(c.chave)}
               icone={c.icon}
-              cor={i}
               onClick={() => navigate(c.rota)}
               rodape={
                 ativos == null ? null : (
