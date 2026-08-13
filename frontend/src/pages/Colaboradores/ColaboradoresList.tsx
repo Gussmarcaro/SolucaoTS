@@ -218,7 +218,7 @@ export function ColaboradoresList({ refreshKey, onVisualizar, onEditar, onAltern
 
       <div className="flex flex-col items-center justify-between gap-3 border-t border-ink-100 px-4 py-3 text-xs text-ink-400 dark:border-ink-800 sm:flex-row">
         <span>{total > 0 ? `${total} colaborador(es)` : 'Sem registros'}</span>
-        <SeletorPagina valor={pageSize} onChange={setPageSize} />
+        <SeletorPagina valor={pageSize} onChange={setPageSize} total={total} />
         <div className="flex items-center gap-2">
           <Button variant="secondary" size="sm" disabled={page <= 1 || carregando} onClick={() => setPage((p) => Math.max(1, p - 1))}>
             <ChevronLeft className="h-4 w-4" />
