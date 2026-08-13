@@ -1,3 +1,4 @@
+import { Autoria } from '@/components/ui/Autoria';
 import { Badge } from '@/components/ui/Badge';
 import { dataBr, formatarMoeda } from '@/lib/masks';
 import type { BemCedido } from '@/types/bemCedido';
@@ -31,6 +32,8 @@ export function BemCedidoView({ bem }: { bem: BemCedido }) {
           <Campo label="Observação" valor={bem.observacao} />
         </div>
       </dl>
+
+      <Autoria entidade="BemCedido" id={bem.id} />
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { Autoria } from '@/components/ui/Autoria';
 import { Badge } from '@/components/ui/Badge';
 import { mascaraCep, mascaraCelular, mascaraCpfCnpj, mascaraTelefoneFixo } from '@/lib/masks';
 import type { Fornecedor } from '@/types/fornecedor';
@@ -40,6 +41,8 @@ export function FornecedorView({ fornecedor }: { fornecedor: Fornecedor }) {
         <Campo label="Cidade / UF" valor={`${fornecedor.cidade} / ${fornecedor.uf}`} />
         <Campo label="CEP" valor={mascaraCep(fornecedor.cep)} />
       </dl>
+
+      <Autoria entidade="Fornecedor" id={fornecedor.id} />
     </div>
   );
 }

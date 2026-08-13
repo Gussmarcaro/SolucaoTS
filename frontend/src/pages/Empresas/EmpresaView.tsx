@@ -1,3 +1,4 @@
+import { Autoria } from '@/components/ui/Autoria';
 import { Badge } from '@/components/ui/Badge';
 import { mascaraCep, mascaraCelular, mascaraCpfCnpj, mascaraTelefoneFixo } from '@/lib/masks';
 import type { Empresa } from '@/types/empresa';
@@ -42,6 +43,8 @@ export function EmpresaView({ empresa }: { empresa: Empresa }) {
         <Campo label="Cidade / UF" valor={`${empresa.cidade} / ${empresa.uf}`} />
         <Campo label="CEP" valor={mascaraCep(empresa.cep)} />
       </dl>
+
+      <Autoria entidade="Empresa" id={empresa.id} />
     </div>
   );
 }

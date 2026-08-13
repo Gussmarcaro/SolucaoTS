@@ -1,3 +1,4 @@
+import { Autoria } from '@/components/ui/Autoria';
 import { Badge } from '@/components/ui/Badge';
 import { mascaraCpfCnpj } from '@/lib/masks';
 import { TIPO_ORGAO_LABEL, PERIODICIDADE_LABEL, type Orgao } from '@/types/orgao';
@@ -28,6 +29,8 @@ export function OrgaoView({ orgao }: { orgao: Orgao }) {
         <Campo rotulo="Periodicidade (Declaração Negativa)" valor={PERIODICIDADE_LABEL[orgao.periodicidade] ?? orgao.periodicidade} />
         <Campo rotulo="CNPJ" valor={mascaraCpfCnpj(orgao.cnpj)} />
       </dl>
+
+      <Autoria entidade="Cliente" id={orgao.id} />
     </div>
   );
 }

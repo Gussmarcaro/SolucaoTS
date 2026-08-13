@@ -1,3 +1,4 @@
+import { Autoria } from '@/components/ui/Autoria';
 import { Badge } from '@/components/ui/Badge';
 import { dataBr, formatarMoeda, mascaraCpfCnpj } from '@/lib/masks';
 import type { Colaborador } from '@/types/colaborador';
@@ -32,6 +33,8 @@ export function ColaboradorView({ colaborador }: { colaborador: Colaborador }) {
         <Campo label="Demissão" valor={colaborador.dataDemissao ? dataBr(colaborador.dataDemissao) : null} />
         <Campo label="Salário Contratual" valor={formatarMoeda(colaborador.salarioContratual)} />
       </dl>
+
+      <Autoria entidade="Colaborador" id={colaborador.id} />
     </div>
   );
 }

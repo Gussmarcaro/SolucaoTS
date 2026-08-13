@@ -1,3 +1,4 @@
+import { Autoria } from '@/components/ui/Autoria';
 import { Badge } from '@/components/ui/Badge';
 import { dataBr, formatarMoeda, mascaraCpfCnpj } from '@/lib/masks';
 import type { ServidorCedido } from '@/types/servidorCedido';
@@ -36,6 +37,8 @@ export function ServidorCedidoView({ servidor }: { servidor: ServidorCedido }) {
         <Campo label="Remuneração Bruta" valor={formatarMoeda(servidor.remuneracaoBruta)} />
         <Campo label="Cessão" valor={vigencia} />
       </dl>
+
+      <Autoria entidade="ServidorCedidoCadastro" id={servidor.id} />
     </div>
   );
 }

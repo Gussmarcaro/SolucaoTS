@@ -1,3 +1,4 @@
+import { Autoria } from '@/components/ui/Autoria';
 import { Badge } from '@/components/ui/Badge';
 import { mascaraCelular, mascaraCep, mascaraCpf } from '@/lib/masks';
 import type { Usuario } from '@/types/usuario';
@@ -39,6 +40,8 @@ export function UsuarioView({ usuario }: { usuario: Usuario }) {
         <Campo label="Bairro" valor={usuario.bairro} />
         <Campo label="Cidade / UF" valor={`${usuario.cidade} / ${usuario.uf}`} />
       </dl>
+
+      <Autoria entidade="Usuario" id={usuario.id} />
     </div>
   );
 }

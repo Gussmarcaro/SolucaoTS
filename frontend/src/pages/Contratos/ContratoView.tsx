@@ -1,3 +1,4 @@
+import { Autoria } from '@/components/ui/Autoria';
 import { Badge } from '@/components/ui/Badge';
 import { dataBr, formatarMoeda, mascaraCpfCnpj } from '@/lib/masks';
 import type { Contrato } from '@/types/contrato';
@@ -40,6 +41,8 @@ export function ContratoView({ contrato }: { contrato: Contrato }) {
           <Campo label="Objeto" valor={contrato.objeto} />
         </div>
       </dl>
+
+      <Autoria entidade="ContratoFirmado" id={contrato.id} />
     </div>
   );
 }

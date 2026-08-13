@@ -1,3 +1,4 @@
+import { Autoria } from '@/components/ui/Autoria';
 import { Badge } from '@/components/ui/Badge';
 import type { Grupo } from '@/types/grupo';
 
@@ -16,6 +17,8 @@ export function GrupoView({ grupo }: { grupo: Grupo }) {
         <dt className="text-xs font-medium uppercase tracking-wider text-ink-400">Descrição</dt>
         <dd className="mt-0.5 text-sm text-ink-800 dark:text-ink-100">{grupo.descricao?.trim() || '—'}</dd>
       </div>
+
+      <Autoria entidade="GrupoUsuario" id={grupo.id} />
     </div>
   );
 }

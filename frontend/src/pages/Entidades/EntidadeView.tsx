@@ -1,3 +1,4 @@
+import { Autoria } from '@/components/ui/Autoria';
 import { ExternalLink, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { mascaraCep, mascaraCelular, mascaraCpfCnpj, mascaraTelefoneFixo } from '@/lib/masks';
@@ -83,6 +84,8 @@ export function EntidadeView({ entidade }: { entidade: Entidade }) {
           </div>
         </dl>
       </div>
+
+      <Autoria entidade="EntidadeBeneficiaria" id={entidade.id} />
     </div>
   );
 }

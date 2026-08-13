@@ -1,3 +1,4 @@
+import { Autoria } from '@/components/ui/Autoria';
 import { ExternalLink, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { dataBr, formatarMoeda, mascaraCelular, mascaraCep, mascaraCpf } from '@/lib/masks';
@@ -148,6 +149,8 @@ export function AjusteView({ ajuste }: { ajuste: Ajuste }) {
           </dd>
         </div>
       </Painel>
+
+      <Autoria entidade="Ajuste" id={ajuste.id} />
     </div>
   );
 }

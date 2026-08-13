@@ -18,6 +18,7 @@ import { BuscaController } from '@/presentation/controllers/BuscaController';
 import { LgpdController } from '@/presentation/controllers/LgpdController';
 import { AssistenteController } from '@/presentation/controllers/AssistenteController';
 import { AlertaController } from '@/presentation/controllers/AlertaController';
+import { AutoriaController } from '@/presentation/controllers/AutoriaController';
 import { autenticar } from '@/presentation/middlewares/autenticar';
 import { exigirGrupo } from '@/presentation/middlewares/exigirGrupo';
 
@@ -49,6 +50,10 @@ routes.use('/auditoria', auditoriaRoutes);
 // Busca global da barra superior — percorre todos os cadastros de uma vez.
 const busca = new BuscaController();
 routes.get('/busca', (req, res, next) => busca.buscar(req, res, next));
+
+// Quem incluiu o registro — uma rota para todos os cadastros que têm o campo.
+const autoria = new AutoriaController();
+routes.get('/autoria/:entidade/:id', (req, res, next) => autoria.consultar(req, res, next));
 
 // Alertas do sino — prazos legais e pendências, calculados a cada consulta.
 const alertas = new AlertaController();
