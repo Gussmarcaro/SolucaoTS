@@ -170,3 +170,14 @@ A base é gerada por `npm run assistente:base` e **versionada** em `backend/src/
 - Modelo `claude-opus-5` com `effort: low` — a tarefa é localizar e reproduzir, não raciocinar longamente.
 - **`npm run verificar:assistente`** confere que a base está completa e que o mapa de navegação bate com o menu real (nos dois sentidos). Rode depois de mexer em `navigation.ts` — menu alterado sem regerar a base faz o assistente ensinar tela que não existe.
 - Sem `ANTHROPIC_API_KEY` o `status` responde `disponivel: false` e o ícone some da barra.
+
+## Alertas do sino (prazos e pendências)
+
+`GET /alertas` devolve prazos legais e pendências **calculados a cada consulta**, não gravados. Notificação armazenada nasce desatualizada — a certidão é renovada e o aviso continua lá —, e um prazo errado no sino é pior que sino vazio. Não há tabela nem processo de geração para manter.
+
+Cinco fontes, todas em dados que já existem: prestação `REJEITADO`; `DocumentoRegularidade.dataVencimento` e `Certidao.vigenciaFinal`; `Ajuste`/`TermoAditivo.dataAssinatura` + 10 dias úteis; `Cliente.periodicidade` (Declaração Negativa, 5 ou 15 dias úteis); e 30/06 para a prestação anual.
+
+- **Dias úteis sem feriados** (`shared/diasUteis.ts`): feriado empurra o vencimento para a frente, então o prazo calculado é sempre ≤ o real — avisa cedo, nunca tarde. É onde o calendário oficial encaixa quando existir. A tela diz isso ao usuário.
+- Janela: aparece a partir de 30 dias do vencimento e some 60 dias depois de vencido — passado isso é pendência antiga, não alerta.
+- O prazo de cadastro de Ajuste/Aditivo é **lembrete**, não status: esse cadastro é feito na tela do TCESP, fora daqui, então o sistema não sabe se já foi enviado. O texto do alerta não pode sugerir que sabe.
+- **`npm run verificar:alertas`** roda as regras contra datas fixas, sem banco. Foi ele que mostrou que minha contagem de 10 dias úteis estava errada na cabeça, não no código.

@@ -4,6 +4,7 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/cn';
 import { http } from '@/services/http';
+import { Alertas } from './Alertas';
 import { Assistente } from './Assistente';
 import { BuscaGlobal } from './BuscaGlobal';
 import { SobreModal } from './SobreModal';
@@ -23,6 +24,21 @@ export function Topbar({ onOpenSidebar }: TopbarProps) {
   const [sobreAberto, setSobreAberto] = useState(false);
   const [buscaAberta, setBuscaAberta] = useState(false);
   const [assistenteAberto, setAssistenteAberto] = useState(false);
+  const [alertasAbertos, setAlertasAbertos] = useState(false);
+  const [pendentes, setPendentes] = useState(0);
+  const [temVencido, setTemVencido] = useState(false);
+
+  // Contagem para o distintivo do sino. Falha aqui não mostra erro: um número
+  // ausente é melhor que um aviso de erro para algo que ninguém pediu.
+  useEffect(() => {
+    http
+      .get<{ urgencia: string }[]>('/alertas')
+      .then((r) => {
+        setPendentes(r.data.length);
+        setTemVencido(r.data.some((a) => a.urgencia === 'VENCIDO'));
+      })
+      .catch(() => setPendentes(0));
+  }, []);
   // O botão só aparece onde o assistente está configurado — um ícone que abre
   // um painel com erro é pior que ícone nenhum.
   const [temAssistente, setTemAssistente] = useState(false);
@@ -87,13 +103,39 @@ export function Topbar({ onOpenSidebar }: TopbarProps) {
 
         <ThemeToggle />
 
-        <button
-          className="focus-ring relative inline-flex h-9 w-9 items-center justify-center rounded-xl text-ink-500 transition-colors hover:bg-ink-100 hover:text-ink-800 dark:text-ink-400 dark:hover:bg-ink-800 dark:hover:text-ink-100"
-          aria-label="Notificações"
-        >
-          <Bell className="h-[18px] w-[18px]" />
-          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-brand-500 ring-2 ring-white dark:ring-ink-950" />
-        </button>
+        <div className="relative">
+          <button
+            onClick={() => setAlertasAbertos((v) => !v)}
+            aria-label={
+              pendentes > 0 ? `Prazos e pendências (${pendentes})` : 'Prazos e pendências'
+            }
+            aria-expanded={alertasAbertos}
+            title="Prazos e pendências"
+            className={cn(
+              'focus-ring relative inline-flex h-9 w-9 items-center justify-center rounded-xl transition-colors hover:bg-ink-100 hover:text-ink-800 dark:hover:bg-ink-800 dark:hover:text-ink-100',
+              alertasAbertos
+                ? 'bg-ink-100 text-ink-800 dark:bg-ink-800 dark:text-ink-100'
+                : 'text-ink-500 dark:text-ink-400',
+            )}
+          >
+            <Bell className="h-[18px] w-[18px]" />
+            {/* O contador só aparece quando há prazo de verdade. O ponto fixo
+                que existia aqui antes sinalizava novidade o tempo todo, o que
+                é o mesmo que não sinalizar nada. */}
+            {pendentes > 0 && (
+              <span
+                className={cn(
+                  'absolute -right-0.5 -top-0.5 inline-flex min-w-[1.15rem] items-center justify-center rounded-full px-1 text-[10px] font-bold leading-[1.15rem] text-white ring-2 ring-white dark:ring-ink-950',
+                  temVencido ? 'bg-red-500' : 'bg-amber-500',
+                )}
+              >
+                {pendentes > 9 ? '9+' : pendentes}
+              </span>
+            )}
+          </button>
+
+          <Alertas aberto={alertasAbertos} onFechar={() => setAlertasAbertos(false)} />
+        </div>
 
         <button
           onClick={() => setSobreAberto(true)}

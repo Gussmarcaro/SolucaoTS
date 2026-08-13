@@ -21,7 +21,8 @@
     "verificar:montador": "tsx scripts/verificarMontador.ts",
     "verificar:auditoria": "tsx scripts/verificarAuditoria.ts",
     "assistente:base": "tsx scripts/gerarBaseAssistente.ts",
-    "verificar:assistente": "tsx scripts/verificarAssistente.ts"
+    "verificar:assistente": "tsx scripts/verificarAssistente.ts",
+    "verificar:alertas": "tsx scripts/verificarAlertas.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.116.0",

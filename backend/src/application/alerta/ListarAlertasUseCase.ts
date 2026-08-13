@@ -1,0 +1,217 @@
+import type { Alerta, UrgenciaAlerta } from '@/core/alerta/Alerta';
+import { diasAte, somarDiasUteis } from '@/shared/diasUteis';
+import { parseDataISO } from '@/shared/datas';
+
+/** Linhas cruas que o repositório entrega; as regras ficam aqui. */
+export interface DadosAlertas {
+  prestacoesRejeitadas: { id: string; ajusteCodigo: string; entidadeNome: string; ano: number }[];
+  /** Certidões da entidade e do ajuste, já unificadas em uma forma só. */
+  certidoes: { id: string; descricao: string; vencimento: string; onde: string }[];
+  ajustesRecentes: { id: string; codigoAjuste: string; entidadeNome: string; dataAssinatura: string }[];
+  aditivosRecentes: { id: string; numero: string; ajusteId: string; ajusteCodigo: string; dataAssinatura: string }[];
+  orgaos: { id: string; nome: string; periodicidade: 'QUADRIMESTRAL' | 'ANUAL' }[];
+  /** Ajustes do exercício ainda sem prestação Armazenada. */
+  ajustesSemPrestacao: number;
+}
+
+export interface IAlertaRepository {
+  coletar(desde: string): Promise<DadosAlertas>;
+}
+
+/** Prazo do TCESP para cadastrar Ajuste e Termo Aditivo (§5 das regras). */
+const DIAS_UTEIS_CADASTRO = 10;
+/** Declaração Negativa: 5 dias úteis (quadrimestral) ou 15 (anual). */
+const DIAS_UTEIS_NEGATIVA = { QUADRIMESTRAL: 5, ANUAL: 15 } as const;
+
+/** Só entram na lista prazos dentro desta janela — antes disso é ruído. */
+const JANELA_FUTURA = 30;
+/** Vencido há mais que isto deixa de ser alerta e vira pendência antiga. */
+const JANELA_PASSADA = 60;
+
+function urgencia(dias: number): UrgenciaAlerta {
+  if (dias < 0) return 'VENCIDO';
+  return dias <= 7 ? 'CRITICO' : 'PROXIMO';
+}
+
+const PESO: Record<UrgenciaAlerta, number> = { VENCIDO: 0, CRITICO: 1, PROXIMO: 2 };
+
+/** Fim do último período encerrado e o do próximo a encerrar. */
+function fimDosQuadrimestres(hoje: Date): Date[] {
+  const ano = hoje.getUTCFullYear();
+  return [
+    new Date(Date.UTC(ano - 1, 11, 31)),
+    new Date(Date.UTC(ano, 3, 30)),
+    new Date(Date.UTC(ano, 7, 31)),
+    new Date(Date.UTC(ano, 11, 31)),
+  ];
+}
+
+/**
+ * Alertas de prazo e de pendência, calculados a cada consulta.
+ *
+ * Nada disso é gravado. Uma notificação gravada nasce desatualizada — a
+ * certidão é renovada e o aviso continua lá, a prestação é corrigida e o
+ * alerta persiste. Calculando na hora, o sino não mente, e não há processo de
+ * geração para manter no ar.
+ *
+ * Em compensação, tudo aqui precisa ser barato: são consultas por índice e
+ * aritmética de data, sem varrer histórico.
+ */
+export class ListarAlertasUseCase {
+  constructor(private readonly repo: IAlertaRepository) {}
+
+  async execute(hoje = new Date()): Promise<Alerta[]> {
+    const desde = new Date(hoje.getTime());
+    desde.setUTCDate(desde.getUTCDate() - JANELA_PASSADA);
+    const dados = await this.repo.coletar(desde.toISOString().slice(0, 10));
+
+    const alertas: Alerta[] = [
+      ...this.rejeitadas(dados),
+      ...this.certidoes(dados, hoje),
+      ...this.cadastros(dados, hoje),
+      ...this.declaracoesNegativas(dados, hoje),
+      ...this.prestacaoDeContas(dados, hoje),
+    ];
+
+    // Vencido primeiro; dentro do mesmo grupo, o prazo mais apertado na frente.
+    return alertas.sort(
+      (a, b) => PESO[a.urgencia] - PESO[b.urgencia] || (a.dias ?? 0) - (b.dias ?? 0),
+    );
+  }
+
+  /** Rejeição não tem prazo — tem urgência. Sempre no topo. */
+  private rejeitadas(d: DadosAlertas): Alerta[] {
+    return d.prestacoesRejeitadas.map((p) => ({
+      id: `prestacao-rejeitada:${p.id}`,
+      tipo: 'PRESTACAO_REJEITADA' as const,
+      urgencia: 'VENCIDO' as const,
+      titulo: `Prestação rejeitada pelo TCESP — ${p.ajusteCodigo}`,
+      detalhe: `Exercício ${p.ano} · ${p.entidadeNome}. Corrija as inconformidades e retransmita.`,
+      dias: null,
+      referenciaId: p.id,
+    }));
+  }
+
+  private certidoes(d: DadosAlertas, hoje: Date): Alerta[] {
+    return d.certidoes.flatMap((c) => {
+      const dias = diasAte(parseDataISO(c.vencimento), hoje);
+      if (dias > JANELA_FUTURA || dias < -JANELA_PASSADA) return [];
+      return [
+        {
+          id: `certidao:${c.id}`,
+          tipo: 'CERTIDAO' as const,
+          urgencia: urgencia(dias),
+          titulo: dias < 0 ? `Certidão vencida — ${c.descricao}` : `Certidão a vencer — ${c.descricao}`,
+          detalhe: `${c.onde} · vencimento em ${c.vencimento}. Certidão vencida impede o repasse.`,
+          dias,
+          referenciaId: c.id,
+        },
+      ];
+    });
+  }
+
+  /**
+   * Prazo para cadastrar Ajuste e Termo Aditivo no Audesp.
+   *
+   * O cadastro é feito na tela do TCESP, fora deste sistema — então aqui não
+   * há como saber se já foi enviado. O alerta é um lembrete a partir da data de
+   * assinatura, não uma afirmação sobre o que existe no Tribunal, e o texto
+   * precisa deixar isso claro.
+   */
+  private cadastros(d: DadosAlertas, hoje: Date): Alerta[] {
+    const doPrazo = (assinatura: string) =>
+      diasAte(somarDiasUteis(parseDataISO(assinatura), DIAS_UTEIS_CADASTRO), hoje);
+
+    const ajustes = d.ajustesRecentes.flatMap((a): Alerta[] => {
+      const dias = doPrazo(a.dataAssinatura);
+      if (dias > JANELA_FUTURA || dias < -JANELA_PASSADA) return [];
+      return [
+        {
+          id: `cadastro-ajuste:${a.id}`,
+          tipo: 'CADASTRO_AJUSTE',
+          urgencia: urgencia(dias),
+          titulo: `Cadastro do ajuste ${a.codigoAjuste} no Audesp`,
+          detalhe: `${a.entidadeNome} · assinado em ${a.dataAssinatura}. Prazo de ${DIAS_UTEIS_CADASTRO} dias úteis.`,
+          dias,
+          referenciaId: a.id,
+        },
+      ];
+    });
+
+    const aditivos = d.aditivosRecentes.flatMap((t): Alerta[] => {
+      const dias = doPrazo(t.dataAssinatura);
+      if (dias > JANELA_FUTURA || dias < -JANELA_PASSADA) return [];
+      return [
+        {
+          id: `cadastro-aditivo:${t.id}`,
+          tipo: 'CADASTRO_ADITIVO',
+          urgencia: urgencia(dias),
+          titulo: `Cadastro do termo aditivo ${t.numero} no Audesp`,
+          detalhe: `Ajuste ${t.ajusteCodigo} · assinado em ${t.dataAssinatura}. Prazo de ${DIAS_UTEIS_CADASTRO} dias úteis.`,
+          dias,
+          referenciaId: t.ajusteId,
+        },
+      ];
+    });
+
+    return [...ajustes, ...aditivos];
+  }
+
+  /**
+   * Declaração Negativa — a periodicidade do órgão define o prazo (§5).
+   *
+   * Quadrimestral: 5 dias úteis após o quadrimestre. Anual: 15 dias úteis após
+   * o exercício. Só interessa o período encerrado mais recente: o anterior já
+   * passou da janela e o seguinte ainda não começou a contar.
+   */
+  private declaracoesNegativas(d: DadosAlertas, hoje: Date): Alerta[] {
+    return d.orgaos.flatMap((o): Alerta[] => {
+      const fins =
+        o.periodicidade === 'QUADRIMESTRAL'
+          ? fimDosQuadrimestres(hoje)
+          : [new Date(Date.UTC(hoje.getUTCFullYear() - 1, 11, 31))];
+
+      const encerrados = fins.filter((f) => f.getTime() <= hoje.getTime());
+      const ultimo = encerrados[encerrados.length - 1];
+      if (!ultimo) return [];
+
+      const dias = diasAte(somarDiasUteis(ultimo, DIAS_UTEIS_NEGATIVA[o.periodicidade]), hoje);
+      if (dias > JANELA_FUTURA || dias < -JANELA_PASSADA) return [];
+
+      const periodo = ultimo.toISOString().slice(0, 10);
+      return [
+        {
+          id: `declaracao-negativa:${o.id}:${periodo}`,
+          tipo: 'DECLARACAO_NEGATIVA',
+          urgencia: urgencia(dias),
+          titulo: `Declaração Negativa — ${o.nome}`,
+          detalhe: `Período encerrado em ${periodo} · periodicidade ${o.periodicidade === 'QUADRIMESTRAL' ? 'quadrimestral' : 'anual'}. Devida quando não houve repasse no período.`,
+          dias,
+          referenciaId: o.id,
+        },
+      ];
+    });
+  }
+
+  /** Prestação anual e consolidada: até 30/06 do exercício seguinte. */
+  private prestacaoDeContas(d: DadosAlertas, hoje: Date): Alerta[] {
+    if (d.ajustesSemPrestacao === 0) return [];
+
+    const exercicio = hoje.getUTCMonth() >= 6 ? hoje.getUTCFullYear() : hoje.getUTCFullYear() - 1;
+    const prazo = new Date(Date.UTC(exercicio + 1, 5, 30));
+    const dias = diasAte(prazo, hoje);
+    if (dias > 60) return [];
+
+    return [
+      {
+        id: `prestacao-contas:${exercicio}`,
+        tipo: 'PRESTACAO_CONTAS',
+        urgencia: urgencia(dias),
+        titulo: `Prestação de contas do exercício ${exercicio}`,
+        detalhe: `${d.ajustesSemPrestacao} ajuste(s) sem prestação armazenada. Entrega até 30/06/${exercicio + 1}.`,
+        dias,
+        referenciaId: null,
+      },
+    ];
+  }
+}

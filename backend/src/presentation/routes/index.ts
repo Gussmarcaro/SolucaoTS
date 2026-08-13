@@ -17,6 +17,7 @@ import { auditoriaRoutes } from './auditoria.routes';
 import { BuscaController } from '@/presentation/controllers/BuscaController';
 import { LgpdController } from '@/presentation/controllers/LgpdController';
 import { AssistenteController } from '@/presentation/controllers/AssistenteController';
+import { AlertaController } from '@/presentation/controllers/AlertaController';
 import { autenticar } from '@/presentation/middlewares/autenticar';
 import { exigirGrupo } from '@/presentation/middlewares/exigirGrupo';
 
@@ -48,6 +49,10 @@ routes.use('/auditoria', auditoriaRoutes);
 // Busca global da barra superior — percorre todos os cadastros de uma vez.
 const busca = new BuscaController();
 routes.get('/busca', (req, res, next) => busca.buscar(req, res, next));
+
+// Alertas do sino — prazos legais e pendências, calculados a cada consulta.
+const alertas = new AlertaController();
+routes.get('/alertas', (req, res, next) => alertas.listar(req, res, next));
 
 // Assistente da Fase V — responde a partir da documentação embarcada.
 const assistente = new AssistenteController();
