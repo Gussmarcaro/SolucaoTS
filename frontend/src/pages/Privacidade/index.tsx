@@ -3,6 +3,9 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui/Card';
 import { MEDIDAS, OPERACOES, PENDENCIAS } from '@/lib/inventarioLgpd';
+import { useAuth } from '@/contexts/AuthContext';
+import { GRUPOS_ADMIN } from '@/lib/navigation';
+import { TitularLgpd } from './Titular';
 
 /**
  * Privacidade e LGPD — o registro das operações de tratamento (art. 37) que o
@@ -12,6 +15,13 @@ import { MEDIDAS, OPERACOES, PENDENCIAS } from '@/lib/inventarioLgpd';
  * órgão. Misturar os dois daria a impressão de uma adequação que não existe.
  */
 export function Privacidade() {
+  const { usuario } = useAuth();
+  // A consulta por titular cruza todos os cadastros — o servidor já a restringe,
+  // e aqui a seção some para quem não pode usá-la.
+  const podeConsultarTitular = GRUPOS_ADMIN.some(
+    (g) => g.toLowerCase() === usuario?.grupo?.trim().toLowerCase(),
+  );
+
   return (
     <>
       <PageHeader
@@ -121,6 +131,8 @@ export function Privacidade() {
           </CardBody>
         </Card>
       </div>
+
+      {podeConsultarTitular && <TitularLgpd />}
     </>
   );
 }

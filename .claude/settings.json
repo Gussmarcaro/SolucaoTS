@@ -8,7 +8,9 @@
       "Bash(npx tsc *)",
       "Bash(npm run *)",
       "Bash(node -e ' *)",
-      "Bash(grep -o \"transition-\\\\\\\\\\\\\\\\\\\\[width[^}]*}\" dist/assets/*.css)"
+      "Bash(grep -o \"transition-\\\\\\\\\\\\\\\\\\\\[width[^}]*}\" dist/assets/*.css)",
+      "Bash(sed -i 's/prestacaoContasId: true/prestacaoId: true/g; s/e\\\\.prestacaoContasId/e.prestacaoId/g; s/s\\\\.prestacaoContasId/s.prestacaoId/g; s/d\\\\.prestacaoContasId/d.prestacaoId/g' src/infrastructure/database/PrismaTitularRepository.ts)",
+      "Bash(Select-Object -First 8)"
     ]
   }
 }

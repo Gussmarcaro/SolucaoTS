@@ -17,6 +17,7 @@ import { auditoriaRoutes } from './auditoria.routes';
 import { BuscaController } from '@/presentation/controllers/BuscaController';
 import { LgpdController } from '@/presentation/controllers/LgpdController';
 import { autenticar } from '@/presentation/middlewares/autenticar';
+import { exigirGrupo } from '@/presentation/middlewares/exigirGrupo';
 
 const routes = Router();
 
@@ -51,5 +52,12 @@ routes.get('/busca', (req, res, next) => busca.buscar(req, res, next));
 // usuário autenticado: cada um gera o registro do próprio acesso.
 const lgpd = new LgpdController();
 routes.post('/lgpd/acesso-dados', (req, res, next) => lgpd.acessoDados(req, res, next));
+// O relatório do titular cruza todos os cadastros de uma vez — fica restrito a
+// quem administra, como a trilha de auditoria.
+routes.get(
+  '/lgpd/titular',
+  exigirGrupo('Administrador', 'Suporte'),
+  (req, res, next) => lgpd.titular(req, res, next),
+);
 
 export { routes };
