@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { Menu, Search, Bell, Info, LogOut } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Menu, Search, Bell, Info, LogOut, X } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useAuth } from '@/contexts/AuthContext';
+import { cn } from '@/lib/cn';
 import { SobreModal } from './SobreModal';
 
 interface TopbarProps {
@@ -17,6 +18,16 @@ function iniciais(nome?: string): string {
 export function Topbar({ onOpenSidebar }: TopbarProps) {
   const { usuario, sair } = useAuth();
   const [sobreAberto, setSobreAberto] = useState(false);
+  const [buscaAberta, setBuscaAberta] = useState(false);
+  const campoBusca = useRef<HTMLInputElement>(null);
+
+  // O campo continua montado (só encolhe), então o foco precisa ser movido na
+  // mão: ao abrir, para dentro dele; ao fechar, para fora, senão o cursor
+  // ficaria num campo invisível.
+  useEffect(() => {
+    if (buscaAberta) campoBusca.current?.focus();
+    else campoBusca.current?.blur();
+  }, [buscaAberta]);
 
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-ink-200/70 bg-white/80 px-4 backdrop-blur-md dark:border-ink-800/70 dark:bg-ink-950/70 sm:px-6">
@@ -28,20 +39,39 @@ export function Topbar({ onOpenSidebar }: TopbarProps) {
         <Menu className="h-5 w-5" />
       </button>
 
-      {/* Busca — `ml-auto` empurra a busca e tudo que vem depois dela (ações e
-          perfil) para a direita da barra. Sem `flex-1`: crescer até o limite
-          consumiria a folga que a margem automática precisa para deslocar o
-          bloco. */}
-      <div className="relative ml-auto hidden w-full min-w-0 max-w-md sm:block">
+      {/* Busca — nasce fechada e abre pelo botão da lupa. O campo não é
+          desmontado: encolher a largura anima a abertura, o que remontá-lo não
+          faria. `ml-auto` empurra a busca e tudo que vem depois dela (ações e
+          perfil) para a direita da barra. */}
+      <div
+        aria-hidden={!buscaAberta}
+        className={cn(
+          'relative ml-auto hidden min-w-0 transition-[width,opacity] duration-200 sm:block',
+          buscaAberta ? 'w-full max-w-md opacity-100' : 'w-0 opacity-0',
+        )}
+      >
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
         <input
+          ref={campoBusca}
           type="text"
+          tabIndex={buscaAberta ? 0 : -1}
           placeholder="Buscar ajustes, entidades, tarefas..."
+          onKeyDown={(e) => e.key === 'Escape' && setBuscaAberta(false)}
           className="focus-ring h-10 w-full rounded-xl border border-ink-200 bg-ink-50 pl-10 pr-4 text-sm text-ink-800 placeholder:text-ink-400 transition-colors dark:border-ink-800 dark:bg-ink-900 dark:text-ink-100"
         />
       </div>
 
       <div className="flex flex-1 items-center justify-end gap-1.5 sm:flex-none">
+        <button
+          onClick={() => setBuscaAberta((v) => !v)}
+          aria-label={buscaAberta ? 'Fechar busca' : 'Buscar'}
+          aria-expanded={buscaAberta}
+          title={buscaAberta ? 'Fechar busca' : 'Buscar'}
+          className="focus-ring hidden h-9 w-9 items-center justify-center rounded-xl text-ink-500 transition-colors hover:bg-ink-100 hover:text-ink-800 dark:text-ink-400 dark:hover:bg-ink-800 dark:hover:text-ink-100 sm:inline-flex"
+        >
+          {buscaAberta ? <X className="h-[18px] w-[18px]" /> : <Search className="h-[18px] w-[18px]" />}
+        </button>
+
         <ThemeToggle />
 
         <button
