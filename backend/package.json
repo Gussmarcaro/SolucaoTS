@@ -19,9 +19,12 @@
     "dominios:seed": "tsx prisma/seeds/dominios.ts",
     "dominios:fase-v": "tsx scripts/gerarDominiosFaseV.ts",
     "verificar:montador": "tsx scripts/verificarMontador.ts",
-    "verificar:auditoria": "tsx scripts/verificarAuditoria.ts"
+    "verificar:auditoria": "tsx scripts/verificarAuditoria.ts",
+    "assistente:base": "tsx scripts/gerarBaseAssistente.ts",
+    "verificar:assistente": "tsx scripts/verificarAssistente.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.116.0",
     "@prisma/client": "^5.19.1",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",

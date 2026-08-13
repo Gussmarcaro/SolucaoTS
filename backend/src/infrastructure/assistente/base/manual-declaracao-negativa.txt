@@ -1,0 +1,133 @@
+Manual de orientação para o Sistema AUDESP
+ Fase V - Repasses Públicos ao Terceiro Setor
+
+                Declaração Negativa
+
+                                                                                                                   1
+Sumário
+
+Introdução .................................................................................................................................................................... 3
+Declaração Negativa..................................................................................................................................................... 4
+Acesso à Fase V – Sistema Audesp ............................................................................................................................... 5
+Inclusão de Declaração Negativa ................................................................................................................................. 7
+
+                                                                                                                                          2
+Introdução
+
+A Fase V – Repasses ao Terceiro Setor do Sistema Audesp nasceu da necessidade de acompanhamento mais
+próximo, por parte da Fiscalização, dos atos realizados pelos gestores públicos relativos à prestação de serviços
+para uma parcela da sociedade, uma vez que o Estado passou a delegar a terceiros algumas funções sob sua
+responsabilidade.
+Este acompanhamento vem ao encontro da necessidade de aperfeiçoamento do processo de fiscalização que o
+TCESP vem adotando nos últimos anos, em aderência à Missão e Visão estabelecidas no Planejamento Estratégico
+institucional.
+O objetivo deste manual é trazer orientações quanto aos procedimentos para informar a Declaração Negativa. A
+Declaração Negativa deve ser encaminhada quando a entidade não possui documentos a serem informados no
+período.
+Desta forma, espera-se que este instrumento de orientação ajude os jurisdicionados no cumprimento das
+responsabilidades perante a sociedade e TCESP, permitindo que a prestação seja sempre a mais correta possível.
+
+                                                                                                                                          3
+Declaração Negativa
+
+A prestação de informações no Sistema Audesp – Fase V – Repasses Públicos ao Terceiro Setor deve ser realizada
+pelo Órgão Concessor, jurisdicionado ao TCESP.
+
+Caso a assinatura do Ajuste e/ou Termo Aditivo tenha se dado por Secretaria Estadual, mas a execução do contrato
+esteja sob acompanhamento de alguma das UGE´s (Unidade Gestora Executora) da própria Secretaria, esta será a
+responsável por informar no Sistema Audesp – Fase V – Repasses Públicos ao Terceiro Setor os dados do Ajuste
+firmado ou da declaração negativa.
+
+No caso dos Municípios, a obrigação pela prestação dos dados no Sistema Audesp Fase V – Repasses Públicos ao
+Terceiro Setor será do órgão responsável pela assinatura.
+
+A declaração negativa do módulo Ajuste terá envio periódico indicando que não houve assinatura de cada tipo de
+ajuste.
+
+Assim, se a entidade, no período (ano ou quadrimestre), assinou apenas ajustes do tipo Termo de Colaboração,
+deve enviar declaração negativa dos demais tipos de ajuste (Contrato de Gestão, Termo de Parceria, Termo de
+Fomento e Convênio).
+
+A periodicidade de envio da Declaração Negativa depende do tipo de órgão devendo a entidade consultar o
+Comunicado AUDESP 53/2023 e o calendário de obrigações AUDESP publicado anualmente:
+https://www.tce.sp.gov.br/legislacao/comunicado/declaracao-negativa-ajustes-terceiro-setor-fase-v-sistema-
+audesp
+
+A lista de entidades com a respectiva periodicidade pode ser consultada no arquivo “Fase_V_entidades”
+disponibilizado na página de Manuais da Fase V - AUDESP:
+https://www.tce.sp.gov.br/audesp/documentacao/fase-v-sistema-audesp-manuais
+
+Periodicidade            Entidade/Órgão              Prazo de envio
+Quadrimestral
+                  Estado: Unidades Gestoras        5 dias úteis após o
+     Anual     Executoras (UGE´s), Autarquias e    encerramento do
+
+                        Fundações Típicas             quadrimestre
+
+                    Municípios: Prefeituras       15 dias úteis após o
+                    Municipais, Autarquias e     encerramento do ano
+
+                        Fundações Típicas
+
+                     Os demais órgãos não
+                       enquadrados acima
+
+Se a entidade cadastrar ajustes de todos os tipos com data de assinatura no período a declaração negativa não
+precisará ser informada.
+
+                                                                                                            4
+Acesso à Fase V – Sistema Audesp
+
+Para que um usuário tenha consiga realizar os cadastros, ele deve ter a seguinte permissão concedida pelo Gestor
+de acessos do órgão jurisdicionado:
+-Sistema: "Audesp Fase V - Terceiro Setor"
+-Papel: “Prestação de dados - jurisdicionado"
+
+Caso o órgão jurisdicioinado não tenha um Gestor cadastrado, deverá enviar um ofício digitalizado, conforme
+orientações do Comunicado SDG nº 43/2015, assinado pelo dirigente do órgão via Fale Conosco do Sistema
+Audesp. (Observação: o e-mail cadastrado no citado comunicado não deve ser utilizado.)
+https://www.tce.sp.gov.br/legislacao/comunicado/comunicado-sdg-432015-sistema-delegacoes-
+responsabilidades
+https://www4.tce.sp.gov.br/chamados/
+
+Caso o Gestor de acessos tenha dúvida sobre como conceder a permissão, recomendamos que consulte o
+manual, disponível no link que segue:
+https://www4.tce.sp.gov.br/sistema-de-delegacoes-de-responsabilidades
+
+Após a permissão de uso, o usuário deverá acessar o Portal de Sistemas, clicando no botão “LOGIN”, no site do
+
+TCESP:                            Clique aqui
+
+Em seguida insira seu login e senha. Caso não tenha cadastro no Portal de Sistemas, clique na opção “Não possuo
+uma conta” (seta verde) e siga os passos exibidos na tela:
+
+                                                                                                                                          5
+Em seguida clique no ícone da Fase V – Terceiro Setor:
+
+Atenção: o ambiente piloto da Fase V – Sistema Audesp continuará disponível para acesso àqueles que quiserem
+realizar qualquer tipo de teste. Portanto, deve-se atentar para o ícone a ser escolhido para o envio da prestação
+dos dados dos Ajustes e/ou Termos Aditivos firmados, pois os dois ambientes, de produção (oficial) e piloto não se
+comunicam.
+
+                                                                                                                                          6
+Inclusão de Declaração Negativa
+
+-Na página inicial da Fase V – AUDESP, no Menu “AJUSTES”, clique em “Declaração” e depois na opção “Incluir
+Declaração Negativa”:
+
+- Na tela de inclusão de declaração negativa preencha os campos “Ano de Referência”, “Tipo de Ajuste” e “Período
+de Referência” e depois clique em “Adicionar”:
+
+                                                                                                                                          7
+-Após a adição de todos os tipos ajustes que não tiveram celebração no período clique no botão “Enviar Declaração
+Negativa” para completar o envio:
+
+-Se o sistema identificar que um ajuste de determinado tipo foi enviado no período, a declaração negativa só
+permitirá selecionar os demais tipos de ajuste não enviados.
+-Mesmo após o envio da declaração negativa, se o órgão cadastrar um ajuste de tipo que ele declarou não ter
+firmado, o sistema assume que houve entrega sem necessidade de alteração da Declaração Negativa enviada.
+-Em caso de dúvidas, deve-se encaminhar um Fale conosco, conforme segue:
+https://www4.tce.sp.gov.br/chamados/open.php?1lid=9
+
+                                                                                                                                          8
+

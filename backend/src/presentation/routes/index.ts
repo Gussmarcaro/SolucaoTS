@@ -16,6 +16,7 @@ import { authRoutes } from './auth.routes';
 import { auditoriaRoutes } from './auditoria.routes';
 import { BuscaController } from '@/presentation/controllers/BuscaController';
 import { LgpdController } from '@/presentation/controllers/LgpdController';
+import { AssistenteController } from '@/presentation/controllers/AssistenteController';
 import { autenticar } from '@/presentation/middlewares/autenticar';
 import { exigirGrupo } from '@/presentation/middlewares/exigirGrupo';
 
@@ -47,6 +48,11 @@ routes.use('/auditoria', auditoriaRoutes);
 // Busca global da barra superior — percorre todos os cadastros de uma vez.
 const busca = new BuscaController();
 routes.get('/busca', (req, res, next) => busca.buscar(req, res, next));
+
+// Assistente da Fase V — responde a partir da documentação embarcada.
+const assistente = new AssistenteController();
+routes.get('/assistente/status', (req, res) => assistente.status(req, res));
+routes.post('/assistente', (req, res, next) => assistente.responder(req, res, next));
 
 // LGPD — registro das operações de tratamento (art. 37). Aberta a qualquer
 // usuário autenticado: cada um gera o registro do próprio acesso.

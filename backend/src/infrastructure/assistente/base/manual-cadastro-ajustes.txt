@@ -1,0 +1,1405 @@
+Manual de orientação para o Sistema AUDESP
+ Fase V - Repasses Públicos ao Terceiro Setor
+
+   Módulo Ajustes (inclusive Termo Aditivo)
+
+                                                                                                                   1
+Sumário
+
+Introdução .................................................................................................................................................................... 4
+Prestação de Contas..................................................................................................................................................... 5
+Acesso à Fase V – Sistema Audesp ............................................................................................................................... 5
+Cadastro ....................................................................................................................................................................... 8
+
+   Certidão .................................................................................................................................................................... 8
+      Cadastro de Certidão............................................................................................................................................ 8
+      Consulta de Certidão .......................................................................................................................................... 15
+
+   Ajuste ..................................................................................................................................................................... 19
+      Cadastro do Ajuste ............................................................................................................................................. 19
+         Aba Dados Gerais ........................................................................................................................................... 20
+            Aba Identificação do Ajuste ....................................................................................................................... 20
+            Aba Organização Social .............................................................................................................................. 22
+            Aba Responsáveis pela Assinatura ............................................................................................................. 26
+            Aba Declarações ......................................................................................................................................... 28
+            Aba Cláusulas Contratuais.......................................................................................................................... 29
+            Aba Relação dos Bens Cedidos................................................................................................................... 30
+            Aba Convênios Relacionados ..................................................................................................................... 34
+         Aba Entidade Gerenciada/Programa ............................................................................................................. 35
+         Aba Chamamento Público.............................................................................................................................. 39
+            Aba Adequação Orçamentária ................................................................................................................... 39
+            Aba Convocação ......................................................................................................................................... 41
+            Aba Seleção ................................................................................................................................................ 43
+         Aba Publicação ............................................................................................................................................... 46
+         Aba Plano de Trabalho ................................................................................................................................... 47
+            Aba Dados Gerais. ...................................................................................................................................... 48
+            Aba Plano de Metas ................................................................................................................................... 48
+            Aba Plano de Aplicação .............................................................................................................................. 55
+            Aba Cronograma de Desembolso............................................................................................................... 57
+         Aba Empenho ................................................................................................................................................. 59
+      Concluir Ajuste ................................................................................................................................................... 62
+
+   Termo Aditivo......................................................................................................................................................... 64
+
+                                                                                                                                          2
+Inclusão de Termo Aditivo.................................................................................................................................. 64
+   Aba Dados Gerais ........................................................................................................................................... 65
+   Aba Metas ...................................................................................................................................................... 68
+   Aba Plano de Aplicação – Memória de Cálculo.............................................................................................. 72
+   Aba Cronogramas de Desembolso ................................................................................................................. 76
+   Aba Empenho ................................................................................................................................................. 78
+
+                                                                                                                                    3
+Introdução
+
+A Fase V – Repasses ao Terceiro Setor do Sistema Audesp nasceu da necessidade de acompanhamento mais
+próximo, por parte da Fiscalização, dos atos realizados pelos gestores públicos relativos à prestação de serviços
+para uma parcela da sociedade, uma vez que o Estado passou a delegar a terceiros algumas funções sob sua
+responsabilidade.
+Este acompanhamento vem ao encontro da necessidade de aperfeiçoamento do processo de fiscalização que o
+TCESP vem adotando nos últimos anos, em aderência à Missão e Visão estabelecidas no Planejamento Estratégico
+institucional.
+No contexto de aperfeiçoamento da Fiscalização, este manual traz orientações ao jurisdicionado sobre o envio de
+registros do Ajuste ou Termo Aditivo firmados com a Entidade Beneficiária do repasse público.
+Desta forma, espera-se que este instrumento de orientação ajude os jurisdicionados no cumprimento das
+responsabilidades perante a sociedade e TCESP, permitindo que a prestação seja sempre a mais correta possível.
+
+                                                                                                                                          4
+Prestação de Contas
+
+A prestação de contas no Sistema Audesp – Fase V – Repasses Públicos ao Terceiro Setor relativo aos Ajustes e/ou
+Termos Aditivos (TA) firmados deve ser realizada pelo Órgão Concessor, jurisdicionado ao TCESP.
+Caso a assinatura do Ajuste e/ou Termo Aditivo tenha se dado por Secretaria Estadual, mas a execução do contrato
+esteja sob acompanhamento de alguma das UGE´s (Unidade Gestora Executora) da própria Secretaria, esta será a
+responsável por informar no Sistema Audesp – Fase V – Repasses Públicos ao Terceiro Setor os dados do Ajuste
+firmado.
+No caso dos Municípios, a obrigação pela prestação dos dados dos Ajustes e/ou Termos Aditivos no Sistema Audesp
+Fase V – Repasses Públicos ao Terceiro Setor será do órgão responsável pela assinatura.
+
+Acesso à Fase V – Sistema Audesp
+
+Este manual tem como objetivo mostrar como deve ser a alimentação do módulo Ajustes e/ou Termos Aditivos por
+parte do jurisdicionado responsável pelo envio dos dados na Fase V do Sistema Audesp.
+Para que um usuário tenha consiga realizar os cadastros, ele deve ter a seguinte permissão concedida pelo Gestor
+de acessos do órgão jurisdicionado:
+-Sistema: "Audesp Fase V - Terceiro Setor"
+-Papel: “Prestação de dados - jurisdicionado"
+
+Caso o órgão jurisdicioinado não tenha um Gestor cadastrado, deverá enviar um ofício digitalizado, conforme
+orientações do Comunicado SDG nº 43/2015 (https://www.tce.sp.gov.br/legislacao/comunicado/comunicado-sdg-
+432015-sistema-delegacoes-responsabilidades) , assinado pelo dirigente do órgão via Fale Conosco do Sistema
+Audesp (https://www4.tce.sp.gov.br/chamados/). (Observação: o e-mail cadastrado no citado comunicado não
+deve ser utilizado.)
+Caso o Gestor de acessos tenha dúvida sobre como conceder a permissão, recomendamos que consulte o manual,
+disponível no link que segue:
+https://www4.tce.sp.gov.br/sistema-de-delegacoes-de-responsabilidades
+
+Após a permissão de uso, o usuário deverá acessar o Portal de Sistemas, clicando no botão “LOGIN”, no site do
+TCESP:
+
+                                                                                                                                          5
+                                                                                                     Clique aqui
+
+Em seguida insira seu login e senha. Caso não tenha cadastro no Portal de Sistemas, clique na opção “Não possuo
+uma conta” (seta verde) e siga os passos exibidos na tela:
+
+                                                                                                                                          6
+Em seguida clique no ícone da Fase V – Terceiro Setor:
+
+Atenção: o ambiente piloto da Fase V – Sistema Audesp continuará disponível para acesso àqueles que quiserem
+realizar qualquer tipo de teste. Portanto, deve-se atentar para o ícone a ser escolhido para o envio da prestação
+dos dados dos Ajustes e/ou Termos Aditivos firmados, pois os dois ambientes, de produção (oficial) e piloto não se
+comunicam.
+
+                                                                                                                                          7
+Cadastro
+
+Para o registro dos dados dos Ajustes firmados com o Terceiro Setor, será necessário cadastrar as Certidões. Segue
+a definição de Certidão:
+Certidão: documento eletrônico utilizado para o cadastro dos responsáveis e da beneficiária/conveniada pelo
+repasse no momento da assinatura do Ajuste.
+O registro dos dados do Ajuste pode ser de duas formas:
+
+    1) Primeiro se cadastra a Certidão e, com o número da Certidão, se cadastra o Ajuste; ou
+    2) Se cadastra o Ajuste e, juntamente com ele, cada uma das Certidões exigidas.
+
+Certidão
+Cadastro de Certidão
+
+Para cadastrar a Certidão deve-se entrar no Sistema e selecionar a opção “Incluir Certidão” (1). Essa opção abre
+uma “árvore” para escolha das opções. Escolha a “Entidade Beneficiária” e “Dados Gerais – OS” (2):
+
+1  2
+
+      8
+É aberta a tela inicial. Preencha o campo “Descrição” (1) com informação que facilite a identificação da certidão.
+Então clique em “Gravar Identidade” (2). Caso o registro do campo “Descrição” não esteja correto, clique em
+“Limpar” (3):
+
+1  2
+
+                         3
+
+Na parte superior da tela constam os passos que deverão ser cumpridos no cadastro de uma Certidão (1). Após o
+preenchimento da primeira tela, o Sistema exibe o número de identificação da Certidão (2). Preencha a segunda
+tela com o CNPJ da Entidade Beneficiária e clique em “Buscar” (3):
+
+                        1
+
+                                                             2
+                                        3
+
+Observação: recomenda-se guardar o número da certidão e sua identificação, para que futuramente se possa
+vinculá-la a outro Ajuste que venha a ser assinado entre a Concessora e Beneficiária – desde que os dados
+permaneçam os mesmos.
+
+                                                                                                                                          9
+Clique na entidade exibida (1) e em “Selecionar” (2):
+
+1                                                      2
+
+O campo “Razão Social” (1) será preenchido automaticamente. Informe então a “Data de Constituição (2) e o
+“Endereço da Entidade” (3). Caso seja necessário excluir os dados informados nesta tela, clique em “Limpar” (4). Se
+estiverem corretos, clique em “Gravar Dados da Entidade” (5):
+
+                                   1
+
+                                                                                                                               5
+                                2
+
+                                      3
+
+                         4
+Observação: para saber mais detalhes sobre o que se pede no campo, passe o mouse sobre o ponto de interrogação
+ao lado. Contudo, o detalhamento da definição irá aparecer somente nos casos em que existe a possibilidade de
+interpretação diversa. Onde o entendimento é intuitivo, não se colocou o ponto de interrogação.
+
+                                                                                                                                         10
+A próxima tela deverá ser informada com a Data de Registro do Estatuto (1), a Finalidade Estatutária (Artigo de
+Referência (2)) e Resumo da Finalidade (3). Caso os dados não estejam corretos, clique em “Limpar” (4). Se os dados
+informados estiverem corretos clique em “Gravar Estatuto” (5).
+
+                               1
+                                                   3
+
+                            2
+                                                                                                                                   5
+
+                        4
+Em seguida, informe sobre a Qualificação. Ao responder “Não” (1) nenhum outro registro precisará ser informado.
+Basta então clicar em “Gravar Qualificação” (2).
+
+                                                                                                                                    2
+
+                                  1
+
+Ao responder “Sim” (1), abre-se um conjunto de campos para preenchimento:
+Veículo de Comunicação: qual o veículo de comunicação utilizado (Diário Oficial do Município ou do Estado; Jornal
+ou Outro, como publicação na internet) (2).
+Data em que ocorreu a publicação (3).
+Endereço na internet em que se encontra a publicação (4). Caso não tenha sido publicado, este campo poderá ficar
+sem preenchimento.
+
+                                                                                                                                         11
+Em seguida, clique no botão “Adicionar” (5).
+Caso os registros não estejam corretos, clique em “Limpar” (6).
+
+1 5
+
+      2 4
+
+                   3
+6
+
+Após clicar em “Adicionar” os registros serão carregados em uma lista, na parte inferior da tela (1). Na coluna
+“Nome” (2) será exibido o nome informado quando a opção de Veículo escolhida for “Outro”. Nos demais caso essa
+coluna permanece vazia.
+
+Será possível fazer a edição, caso algum dado informado esteja incorreto, clicando no botão  (3) ou mesmo
+excluir, se necessário, clicando em (4).
+
+                                                                                             12
+2  13 4
+
+Se houver a necessidade é possível voltar para a tela anterior clicando no botão “Voltar” (1). Uma mensagem será
+exibida na tela, solicitando a confirmação (2). Caso confirme, os dados informados na tela serão perdidos, pois não
+foram gravados previamente (veja que o botão “Gravar Qualificação” permanece habilitado (3)).
+
+                                                                                       2
+
+                                                                                                                                 3
+
+                                                                                                 1
+Porém, será melhor clicar em “Gravar Qualificação” (3 – acima) antes de clicar em “Voltar” (1 – acima), para não
+perder os dados. Então poderá clicar em “Voltar” mantendo os dados já informados.
+
+                                                                                                                                         13
+Em seguida, para finalizar a prestação dos dados da Certidão, deve-se clicar em “Concluir” (1). Este botão está
+localizado do lado direito, na parte inferior da tela:
+
+                                                                                                                                  1
+Concluída a Certidão será exibida uma mensagem confirmando a conclusão:
+
+As demais certidões da Entidade Beneficiária ou do Concessor seguem da mesma forma, apenas variando os tipos
+de campos exigidos. Por tal razão não serão detalhadas neste manual, porém, nas imagens que seguem mostra-se
+quais são as Certidões a serem preenchidas para a Entidade Beneficiária (1) e Órgão Concessor (2):
+
+                                                                                                                                         14
+                       1
+                                                                                                              1
+
+                      2 2
+
+Consulta de Certidão
+Caso seja necessário consultar uma certidão já informada, duas são as possibilidades:
+
+    1) Informando algum critério;
+    2) Pesquisando todas, sem colocar critério.
+    1) Informando critério
+Em primeiro lugar, deve-se escolher a opção “Pesquisar Certidão” no menu (1):
+
+                                                                                                                                         15
+            1
+
+Será aberta a tela seguinte, onde os critérios podem ser combinados, melhorando a busca, pois vai trazer menos
+Certidões para verificação e escolha. A identificação da Certidão (1) é a maneira mais assertiva.
+
+Critérios que podem ser utilizados para refinar a pesquisa:
+
+    a) Identificação da Certidão (1);
+    b) Tipo de Certidão (2);
+    c) Situação da Certidão (3);
+    d) Descrição (4) – o texto precisa ser o mesmo informado na Certidão;
+    e) CPF (5);
+    f) Início período de Atuação (6);
+    g) Término do período de Atuação (6).
+
+Após escolher o critério ou critérios, clique em “Pesquisar Certidões” (7).
+
+   1     2        3
+
+   4
+                                                                                                     7
+
+5     6        6
+
+Após a inclusão dos critérios, localizou-se a Certidão informada anteriormente. Algumas ações podem ser
+executadas:
+
+                                                                                                                                         16
+    a) Atualização, clicando no botão (1);
+    b) Visualização, clicando no botão (2);
+
+    c) Clonar, clicando no botão (3)*; e
+
+    d) Exclusão, clicando no botão (4).
+*Clonar uma Certidão: caso seja necessário aproveitar uma Certidão para outro Ajuste, com algumas alterações,
+será possível fazer uma cópia dela e ajustar o cadastro para a realidade do novo Ajuste que está sendo cadastrado.
+
+1  3
+
+                                                                                                          2
+                                                                                                                       4
+
+1 – Atualizar: ao clicar nesta opção , permite-se alterar os dados informados anteriormente. O Sistema
+posiciona na primeira aba. Faça a alteração, se necessário, e clique em “Gravar Dados da Entidade”. Proceda da
+mesma forma para as demais abas, até a última, quando se deverá clicar em “Concluir”.
+
+2 – Visualizar: clique nesta opção para visualizar toda a Certidão cadastrada.
+
+3 – Clonar: clique nesta opção quando precisar replicar a Certidão, com alteração, para utilizar em um novo
+ajuste informado. Esta opção permite a edição da Certidão, acrescentando, excluindo ou corrigindo os dados
+cadastrados inicialmente. Nesta condição o número de identificação será alterado (1). O sistema abre a primeira
+aba (2) para que se faça a correção ou confirmação, clicando no botão “Gravar Identidade” (3). O último passo (4)
+está em cinza, mostrando que é necessário passar por todos para confirmar ou alterar a Certidão. Grave cada uma
+das abas, para não perder o registro, até a última.
+
+                                                                                                                                         17
+                                                         1          4
+                                          2                               3
+
+Veja na imagem a seguir a Certidão original (1) e a replicada (2):
+
+                              1
+
+                               2
+Para o caso em que os dados da mesma Certidão poderão servir para mais de um Ajuste, basta pesquisar pelo
+número da certidão e realizar o vínculo. Nesta situação não é preciso clonar.
+4 – Excluir: para fazer a exclusão da Certidão, clique nesta opção . O Sistema irá exibir uma mensagem,
+solicitando a confirmação. Caso clique em “Confirmar” o Sistema fará a exclusão.
+
+                                                                                                                                         18
+Ajuste
+
+Cadastro do Ajuste
+
+Para realização do cadastro do Ajuste deve-se preencher todas as abas exibidas pelo Sistema. Recomenda-se
+sempre fazer uma conferência antes de clicar no botão “Concluir” para a remessa ao TCESP.
+O Sistema Audesp – Fase V – Repasses Públicos ao Terceiro Setor não permite que dois ou mais servidores, ao
+mesmo tempo, informem dados em um mesmo ajuste que começou a ser cadastrado mas não foi concluído.
+Contudo, servidores distintos podem registrar dados durante a realização do cadastro de um Ajuste, desde que em
+momentos separados (por exemplo: um servidor informa a primeira e a segunda aba por completo, gravando e
+saindo do sistema; outro servidor poderá continuar a informar da terceira aba em diante, em momento posterior,
+não esquecendo de gravar cada uma das abas informadas, para não perder os dados).
+O início da prestação dos dados de um Ajuste começa com a escolha do tipo a ser informado, conforme se vê na
+imagem que segue. Clique no menu “Ajustes” (1) e, em seguida, “Incluir Ajuste” (2). Então selecione o tipo a ser
+informado (3).
+
+                                                                                                                                         19
+                                                                     1
+                                                                                                    3
+
+                      2
+
+Aba Dados Gerais
+Aba Identificação do Ajuste
+Para mostrar como é o funcionamento das diversas abas se utilizará o “Contrato de Gestão” como modelo, por
+conter a maior quantidade de registros a serem informados.
+Depois de clicar na opção “Contrato de Gestão” será exibida a primeira aba de preenchimento. Na parte superior
+da tela consta a relação de todas as abas que deverão ser preenchidas (1).
+Deve-se iniciar informando o CNPJ do Órgão Concessor do recurso. Em seguida clique em “Buscar” (2):
+
+                                             2
+                                                                                        1
+
+                                                                                                                                         20
+Observação: por conta da Lei Geral de Proteção de Dados, alguns registros foram ocultados, preservando a
+privacidade do registro e seu portador.
+Será aberta uma nova tela, para seleção do órgão e confirmação (1). Clique em “Selecionar” (2).
+
+                                                                                                       2
+
+                                                    1
+
+Em seguida informar:
+Nº do Ajuste/Contrato de Gestão (1);
+Data da Assinatura (2);
+Valor Global (3);
+Lei que regula o Contrato de Gestão (4);
+Vigência de Início e Data de Término (5);
+Objeto (6).
+Município que tem maior predominância/prevalência na execução do objeto do ajuste (7);
+Após verificar que todos os dados estão corretos, clique em “Gravar” (8) para finalizar a primeira aba, sem perder
+os registros informados.
+Se os dados informados não estiverem corretos, clique em “Limpar” (9)
+
+                                                                                                                                         21
+1
+
+         2  3
+
+      4
+
+5 5
+    6 8 7
+
+                       9
+
+Após clicar em “Gravar” uma mensagem será exibida, informando sobre o sucesso na gravação e a aba superior
+ficará sinalizada com o preenchimento completo, em verde (1):
+
+   1
+
+Aba Organização Social
+Informe o número do CNPJ e clique no botão “Buscar” (1):
+
+                                                                                                                                         22
+1
+
+Será aberta uma tela para escolher (1) e, em seguida, clique em “Selecionar” (2):
+
+   1                                                                               2
+
+O próximo passo é selecionar as Certidões da Entidade Beneficiária, de Seus Membros e do Corpo Diretivo.
+
+Caso o cadastro destas Certidões tenha sido feito previamente, basta clicar em “Buscar” (1) para fazer a pesquisa
+da Certidão, conforme segue:
+
+                                                                                      23
+                                        11 1
+
+Com o número de Identificação da Certidão (1) ou sua Descrição (2) será possível verificar qual deve ser selecionada,
+caso mais de uma seja exibida na pesquisa. Depois de identificar a correta, clique em “Selecionar” (3):
+
+                                                         2
+                                         1
+
+                                                                                                  3
+A Certidão selecionada será vinculada automaticamente (1):
+
+                                                                                                                                         24
+                                       1
+Caso a Certidão não tenha sido cadastrada previamente, clique no botão “Criar Certidão” (1) para realizar seu
+cadastro e vinculação ao Ajuste:
+
+                                                                                       1
+Será exibida a tela que segue, com uma mensagem de alerta, para que o cadastro da certidão seja realizado, a fim
+de que a vinculação seja concluída (1). Caso contrário, os dados não serão armazenados. Clique em “Continuar” (2):
+
+                                                                                                                                         25
+                                                              1
+                                                                                                                              2
+
+Para realizar o cadastro da Certidão sugerimos consultar este assunto neste manual.
+Aba Responsáveis pela Assinatura
+É necessário informar quem assinou pelo Órgão Concessor do recurso e pela Entidade Beneficiária. Para isto,
+selecione a qual dos dois órgãos pertence o signatário (1) e o identifique, informando o CPF e sua data de
+nascimento (2). Clique em “Buscar” (3):
+
+                                                                                                                                         26
+                                  1
+                                                     3
+
+                              2
+
+Em seguida informe o Cargo (1), E-mail Institucional (2) e Particular (2) e clique em “Adicionar” (3):
+
+                                                                                     1
+                                                                                                                                   3
+
+                       2
+Observação: o mesmo CPF não poderá ser utilizado para informar o responsável pela Concessora e pela Entidade
+Beneficiária.
+É obrigatório que se informe ao menos um responsável pelo Órgão Concessor e um pela Entidade Beneficiária.
+Em seguida ao registro do primeiro responsável, proceda ao cadastro do segundo, clicando também no botão
+“Adicionar” como explicado na imagem acima.
+
+                                                                                                                                         27
+Caso seja necessário alterar, clique no botão “Atualizar”  , “Visualizar”  ou “Excluir” . Se não for
+
+necessário realizar qualquer alteração, então clique em “Gravar” (4).
+
+                                                                                                                     3
+                                                                                                            1
+
+                                                                                                                                      4
+
+                                                                                                             2
+
+Aba Declarações
+
+Nesta aba algumas perguntas deverão ser respondidas. De acordo com a resposta informada, novos dados deverão
+ser preenchidos.
+Na primeira pergunta, se responder “Sim” (1), será necessário informar também a “Data de aprovação” (2). Em
+caso negativo, não. Na segunda e terceira pergunta não há desdobramento da questão (3). Em seguida, clique em
+“Gravar” (4):
+
+                                                                           28
+                                       1
+                                   2
+
+                                                            34
+
+Aba Cláusulas Contratuais
+Ao informar esta aba, quando cabível, haverá desdobramento da pergunta. O registro pode ser colocado como
+número cardinal, ordinal, escrito, separado por vírgula, por ponto-e-vírgula ou por traço. Ou seja, o campo aceita
+diversas formas de evidenciar as cláusulas contratuais que tratam dos assuntos:
+
+                                                                                          Forma de inserção
+                                                                                          dos registros.
+
+Responda todos os questionamentos. Clique em “Gravar” (1).
+                                                                                                                                         29
+                                                                                                                          1
+
+Aba Relação dos Bens Cedidos
+Se houve a cessão/permissão de uso dos bens móveis, informe:
+
+    a) Número do Patrimônio (1);
+    b) Data de Cessão/Permissão (2);
+    c) Valor do Bem (3) – este campo é opcional, mas recomendável que seja informado;
+    d) Descrição do Patrimônio (4).
+    Em seguida clique em “Adicionar” (5) para cada um dos bens informados:
+
+                                                                                                                                         30
+                                        1
+                                   2
+
+                                                            5
+                                        3
+
+                                   4
+Primeiro cadastro de bem móvel realizado (1).
+Caso a lista de bens seja grande, pode-se fazer a adição por meio de lote, clicando no botão “Adicionar em
+Lote” (2).
+
+                                                                                                      2
+
+                                                    1
+
+Uma nova tela se abre, com o botão “Anexar Documentos” (1). No  (2) consta a instrução para elaboração
+do arquivo para “upload”.
+
+                                                                31
+                                1
+                                              2
+
+    Clique em “Anexar Documentos” Uma tela para localizar o arquivo “csv” salvo em sua máquina se abrirá.
+    Selecione o arquivo e clique em “Abrir”. O “upload” será realizado. No caso de algum erro, o sistema irá exibir
+    mensagem informando sobre o problema (1). Clique em “OK” (2), proceda à correção e repita o processo.
+
+                                                  1
+                                                                                                                       2
+
+    Em seguida, informe sobre os bens imóveis, caso a opção assinalada seja “Sim”.
+    a) Data de Cessão/Permissão (1);
+    b) Descrição do Patrimônio (2).
+Em seguida, clique em “Adicionar” (3).
+
+                                                                                                                                         32
+   2  3
+
+1
+
+Após adicionar todos os bens imóveis, clique em “Gravar” (1).                                   , “Visualizar”
+Observação: tanto na inclusão dos bens móveis quanto dos bens imóveis os botões de “Atualizar”
+
+      e “Excluir” estão disponíveis para utilização, se necessário (2).
+
+                                                                                                2
+                                                                                                              1
+
+                                                                                                                 33
+Aba Convênios Relacionados
+
+Ao informar “Sim” sobre recursos provenientes de fonte Estadual, novas perguntas se abrem para resposta:
+
+    a) Número do Ajuste (1);
+    b) Ano do Ajuste (2);
+    c) Número e_TCESP (registro opcional) – mas caso tenha é recomendável ser informado (3). Clique em
+
+         “Buscar” (4) em seguida.
+    d) Relator (registro opcional) (5).
+
+Após os preenchimentos anteriores, clique em “Adicionar” (6).
+
+1
+
+              2
+
+3                                                                                                  6
+
+           4
+5
+
+Após a adição de todos os ajustes relacionados, clique em “Gravar (1). Os botões para “Atualizar”  e “Excluir”
+      estão disponíveis para utilização, se necessário (2).
+
+                                                                                                      34
+                                                                                                                      2
+                                                                                                                                    1
+
+Aba Entidade Gerenciada/Programa
+Ao clicar em “Entidade ou Programa sem CNPJ”, alguns campos devem ser informados:
+
+    a) Nome (da Entidade ou Programa) (1);
+    b) Endereço (registro opcional – mas recomenda-se informar caso exista) (2);
+    c) Telefone (3);
+Após preencher os campos informados, clique em “Adicionar” (4).
+
+                                                                                                                                         35
+                                                                           1
+                                                                                                                                    4
+
+                                                                           2
+                                 3
+Após realizar o cadastro (1), caso não existam mais outras Entidades ou Programas para cadastramento, clique em
+“Gravar” (2).
+
+                                                                      1
+                                                                                                                                     2
+
+Havendo Entidade ou Programa com CNPJ, informe inicialmente o CNPJ (1) e clique em “Buscar” (2):
+
+                                                                                                                                         36
+1
+                    2
+
+Será aberta uma nova tela para seleção das opções apresentadas (1) conforme segue e, ao final, clique em
+“Selecionar (2):
+
+                       1
+                       1
+
+                       1                          2
+
+Em seguida à seleção, clique em “Adicionar” (1):
+
+                                                     37
+                                                                                                                                  1
+
+Na sequência da inclusão de todas as Entidades e/ou Programas incluídos (dois programas) (1), clique em “Gravar”
+(2).
+Os botões de “Atualização” ou “Exclusão” estão disponíveis (3).
+
+                                                                                                                           3
+                                                                                  1
+
+                                                                                                                                     2
+
+                                                                                                                                         38
+Aba Chamamento Público
+Esta aba está dividida nas que seguem:
+
+Aba Adequação Orçamentária
+Ao informar “Sim”, são abertos novos campos para registro:
+
+    a) Classificação Institucional (1);
+    b) Classificação Funcional Programática (2);
+    c) Classificação Econômica (3);
+    d) Valor (4)
+Se todos os dados estiverem corretos, clique e, “Adicionar” (5).
+
+                                     1
+                                            2
+
+                                     3
+                                                                                                                                   5
+
+                           4
+
+Observação: no caso dos municípios se o código da Classificação Econômica da Despesa não estiver de acordo com
+a relação adotada pelo Sistema Audesp, Será exibida mensagem (1) de alerta para confirmação por parte do usuário
+responsável pela prestação:
+
+                                                                                                                                         39
+                                                                               1
+
+                                                                    2
+                                                                                                                  3
+
+Ao clicar em “Cancelar” (2 – acima) o cadastro não será efetuado, voltando para a tela anterior, permitindo assim
+que se faça a correção. Caso se confirme em “Prosseguir” (3), o cadastro continua, sob responsabilidade do usuário
+declarante.
+Por fim, se não houver novos registros, deve-se “Gravar” (1):
+
+                                                                                                                                   1
+
+                                                                                                                                         40
+Aba Convocação
+
+A resposta “Sim” abre um novo conjunto de perguntas:
+
+    a) Dispensa do chamamento público (1);
+    b) Contrato emergencial (2);
+    c) Existência de publicação (3);
+    d) Lista de publicações: deve-se registrar todos os meios utilizados para a divulgação. Se a data da publicação
+
+         for inferior ao prazo mínimo disposto na legislação, uma mensagem de alerta será emitida (4). Faça a
+         correção para prosseguir.
+    e) Se os dados estiverem corretos, clique em “Adicionar” (5).
+
+      1
+
+   2
+
+3                                                4
+
+   4                                                5
+
+                                              4
+
+Em seguida registre:
+    a) Se houve retificação (1);
+    b) Lista de publicação da retificação (2).
+
+                                                       41
+Se os dados estiverem corretos, clique em “Adicionar” (3). Caso contrário, faça a correção.
+
+                                                                                 Dado anterior
+                                                                                 corrigido
+                              1
+
+                                                                                                                                 3
+
+                               22 2
+Em seguida informe:
+
+    a) Data de entrega da proposta (1);
+    b) Justificativa do prazo de convocação, da emergência da contratação e/ou da não-publicação (2).
+Se todos os dados estiverem corretos, clique em “Gravar” (3). Caso algum esteja incorreto, proceda a alteração e
+não esqueça de gravar novamente.
+
+1                                  3
+                                2      42
+Aba Seleção
+Todas as entidades que participaram da seleção devem ser informadas.
+Informe o CNPJ (1) da OS participante e clique em “Buscar” (1). Então selecione a entidade (2) e clique em
+“Selecionar” (3):
+
+                   1
+
+                                                                                                          3
+                                               2
+
+Em seguida informe a OS selecionada clicando na coluna “Selecionado?” (1):
+
+                                                                                          1
+
+Em seguida, informe:
+    a) Comprovação de que a Entidade atua na área pelo tempo mínimo (1);
+    b) Justificativa para escolha da OS (2);
+    c) Publicação do resultado (3). Em seguida, clique em “Adicionar” (4):
+                                                                                                                                         43
+   1
+         2
+
+34
+
+3           3  3
+
+Continue respondendo:
+    a) Se houve retificação da publicação (1);
+    b) Se existe Proposta Técnica e Orçamentária aprovada e Data de aprovação pelo Concessor (2);
+    c) Se existe Proposta Técnica e Orçamentária aprovada e Data de aprovação pelo Conselho de Administração
+         (3)
+    d) Parecer favorável quanto à conveniência e oportunidade de qualificação (4);
+
+                                                              1
+
+                                             2
+                                      2
+
+                                        3
+                                     3
+                                      4
+Se houver Representação ou Exame prévio de edital, recomenda-se informar, conforme pedido:
+    a) Número e_TCESP (1).
+
+                                                                                                                                         44
+Em seguida clique em “Buscar” (2):
+
+                                           2
+                               1
+
+Caso o número informado não seja encontrado, o sistema retorna uma mensagem (1), conforme segue:
+                                                                                   1
+
+                                                                                                   2
+
+Clique em “Ok” (2 - acima) para continuar.
+Após clicar em “Buscar”, conforme descrito na página anterior, o sistema exibe a lista para seleção. Selecione o
+processo em questão para continuar. O campo seguinte, Relator (1), também deve ser inserido automaticamente
+pelo sistema. Então clique em “Adicionar” (2). Após todos os campos informados corretamente, clique em “Gravar”
+(3):
+
+                                                                                                                                         45
+1                                                                                                                  2
+
+                                                                                                                3
+
+Aba Publicação
+
+Nesta aba deve-se informar sobre a publicação do Ajuste:
+    a) Se houve a publicação do Ajuste (1). Clicando em “Sim” o sistema exibe mais perguntas;
+    b) Veículo de Publicação (2);
+    c) Data da publicação (3);
+    d) Endereço na internet (4);
+
+Todos os campos informados e corretos, clique em “Adicionar” (5):
+
+                 1                                                                                                    5
+23 4                                                                                                                       46
+Após registrar todos os dados da publicação, clique em “Gravar” (1):
+
+                                                                      Registros adicionados
+                                                                                                                   1
+
+Aba Plano de Trabalho
+Nesta aba constam abas detalhando o Plano.
+
+                                                                                                                      47
+Aba Dados Gerais
+
+Deve-se informar a vigência do Plano de Trabalho
+    a) Data de Início (1);
+    b) Data de Término (2).
+
+Em seguida clique em “Gravar” (3):
+
+                                                  3
+
+1  2
+
+Aba Plano de Metas
+
+No campo “Nome do Programa” (1) informe o respectivo nome. O botão “Adicionar à Lista” será habilitado (2).
+Clique nele para adicionar o primeiro:
+
+                                                     48
+                                 1
+                                               2
+
+Após clicar em “Adicionar à lista” (imagem acima), o programa aparece na caixa “Programas” (1). Clique sobre ele
+para abrir os demais campos:
+
+                                                   1
+Após clicar, será possível “Excluir” (1) ou “Atualizar Programa” (2), clicando em um dos dois botões disponíveis:
+
+                                                                                                                                         49
+                                                                       Campos habilitados para
+                                                                       preenchimento
+
+2  1
+
+O nome do Programa já aparece no campo “Nome do Programa” (1). Em seguida informe:
+
+    a) Código da meta (2);
+    b) Meta (nome da meta para sua identificação) (3);
+    c) Tipo de meta (4);
+    d) Unidade de medida (unidade adotada para a meta) (5);
+    e) Descrição (da meta) (6).
+
+Em seguida clique em “Adicionar Vigência” (7) da meta:
+                                                                 1
+
+      2                                                             3               4                                                       5
+
+                                                                               6
+                                                                    7
+
+                                                                                                                                        50
+Os indicadores quantitativos e qualitativos são formas de monitorar o alcance dos objetivos, ou seja, são fatores
+que mostram se as estratégias adotadas e ações efetivadas pela entidade estão produzindo os resultados previstos.
+O sistema Audesp fase V prevê a inclusão dos seguintes tipos de meta:
+Meta quantitativa: é aquela relacionada à quantidade e que contém expressão numérica. Refere-se à realização
+da atividade mensurada quantitativamente prevista para o período.
+Meta qualitativa: é aquela relacionada à qualidade dos serviços prestados e é expressa por meio de fatos/ações
+observáveis e aspectos subjetivos, com o uso de escalas ou categorias analíticas.
+Meta qualitativa quantificável: é a que possui indicadores mensuráveis por métricas e/ou cálculos matemáticos e
+estatísticos. Quando selecionada, abre-se a opção de unidade de medida.
+Meta qualitativa não quantificável: é a que não possui indicadores mensuráveis por métricas e/ou cálculos
+matemáticos e estatísticos. Quando selecionada:
+
+    • não há a opção de unidade de medida;
+    • na vigência, deve ser apresentada opção "Única" na Periodicidade (como último valor possível na lista);
+    • não são apresentados campos de detalhes de periodicidade.
+
+A adição da vigência para a meta leva em consideração os seguintes fatos:
+    a) A periodicidade (será mensal, bimestral, trimestral, quadrimestral, semestral ou no exercício);
+    b) Se a vigência do ajuste se der em data que torna a primeira e a última periodicidade menor que o
+         estipulado. Por exemplo: a vigência do ajuste inicia em 01/06 e a periodicidade considerada é
+         quadrimestral. Isto quer dizer que, na primeira periodicidade haverá somente 3 meses (junho, julho e
+         agosto) e na última somente um mês (maio). Tal fato precisa ser considerado para a inclusão das
+         quantidades estabelecidas para o cumprimento da meta como um todo;
+    c) O preenchimento do item “Qualificador” do plano de metas do Sistema Audesp fase V depende de como a
+         meta foi definida no âmbito do ajuste. Por exemplo, se a meta é "100 atendimentos" o qualificador “igual
+         a” significa igual a 100. Se a meta é "mais de 100 atendimentos", o qualificador poderia ser "maior que" o
+         que significa maior que 100.
+    d) Se a distribuição das quantidades for igual para todos os períodos, independentemente da data de início,
+         o sistema disponibiliza o botão “Quantidade igual para todos os períodos?” para ser sinalizado:
+
+                                                                                                                                         51
+                                                           Marque esta opção se a quantidade
+                                                           for igual para todos os períodos.
+A seguir um exemplo em que a periodicidade é quadrimestral (1), com impacto sobre o primeiro e último
+quadrimestre, pois o ajuste inicia sua vigência em junho/2023, termina em maio/2025 e a vigência da meta é para
+dois anos (2023 a 2025):
+
+                                                                                        1
+
+                                                                                                                                         52
+Veja que:
+    a) A meta cadastrada apresenta como limite o atendimento de 1000 pessoas durante os dois anos de sua
+         vigência. Como a periodicidade é quadrimestral, o período da vigência concentra 6 quadrimestres. Contudo
+         o primeiro quadrimestre que começa em junho/2023 terá somente 3 meses e o último quadrimestre, que
+         será em 2025, terá somente um mês, que é maio.
+    b) Então é recomendável ajustar a quantidade a ser atendida por quadrimestre no primeiro e no último. Como
+         o primeiro terá 3 meses, é possível adotar a seguinte técnica: divide-se o total (1000) por 6 (quadrimestres),
+         que será igual a 166,67. Divide-se novamente este valor por 4 (quantidade de meses de um quadrimestre)
+         e multiplica-se por 3 (quantidade de meses do primeiro quadrimestre – junho a agosto). A diferença de um
+         mês será atribuída ao último, que tem somente o mês de maio.
+    c) No penúltimo quadrimestre se faz o ajuste em função da dízima observada na divisão (0,67). Veja como
+         ficaria a proposta de distribuição:
+                                                                                                           Registro do último período, para
+                                                                                                           completar a meta
+
+                                       Distribuição proposta
+                                       pelos períodos
+
+Observação: a distribuição dos atendimentos (acima) para alcance da meta é meramente exemplificativa, para
+facilitar o entendimento do usuário responsável por alimentar o sistema com os registros dos ajustes. Não se trata
+de técnica que deverá ser seguida à risca. Importante ainda mencionar que deve ser informado no sistema o plano
+de metas exatamente como ele foi desenvolvido e aprovado pelas partes interessadas.
+
+                                                                                                                                         53
+Após informar todas as periodicidades da meta em processo de cadastro, o sistema habilita o botão “Adicionar
+Meta” (1):
+
+                                                                                 Botões para
+                                                                                 Atualizar ou
+                                                                                 Excluir
+                                             Todos os
+                                             períodos
+                                             cadastrados
+
+                                                                                                                             1
+
+Adicionada a Meta, pode-se seguir para o cadastramento da segunda meta dentro do mesmo programa, seguindo
+os mesmos passos já descritos.
+Caso se queira cadastrar novo Programa, basta incluir nome do novo programa no campo respectivo e clicar em
+“Adicionar à lista”, como descrito no início desta Aba.
+Cadastrados os Programas e as Metas, então clique em “Gravar Metas” (1):
+
+                                                                                                                                         54
+                                                                                                                                   1
+
+Observação: somente Metas com valores devem ser cadastradas. Isto quer dizer que as Metas podem ser
+classificadas em “quantitativas” ou “qualitativas”. Contudo, se ela for quantificável, independentemente da
+classificação atribuída, ela deverá ser informada.
+Aba Plano de Aplicação
+Informe:
+
+    a) Categoria de Despesa, de acordo com as opções (1);
+    b) Ano (do plano de aplicação) (2);
+    c) Mês da aplicação (de acordo com as opções) (3);
+    d) Valor da aplicação (4);
+Em seguida, clique em “Adicionar” (5):
+
+                                                                                                                                         55
+                                   1
+
+                         2
+                                                   5
+
+                             3
+                                  4
+
+Alternativamente, se a quantidade de registros for extensa, pode-se utilizar a inclusão em Lote. Para isto clique no
+botão “Adicionar em Lote”, que fica do lado direito da tela, antes de preencher qualquer campo do lado esquerdo.
+Na imagem a seguir evidencia-se como adicionar um lote após inserir o primeiro registro manualmente:
+
+    a) Registros inseridos (1);
+    b) Botão habilitado para uso (2):
+
+                                                                                                       2
+
+                            1
+
+Ao clicar em “Adicionar em Lote” abre-se uma nova tela. Para fazer o “upload” do arquivo com a relação de
+aplicações do plano clique em “Anexar Documentos” (1). Será aberta uma tela para escolha do arquivo, que deverá
+estar salvo em seu computador de acordo com o leiaute estabelecido. O leiaute pode ser consultado passando o
+mouse sobre o botão . Caso queira cancelar essa operação, clique em “Cancelar” (2):
+
+                                                                                                                                         56
+                  Instruções para criação do
+
+   Passe o mouse  arquivo de carga
+
+1  aqui. 2
+
+                                                                           2
+
+Após informar os registros do Plano de Aplicação, clique em “Gravar” (1):
+
+                                                                                                                                   1
+
+Aba Cronograma de Desembolso
+Deve-se preencher os campos desta aba informando qual a previsão de desembolso dos valores referente ao Plano
+de atuação traçado para o ajuste firmado. Para isto, informe:
+
+    a) Ano (ano em que se dará o desembolso) (1);
+    b) Mês (2);
+
+                                                                                                                                         57
+    c) Valor (3).
+
+Contudo, caso queira fazer o “upload” de um arquivo com estes dados, deve-se clicar em “Adicionar em Lote” antes
+(4):
+
+                                                                             4
+   1
+
+      2
+
+             3
+
+Ao escolher “Adicionar em Lote” abre-se a tela com a opção de escolha do arquivo com os registros que deverão
+ser armazenados no Sistema. Este arquivo deverá estar salvo em seu computador, para que seja localizado ao clicar
+em “Anexar Documentos” (1). O arquivo deverá obedecer ao leiaute estabelecido, que pode ser consultado ao
+
+passar o mouse sobre o botão :
+
+1  Passe o
+
+   mouse aqui
+
+   i           Leiaute que deve ser
+
+               seguido
+
+Após informar o Cronograma de Desembolso, clique em “Gravar” (1):
+                                                                                                                                         58
+                                                                                                                                   1
+
+Aba Empenho
+    Nesta aba, ao responder “Sim” (1) novos campos são habilitados para preenchimento:
+    a) Número (do empenho) (2);
+    b) Data de Emissão (3);
+    c) Classificação Econômica (4);
+    d) Fonte de Recurso (5);
+    e) Valor (6);
+    f) Histórico (7):
+
+                                                                                                                                         59
+   1     3     4
+
+                                  2
+                                                                             6
+
+                                  5
+
+                                 7
+
+Além destas, os seguintes dados também devem ser informados:
+    a) CPF do Ordenador de Despesa (1);
+    b) Data de Nascimento (2);
+
+Em seguida, clique em “Buscar” (3):
+
+1     2     3
+
+Após clicar em “Buscar” o sistema preenche automaticamente o nome do Ordenador da Despesa (1). Se todos os
+registros estiverem corretos, clique em “Adicionar Empenho” (2):
+
+                                                                                                                                         60
+                                                                                                                                2
+                                              1
+Caso o sistema não encontre a classificação econômica informada na tabela de códigos utilizada como base, ele
+exibirá uma mensagem de alerta. Se a classificação estiver correta, clique em “Prosseguir” (1). Caso contrário, em
+“Cancelar” e corrija o registro:
+
+                                                                                                                1
+
+                                                                        2
+Após o registro do empenho, se não houver outros para informar, clique em “Gravar”:
+
+                                                                                                                                         61
+                                                                         Botões para Atualização,
+                                                                         Visualização ou Exclusão do
+                                                                         empenho adicionado
+
+                                                                                                                  1
+
+Concluir Ajuste
+
+Ao finalizar o registro de todos os dados pedidos (todas as abas estão sinalizadas em verde), o botão “Concluir
+Ajuste” é habilitado para que estes dados sejam encaminhados ao TCESP.
+Até este momento será possível realizar qualquer alteração em qualquer das abas, retornando nela, clicando no
+botão (Atualizar) e corrigindo. Em seguida deve-se “Gravar” para evitar a perda da alteração. Portanto, antes
+de clicar no botão “Concluir Ajuste” recomenda-se fazer uma revisão dos dados preenchidos em todas as abas, para
+garantia de que estejam corretos.
+Em seguida, deve-se clicar em “Concluir Ajuste” para realizar a prestação de contas.
+Caso seja necessário realizar alguma alteração após a conclusão, deve-se seguir os procedimentos estabelecidos no
+Manual Alteração Exclusão Fase V Repasses Terceiro Setor, publicado em
+https://www.tce.sp.gov.br/audesp/documentacao/fase-v-sistema-audesp-manuais.
+Observação: caso o sistema identifique que algum registro ou conjunto de registros apresente algum tipo de
+incompatibilidade (mesmo estando a aba sinalizada em verde o sistema pode acusar o erro) o sistema irá sinalizar
+ao jurisdicionado para que adote as medidas corretivas antes da remessa ao TCESP. Por exemplo: Na Aba Plano de
+Metas, todas as metas devem estar informadas, cobrindo toda a vigência do ajuste. Caso o sistema verifique que
+existe período da vigência sem meta, ele irá acusar a falha, impedindo o envio da prestação de contas do ajuste
+para o TCESP. Veja:
+
+                                                                                                                                         62
+                                                                                                                            1
+
+Confirme a leitura do alerta clicando em “OK” (1), proceda à correção e clique novamente em “Concluir Ajuste”.
+Sistema exibe uma mensagem de confirmação:
+
+                                                                                            1
+
+Após clicar em “Concluir” (1 - acima) pode-se verificar que o Ajuste em questão foi enviado ao TCESP (1):
+                                                                                                                                         63
+                                                    1
+1
+
+Termo Aditivo                                                                  1
+Inclusão de Termo Aditivo                                                2
+
+Deve seguir os seguintes passos:                                                        64
+Pesquisar o ajuste (1). Em seguida clicar no botão “Termo Aditivo” (2).
+
+                                           Informe o número
+                                           do ajuste
+
+Uma nova tela se abrirá. Clique no botão “Adicionar Termo Aditivo” (1):
+                                                                                                           1
+
+Aba Dados Gerais
+Em seguida, abre-se a tela para iniciar o registro do “Termo Aditivo - TA”:
+
+    a) Identificação do Termo Aditivo (1);
+    b) Data da Assinatura (2);
+    c) Data de Vigência: Data de Início e Data de Término (3);
+    d) Objeto do Termo (4);
+    e) Justificativa (5):
+
+                                21
+                                                    3
+                                                                          4
+
+                                                                          5
+Em seguida, na mesma tela, responda aos questionamentos, detalhando quando houver desdobramento
+(normalmente respondendo “Sim”):
+
+                                                                                                                                         65
+Ao responder “Sim” abrem-se novos  Por fim, clique aqui
+questionamentos                    para adicionar o
+                                   registro
+
+Na sequência, informe se houve “Acréscimo”, “Supressão” ou “Não Houve”. Caso tenha ocorrido aumento ou
+redução, informe o valor respectivo. Na imagem que segue, evidenciamos a situação de “Acréscimo” (1) e o
+respectivo montante acrescido (2):
+
+                                                    1
+                                      2
+Contudo, caso o TA seja referente a outro assunto, essa pergunta deverá ser respondida com “Não Houve” (1):
+
+                                                    1
+Em seguida, informar se houve ou não prorrogação de prazo (1):
+
+                                                         66
+                                      1
+Neste caso, não haverá desdobramento da pergunta. As demais também não terão desdobramento. Após
+responder a todas, clique em “Gravar” (1):
+
+                                                                                                                                    1
+
+O Sistema irá exibir uma mensagem informando que os dados do Plano de Trabalho inserido no Ajuste foram
+copiados para este TA, para que seja alterado ou mantido. Se houver alteração o sistema irá gerar uma nova versão
+atualizada do Plano de Trabalho. A versão original permanecerá mantida no Sistema como a primeira versão.
+Na parte superior da tela aparecem novas abas (1) para registro:
+
+                                                                                                                          1
+                                                                                                                                         67
+Como se pode ver da imagem acima, a aba “Dados Gerais” foi preenchida integralmente.
+Aba Metas
+Ao carregar o Plano de Trabalho original, o Sistema exibe esta aba para confirmação de que não houve alteração
+nos Programas/Metas estabelecidas, ou para que se faça a atualização, acrescentando, suprimindo ou excluindo
+do Plano algum Programa/Meta.
+Importante destacar que o Plano de Trabalho final, inserido no termo aditivo, deve contemplar todas as metas
+estabelecidas no plano de trabalho original, incluindo as modificações decorrentes do referido termo. Assim, as
+metas que não foram objeto de alteração devem permanecer incluídas no Plano de Trabalho.
+Programa
+Caso seja necessário incluir um novo programa, insira seu nome e clique em “Adicionar à Lista” (1):
+
+                                                  Insira o novo programa
+                                                    1
+
+A inclusão de um novo Programa segue os mesmos procedimentos já descritos na aba Metas, dentro da aba Plano
+de Trabalho do Ajuste (recomendamos voltar para consultar essas orientações).
+Caso o TA informe sobre a alteração nas metas já informadas, deve-se clicar no Programa respectivo já cadastrado
+(1):
+
+                                                                                                                                         68
+          1
+
+Observação: o Sistema irá guardar a versão original do Plano de Trabalho e, a partir das alterações (acréscimos,
+supressões ou inclusões) irá gerar uma nova versão atualizada.
+
+Caso se queira alterar a meta informada, deve-se clicar no botão  (1) da Lista de Metas, para abrir os dados e
+                                                                                                           correção:
+realizar     a
+
+                                                                                                            1
+A Lista de Vigências (1) se abre para alteração. Se necessário, clique no botão para atualizar a vigência (2):
+
+                                                                                                                                         69
+1
+                                                     2
+
+Altere a Vigência (Data de Início e/ou Data de Término) (1) e/ou a Periodicidade (2):
+
+                                                                          1
+                                                                                                        2
+
+Se for necessário alterar a periodicidade, será exibida uma mensagem de alerta sobre a exclusão dos períodos
+informados anteriormente. Isto se dá porque os períodos já cadastrados serão impactados com a alteração,
+obrigando a novo registro. Se quiser continuar, clique em “Continuar” (1):
+
+                                                                                   1
+
+Porém, caso seja necessário alterar uma ou mais metas informadas, clique no botão  (1) na Lista de
+Periodicidades (2):
+
+                                                                                      70
+                                                                             2
+                                                                                                1
+
+Será aberta uma tela para alteração na quantidade (1) somente. Clique em Atualizar” (2):
+
+                                                                    1
+                                                                                             2
+
+Observação: este caminho é válido apenas para atualização no valor da meta estabelecida em determinada
+periodicidade e exercício. Caso seja necessário acrescentar valores à meta, dentro do Programa já existente, deve-
+se inserir um novo registro no mesmo código de meta, após clicar no Programa já cadastrado (1), com um novo
+valor e informar a sua periodicidade:
+
+    a) Código da meta (2);
+    b) Meta (3);
+    c) Unidade de Medida (4);
+    d) Descrição (5).
+
+                                                                                                                                         71
+Em seguida clique em “Adicionar Vigência” (6):
+
+                                                23  4
+
+                                                                                 5
+                16
+
+Então, deve-se informar a Vigência do acréscimo realizado na meta e a respectiva periodicidade adotada.
+Importante sinalizar que, mesmo sendo acréscimo à uma meta existente, a periodicidade poderá ser diferente da
+anterior (1), assim como a vigência também (2):
+
+                                                                   2
+
+                                                                                                           1
+
+A distribuição das metas dentro do período deverá ser feita em seguida, da mesma forma que consta da aba Plano
+de Metas do Ajuste.
+Após a inclusão dos registros, deve-se “Gravar” (botão ao final da tela) para não perder os dados.
+
+Aba Plano de Aplicação – Memória de Cálculo
+
+Caso seja necessário informar novos registros sobre acréscimos ao Plano de Aplicação, basta inserir os novos
+registros:
+
+    a) Categoria de despesa (1);
+    b) Ano (2);
+    c) Mês (3);
+
+                                                                                                                                         72
+    d) Valor (4).
+Em seguida, clique em “Adicionar” (5):
+
+                                       1
+                              2
+
+                                                     5
+                                   3
+
+                                          4
+Alternativamente, se houver um conjunto grande de dados pode-se fazer upload de um arquivo, pelo botão
+“Adicionar em Lote” (1):
+
+                                                                                                           1
+
+Abre-se a tela para “Anexar Documentos” (1), ou seja, fazer o upload do arquivo com os registros adicionais. Após
+selecionar o arquivo, que deve obedecer ao padrão informado (2), deve-se clicar em “Adicionar” (3):
+
+                                                                                                                                         73
+                                                                             3-Após selecionar o
+1 2-Posicione o mouse no “?” habilita arquivo este botão
+
+                         para ver o leiaute adotado
+
+Se o TA alterou o registro anterior informado, ou é necessário excluir, então basta clicar em  (1) ou (2),
+para habilitar a alteração/exclusão:
+
+                                                                                                                  2
+                                                                                           1
+Para alteração, abre-se a seguinte tela, com os campos habilitados (1). Em seguida clique em “Atualizar” (2):
+
+                                                                                                                     74
+                                                                    1
+                                                                                                                         2
+
+Para exclusão aparece a pergunta que deve ser confirmada (1). Após a alteração e/ou exclusão, clique em “Gravar”
+(2):
+
+                                                                                         1
+                                                                                                                                2
+
+                                                                                                                                         75
+Aba Cronogramas de Desembolso
+Sendo necessário inserir um novo cronograma, basta inserir os novos dados ou, se a lista for grande, utilizar a opção
+de “Adicionar em Lote” (1):
+
+                                                                                                      1
+
+Em seguida, clique em “Anexar Documentos” (1), para fazer o upload do arquivo que contenha a relação a ser
+inserida. O arquivo deve estar salvo em seu computador e ele deve seguir o padrão, que pode ser consultado ao se
+passar o mouse pelo ponto de interrogação “?” (2). Após o upload, o Sistema habilita o botão “Adicionar” (3):
+
+                                           2
+                                                                                                              3
+
+            1
+
+                                                                                                                                         76
+Para uma relação pequena, informe os seguintes campos:
+    a) Ano (1);
+    b) Mês (2);
+    c) Valor (3).
+
+Em seguida, clique em “Adicionar” (4);
+
+                           1
+                                                4
+
+                                2
+
+                                       3
+
+Caso seja necessário apenas alterar e/ou excluir um ou mais registros do Cronograma de Desembolso informado
+
+anteriormente, basta clicar em  ou . Para atualizar será exibida a tela que segue. Em seguida clique em
+“Atualizar” (1):
+
+                                Campos que podem ser alterados
+                                                                          1
+
+Se quiser excluir, a seguinte mensagem será exibida. Clique em “Excluir” (1):
+                                                                                                                                         77
+                                                                                         1
+
+Por fim, clique em “Gravar” (1), após as alterações realizadas:
+
+                                                                                                                                1
+
+Aba Empenho
+Caso não tenha sido emitido empenho decorrente da elaboração do TA, clique em “Não” (1) e, em seguida, “Gravar”
+(2), para finalizar a prestação do Termo Aditivo:
+
+                                                                                                                                         78
+                                   1                                         2
+                                                                                   79
+Caso tenha sido emitido, deve-se informar:
+    a) Número (1);
+    b) Data de Emissão (2);
+    c) Classificação Econômica (3);
+    d) Fonte de Recurso (4);
+    e) Valor (5);
+    f) Histórico (6):
+
+                                                     2  3
+                             1                                            5
+
+                                   4
+
+                             6
+Em seguida também informe:
+
+    a) CPF Ordenador da Despesa (1);
+    b) Data de Nascimento (2)
+E clique em “Buscar” (3):
+1  2
+
+      3
+
+Após inserir os dados solicitados, clique em “Adicionar Empenho” (1);
+
+                                                                                                                              1
+Por fim, clique em “Gravar” (1):
+
+                                                                                                                                 80
+                                                                                                                                      1
+Observação: recomenda-se fazer uma revisão de todos os registros informados, a fim de corrigir se houver erro,
+antes de remeter ao TCESP como prestação de contas oficial. Isto evita o retrabalho no processo de correção.
+Se todos os dados estiverem corretos, clique em “Concluir” (1), para prestar ao TCESP os dados deste TA:
+
+                                                                                                                1
+                                                                                                                                         81
+

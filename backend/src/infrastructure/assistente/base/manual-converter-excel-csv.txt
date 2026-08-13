@@ -1,0 +1,80 @@
+     Manual de orientação para o Sistema AUDESP
+       Fase V - Repasses Públicos ao Terceiro Setor
+Conversão de arquivo do tipo Excel para o formato CSV
+
+                                                                                                                             1
+Sumário
+
+Introdução .................................................................................................................................................................... 3
+Arquivo Excel................................................................................................................................................................ 4
+Conversão para formato csv ........................................................................................................................................ 8
+Anexar Documento csv .............................................................................................................................................. 10
+
+                                                                                                                                          2
+Introdução
+
+A Fase V – Repasses ao Terceiro Setor do Sistema Audesp nasceu da necessidade de acompanhamento mais
+próximo, por parte da Fiscalização, dos atos realizados pelos gestores públicos relativos à prestação de serviços
+para uma parcela da sociedade, uma vez que o Estado passou a delegar a terceiros algumas funções sob sua
+responsabilidade.
+Este acompanhamento vem ao encontro da necessidade de aperfeiçoamento do processo de fiscalização que o
+TCESP vem adotando nos últimos anos, em aderência à Missão e Visão estabelecidas no Planejamento Estratégico
+institucional.
+No módulo Ajuste, a fim de facilitar o envio de informações relacionadas ao plano de aplicação, cronograma de
+desembolso e relação de bens cedidos foi criada a funcionalidade que permite a importação de um arquivo em
+formato CSV.
+Este manual tem como propósito fornecer orientações sobre os procedimentos necessários para converter um
+arquivo do tipo Excel para o formato CSV.
+Desta forma, espera-se que este instrumento de orientação ajude os jurisdicionados no cumprimento das
+responsabilidades perante a sociedade e TCESP, permitindo que a prestação seja sempre a mais correta possível.
+
+                                                                                                                                          3
+Arquivo Excel
+
+A utilização da planilha Excel proporciona uma simplificação na manipulação de informações para o usuário.
+Antes de iniciar a conversão para CSV, certifique-se de que os dados na planilha Excel estão devidamente
+organizados e formatados conforme padrão.
+Para visualizar o padrão de cada aba clique no botão “Adicionar em lote” e depois passe o mouse em cima do
+botão com o sinal de interrogação:
+
+-Relação de Bens Cedidos
+
+                                                                                                                                          4
+Exemplo:
+-Plano de Aplicação
+
+                                                                                                                                          5
+Exemplo:
+-Cronograma de Desembolso
+
+                                                                                                                                          6
+Exemplo:
+
+Sugerimos que quando os dados estiverem completos, sem necessidade de alterações, sejam copiados para um
+novo documento vazio no Excel. Isso ocorre porque, ao converter o arquivo para CSV, pode acontecer do CSV
+reconhecer as linhas apagadas como preenchidas.
+
+                                                                                                                                          7
+Conversão para formato csv
+
+Após certificar-se de que os dados na planilha do Excel estão devidamente organizados e formatados conforme
+padrão clique no botão “Arquivo” e depois na opção “Salvar uma Cópia”:
+
+                                                                                                                                          8
+No campo de tipo do documento estará selecionado “Pasta de Trabalho do Excel”, altere para “CSV (separado por
+vírgulas)”:
+
+Por fim, clique em “Salvar”:
+                                                                                                                                          9
+Anexar Documento csv
+
+Para adicionar as informações via arquivo CSV clique no botão “Adicionar em lote” e depois em “Anexar
+Documentos”:
+
+                                                                                                                                         10
+Clique no arquivo que contém as informações e depois clique no botão “Abrir”:
+As informações serão exibidas em tela, clique em “Adicionar” para que as informações sejam incluídas:
+
+Por fim clique no botão “Gravar” para gravar as informações adicionadas via lote (arquivo CSV).
+                                                                                                                                         11
+

@@ -158,3 +158,15 @@ No `backend/`:
 No `frontend/`: `npm run dev` (Vite em :5173) e `npm run build`.
 
 Não há framework de testes ainda; `verificar:montador` é a única checagem automatizada e roda como script.
+
+## Assistente da Fase V
+
+Ícone ao lado da lupa na barra superior. Responde sobre a Fase V e sobre o uso do sistema **ancorado na documentação embarcada** — não no conhecimento geral do modelo. Backend: `POST /assistente` (streaming SSE) e `GET /assistente/status`.
+
+A base é gerada por `npm run assistente:base` e **versionada** em `backend/src/infrastructure/assistente/base/` (~239 KB), como as tabelas de domínio: produção não precisa do `pdftotext` nem dos PDFs. Fontes: 5 manuais do TCESP, a síntese `REGRAS_NEGOCIO_FASE_V.md` e o **mapa de navegação extraído do `navigation.ts` do frontend** — é ele que impede o assistente de inventar caminho de tela.
+
+- O corpus inteiro vai no prompt a cada pergunta, sem busca por trechos: a regra que responde costuma estar numa tabela que não repete as palavras da pergunta, e o que o modelo não recebe ele não cita — supõe. Com o manual todo à vista, "não encontrei na documentação" passa a ser verdade verificável.
+- O corpus entra com `cache_control` (TTL 1h) antes de qualquer conteúdo volátil — a partir da 2ª pergunta custa ~1/10. Não coloque data, usuário ou id de requisição antes dele: invalida o cache inteiro.
+- Modelo `claude-opus-5` com `effort: low` — a tarefa é localizar e reproduzir, não raciocinar longamente.
+- **`npm run verificar:assistente`** confere que a base está completa e que o mapa de navegação bate com o menu real (nos dois sentidos). Rode depois de mexer em `navigation.ts` — menu alterado sem regerar a base faz o assistente ensinar tela que não existe.
+- Sem `ANTHROPIC_API_KEY` o `status` responde `disponivel: false` e o ícone some da barra.

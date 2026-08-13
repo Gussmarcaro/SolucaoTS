@@ -1,0 +1,3024 @@
+ Manual da Prestação de Contas
+dos Repasses ao Terceiro Setor
+
+                                                                                          Versão 1.19
+         TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+         DTI – Departamento de Tecnologia da Informação
+         DSis-1 – Sistemas para Prestação de Contas
+
+Sumário
+
+Histórico de alterações deste documento ......................................................... 6
+1 Introdução ................................................................................................ 8
+2 Envio e Consulta de Prestação de Contas............................................... 9
+
+  2.1 Ambientes ............................................................................................ 9
+  2.2 Credencial e Permissão de Envio......................................................... 9
+  2.3 Autenticação........................................................................................10
+  2.4 Envio da Prestação de Contas ............................................................10
+  2.5 Consulta do Estado do Envio da Prestação de Contas .......................11
+  2.6 Resolução de Inconformidades ...........................................................11
+  2.7 Retificação da Prestação de Contas ...................................................11
+  2.8 Declaração Negativa ...........................................................................12
+3 Descritor..................................................................................................13
+  3.1 Campos ...............................................................................................13
+  3.2 Regras .................................................................................................14
+4 Código do Ajuste .....................................................................................14
+  4.1 Campos ...............................................................................................14
+  4.2 Regras .................................................................................................14
+5 Relação de Empregados da Entidade Beneficiária .................................14
+  5.1 Campos ...............................................................................................15
+  5.2 Regras .................................................................................................15
+6 Relação de Bens da Entidade Beneficiária .............................................16
+  6.1 Campos ...............................................................................................17
+  6.2 Regras .................................................................................................17
+7 Contratos ................................................................................................18
+  7.1 Campos ...............................................................................................18
+  7.2 Regras .................................................................................................19
+8 Documentos Fiscais................................................................................20
+  8.1 Campos ...............................................................................................20
+  8.2 Regras .................................................................................................21
+9 Pagamentos ............................................................................................22
+  9.1 Campos ...............................................................................................22
+  9.2 Regras .................................................................................................23
+10 Disponibilidades ......................................................................................23
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+         (11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br            2
+                             TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                             DTI – Departamento de Tecnologia da Informação
+                             DSis-1 – Sistemas para Prestação de Contas
+
+  10.1 Campos ...........................................................................................24
+  10.2 Regras .............................................................................................24
+11 Receitas ..................................................................................................24
+  11.1 Campos ...........................................................................................25
+  11.2 Regras .............................................................................................25
+12 Ajustes de Saldo .....................................................................................25
+  12.1 Campos ...........................................................................................27
+  12.2 Regras .............................................................................................28
+13 Relação de Servidores Cedidos pelo Órgão Concessor .........................29
+  13.1 Campos ...........................................................................................30
+  13.2 Regras .............................................................................................30
+14 Descontos ...............................................................................................31
+  14.1 Campos ...........................................................................................31
+  14.2 Regras .............................................................................................31
+15 Devoluções .............................................................................................32
+  15.1 Campos ...........................................................................................32
+  15.2 Regras .............................................................................................32
+16 Glosas.....................................................................................................32
+  16.1 Campos ...........................................................................................33
+  16.2 Regras .............................................................................................33
+17 Empenhos ...............................................................................................34
+  17.1 Campos ...........................................................................................34
+  17.2 Regras .............................................................................................35
+18 Repasses ................................................................................................35
+  18.1 Campos ...........................................................................................35
+  18.2 Regras .............................................................................................36
+19 Relatório de Atividades ...........................................................................36
+  19.1 Campos ...........................................................................................37
+  19.2 Regras .............................................................................................38
+20 Dados Gerais da Entidade Beneficiária ..................................................39
+  20.1 Campos ...........................................................................................39
+  20.2 Regras .............................................................................................39
+21 Responsáveis e Membros do Órgão Concessor.....................................40
+  21.1 Campos ...........................................................................................40
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     3
+                             TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                             DTI – Departamento de Tecnologia da Informação
+                             DSis-1 – Sistemas para Prestação de Contas
+
+  21.2 Regras .............................................................................................40
+22 Publicação do Regulamento de Compras ...............................................40
+
+  22.1 Campos ...........................................................................................41
+  22.2 Regras .............................................................................................42
+23 Publicação do Extrato de Execução Física e Financeira ........................42
+  23.1 Campos ...........................................................................................42
+  23.2 Regras .............................................................................................43
+24 Declarações ............................................................................................43
+  24.1 Campos ...........................................................................................43
+  24.2 Regras .............................................................................................44
+25 Relatório da Comissão de Avaliação.......................................................44
+  25.1 Campos ...........................................................................................44
+  25.2 Regras .............................................................................................44
+26 Relatório Governamental da Análise da Execução .................................45
+  26.1 Campos ...........................................................................................45
+  26.2 Regras .............................................................................................45
+27 Relatório de Monitoramento e Avaliação.................................................45
+  27.1 Campos ...........................................................................................45
+  27.2 Regras .............................................................................................45
+28 Demonstrações contábeis.......................................................................46
+  28.1 Campos ...........................................................................................46
+  28.2 Regras .............................................................................................46
+29 Publicações de Parecer ou Ata ...............................................................46
+  29.1 Campos ...........................................................................................47
+  29.2 Regras .............................................................................................47
+30 Publicação do Relatório de atividades ....................................................47
+  30.1 Campos ...........................................................................................48
+  30.2 Regras .............................................................................................48
+31 Termo da Relação de Bens Cedidos.......................................................48
+  31.1 Campos ...........................................................................................48
+  31.2 Regras .............................................................................................48
+32 Prestação de Contas da Entidade Beneficiária .......................................48
+  32.1 Campos ...........................................................................................48
+  32.2 Regras .............................................................................................49
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     4
+                             TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                             DTI – Departamento de Tecnologia da Informação
+                             DSis-1 – Sistemas para Prestação de Contas
+
+33 Parecer conclusivo..................................................................................49
+  33.1 Campos ...........................................................................................49
+  33.2 Regras .............................................................................................50
+
+34 Transparência .........................................................................................50
+  34.1 Campos ...........................................................................................51
+  34.2 Regras .............................................................................................53
+
+35 Retificação da Prestação de Contas .......................................................53
+  35.1 Campos ...........................................................................................53
+  35.2 Regras .............................................................................................53
+
+36 Declaração Negativa...............................................................................53
+  36.1 Campos ...........................................................................................53
+  36.2 Regras .............................................................................................53
+
+37 Glossário .................................................................................................55
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     5
+                    TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                    DTI – Departamento de Tecnologia da Informação
+                    DSis-1 – Sistemas para Prestação de Contas
+
+Histórico de alterações deste documento
+
+Versão  Data        Descrição
+1.0     02/10/2023  A primeira versão do documento unifica os dados dos diversos tipos
+                    de ajustes para consulta em arquivo único.
+1.3     01/07/2024  Versão 1.3 do arquivo JSON. Inclui o campo "tipo_documento" no
+                    "descritor" e altera a regra 1 de validação de contratos. Também
+1.4     19/08/2024  altera os schemas, permitindo informar valores negativos para as
+                    receitas de aplicações financeiras; e corrige o incremento dos
+1.5     28/11/2024  valores monetários (0.01) e dos valores mínimos dos descontos e
+                    devoluções (0.01).
+1.6     15/04/2025  Versão 1.4 do arquivo JSON. Inclui os dados de relação de
+                    empregados, relação de bens e relação de servidores cedidos.
+1.7     23/06/2025  Inclui a sessão explicativa “Envio e Consulta da Prestação de
+                    Contas”.
+1.8     05/09/2025  Versão 1.5 do arquivo JSON. Inclui os dados do relatório de
+                    atividades.
+1.9     07/11/2025  Versão 1.6 do arquivo JSON. Inclui os dados declaratórios, parecer
+                    conclusivo e alteração para prestação anual.
+                    Inclui instruções explicativas quanto aos dados de Descontos e
+                    Devoluções.
+                    Versão 1.7 do arquivo JSON, que inclui a retificação da prestação
+                    de contas, a declaração negativa e a inclusão da Relação de Bens
+                    e Empregados para a prestação de contas de Convênio.
+                    Revisão do texto das regras de validações de datas.
+                    Inclusão de esclarecimentos na seção 9 Pagamentos.
+                    Inclusão de esclarecimentos na seção 8 Documentos Fiscais.
+                    Correção da descrição do campo “periodicidades” da seção 19
+                    Relatório de Atividades.
+
+1.10    28/11/2025  Versão 1.8 do arquivo JSON, que torna opcional o campo
+
+                    identificacao_parecer da seção 33 Parecer Conclusivo.
+
+                    Detalhamento na seção 2.7 Retificação da Prestação de Contas do
+
+                    estado da prestação de contas impactada por uma retificação.
+
+1.11    12/01/2026  Inclusão do endereço e requisito das credenciais de acesso do
+
+                    ambiente de produção (seções 2.1 Ambientes e 2.2 Credencial e
+
+                    Permissão de Envio).
+
+1.12    15/01/2026  Versão 1.9 do arquivo JSON, que acrescenta o campo
+
+                    pagamento_data na seção 16 Glosas, acrescenta o campo
+
+                    fonte_recurso_tipo em retificacao_repasses na seção 12 Ajustes de
+
+                    Saldo e exclui a categoria de despesa "75 = UTILIDADES
+
+                    PÚBLICAS - GÁS" (campo categoria_despesas_tipo de
+
+                    documentos_fiscais).
+
+                    Inclusão de esclarecimento sobre pagamento de Folha Ordinária na
+
+                    seção 9 Pagamentos.
+
+                    Inclusão de esclarecimentos e regras de análise de glosa de
+
+                    pagamento de Folha Ordinária na seção 16 Glosas.
+
+                    Alteração das regras de duplicidade de repasses recebidos que
+
+                    passam a incluir a fonte de recurso na composição da chave
+
+                    (seções 11 Receitas e 12 Ajustes de Saldo).
+
+                    Esclarecimento das situações de devolução na seção 15
+
+                    Devoluções
+
+1.13    16/03/2026  Versão 1.10 do arquivo JSON, que atualiza a lista de tipos de fontes
+
+                    de recursos válidos (campo fonte_recurso_tipo) e corrige o $id dos
+
+                    campos do elemento participacoes_quadro_diretivo_administrativo.
+
+                    Incluído esclarecimento sobre os campos valor_encargos e
+
+                    categoria_despesas_tipo da seção 8 Documentos Fiscais.
+
+        Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+                    (11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                 6
+                  TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                  DTI – Departamento de Tecnologia da Informação
+                  DSis-1 – Sistemas para Prestação de Contas
+
+                  Incluído esclarecimento sobre salário contratual e cbo na seção 5
+
+                  Relação de Empregados da Entidade Beneficiária.
+
+                  Incluído esclarecimento sobre o campo entidade na seção 3
+
+                  Descritor.
+
+                  Incluído esclarecimento sobre os campos quantidade_realizada e
+
+                  resultado_meta na seção 19 Relatório de Atividades.
+
+                  Incluída referência a documento complementar na seção 11
+
+                  Receitas.
+
+                  Incluído esclarecimento que no ambiente piloto o sistema inicia a
+
+                  prestação de contas no exercício de 2024 (seções 2.1 Ambientes e
+
+                  3 Descritor)
+
+1.14  15/04/2026  Versão 1.11 do arquivo JSON, que aumenta o tamanho máximo do
+
+                  campo numero_transacao do pagamento para 40 caracteres (seção
+
+                  9 Pagamentos).
+
+                  Revisado o texto da regra sobre duplicidade de empenhos para
+
+                  melhor entendimento (regra 1 da seção 17. Empenhos).
+
+                  Revisado o texto da nota sobre o campo mes do descritor para
+
+                  melhor entendimento (seção 3 Descritor).
+
+1.15  15/06/2026  Incluído esclarecimento sobre o período de remuneração na relação
+
+                  de empregados (5 Relação de Empregados da Entidade
+
+                  Beneficiária) e na remuneração de servidores cedidos (13 Relação
+
+                  de Servidores Cedidos pelo Órgão Concessor)
+
+                  Incluído esclarecimento sobre o preenchimento do campo
+
+                  numero_transacao para pagamento de folha ordinária (seção 9
+
+                  Pagamentos).
+
+                  Corrigida a regra de validação de justificativa para a declaração
+
+                  “Aplicações de Sanções” no parecer conclusivo (33 Parece
+
+                  Conclusivo)
+
+1.16  25/06/2026  Versão 1.12 do arquivo JSON Schema, que corrige para R$ 0,01 o
+
+                  valor mínimo de repasses recebidos, outras receitas e recursos
+
+                  próprios (11 Receitas) e das glosas (16 Glosas).
+
+                  Corrigido o texto da regra de validação da data de emissão de
+
+                  documento fiscal (8 Documentos Fiscais).
+
+                  Corrigido o texto da regra de validação da data de empenho (17
+
+                  Empenhos)
+
+                  Incluídos exemplos de chamadas à API de autenticação e envio de
+
+                  prestação de contas na seção 2 Envio e Consulta de Prestação de
+
+                  Contas.
+
+1.17  29/06/2026  Versão 1.13 do arquivo JSON Schema, que corrige o número de
+
+                  campos mínimos da seção contratos (7 Contratos) nos ajustes de
+
+                  tipo Convênio, Termo de Colaboração e Termo de Fomento.
+
+1.18  01/07/2026  Versão 1.14 do arquivo JSON Schema, que reforça a
+
+                  obrigatoriedade do campo valor_cessao na relação de bens móveis
+
+                  cedidos (6 Relação de Bens da Entidade Beneficiária) e bloqueia
+
+                  valor não numérico no preenchimento do campo pagamento_valor
+
+                  na retificação de pagamento (12 Ajustes de Saldo).
+
+1.19  24/07/2026  Corrigido o texto da regra de validação da data de aquisição e
+
+                  cessão de bens para a primeira prestação de contas (6 Relação de
+
+                  Bens da Entidade Beneficiária).
+
+                  Corrigido o texto da regra de validação da data de emissão
+
+                  empenho para a primeira prestação de contas (17 Empenhos).
+
+                  Corrigido o texto da regra de validação da data do repasse para a
+
+                  última prestação de contas (18 Repasses).
+
+      Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+                  (11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     7
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+1 Introdução
+
+    Este manual oferece uma visão geral do processo de envio e consulta de
+prestação de contas dos repasses ao terceiro setor (Fase V) do Sistema Audesp,
+relacionando as APIs utilizadas e descrevendo o documento JSON que deve conter
+os dados da prestação de contas, com o objetivo de orientar os órgãos
+jurisdicionados a respeito da criação do arquivo JSON e do seu envio para o
+TCESP.
+
+    A próxima sessão explica o processo comunicação com o Sistema Audesp,
+enquanto as sessões seguintes orientam a respeito da criação do arquivo JSON
+com os dados da prestação de contas.
+
+    O documento JSON compreende todos os tipos de ajustes e as diferenças na
+prestação de contas para cada tipo de ajuste estão destacadas onde aplicável. Em
+cada seção do manual são apresentados os campos e as regras de validação de
+dados aplicáveis para cada bloco de dados, que são aplicadas após a recepção do
+documento pelo WebService Audesp. Além das regras de validação de dados, há
+também regras de validação da estrutura do arquivo JSON e do formato dos dados,
+que são aplicadas no momento do envio do documento. Essas regras estão
+descritas nos arquivos JSON Schema, que estão disponíveis em AUDESP -
+Repasses ao Terceiro Setor - JSON/Schemas, e devem ser consultadas para a
+criação dos arquivos JSON. Os arquivos JSON de exemplo para cada tipo de ajuste
+também estão disponíveis no link acima.
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     8
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+2 Envio e Consulta de Prestação de Contas
+
+    Esta sessão tem como objetivo orientar os usuários sobre os passos
+necessários para o envio e consulta de prestação de contas de repasses ao
+Terceiro Setor utilizando o sistema AUDESP Fase V.
+
+    Diferentemente do módulo para cadastro de ajustes, o módulo de prestação de
+contas não dispõe de uma interface interativa acessível via navegador na internet.
+O processo do envio da prestação de contas envolve a comunicação entre sistemas
+através da utilização das APIs RESTFUL fornecidas pelo Tribunal de Contas do
+Estado de São Paulo (TCESP). Para mais detalhes sobre as chamadas das APIs
+consultar a documentação disponível na página Documentação das APIs AUDESP.
+
+    Passos para Envio e Consulta de Prestação de Contas
+2.1 Ambientes
+
+    Os seguintes servidores (base URL ou endpoint base) estão disponíveis para
+o envio da prestação de contas:
+
+    • Ambiente piloto: https://audesp-piloto.tce.sp.gov.br
+    • Ambiente produção: https://audesp.tce.sp.gov.br
+    Observações:
+    1. O ambiente piloto da prestação de contas depende do cadastro de ajustes
+
+         no ambiente piloto do AUDESP Fase V.
+    2. No ambiente piloto o sistema inicia a prestação de contas no exercício de
+
+         2024.
+2.2 Credencial e Permissão de Envio
+
+    Para o envio da prestação de contas o usuário deverá ter uma credencial
+cadastrada nos sistemas do TCESP com a seguinte permissão:
+
+    • Ambiente piloto: permissão "Transmissão Pacotes - Fase V" no sistema
+         "WebService Audesp - Piloto" (Camada de Serviço do Audesp - Piloto).
+
+         Após o cadastro a permissão será listada da seguinte forma:
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     9
+                             TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                             DTI – Departamento de Tecnologia da Informação
+                             DSis-1 – Sistemas para Prestação de Contas
+• Ambiente produção: permissão "Transmissão Pacotes - Fase V" no
+    sistema "WebService Audesp " (Camada de Serviço do Audesp).
+
+• Após o cadastro a permissão será listada da seguinte forma:
+
+2.3 Autenticação
+    Antes de iniciar o envio da prestação de contas, é necessário realizar a
+
+autenticação no sistema AUDESP. Para isso, siga os passos abaixo:
+
+    1. Acesse a API de autenticação no servidor utilizando a rota (path): /login
+
+    2. Forneça as credenciais de acesso conforme especificado na documentação
+         da API.
+
+    3. Após a autenticação bem-sucedida, você receberá um token de
+         autenticação. Este token é essencial para as próximas chamadas de API e
+         deve ser incluído no cabeçalho de todas as requisições subsequentes.
+
+    Exemplo de chamada da API utilizando o curl:
+
+       curl -s --location --request POST "https://audesp.piloto.tce.sp.gov.br/login" --header
+       "x-authorization: <USUARIO>:<SENHA>"
+
+2.4 Envio da Prestação de Contas
+
+    Com o token de autenticação em mãos é possível proceder com o envio da
+prestação de contas. O envio deve ser feito utilizando um documento JSON que
+contenha os dados da prestação, conforme especificado nas próximas sessões
+deste documento.
+
+    Existem diferentes rotas (paths) na API para o envio de prestações de contas,
+dependendo do tipo de contrato ou convênio. Deve ser utilizada a rota
+correspondente ao tipo de prestação de contas que será envidada:
+
+• Contrato de Gestão: /f5/enviar-prestacao-contas-contrato-gestao
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     10
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+    • Convênio: /f5/enviar-prestacao-contas-convenio
+
+    • Termo de Colaboração: /f5/enviar-prestacao-contas-termo-colaboracao
+
+    • Termo de Fomento: /f5/enviar-prestacao-contas-termo_fomento
+
+    • Termo de Parceria: /f5/enviar-prestacao-contas-termo-parceria
+
+    • Declaração Negativa: /f5/declaracao-negativa
+
+    Ao enviar a prestação de contas o sistema retornará um número de protocolo
+caso o documento JSON atenda às especificações do JSON Schema. Caso o
+documento não atenda às especificações do JSON Schema será retornado um erro
+da API.
+
+    Exemplo de chamada da API utilizando o curl:
+
+       curl -s --location "https://audesp-piloto.tce.sp.gov.br/f5/enviar-prestacao-contas-
+       contrato-gestao" --header "Authorization: Bearer <TOKEN-RECEBIDO>" --form
+       "documentoJSON=@\"<NOME-ARQUIVO-JSON>\""
+
+2.5 Consulta do Estado do Envio da Prestação de Contas
+    Após o envio da prestação de contas, pode-se consultar o estado do envio
+
+utilizando-se o número de protocolo recebido. Para isso, deve-se seguir os passos
+abaixo:
+
+    1. Acessar a API de consulta através da rota (path): /f5/consulta
+
+    2. Fornecer o número de protocolo recebido no envio da prestação de contas.
+
+    3. A API retornará o resultado da consulta, que incluirá o estado do envio e,
+         caso pertinente, a relação de inconformidades identificadas na prestação.
+
+2.6 Resolução de Inconformidades
+    Caso a consulta retorne que o documento foi rejeitado ("status":"Rejeitado"),
+
+deve-se revisar as inconformidades da prestação de contas conforme as
+orientações fornecidas e realizar as correções necessárias. Após corrigi-las, fazer
+um novo envio da prestação de contas. Repetir o processo até que a prestação de
+contas seja aceita (consulta retorne "status":"Armazenado").
+
+2.7 Retificação da Prestação de Contas
+    Para retificar uma prestação de contas armazenada deverá ser enviada uma
+
+nova prestação de contas completa, incluindo-se o campo que sinaliza a retificação
+(35 Retificação da Prestação de Contas). A retificação validada pelo sistema
+substituirá completamente todos os dados da prestação de contas enviada
+anteriormente, que passará para o status de substituída ("status":"Substituído").
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     11
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+    Para fins de análise/autuação será considerada como data do envio da
+prestação de contas a data do último envio acatado com sucesso, incluindo-se o
+envio de retificações.
+
+    A retificação da prestação de contas de um exercício anterior ao último exercício
+prestado exigirá o reenvio de todas as prestações subsequentes. As prestações de
+contas de exercícios subsequentes passarão para o estado de excluídas
+("status":"Excluído").
+
+    Durante o prazo da prestação de contas o envio de uma retificação será acatado
+automaticamente. Após o prazo da prestação de contas a retificação poderá exigir
+autorização, que deverá ser obtida através de interface própria.
+
+2.8 Declaração Negativa
+
+    O início da obrigatoriedade da prestação de contas é definido pela data da
+assinatura do ajuste. Caso o ajuste não tenha repasse no(s) exercício(s) inicial(ais)
+deverá ser enviada a Declaração Negativa do ajuste para o(s) exercício(s) em
+questão.
+
+    Uma declaração negativa armazenada será automaticamente sobrescrita por
+uma prestação de contas enviada do mesmo período, desde que não existam
+prestações de contas armazenadas de exercícios posteriores. Se houver
+prestações de contas de exercícios posteriores será necessário o envio de uma
+retificação para a sobrescrita da declaração negativa.
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     12
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+    A prestação de contas está dividida em blocos de dados abrangendo as
+seguintes áreas:
+
+    A próximas sessões descrevem os detalhes dos blocos de dados do documento
+JSON, versão 1.14.
+
+3 Descritor
+
+"descritor": {
+   "tipo_documento": "Prestação de Contas de Convênio",
+   "municipio": 7107,
+   "entidade": 10048,
+   "ano": 2025,
+   "mes": 121
+
+}
+
+3.1 Campos
+
+    • tipo_documento: tipo da prestação de contas, que deve corresponder ao
+        tipo do ajuste referenciado na prestação.
+
+    • município: código do município no Sistema Audesp;
+
+    • entidade: código da entidade no Sistema Audesp. Identifica o órgão
+        responsável pela prestação de contas para o TCESP;
+
+    • ano: ano do exercício da prestação de contas;
+    • mes: mês referente ao período da prestação de contas1.
+
+     1 O campo “mes" do descritor deverá ser preenchido sempre com o valor 12. Futuramente
+esse campo poderá receber outros valores.
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     13
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+3.2 Regras
+
+    1. Os códigos de município e entidade devem corresponder aos códigos de
+         uma entidade existente no Sistema Audesp, conforme planilha disponível na
+         página https://www.tce.sp.gov.br/audesp/coletor (item 4).
+
+    2. O campo ano deverá ser igual ou maior que 2025 e menor ou igual ao ano
+         da data corrente. Excepcionalmente no ambiente piloto o sistema inicia a
+         prestação de contas no exercício de 2024.
+
+4 Código do Ajuste
+
+"codigo_ajuste": "2023000000000001"
+
+4.1 Campos
+
+    • codigo_ajuste: código do ajuste ao qual pertence a prestação de contas.
+
+4.2 Regras
+
+    1. O ajuste correspondente ao código informado deve ter sido enviado pela
+         entidade que está prestando contas, estar armazenado na base de dados
+         do sistema (módulo de Ajustes) e seu tipo deve corresponder ao tipo da
+         prestação de contas enviada.
+
+5 Relação de Empregados da Entidade
+
+    Beneficiária
+
+"relacao_empregados": [
+   {
+      "cpf": "00000000191",
+      "data_admissao": "2023-01-01",
+      "data_demissao": "2023-04-30",
+      "cbo": "123456",
+      "cns": "123456789012345",
+      "salario_contratual": 1320.00,
+      "periodos_remuneracao": [
+         {
+             "mes": 1
+             "carga_horaria ": 160.00,
+             "remuneracao_bruta ": 1320.00
+         },
+         {
+             "mes": 2
+             "carga_horaria ": 160.00,
+             "remuneracao_bruta ": 1320.00
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     14
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+         },
+         {
+
+             "mes": 3
+             "carga_horaria ": 160.00,
+             "remuneracao_bruta ": 1320.00
+         },
+         {
+             "mes": 4
+             "carga_horaria ": 160.00,
+             "remuneracao_bruta ": 1320.00
+         }
+      ]
+   }
+]
+
+5.1 Campos
+
+  • cpf: CPF do empregado.
+  • data_admissao: data da admissão do empregado.
+  • data_demissao: data de demissão do empregado, se houver.
+  • cbo: código da ocupação do empregado de acordo com o Código Brasileiro
+
+       de Ocupação (CBO).
+  • cns: número do Cartão Nacional de Saúde (CNS), exigido apenas para
+
+       médicos, de acordo com o CBO informado.
+  • salario_contratual: salário contratual do empregado.
+  • periodos_remuneracao: lista dos períodos de remuneração do empregado.
+  • mes: mês da remuneração.
+  • carga_horaria: carga horária trabalhada no mês.
+  • remuneracao_bruta: remuneração bruta no mês.
+
+5.2 Regras
+
+  1. O empregado deve ser único no contexto do documento, ou seja, não poderão
+       ser informados dois ou mais empregados com o mesmo CPF e mesma data
+       de admissão para o mesmo ajuste.
+
+  2. O número do CPF do empregado deve ser válido.
+  3. A data de admissão deve ser menor que a data corrente e deve ser menor ou
+
+       igual à data final do período da prestação.
+  4. A data de demissão deve ser menor que a data corrente, deve ser maior ou
+
+       igual à data de admissão e deve estar dentro do período da prestação.
+  5. O CBO deve corresponder a um código de ocupação válido. Para estagiários
+
+       deve-se utilizar o código equivalente à função exercida.
+  6. O número do CNS deve ser informado sempre que o CBO corresponder à
+
+       ocupação de médico (subgrupo 225) e deve ser válido.
+  7. O mês da remuneração deve corresponder ao período da prestação, limitado
+
+       pela data da admissão e pela data de demissão, se houver. As datas de
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     15
+                               TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                               DTI – Departamento de Tecnologia da Informação
+                               DSis-1 – Sistemas para Prestação de Contas
+
+    admissão e de demissão são consideradas como dias trabalhados, e portanto,
+    remunerados.
+8. Todos os empregados previamente informados e sem data de demissão
+    devem ser informados na prestação atual.
+9. Os campos salário contratual e cbo devem ser informados conforme a
+    situação do início do exercício.
+
+6 Relação de Bens da Entidade Beneficiária
+
+"relacao_bens": {
+   "relacao_bens_moveis_adquiridos": [
+      {
+         "numero_patrimonio": "123",
+         "descricao": "Descrição do bem",
+         "data_aquisicao": "2023-01-01",
+         "valor_aquisicao": 100.00
+      }
+   ],
+   "relacao_bens_moveis_cedidos": [
+      {
+         "numero_patrimonio": "123",
+         "descricao": "Descrição do bem",
+         "data_cessao": "2023-01-01",
+         "valor_cessao": 100.00
+      }
+   ],
+   "relacao_bens_moveis_baixados_devolvidos": [
+      {
+         "numero_patrimonio": "123",
+         "data_baixa_devolucao": "2023-01-01",
+      }
+   ],
+   "relacao_bens_imoveis_adquiridos": [
+      {
+         "descricao": "Descrição do bem imóvel",
+         "data_aquisicao": "2023-01-01"
+      }
+   ],
+   "relacao_bens_imoveis_cedidos": [
+      {
+         "descricao": "Descrição do bem imóvel",
+         "data_cessao": "2023-01-01"
+      }
+   ],
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     16
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+   "relacao_bens_imoveis_baixados_devolvidos": [
+      {
+         "descricao": "Descrição do bem imóvel",
+         "data_baixa_devolucao": "2023-01-01",
+      }
+
+   ]
+}
+
+6.1 Campos
+
+    • relacao_bens_moveis_adquiridos
+             o numero_patrimonio: Número do patrimônio.
+             o descricao: Descrição do patrimônio.
+             o data_aquisicao: Data da aquisição do patrimônio.
+             o valor_aquisicao: Valor da aquisição do patrimônio.
+
+    • relacao_bens_moveis_cedidos
+             o numero_patrimonio: Número do patrimônio.
+             o descricao: Descrição do patrimônio.
+             o data_cessao: Data da cessão do patrimônio.
+             o valor_cessao: Valor da cessão do patrimônio.
+
+    • relacao_bens_moveis_baixados_devolvidos
+             o numero_patrimonio: Número do patrimônio.
+             o data_baixa_devolucao: Data da baixa/devolução.
+
+    • relacao_bens_imoveis_adquiridos
+             o descricao: Descrição do bem imóvel adquirido.
+             o data_aquisicao: Data da aquisição do bem.
+
+    • relacao_bens_imoveis_cedidos
+             o descricao: Descrição do bem imóvel cedido.
+             o data_aquisicao: Data da cessão do bem.
+
+    • relacao_bens_imoveis_baixados_devolvidos
+             o descricao: Descrição do bem imóvel baixado/devolvido.
+             o data_aquisicao: Data da baixa/devolução do bem.
+
+6.2 Regras
+
+    1. A data da aquisição dos bens móveis e imóveis deve estar dentro do período
+         da prestação. Caso seja a primeira prestação de contas do ajuste a data
+         poderá ser anterior ao período da prestação.
+
+    2. A data da cessão dos bens móveis e imóveis deve estar dentro do período
+         da prestação. Caso seja a primeira prestação de contas do ajuste a data
+         poderá ser anterior ao período da prestação.
+
+    3. A data da baixa/devolução dos bens móveis e imóveis deve estar dentro do
+         período da prestação.
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     17
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+7 Contratos
+
+"contratos": [
+   {
+      "numero": "1234657890",
+      "credor": {
+         "documento_tipo": 1,
+         "documento_numero": "00000000191",
+         "nome": "Nome/Razão Social do Credor"
+      },
+      "data_assinatura": "2023-01-01",
+      "vigencia_tipo": 1,
+      "vigencia_data_inicial": "2023-01-01",
+      "vigencia_data_final": "2023-01-01",
+      "objeto": "Objeto do contrato",
+      "natureza_contratacao": [
+         1,
+         2,
+         3
+      ],
+      "natureza_contratacao_outro": "Descrição de outros serviços",
+      "criterio_selecao": 1,
+      "criterio_selecao_outro": "Descrição de outros critérios de
+
+seleção",
+      "artigo_regulamento_compras": "Artigo 1",
+      "valor_montante": 1.23,
+      "valor_tipo": 1
+
+   }
+]
+
+7.1 Campos
+    • numero: número do contrato.
+    • credor: credor do contrato.
+             o documento_tipo: tipo do documento do credor do contrato (CPF,
+                  CNPJ ou RNE).
+             o documento_numero: número do documento do credor do contrato.
+             o nome: nome/razão social do credor do contrato.
+    • data_assinatura: data da assinatura do contrato.
+    • vigencia_tipo: tipo da vigência do contrato.
+    • vigencia_data_inicial: data inicial da vigência do contrato.
+    • vigencia_data_final: data final da vigência do contrato.
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     18
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+    • objeto: objeto do contrato.
+
+    • natureza_contratacao: natureza da contratação.
+
+    • natureza_contratacao_outro: descrição de outros serviços (natureza da
+        contratação).
+
+    • criterio_selecao: critério de seleção.
+
+    • criterio_selecao_outro: descrição de outros critérios de seleção.
+
+    • artigo_regulamento_compras: artigo do regulamento de compras.
+
+        Obs.: obrigatório para prestações de contas do tipo “Contrato de Gestão” e
+        “Termo de Parceria”, opcional para os demais tipos de prestação de contas.
+
+    • valor_montante: valor do contrato.
+
+    • valor_tipo: tipo de valor do contrato.
+
+7.2 Regras
+
+    1. Todos os contratos vigentes durante o período referente à prestação devem
+         ser informados na prestação de contas. O contrato deve ser único no
+         contexto do documento, ou seja, não poderão ser informados dois ou mais
+         contratos com o mesmo número do contrato, data da assinatura do contrato,
+         tipo do documento do credor do contrato e número do documento do credor
+         do contrato.
+
+    2. O número do documento do credor do contrato deve ser válido, de acordo
+         com o tipo do documento do credor do contrato informado (‘1 – CPF’ ou ‘2 –
+         CNPJ'). Para documento estrangeiro (RNE) não há validação de número de
+         documento.
+
+    3. O nome/razão social do credor do contrato deve ser informado caso o tipo
+         de documento do credor do contrato seja ‘3 – RNE’.
+
+    4. A data da assinatura do contrato deve ser maior ou igual à data corrente
+         menos 20 anos.
+
+    5. A data inicial da vigência do contrato deve ser maior ou igual à data corrente
+         menos 20 anos e menor ou igual à data corrente mais 2 anos.
+
+    6. A data final da vigência do contrato deve ser informada caso o tipo da
+         vigência do contrato seja ‘1 – Pré-Estabelecida’.
+
+    7. A data final da vigência do contrato deve ser maior ou igual a data inicial da
+         vigência do contrato e menor ou igual à data inicial da vigência do contrato
+         mais 10 anos.
+
+    8. Caso o campo “natureza da contratação” contenha o valor ‘23 – Outros
+         Serviços’, o campo “descrição de outros serviços” deve informar a descrição
+         dos serviços. Caso contrário, o campo “descrição de outros serviços” será
+         desconsiderado.
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     19
+                             TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                             DTI – Departamento de Tecnologia da Informação
+                             DSis-1 – Sistemas para Prestação de Contas
+
+9. Caso o valor do campo “critério de seleção” seja ‘4 – Outros’, o campo
+    “descrição de outros critérios de seleção” deve informar a descrição dos
+    critérios de seleção. Caso contrário, o campo “descrição de outros critérios
+    de seleção” será desconsiderado.
+
+8 Documentos Fiscais
+
+Na prestação de contas convencionou-se nomear qualquer documento
+comprobatório de pagamento como “documento fiscal” e isso inclui guias de
+recolhimento e recibos, nota fiscal, duplicata, fatura etc.
+
+"documentos_fiscais": [
+   {
+      "numero": "0987654321",
+      "credor": {
+         "documento_tipo": 1,
+         "documento_numero": "00000000272",
+         "nome": "Nome/Razão Social do Credor"
+      },
+      "identificacao_contrato": {
+         "numero": "1234657890",
+         "data_assinatura": "2023-01-01",
+         "identificacao_credor": {
+             "documento_tipo": 1,
+             "documento_numero": "00000000191"
+         }
+      },
+      "descricao": "Descrição do Documento Fiscal",
+      "data_emissao": "2023-01-01",
+      "estado_emissor": 26,
+      "valor_bruto": 1.23,
+      "valor_encargos": 1.23,
+      "categoria_despesas_tipo": 1,
+      "rateio_proveniente_tipo": 1,
+      "rateio_percentual": 1.23
+   }
+
+]
+
+8.1 Campos
+
+    • numero: número do documento fiscal.
+
+    • credor: credor do documento fiscal.
+
+             o documento_tipo: tipo do documento credor do documento fiscal
+                  (CPF, CNPJ ou RNE).
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     20
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+             o documento_numero: número do documento do credor do documento
+                  fiscal.
+
+             o nome: nome/razão social do credor do documento fiscal.
+
+    • identificacao_contrato: identificação do contrato associado ao documento
+         fiscal.
+
+             o numero: número do contrato.
+
+             o data_assinatura: data da assinatura do contrato.
+
+             o identificacao_credor: identificação do credor do contrato.
+
+                      ▪ documento_tipo: tipo do documento do credor do contrato
+                           (CPF, CNPJ ou RNE).
+
+                      ▪ documento_numero: número do documento do credor do
+                           contrato.
+
+    • descrição: descrição do documento fiscal.
+
+    • data_emissao: data da emissão do documento fiscal.
+
+    • estado_emissor: estado emissor do documento fiscal.
+
+    • valor_bruto: valor bruto do documento fiscal.
+
+    • valor_encargos: valor dos encargos retidos do documento fiscal.
+
+    • categoria_despesas_tipo: categoria de despesa. Quando houver mais de
+         uma categoria de despesa em um mesmo documento fiscal informe a
+         categoria de despesa cujo valor seja mais relevante.
+
+    • rateio_proveniente_tipo: proveniente de rateio.
+
+    • rateio_percentual: percentual de rateio.
+
+8.2 Regras
+
+    1. O documento fiscal deve ser único no contexto do ajuste, ou seja, não
+        poderão ser informados dois ou mais documentos fiscais com o mesmo
+        número do documento fiscal, tipo do documento do credor do documento
+        fiscal e número do documento do credor do documento fiscal para o mesmo
+        ajuste.
+
+    2. O número do documento do credor do documento fiscal deve ser válido, de
+        acordo com o tipo do documento do credor do documento fiscal informado
+        (‘1 – CPF’ ou ‘2 – CNPJ'). Para documento estrangeiro (RNE) não há
+        validação de número de documento.
+
+    3. O nome/razão social do credor do documento fiscal deve ser informado caso
+        o tipo do documento do credor do documento fiscal seja ‘3 – RNE’.
+
+    4. Caso o documento fiscal esteja vinculado a um contrato, o contrato
+        informado deve estar previamente armazenado na base de dados (recebido
+        em prestações anteriores) ou ser informado no próprio documento JSON.
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     21
+                             TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                             DTI – Departamento de Tecnologia da Informação
+                             DSis-1 – Sistemas para Prestação de Contas
+
+5. A data de emissão do documento fiscal deve estar dentro do período da
+    prestação de contas. Caso seja a primeira prestação de contas do ajuste a
+    data poderá ser anterior ao período da prestação.
+
+6. O valor dos encargos retidos do documento fiscal deve ser maior ou igual a
+    zero e menor que o valor bruto do documento fiscal. Quando não houver
+    retenção deve ser informado com o valor zero.
+
+7. Caso o valor do campo “proveniente de rateio” seja ‘1 – Sim’, o campo
+    “percentual de rateio” deve informar o valor percentual do rateio. Caso
+    contrário, o campo “percentual de rateio” será desconsiderado.
+
+9 Pagamentos
+
+"pagamentos": [
+   {
+      "identificacao_documento_fiscal": {
+         "numero": "0987654321",
+         "identificacao_credor": {
+             "documento_tipo": 1,
+             "documento_numero": "00000000272"
+         }
+      },
+      "pagamento_data": "2023-01-01",
+      "pagamento_valor": 1.23,
+      "fonte_recurso_tipo": 1,
+      "meio_pagamento_tipo": 1,
+      "banco": 1,
+      "agencia": 1234,
+      "conta_corrente": "5678X",
+      "numero_transacao": "001ABC"
+   }
+
+]
+9.1 Campos
+
+    • identificacao_documento_fiscal: identificação do documento fiscal
+         associado ao pagamento.
+
+             o numero: número do documento fiscal1.
+
+             o identificacao_credor: identificação do credor do documento fiscal.
+
+                      ▪ documento_tipo: tipo do documento credor do documento
+                           fiscal (CPF, CNPJ ou RNE).
+
+                      ▪ documento_numero: número do documento do credor do
+                           documento fiscal.
+
+    • pagamento_data: data do pagamento.
+
+    • pagamento_valor: valor do pagamento.
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     22
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+    • fonte_recurso_tipo: fonte de recurso.
+
+    • meio_pagamento_tipo: local de onde saiu o recurso público para o
+         pagamento (1 - Banco ou 2 - Fundo Fixo).
+
+    • agencia: número da agência do pagamento.
+
+    • conta_corrente: número da conta corrente do pagamento.
+
+    • numero_transacao: número da transação do pagamento2.
+
+1 Caso o pagamento informado seja uma Folha Ordinária, o número do documento fiscal deverá ser
+informado como 9999.
+
+2 Caso o pagamento informado seja uma Folha Ordinária, o número da transação poderá ser informado
+como 9999.
+
+9.2 Regras
+
+    1. O pagamento deve ser único no contexto do ajuste, ou seja, não poderão
+        ser informados dois ou mais pagamentos com o mesmo documento fiscal,
+        data do pagamento, valor do pagamento e fonte de recurso para o mesmo
+        ajuste.
+
+    2. O documento fiscal associado ao pagamento deve estar previamente
+        armazenado na base de dados (recebido em prestações anteriores) ou ser
+        informado no próprio documento JSON. Exceto para pagamento de Folha
+        Ordinária, que não tem documento fiscal associado na seção
+        documentos_fiscais.
+
+    3. A data do pagamento deve estar dentro do período da prestação de contas.
+
+    4. Os campos “número do banco”, “número da agência”, “número da conta
+        corrente” e “número da transação do pagamento” devem ser informados
+        caso o valor do campo “meio de pagamento” seja ‘1 – Banco’. Caso contrário,
+        os campos com dados bancários serão desconsiderados.
+
+10 Disponibilidades
+
+"disponibilidades": {
+   "saldos": [
+      {
+         "banco": 1,
+         "agencia": 1234,
+         "conta": "5678X",
+         "conta_tipo": 1,
+         "saldo_bancario": 1.23,
+         "saldo_contabil": 1.23
+      }
+   ],
+   "saldo_fundo_fixo": 1.23
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     23
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+}
+10.1 Campos
+
+    • saldos: saldos da disponibilidade financeira.
+             o banco: número do banco da disponibilidade.
+             o agencia: número da agência da disponibilidade.
+             o conta: número da conta da disponibilidade.
+             o conta_tipo: tipo de contas da disponibilidade.
+             o saldo_bancario: saldo bancário da disponibilidade1.
+             o saldo_contabil: saldo contábil da disponibilidade1.
+
+    • saldo_fundo_fixo: saldo do fundo fixo1.
+
+1 Saldo na data final do período da prestação. Por exemplo, se a prestação se refere ao exercício de 2023,
+então a data final é 31/12/2023.
+
+10.2 Regras
+    1. O saldo deve ser único no contexto do documento, ou seja, não poderão ser
+         informados dois ou mais saldos com o mesmo banco, agência, conta e tipo
+         de conta no documento.
+
+11 Receitas
+
+"receitas": {
+   "receitas_aplic_financ_repasses_publicos_municipais": 1.23,
+   "receitas_aplic_financ_repasses_publicos_estaduais": 1.23,
+   "receitas_aplic_financ_repasses_publicos_federais": 1.23,
+   "repasses_recebidos": [
+      {
+         "data_prevista": "2023-01-01",
+         "data_repasse": "2023-01-01",
+         "valor": 1.23,
+         "fonte_recurso_tipo": 1
+      }
+   ],
+   "outras_receitas": [
+      {
+         "descricao": "Descrição",
+         "valor": 1.23
+      }
+   ],
+   "recursos_proprios": [
+      {
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     24
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+         "descricao": "Descrição",
+         "valor": 1.23
+      }
+   ]
+}
+11.1 Campos
+
+    • receitas_aplic_financ_repasses_publicos_municipais: receitas com
+         aplicações financeiras dos repasses públicos municipais.
+
+    • receitas_aplic_financ_repasses_publicos_estaduais: receitas com
+         aplicações financeiras dos repasses públicos estaduais.
+
+    • receitas_aplic_financ_repasses_publicos_federais: receitas com aplicações
+         financeiras dos repasses públicos federais.
+
+    • repasses_recebidos: repasses recebidos no período.
+             o data_prevista: data prevista do repasse.
+             o data_repasse: data do repasse.
+             o valor: valor do repasse.
+             o fonte_recurso_tipo: fonte de recurso.
+
+    • outras_receitas: outras receitas decorrentes da execução do ajuste no
+         período.
+             o descrição: descrição da receita.
+             o valor: valor da receita.
+
+    • recursos_proprios: recursos próprios da entidade beneficiária no período.
+             o descrição: descrição dos recursos.
+             o valor: valor dos recursos.
+
+11.2 Regras
+
+    1. O repasse deve ser único no contexto do documento, ou seja, não poderão
+        ser informados dois ou mais repasses com a mesma data prevista e data do
+        repasse no documento (os valores deverão ser somados).
+
+    2. A data do repasse deve estar dentro do período da prestação de contas (ano
+        informado no descritor).
+
+No caso de ajustes com vigência iniciada antes de 01/01/2025 e com saldo do
+exercício anterior recomendamos a consulta ao Comunicado AUDESP nº 07/2026.
+
+12 Ajustes de Saldo
+
+"ajustes_saldo": {
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     25
+TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+DTI – Departamento de Tecnologia da Informação
+DSis-1 – Sistemas para Prestação de Contas
+
+"retificacao_repasses": [
+   {
+      "data_prevista": "2022-01-01",
+      "data_repasse": "2022-01-01",
+      "fonte_recurso_tipo": 1,
+      "valor_retificado": 4.56
+   }
+
+],
+"inclusao_repasses": [
+
+   {
+      "data_prevista": "2022-01-01",
+      "data_repasse": "2022-01-01",
+      "valor": 1.23,
+      "fonte_recurso_tipo": 1
+
+   }
+],
+"retificacao_pagamentos": [
+
+   {
+      "identificacao_documento_fiscal": {
+         "numero": "0987654321",
+         "identificacao_credor": {
+             "documento_tipo": 1,
+             "documento_numero": "00000000272"
+         }
+      },
+      "pagamento_data": "2022-01-01",
+      "pagamento_valor": 1.23,
+      "fonte_recurso_tipo": 1,
+      "valor_retificado": 4.56
+
+   }
+],
+"inclusao_pagamentos": [
+
+   {
+      "identificacao_documento_fiscal": {
+         "numero": "0987654321",
+         "identificacao_credor": {
+             "documento_tipo": 1,
+             "documento_numero": "00000000272"
+         }
+      },
+      "pagamento_data": "2022-01-01",
+      "pagamento_valor": 1.23,
+      "fonte_recurso_tipo": 1,
+      "meio_pagamento_tipo": 1,
+      "banco": 1,
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     26
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+         "agencia": 1234,
+         "conta_corrente": "5678X",
+         "numero_transacao": "001ABC"
+      }
+   ]
+}
+12.1 Campos
+
+    • retificacao_repasses: retificação de repasses informados em prestações
+         anteriores.
+
+             o data_prevista: data prevista do repasse.
+
+             o data_repasse: data do repasse.
+
+             o fonte_recurso_tipo: fonte de recurso.
+
+             o valor_retificado: valor retificado do repasse (informar zero para
+                  cancelar o repasse).
+
+    • inclusao_repasses: inclusão de repasses não informados em prestações
+         anteriores.
+
+             o data_prevista: data prevista do repasse.
+
+             o data_repasse: data do repasse.
+
+             o valor: valor do repasse.
+
+             o fonte_recurso_tipo: fonte de recurso.
+
+    • retificacao_pagamentos: retificação de pagamentos informados em
+         prestações anteriores.
+
+             o identificacao_documento_fiscal: identificação do documento fiscal
+                  associado ao pagamento.
+
+                      ▪ numero: número do documento fiscal.
+
+                      ▪ identificacao_credor: identificação do credor do documento
+                           fiscal.
+
+                               • documento_tipo: tipo do documento credor do
+                                    documento fiscal.
+
+                               • documento_numero: número do documento do credor
+                                    do documento fiscal.
+
+             o pagamento_data: data do pagamento.
+
+             o pagamento_valor: valor original do pagamento.
+
+             o fonte_recurso_tipo: fonte de recurso.
+
+             o valor_retificado: valor retificado do pagamento (informar zero para
+                  cancelar o pagamento).
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     27
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+    • inclusao_pagamentos: inclusão de pagamentos não informados em
+         prestações anteriores.
+
+             o identificacao_documento_fiscal: identificação do documento fiscal
+                  associado ao pagamento.
+                      ▪ numero: número do documento fiscal.
+                      ▪ identificacao_credor: identificação do credor do documento
+                           fiscal.
+
+                               • documento_tipo: tipo do documento credor do
+                                    documento fiscal.
+
+                               • documento_numero: número do documento do credor
+                                    do documento fiscal.
+
+             o pagamento_data: data do pagamento.
+
+             o pagamento_valor: valor do pagamento.
+
+             o fonte_recurso_tipo: fonte de recurso.
+
+             o meio_pagamento_tipo: meio de pagamento.
+
+             o banco: número do banco do pagamento.
+
+             o agencia: número da agência do pagamento.
+
+             o conta_corrente: número da conta corrente do pagamento.
+
+             o numero_transacao: número da transação do pagamento.
+
+12.2 Regras
+
+Retificação de Repasses
+
+    1. O repasse em retificação deve estar previamente armazenado na base de
+         dados (recebido em prestações anteriores) para o ajuste referente à
+         prestação de contas.
+
+    2. O repasse em retificação deve ser único no contexto do documento, ou seja,
+         não poderão ser retificados dois ou mais repasses com a mesma data
+         prevista, data do repasse e fonte de recurso no documento.
+
+Inclusão de Repasses
+
+    3. A data do repasse incluído deve ser anterior ao período da prestação de
+         contas.
+
+    4. O repasse incluído deve ser único no contexto do ajuste, ou seja, não
+         poderão ser informados dois ou mais repasses com a mesma data prevista,
+         data do repasse e fonte de recurso para o mesmo ajuste (os valores devem
+         ser somados).
+
+Retificação de Pagamentos
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     28
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+    5. O pagamento em retificação deve estar previamente armazenado na base
+         de dados (recebido em prestações anteriores) para o ajuste referente à
+         prestação de contas.
+
+    6. O pagamento em retificação deve ser único no contexto do documento, ou
+         seja, não poderão ser retificados dois ou mais pagamentos com o mesmo
+         documento fiscal, data do pagamento, valor do pagamento e fonte de
+         recurso no documento.
+
+Inclusão de Pagamentos
+
+    7. A data do pagamento incluído deve ser anterior ao período da prestação de
+         contas.
+
+    8. O pagamento incluído deve ser único no contexto do ajuste, ou seja, não
+         poderão ser informados dois ou mais pagamentos com o mesmo documento
+         fiscal, data do pagamento, valor do pagamento e fonte de recurso para o
+         mesmo ajuste.
+
+    9. O documento fiscal associado ao pagamento incluído deve estar
+         previamente armazenado na base de dados (recebido em prestações
+         anteriores) ou informado no próprio documento.
+
+    10. Os campos “número do banco”, “número da agência”, “número da conta
+         corrente” e “número da transação do pagamento” incluído devem ser
+         informados caso o valor do campo “meio de pagamento” seja ‘1 – Banco’.
+         Caso contrário, os campos com dados bancários serão desconsiderados.
+
+13 Relação de Servidores Cedidos pelo Órgão
+
+    Concessor
+
+Obs.: Não se aplica a prestações de contas dos tipos “Termo de Colaboração” e
+“Termo de Fomento”.
+
+"servidores_cedidos": [                             "Função",
+   {
+      "cpf": "00000000191",
+      "data_inicial_cessao": "2023-01-01",
+      "data_final_cessao": "2023-04-30",
+      "cargo_publico_ocupado": "Cargo",
+      "funcao_desempenhada_entidade_beneficiaria":
+      "onus_pagamento": 1,
+      "periodos_cessao": [
+         {
+             "mes": 1,
+             "carga_horaria": 160.0,
+             "remuneracao_bruta": 1320.0
+         },
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     29
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+         {
+             "mes": 2,
+             "carga_horaria": 160.0,
+             "remuneracao_bruta": 1320.0
+
+         },
+         {
+
+             "mes": 3,
+             "carga_horaria": 160.0,
+             "remuneracao_bruta": 1320.0
+         },
+         {
+             "mes": 4,
+             "carga_horaria": 160.0,
+             "remuneracao_bruta": 1320.0
+         }
+      ]
+   }
+]
+
+13.1 Campos
+
+    • cpf: CPF do empregado.
+    • data_inicial_cessao: data inicial da cessão.
+    • data_final_cessao: data final da cessão.
+    • cargo_publico_ocupado: cargo público ocupado pelo servidor no órgão de
+
+         origem.
+    • funcao_desempenhada_entidade_beneficiaria: função desempenhada pelo
+
+         servidor na entidade beneficiária.
+    • onus_pagamento: responsável pelo pagamento do servidor.
+    • periodos_cessao: lista dos períodos de cessão do servidor.
+    • mes: mês da cessão.
+    • carga_horaria: carga horária trabalhada no mês.
+    • remuneracao_bruta: remuneração bruta no mês.
+
+13.2 Regras
+
+    1. O servidor deve ser único no contexto do documento, ou seja, não poderão
+         ser informados dois ou mais servidores com o mesmo CPF e mesma data
+         de cessão para o mesmo ajuste.
+
+    2. O número do CPF do empregado deve ser válido.
+    3. A data inicial de cessão deve ser menor ou igual à data final do período da
+
+         prestação de contas.
+    4. A data final de cessão deve ser maior ou igual à data inicial de cessão e deve
+
+         estar dentro do período da prestação de contas.
+    5. O mês da remuneração do servidor cedido deve corresponder ao período da
+
+         prestação, limitado pelas datas inicial e final de cessão, se houver. As datas
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     30
+                             TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                             DTI – Departamento de Tecnologia da Informação
+                             DSis-1 – Sistemas para Prestação de Contas
+
+    inicial e final de cessão são consideradas como dias trabalhados, e portanto,
+    remunerados.
+6. Todos os servidores cedidos previamente informados e sem data final de
+    cessão devem ser informados na prestação atual.
+
+14 Descontos
+
+"descontos": [
+   {
+      "data": "2023-01-01",
+      "descricao": "Descrição do Desconto",
+      "valor": 1.23
+   }
+
+]
+14.1 Campos
+
+    • data: data do desconto.
+
+    • descrição: descrição do desconto.
+
+    • valor: valor do desconto.
+
+14.2 Regras
+
+    1. O desconto deve ser único no contexto do documento, ou seja, não poderão
+         ser informados dois ou mais descontos com a mesma data, descrição e valor
+         do desconto no documento (os valores deverão ser somados).
+
+    2. A data do desconto deve estar dentro do período da prestação de contas.
+
+    3. O valor do desconto deve ser maior que zero e menor que o valor atualizado
+         do ajuste (valor inicial do ajuste com valores acrescidos ou suprimidos pelos
+         seus termos aditivos).
+
+    Os itens “Descontos” e “Devoluções” devem ser informados conforme
+estabelece o Artigo 203 da Instrução Normativa nº 01/2024, a saber:
+
+https://www.tce.sp.gov.br/legislacao/instrucao/instrucoes-12024
+
+"Artigo 203 - A emissão de parecer conclusivo pelos órgãos e entidades
+concessores sobre a aplicação de recursos transferidos em cada exercício
+financeiro a órgãos/entidades públicos(as) e a entidades do Terceiro Setor deve
+atender à transparência da gestão definida pelo art. 48 da Lei Complementar nº
+101, de 04 de maio de 2000 (Lei de Responsabilidade Fiscal), devendo a autoridade
+competente atestar conclusivamente, no mínimo:
+
+[...]
+
+V - a devolução de eventuais glosas, saldos ou autorização formal para sua
+utilização em exercício subsequente;"
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     31
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+O “Desconto” refere-se à dedução aplicada ao valor de repasse em razão do
+descumprimento parcial ou integral de metas estabelecidas no plano de trabalho.
+
+15 Devoluções
+
+"devolucoes": [
+   {
+      "data": "2023-01-01",
+      "natureza_devolucao_tipo": 1,
+      "valor": 1.23
+   }
+
+]
+15.1 Campos
+
+    • data: data da devolução
+
+    • natureza_devolucao_tipo: natureza da devolução.
+
+    • valor: valor da devolução.
+
+15.2 Regras
+
+    1. A devolução deve ser única no contexto do documento, ou seja, não poderão
+         ser informadas duas ou mais devoluções com a mesma data, natureza da
+         devolução e valor da devolução no documento (os valores deverão ser
+         somados).
+
+    2. A data da devolução deve estar dentro do período da prestação de contas.
+
+    3. O valor da devolução deve ser maior que zero e menor que o valor atualizado
+         do ajuste (valor inicial do ajuste com valores acrescidos ou suprimidos pelos
+         seus termos aditivos).
+
+A “Devolução” ocorre nas seguintes situações:
+
+    • Devolução de valores glosados à conta bancária específica vinculada ao
+         repasse público;
+
+    • Devolução de valores glosados à conta bancária do órgão público
+         concedente.
+
+    • Valor não aplicado.
+
+16 Glosas
+
+"glosas": [
+   {
+      "identificacao_documento_fiscal": {
+         "numero": "0987654321",
+         "identificacao_credor": {
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     32
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+             "documento_tipo": 1,
+             "documento_numero": "00000000272"
+         }
+      },
+      "pagamento_data": "2023-01-01",
+      "resultado_analise": 2,
+      "valor_glosa": 1.23
+   }
+]
+16.1 Campos
+
+    • identificacao_documento_fiscal: identificação do documento fiscal em
+         análise.
+
+             o numero: número do documento fiscal.
+
+             o identificacao_credor: identificação do credor do documento fiscal.
+
+                      ▪ documento_tipo: tipo do documento credor do documento
+                           fiscal.
+
+                      ▪ documento_numero: número do documento do credor do
+                           documento fiscal.
+
+    • pagamento_data: data do pagamento.
+
+    • resultado_analise: resultado da análise.
+
+    • valor_glosa: valor da glosa.
+
+16.2 Regras
+
+    1. O documento fiscal ou pagamento de Folha Ordinária em análise deve estar
+         informado no próprio documento JSON.
+
+    2. A análise do documento fiscal deve ser única no contexto do documento, ou
+         seja, não poderão ser analisados dois ou mais documentos fiscais com o
+         mesmo número do documento fiscal, tipo do documento do credor do
+         documento fiscal e número do documento do credor do documento fiscal no
+         documento.
+
+    3. O valor da glosa deve ser informado caso o resultado da análise seja
+         “Aprovado parcialmente” e deve ser maior que zero e menor que o valor
+         bruto do documento fiscal em análise.
+
+         Caso o resultado da análise seja “Aprovado”, o valor não deve ser informado
+         e será considerado como zero. Caso o resultado da análise seja
+         “Reprovado”, o valor não deve ser informado e será considerado como o
+         valor bruto do documento fiscal ou o valor do pagamento da Folha Ordinária
+         em análise.
+
+    4. A data da emissão do documento fiscal analisado deve estar dentro do
+         período da prestação de contas ou em períodos anteriores.
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     33
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+    5. Todos os documentos fiscais informados na seção documentos fiscais
+         devem possuir uma análise nesta seção.
+
+    6. O campo data_pagamento é exclusivo e obrigatório para a análise de glosa
+         de pagamento de Folha Ordinária. Ele não é utilizado na análise de glosa de
+         documento fiscal.
+
+    7. A análise do pagamento de Folha Ordinária deve ser única no contexto do
+         documento, ou seja, não poderão ser analisados dois ou mais pagamentos
+         de Folha Ordinária com o mesmo tipo do documento do credor, número do
+         documento do credor e data de pagamento no documento.
+
+    8. A data do pagamento de Folha Ordinária analisado deve estar dentro do
+         período da prestação de contas ou em períodos anteriores.
+
+    9. A existência de análise de glosa para pagamento de Folha Ordinária é
+         opcional.
+
+    A seção glosas contém a análise de glosa dos documentos fiscais. Por isso,
+todos os documentos informados na seção documentos fiscais devem ser
+relacionados nesta seção, e não somente os documentos que foram efetivamente
+glosados.
+
+17 Empenhos
+
+"empenhos": [
+   {
+      "numero": "1234567890",
+      "data_emissao": "2023-01-01",
+      "classificao_economica_tipo": "12345678",
+      "fonte_recurso_tipo": 1,
+      "valor": 1.23,
+      "historico": "Histórico",
+      "cpf_ordenador_despesa": "00000000191"
+   }
+
+]
+17.1 Campos
+
+    • numero: número do empenho.
+
+    • data_emissao: data de emissão do empenho.
+
+    • classificacao_economica_tipo: classificação econômica.
+
+    • fonte_recurso_tipo: fonte de recurso.
+
+    • valor: valor do empenho.
+
+    • histórico: histórico.
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     34
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+    • cpf_ordenador_despesa: CPF do ordenador de despesa.
+
+17.2 Regras
+
+    1. Cada empenho deve ter uma identificação única no contexto do ajuste, ou
+         seja, não poderão ser informados dois ou mais empenhos com o mesmo
+         número do empenho e data de emissão para o mesmo ajuste.
+
+    2. O código informado no campo “classificação econômica” deve ser válido
+         para o exercício em que o empenho foi emitido, de acordo com a esfera da
+         entidade (municipal ou estadual).
+
+    3. A data da emissão do empenho deve estar dentro do período da prestação
+         de contas. Caso seja a primeira prestação de contas do ajuste a data poderá
+         ser anterior ao período da prestação.
+
+    4. O CPF do ordenador de despesa deve ser um número de CPF válido.
+
+18 Repasses
+
+"repasses": [
+   {
+    "identificacao_empenho": {
+         "numero": "1234567890",
+         "data_emissao": "2023-01-01"
+      },
+      "data_prevista": "2023-01-01",
+      "data_repasse": "2023-01-01",
+      "valor_previsto": 1.23,
+      "valor_repasse": 4.56,
+      "justificativa_diferenca_valor": "Justificativa",
+      "tipo_documento_bancario": 1,
+      "descricao_outros": "Outro documento bancário",
+      "numero_documento": "ABC123",
+      "banco": 1,
+      "agencia": 1234,
+      "conta": "5678X"
+   }
+
+]
+18.1 Campos
+
+    • identificacao_empenho: identificação do empenho.
+
+             o numero: número do empenho.
+
+             o data_emissao: data de emissão do empenho.
+
+    • data_prevista: data prevista do repasse.
+
+    • data_repasse: data do repasse.
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     35
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+    • valor_previsto: valor previsto do repasse.
+
+    • valor_repasse: valor do repasse.
+
+    • justificativa_diferenca_valor: justificativa para a diferença de valor.
+
+    • tipo_documento_bancario: tipo de documento bancário.
+
+    • descricao_outros: descrição de outros tipos de documentos bancários.
+
+    • numero_documento: número de identificação do documento bancário.
+
+    • banco: número do banco do repasse.
+
+    • agencia: número da agência do repasse.
+
+    • conta: número da conta do repasse.
+
+18.2 Regras
+
+    1. O empenho associado ao repasse deve estar previamente armazenado na
+         base de dados (recebido em prestações anteriores) ou informado no próprio
+         documento JSON.
+
+    2. A data do repasse deve ser maior ou igual à data de emissão do empenho e
+         menor ou igual à data final do período da prestação de contas. Caso seja a
+         prestação de contas do último período da vigência do ajuste a data poderá
+         estar dentro do período seguinte à prestação.
+
+    3. O valor previsto do repasse deverá ser menor ou igual ao valor do empenho.
+
+    4. A soma dos valores de repasse associados a um empenho deve ser menor
+         ou igual ao valor do empenho.
+
+    5. A justificativa para a diferença de valor deve ser informada, caso o valor
+         previsto do repasse seja diferente do valor do repasse. Caso contrário, o
+         campo “justificativa para a diferença de valor” será desconsiderado.
+
+    6. Caso o valor do campo “tipo de documento bancário” seja ‘2 – Outros’, o
+         campo “descrição de outros tipos de documentos bancários” deve informar
+         a descrição do documento utilizado. Caso contrário, o campo “descrição de
+         outros tipos de documentos bancários” será desconsiderado.
+
+19Relatório de Atividades
+
+   "relatorio_atividades": {
+      "programas": [
+         {
+             "nome_programa": "Programa 1",
+             "metas": [
+                {
+                   "codigo_meta": "0123456789",
+                   "periodicidades": [
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     36
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+                       {
+                          "periodo": 1,
+                          "quantidade_realizada": 99.99,
+                          "resultado_meta": 1,
+                          "justificativa": "Justificativa da divergência
+
+entre a meta estimada e executada"
+                       }
+
+                   ],
+                  "meta_atendida" : true,
+                  "justificativa" : "Justificativa para meta não
+atendida"
+                }
+             ]
+         }
+      ]
+   }
+
+19.1 Campos
+
+       • programas
+                o nome_programa: nome do programa de metas.
+                o metas
+                         ▪ codigo_meta: código da meta dentro do programa.
+                         ▪ periodicidades:
+                                  • periodo: período da meta aferida na prestação.
+                                      Valores válidos: 1 a 15, conforme a periodicidade:
+                                           o Mensal: mês do período (1 = janeiro, 2 =
+                                                fevereiro, ... 12 = dezembro)
+                                           o Bimestral: bimestre do exercício (1 = 1º
+                                                bimestre, 2 = 2º bimestre)
+                                           o Trimestral: trimestre do exercício (1 = 1º
+                                                trimestre)
+                                           o Quadrimestral: quadrimestre do exercício (1 =
+                                                1º quadrimestre)
+                                           o Semestral: semestre do exercício(1 = 1º
+                                                semestre)
+                                           o No Exercício: ordinal do exercício da vigência
+                                                da meta (1 = 1º exercício da vigência da meta)
+                                           o Única (sempre 1)
+                                  • quantidade_realizada: valor efetivamente realizado da
+                                      meta no período. Este campo deve ser preenchido
+                                      quando a meta for quantificável, ou seja, pode ser
+                                      expressa por meio de um número mensurável que
+                                      permita aferir seu cumprimento. Exemplo de meta
+                                      qualitativa quantificável: aumentar a nota média de
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     37
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+                                      satisfação para 4,5 na pesquisa aplicada ao final do
+                                      atendimento.
+                                  • resultado_meta: indica o resultado do atingimento de
+                                      meta qualitativa não quantificável no período. Valores
+                                      válidos: 1=“Cumprida”, 2=“Não Cumprida” e
+                                      3=“Cumprida Parcialmente”. Exemplo de meta não
+                                      quantificável: “Melhorar a usabilidade do site a fim de
+                                      ampliar a transparência das informações."
+                                  • justificativa: motivo do não atingimento da meta no
+                                      período.
+                         ▪ meta_atendida: indica se a atividade desenvolvida com os
+                             recursos próprios e as verbas públicas repassadas se
+                             compatibiliza com a meta proposta.
+                         ▪ justificativa: justificativa da meta não atendida.
+
+19.2 Regras
+
+  1. O nome do programa deve ser único no contexto do ajuste, ou seja, não
+       poderão ser informados dois ou mais programas com o mesmo nome.
+
+  2. O código da meta deve ser único no contexto do programa, ou seja, não
+       poderão ser informados duas ou mais metas com o mesmo código dentro de
+       um mesmo programa.
+
+  3. O relatório de atividades deve conter todas as metas declaradas no plano de
+       trabalho do ajuste e termos aditivos que tenham periodicidade ativa no
+       período da prestação de contas.
+
+  4. Todas as metas informadas no relatório de atividades devem ter sido
+       previamente cadastradas no ajuste e termos aditivos.
+
+  5. O período da meta deve respeitar a periodicidade definida no Ajuste e Termos
+       Aditivos.
+
+  6. Todas as periodicidades ativas no período da prestação de contas devem ser
+       informadas.
+
+  7. O campo “quantidade_realizada” deve ser informado quando a meta for do
+       tipo “Quantitativa” e “Qualitativa Quantificável”.
+
+  8. O campo “resultado_meta” deve ser informado quando a meta for do tipo
+       “Qualitativa não Quantificável”.
+
+  9. O campo “justificativa” da periodicidade é exigido para meta do tipo
+       “Quantitativa” e “Qualitativa Quantificável” quando a diferença entre a
+       quantidade realizada e a quantidade estimada for maior que a margem e para
+       a meta do tipo “Qualitativa não Quantificável” quando o resultado for “Não
+       Cumprida”.
+
+  10. O campo “justificativa” da meta é obrigatório quando a meta não for atendida.
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     38
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+20Dados Gerais da Entidade Beneficiária
+
+   "dados_gerais_entidade_beneficiaria": {
+      "identificacao_certidao_dados_gerais": "0123456789",
+      "identificacao_certidao_corpo_diretivo": "0123456789",
+      "identificacao_certidao_membros_conselho": "0123456789",
+      "identificacao_certidao_responsaveis": "0123456789"
+
+   }
+
+20.1 Campos
+
+       • identificacao_certidao_dados_gerais: identificação da certidão de dados
+           gerais da entidade beneficiária.
+
+       • identificacao_certidao_corpo_diretivo: identificação da certidão do corpo
+           diretivo da prestação de contas da entidade beneficiária.
+
+       • identificacao_certidao_membros_conselho: identificação da certidão dos
+           membros do conselho da prestação de contas da entidade beneficiária.
+
+       • identificacao_certidao_responsaveis: identificação da certidão dos
+           responsáveis da entidade gerenciada.
+
+20.2 Regras
+
+  1. A identificação da certidão deve pertencer a uma certidão do tipo
+       correspondente, cadastrada e concluída no sistema Audesp Fase V:
+
+         • identificacao_certidao_dados_gerais
+                  o Contrato de Gestão: Dados Gerais - OS
+                  o Convênio: Dados Gerais - Conveniada
+                  o Termo de Colaboração: Dados Gerais - OSC
+                  o Termo de Fomento: Dados Gerais - OSC
+                  o Termo de Parceria: Dados Gerais - OSCIP
+
+         • identificacao_certidao_corpo_diretivo
+                  o Corpo Diretivo (Prestação de contas)
+
+         • identificacao_certidao_membros_conselho
+                  o Conselho (Prestação de contas)
+
+         • identificacao_certidao_responsaveis
+                  o Entidade Gerenciada – Responsáveis
+
+  2. A certidão deve pertencer ao órgão concessor da prestação de contas.
+  3. A certidão deve pertencer à entidade beneficiária da prestação de contas.
+  4. As certidões de corpo diretivo e de membros do conselho devem ser dos tipos
+
+       específicos para a prestação de contas.
+  5. A vigência das certidões de corpo diretivo, de membros do conselho e dos
+
+       responsáveis deve compreender o período da prestação de contas.
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     39
+                               TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                               DTI – Departamento de Tecnologia da Informação
+                               DSis-1 – Sistemas para Prestação de Contas
+
+6. A certidão dos responsáveis da entidade gerenciada deve ser informada
+    somente para prestação de contas de contrato de gestão.
+
+21Responsáveis e Membros do Órgão Concessor
+
+   "responsaveis_membros_orgao_concessor": {
+      "identificacao_certidao_responsaveis”: "0123456789",
+      "identificacao_certidao_membros_comissao_avaliacao”:
+
+"0123456789",
+      "identificacao_certidao_membros_controle_interno”:
+
+"0123456789"
+      "identificacao_certidao_responsaveis_fiscalizacao_execucao”:
+
+"0123456789"
+   }
+
+21.1 Campos
+
+       • identificacao_certidao_responsaveis: identificação da certidão dos
+           responsáveis pelo órgão concessor.
+
+       • identificacao_certidao_membros_comissao_avaliacao: identificação da
+           certidão dos membros da comissão de avaliação.
+
+       • identificacao_certidao_membros_controle_interno: identificação da
+           certidão dos membros do controle interno.
+
+       • identificacao_certidao_responsaveis_fiscalizacao_execucao:
+           identificação da certidão dos responsáveis pela fiscalização da execução.
+
+21.2 Regras
+
+  1. A identificação da certidão deve pertencer a uma certidão do tipo
+       correspondente, cadastrada e concluída no sistema Audesp Fase V.
+
+  2. A certidão deve pertencer ao órgão concessor da prestação de contas.
+  3. A vigência das certidões deve compreender o período da prestação de contas.
+  4. A certidão dos responsáveis pela fiscalização da execução é exigida somente
+
+       para a prestação de contas de Convênios e Termos de Colaboração e
+       Fomento.
+
+22Publicação do Regulamento de Compras
+
+Obs.: Aplica-se somente à prestação de contas de “Contrato de Gestão”.
+
+   "publicacao_regulamento_compras" : {
+      "houve_publicacao_inicial" : true,
+      "publicacoes_regulamento_inicial" : [
+         {
+             "tipo_veiculo_publicacao" : 2,
+             "nome_veiculo" : "Nome se Outros",
+             "data_publicacao" : "2024-01-01",
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                          40
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+             "endereco_internet" : "https://doe.tce.sp.gov.br"
+         }
+      ],
+      "houve_alteracao_do_regulamento" : true,
+      "houve_publicacao_regulamento_alterado" : true,
+      "publicacoes_alteracao_regulamento" : [
+         {
+
+             "tipo_veiculo_publicacao" : 3,
+             "nome_veiculo" : "Nome se Outros",
+             "data_publicacao" : "2024-01-01",
+             "endereco_internet" : "https://doe.tce.sp.gov.br"
+         }
+      ]
+   }
+
+22.1 Campos
+
+       • houve_publicacao_inicial: informa se houve a publicação inicial do
+           regulamento de compras pela entidade beneficiária.
+
+       • publicacoes_regulamento_inicial: relação das publicações do
+           regulamento de compras inicial.
+                o tipo_veiculo_publicacao: tipo de veículo de comunicação onde a
+                    publicação foi realizada. Valore válidos: de 1 a 10 (ver quadro).
+                     Veículo Descrição
+                         1 Diário Oficial do Município
+                         2 Diário Oficial do Estado
+                         3 Diário Oficial da União
+                         4 Diário da Justiça Eletrônico
+                         5 Portal Nacional de Compras Públicas
+                         6 Jornal de grande circulação nacional
+                         7 Jornal de grande circulação
+                                 regional/municipal
+                         8 Quadro ou mural de acesso público
+                         9 Site da administração direta na Internet
+                        10 Outros
+                o nome_veiculo: nome do veículo de comunicação.
+                o data_publicacao: data da publicação.
+                o endereco_internet: endereço na internet da publicação.
+
+       • houve_alteracao_do_regulamento: informa se houve alteração do
+           regulamento de compras após a publicação inicial.
+
+       • houve_publicacao_regulamento_alterado: informa se a alteração do
+           regulamento de compras foi publicada.
+
+       • publicacoes_alteracao_regulamento: relação das publicações da
+           alteração do regulamento de compras.
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     41
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+22.2 Regras
+
+  1. A informação da publicação do regulamento de compras inicial é obrigatória
+       caso não tenha sido informado em prestações anteriores que houve a
+       publicação.
+
+  2. A relação de publicações do regulamento inicial é obrigatória caso seja
+       informado que houve publicação.
+
+  3. A informação se houve alteração do regulamento é obrigatória se já houve
+       publicação do regulamento de compra.
+
+  4. A informação sobre publicação do regulamento alterado é obrigatória se for
+       informado que houve alteração do regulamento de compras.
+
+  5. A relação de publicações de alteração do regulamento é obrigatória caso seja
+       informado que houve publicação.
+
+  6. Para toda relação de publicações neste documento
+           a. O nome do veículo de comunicação é obrigatório se o tipo do veículo
+                de publicação for 10 (Outros).
+           b. O endereço internet da publicação é opcional.
+           c. A data da publicação deve ser menor ou igual à data corrente.
+
+23Publicação do Extrato de Execução Física e
+
+    Financeira
+
+Obs.: Aplica-se somente a prestação de contas de “Termo de Parceria”.
+
+   "publicacao_extrato_execucao_fisica_financeira" : {
+      "ha_extrato_execucao_fisica_financeira" : true,
+      "extrato_elaborado_conforme_modelo" : true,
+      "publicacoes" : [
+         {
+             "tipo_veiculo_publicacao" : 2,
+             "nome_veiculo" : "Nome se Outros",
+             "data_publicacao" : "2024-01-01",
+             "endereco_internet" : "https://doe.tce.sp.gov.br"
+         }
+      ]
+
+   }
+
+23.1 Campos
+
+       • ha_extrato_execucao_fisica_financeira: informa se há extrato de
+           execução Física e Financeira, conforme previsto no inciso VI, § 2º do art.
+           10 da Lei Federal 9.790/99 e inciso VI do art. 3º da Lei Estadual nº
+           11.598, de 15 de dezembro de 2003.
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     42
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+       • extrato_elaborado_conforme_modelo: informa se o extrato foi elaborado
+           conforme modelo contido no Anexo II do Decreto Federal nº 3.100, de 30
+           junho de 1999.
+
+       • publicacoes: relação de publicações do extrato de execução física e
+           financeira.
+
+23.2 Regras
+
+  1. A informação se o extrato foi elaborado conforme o modelo é obrigatória se
+       há extrato.
+
+  2. A relação de publicações é obrigatória se há extrato.
+  3. Aplica-se à relação de publicações as mesmas regras das publicações do
+
+       Regulamento de Compras
+
+24 Declarações
+
+   "declaracoes" : {
+      "houve_contratacao_empresas_pertencentes" : true,
+      "empresas_pertencentes" : [
+         {
+                "cnpj" : "12345678901234",
+                "cpf" : "00000000191"
+         }
+      ],
+      "houve_participacao_quadro_diretivo_administrativo" : true,
+      "participacoes_quadro_diretivo_administrativo" : [
+         {
+             "cpf_dirigente" : "00000000191",
+             "cpf_contratados": [
+                "00000000272",
+                "00000000383"
+             ]
+         }
+      ],
+      "compras_contratacoes_adequados_regulamento_proprio" : true
+
+   }
+
+24.1 Campos
+
+       • houve_contratacao_empresas_pertencentes: informa se houve
+           contratação de empresa(s) pertencente(s) a dirigentes da OS, OSCIP ou
+           da entidade gerenciada, agentes políticos de Poder, membros do
+           Ministério Público ou dirigentes de órgão ou entidade da Administração
+           Pública celebrante, bem como seus respectivos cônjuges, companheiros
+           ou parentes, até o segundo grau, em linha reta, colateral ou por
+           afinidade.
+                o cnpj: CNPJ da empresa contratada.
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     43
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+                o cpf: CPF do dirigente da entidade ou de Agente
+                    Políticos/Dirigentes do poder público contratante.
+
+       • houve_participacao_quadro_diretivo_administrativo: informa se houve no
+           quadro diretivo da OS e no quadro administrativo da entidade
+           gerenciada, agentes políticos de Poder, de membros do Ministério
+           Público ou de dirigente de órgão ou entidade da Administração Pública
+           celebrante, bem como seus respectivos cônjuges, companheiros ou
+           parentes, até o segundo grau, em linha reta colateral ou por afinidade.
+                o cpf_dirigente: CPF do dirigente da entidade ou de Agente
+                    Político/Dirigente do poder público contratante
+                o cpf_contratados: relação de CPFs dos contratados pelo dirigente
+
+       • compras_contratacoes_adequados_regulamento_proprio: informa se as
+           compras e contratações estão adequadas ao regulamento próprio do
+           órgão concessor.
+
+24.2 Regras
+
+  1. A declaração sobre a adequação das compras e contratações ao regulamento
+       próprio do órgão concessor aplica-se somente para as prestações de contas
+       de ‘Contrato de Gestão” e “Termo de Parceria”.
+
+  2. A relação de empresas pertencentes é obrigatória se houve contratação.
+  3. A relação de participações (dirigentes e contratados) é obrigatória se houve
+
+       participação no quadro diretivo da OS e no quadro administrativo da entidade
+       gerenciada.
+  4. Os CNPJs e CPFs devem ser válidos.
+
+25Relatório da Comissão de Avaliação
+
+Obs.: Aplica-se somente a prestação de contas de “Contrato de Gestão”.
+
+"relatorio_comissao_avaliacao" : {                                 desfavorável"
+   "houve_emissao_relatorio_final" : true,
+   "conclusao_relatorio" : 1,
+   "justificativa" : "Justificativa para conclusão
+
+}
+
+25.1 Campos
+
+• houve_emissao_relatorio_final: informa se houve emissão do relatório
+    final por parte da Comissão de Avaliação no período.
+
+• conclusao_relatorio: informa a conclusão do relatório. Valores válidos:
+    1=“Favorável sem Ressalvas”, 2=“Favorável com Ressalvas” e
+    3=“Desfavorável”.
+
+• justificativa: justificativa da conclusão do relatório.
+
+25.2 Regras
+
+1. A conclusão do relatório é obrigatória se houve emissão.
+2. A justificativa é obrigatória se a conclusão for desfavorável.
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+             (11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br             44
+             TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+             DTI – Departamento de Tecnologia da Informação
+             DSis-1 – Sistemas para Prestação de Contas
+
+26Relatório Governamental da Análise da
+
+    Execução
+
+Obs.: Aplica-se somente a prestação de contas de “Convênio”.
+
+"relatorio_governamental_analise_execucao”: {                      desfavorável"
+   "houve_emissao_relatorio_final" : true,
+   "conclusao_relatorio" : 1,
+   "justificativa" : "Justificativa para conclusão
+
+}
+
+26.1 Campos
+
+• houve_emissao_relatorio_final: informa se houve emissão do relatório
+    final por parte da fiscalização da execução no período.
+
+• conclusao_relatorio: informa a conclusão do relatório. Valores válidos:
+    1=“Favorável sem Ressalvas”, 2=“Favorável com Ressalvas” e
+    3=“Desfavorável”.
+
+• justificativa: justificativa da conclusão do relatório.
+
+26.2 Regras
+
+1. A conclusão do relatório é obrigatória se houve emissão.
+2. A justificativa é obrigatória se a conclusão for desfavorável.
+
+27Relatório de Monitoramento e Avaliação
+
+Obs.: Aplica-se somente às prestações de contas de “Termo de Colaboração” e
+“Termo de Fomento”.
+
+"relatorio_monitoramento_avaliacao”: {                             desfavorável"
+   "houve_emissao_relatorio_final" : true,
+   "conclusao_relatorio" : 1,
+   "justificativa" : "Justificativa para conclusão
+
+}
+
+27.1 Campos
+
+• houve_emissao_relatorio_final: informa se houve emissão do relatório
+    final por parte da comissão de monitoramento e avaliação no período.
+
+• conclusao_relatorio: informa a conclusão do relatório. Valores válidos:
+    1=“Favorável sem Ressalvas”, 2=“Favorável com Ressalvas” e
+    3=“Desfavorável”.
+
+• justificativa: justificativa da conclusão do relatório.
+
+27.2 Regras
+
+1. A conclusão do relatório é obrigatória se houve emissão.
+2. A justificativa é obrigatória se a conclusão for desfavorável.
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+             (11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br        45
+TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+DTI – Departamento de Tecnologia da Informação
+DSis-1 – Sistemas para Prestação de Contas
+
+28Demonstrações contábeis
+
+   "demonstracoes_contabeis”: {
+      "publicacoes”: [
+         {
+             “tipo_veiculo_publicacao”: 2,
+             "nome_veiculo”: “Nome se Outros”,
+             "data_publicacao”: "2024-01-01",
+             "endereco_internet”: "https://doe.tce.sp.gov.br"
+         }
+      ],
+      "responsavel”: {
+         "numero_crc”: "1SP000001",
+         "cpf”: "00000000191",
+         "situacao_regular_crc”: true
+      }
+
+   }
+
+28.1 Campos
+
+       • publicacoes: relação de publicações das demonstrações contábeis da
+           entidade beneficiária.
+
+       • responsável: identificação do responsável que assinou as demonstrações
+           contábeis.
+                o numero_crc: número do CRC (Conselho Regional de
+                    Contabilidade) do responsável.
+                o cpf: CPF do responsável.
+                o situacao_regular_crc: informa se o profissional que assinou as
+                    demonstrações contábeis encontrava-se em situação regular junto
+                    ao CRC na data da sua elaboração.
+
+28.2 Regras
+
+  1. Obrigatória a informação de ao menos um veículo de comunicação da
+       publicação das demonstrações contábeis.
+
+  2. Aplica-se à relação de publicações as mesmas regras das publicações do
+       Regulamento de Compras
+
+  3. O número de CRC deve ser válido.
+  4. O CPF do responsável deve ser válido.
+
+29Publicações de Parecer ou Ata
+
+   "publicacoes_parecer_ata" : [
+      {
+         "tipo_parecer_ata" : 1,
+         "houve_publicacao" : true,
+         "publicacoes" : [
+             {
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     46
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+                "tipo_veiculo_publicacao" : 2,
+                "nome_veiculo" : "Nome se Outros",
+                "data_publicacao" : "2024-01-01",
+                "endereco_internet" : "https://doe.tce.sp.gov.br"
+             }
+         ],
+         "conclusao_parecer" : 1
+      }
+   ]
+
+29.1 Campos
+
+       • ata_parecer: relação de atas ou pareceres emitidos.
+                o tipo_ata_parecer: tipo da ata ou parecer emitido. Valores válidos:
+                    1="Parecer ou Ata do Conselho Fiscal”, 2=“Parecer ou Ata do
+                    Conselho de Administração”, 3=“Parecer da Auditoria
+                    Independente" e 4=“Parecer do Conselho de Políticas Públicas”.
+                o houve_publicacao: informa se houve publicação da ata ou parecer
+                o publicacoes: relação de publicações da ata ou parecer.
+                o conclusao_parecer: informa a conclusão do parecer. Valores
+                    válidos: 1="Favorável sem Ressalvas”, 2=“Favorável com
+                    Ressalvas”, 3=“Desfavorável”, 4=“Adverso” e 5=“Com abstenção
+                    de opinião".
+
+29.2 Regras
+
+  1. Deve ser informado no máximo uma ata ou parecer de cada tipo.
+  2. Para “Contrato de Gestão” é obrigatória a informação de ao menos uma ata
+
+       ou parecer de conselho fiscal/administração e um parecer de auditoria.
+  3. Para “Convênio”, “Termo de Colaboração” e “Termo de Fomento” é obrigatória
+
+       ao menos uma ata ou parecer de conselho fiscal/administração.
+  4. Para “Termo de Parceria” é obrigatória ao menos uma ata ou parecer de
+
+       conselho fiscal/administração e o parecer do Conselho de Políticas Públicas.
+  5. A relação de publicações é obrigatória caso seja informado que houve
+
+       publicação.
+  6. Aplica-se à relação de publicações as mesmas regras das publicações do
+
+       Regulamento de Compras
+  7. A conclusão do parecer é obrigatória quando houver ata ou parecer.
+
+30Publicação do Relatório de atividades
+
+Obs.: Aplica-se somente a prestação de contas de “Contrato de Gestão”.
+
+   "publicacao_relatorio_atividades" : {
+      "houve_publicacao_exercicio" : true,
+      "publicacoes" : [
+         {
+             "tipo_veiculo_publicacao" : 2,
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                          47
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+             "nome_veiculo" : "Nome se Outros",
+             "data_publicacao" : "2024-01-01",
+             "endereco_internet" : "https://doe.tce.sp.gov.br"
+         }
+      ]
+   }
+
+30.1 Campos
+
+       • houve_publicacao_exercicio: informa se houve publicação do relatório de
+           atividades no exercício.
+
+       • publicacoes: relação de publicações do relatório de atividades.
+
+30.2 Regras
+
+  1. A relação de publicações é obrigatória caso seja informado que houve
+       publicação.
+
+  2. Aplica-se à relação de publicações as mesmas regras das publicações do
+       Regulamento de Compras
+
+31Termo da Relação de Bens Cedidos
+
+Obs.: Aplica-se somente a prestação de contas de “Contrato de Gestão”.
+
+"termo_cessao_permissao_bens": true
+
+31.1 Campos
+
+       • termo_cessao_permissao_bens: informa se foi formalizado termo de
+           cessão/permissão de bens no exercício.
+
+31.2 Regras
+
+  1. A informação sobre a formalização do termo é obrigatória quando houver
+       cessão/permissão de bens informados na prestação de contas do exercício.
+
+32Prestação de Contas da Entidade Beneficiária
+
+   "prestacao_contas_entidade_beneficiaria":
+   {
+
+      "data_prestacao": "2024-01-01",
+      "periodo_referencia_data_inicial": "2024-01-01",
+      "periodo_referencia_data_final": "2024-01-01"
+   }
+
+32.1 Campos
+
+       • data_prestacao: data da conclusão das prestações de contas do
+           exercício pela entidade beneficiária.
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     48
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+       • periodo_referencia_data_inicial: data inicial do período de referência da
+           prestação de contas.
+
+       • periodo_referencia_data_final: data final do período de referência da
+           prestação de contas.
+
+32.2 Regras
+
+  1. A data da prestação deve ser inferior ou igual à data corrente e posterior à
+       data final do período de referência.
+
+  2. As datas inicial e final do período de referência devem estar compreendidas
+       dentro do período da prestação de contas.
+
+  3. As datas inicial e final do período de referência devem estar compreendidas
+       dentro do período de vigência do ajuste e termos aditivos.
+
+33Parecer conclusivo
+
+   "parecer_conclusivo" : {                           parecer
+      "identificacao_parecer" : "0009/2024",          houve cumprimento
+      "conclusao_parecer" : 1,
+      "consideracoes_parecer" : "Considerações do
+
+conclusivo",
+      "declaracoes" : [
+         {
+             "tipo_declaracao" : 1,
+             "declaracao" : 1,
+             "justificativa" : "Justificativa se não
+
+das cláusulas"
+         }
+
+      ]
+   }
+
+33.1 Campos
+
+• identificacao_parecer: identificação do parecer conclusivo, se houver
+• conclusao_parecer: conclusão do parecer. Valores válidos:
+
+    1="Favorável”, 2=“Favorável com ressalvas” e 3=“Desfavorável"
+• consideracoes_parecer: considerações do parecer conclusivo.
+• declarações
+
+         o tipo_declaracao: identificação do questionamento da declaração.
+             Valores válidos: 1="Cumprimento das cláusulas”, 2=“Regularidade
+             dos gastos”, 3=“Identificação nos comprovantes”, 4=“Regularidade
+             dos recolhimentos dos encargos trabalhistas”, 5=“Atendimento aos
+             princípios”, 6=“Realização de visita” e 7=“Aplicação de sanções".
+
+         o declaracao: posicionamento quanto ao questionamento. Valores
+             válidos: 1=“Sim”, 2=“Não” e 3=“Prejudicado”.
+
+         o justificativa: justificativa da declaração.
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+             (11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br        49
+TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+DTI – Departamento de Tecnologia da Informação
+DSis-1 – Sistemas para Prestação de Contas
+
+Tipo da Declaração    Declaração
+Cumprimento das       Houve o cumprimento das cláusulas pactuadas
+cláusulas             em conformidade com a regulamentação que
+                      rege a matéria?
+Regularidade dos      Houve regularidade dos gastos efetuados e
+gastos                sua perfeita contabilização, atestadas pelo
+                      órgão/entidade concessor?
+Identificação nos     Os originais dos comprovantes de gastos
+comprovantes          contêm a identificação da entidade
+                      beneficiária, do tipo de repasse e do número
+Regularidade dos      do ajuste, bem como do órgão/entidade
+recolhimentos dos     repassador(a) a que se referem?
+encargos              Houve regularidade dos recolhimentos de
+trabalhistas          encargos trabalhistas, quando a aplicação dos
+Atendimento aos       recursos envolver gastos com pessoal?
+princípios
+                      Houve atendimento aos princípios da
+Realização de visita  legalidade, impessoalidade, moralidade,
+                      publicidade, eficiência, motivação e interesse
+Aplicação de          Público.
+sanções               Houve realização de visita in loco pelo órgão
+                      ou entidade concessor(a)?
+                      Houve aplicação de Sanções por eventuais
+                      ausências de comprovação ou desvio de
+                      finalidade?
+
+33.2 Regras
+
+  1. O preenchimento das considerações do parecer conclusivo é obrigatório
+       quando o parecer for desfavorável.
+
+  2. Todas as declarações devem ser informadas.
+  3. A declaração para “Regularidade dos recolhimentos dos encargos
+
+       trabalhistas” pode ser “Sim”, “Não” ou “Prejudicado”. Para as demais somente
+       “Sim” ou “Não”.
+  4. A justificativa de uma declaração é obrigatória quando a declaração for “Não”
+       e “Prejudicado”.
+  5. A justificativa da declaração “Aplicação de sanções” é obrigatória quando a
+       declaração for “Sim”.
+
+34 Transparência
+
+   "transparencia" : {
+      "entidade_beneficiaria_mantem_sitio_internet" : true,
+      "sitios_internet" : [
+         "https://transparencia.tce.sp.gov.br/"
+      ],
+      "requisitos_artigos_7o_8o_paragrafo_1o" : [
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     50
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+         {
+             "requisito" : 1,
+             "atende" : true
+
+         }
+      ],
+      "requisitos_sitio_artigo_8o_paragrafo_3o" : [
+
+         {
+             "requisito" : 1,
+             "atende" : false
+
+         }
+      ],
+      "requisitos_divulgacao_informacoes" : [
+
+         {
+             "requisito" : 1,
+             "atende" : true
+
+         }
+      ]
+   }
+
+34.1 Campos
+
+       • entidade_beneficiaria_mantem_sitio_internet: informa se a Entidade
+           Beneficiária mantém sítio na Internet para divulgar as informações
+           previstas na Lei Federal nº 12.527/11 (Lei de Acesso à Informação), art.
+           8º § 2º.
+
+       • sitios_internet: relação de sítios na Internet mantidos pela Entidade
+           Beneficiária.
+
+       • requisitos_artigos_7o_8o_paragrafo_1o: relação de requisitos na
+           divulgação das informações constantes do Arts. 7º e 8º § 1º
+                o requisito: identificação do requisito. Valores válidos: 1 a 8,
+                    conforme tabela.
+                o atende: informa se o requisito é atendido pela Entidade
+                    Beneficiária.
+
+Requisito  Arts. 7º e 8º § 1º
+     1     Competência e Estrutura Organizacional
+     2     Endereço, e-mail, telefones e horários de atendimento
+           das principais unidades
+     3     Registro de quaisquer repasses ou transferências de
+           recursos financeiros
+     4     Registros de despesas realizadas com recursos públicos
+     5     Informações referentes às contratações de bens e
+           serviços, incluindo editais, resultados e contratos
+     6     celebrados.
+           Informações para subsidiar acompanhamento e
+           resultados de programas, ações, projetos e obras de
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+           (11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br          51
+           TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+           DTI – Departamento de Tecnologia da Informação
+           DSis-1 – Sistemas para Prestação de Contas
+
+           órgãos e entidades, bem como metas e indicadores
+
+           propostos.
+
+7          Respostas a perguntas mais frequentes da sociedade
+
+8          Resultado de inspeções, auditorias, prestações e
+
+           tomadas de contas realizadas pelos órgãos de controle
+
+           interno e externo, incluindo prestações de contas
+
+           relativas a exercícios anteriores.
+
+• requisitos_sitio_artigo_8o_paragrafo_3o: relação de requisitos de sítio do
+    Art. 8º, § 3º.
+         o requisito: identificação do requisito. Valores válidos: 1 a 6,
+             conforme tabela.
+         o atende: informa se o requisito é atendido pela Entidade
+             Beneficiária.
+
+Requisito  Art. 8º § 3º
+     1     Ferramenta de pesquisa de conteúdo
+     2     Geração de relatórios em diversos formatos eletrônicos
+           abertos
+     3     Possibilitar acesso automatizado por sistemas externos
+           em formatos abertos
+     4     Divulga em detalhes os formatos utilizados na
+           estruturação da informação
+     5     Garante a autenticidade e integridade das informações
+           divulgadas
+     6     Atualização periódica
+
+• requisitos_divulgacao_informacoes: relação de requisitos de divulgação
+    das informações.
+         o requisito: identificação do requisito. Valores válidos: 1 a 10,
+             conforme tabela.
+         o atende: informa se o requisito é atendido pela Entidade
+             Beneficiária.
+
+Requisito  Divulgação das Informações
+     1     Estatuto Social atualizado
+     2     Ajustes (Termo de Parceria, Convênio, etc.)
+     3     Plano de Trabalho
+     4     Relação Nominal dos Dirigentes
+     5     Lista de prestadores de serviços e valores pagos
+     6     Remuneração individualizada dos dirigentes e
+           empregados com identificação de nomes e cargos
+     7     Balanços e Demonstrações Contábeis
+     8     Regulamento de Compras
+     9     Regulamento de Contratação de Pessoal
+    10     Relatório estatístico de atendimento realizado pelo SIC
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+           (11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br           52
+                                 TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                                 DTI – Departamento de Tecnologia da Informação
+                                 DSis-1 – Sistemas para Prestação de Contas
+
+34.2 Regras
+
+  1. A relação de sítios na Internet é obrigatória se a entidade beneficiária mantém
+       sítios na Internet.
+
+  2. Todos os requisitos dos Arts. 7º e 8º § 1º devem ser informados se a entidade
+       beneficiária mantém sítio na internet.
+
+  3. Todos os requisitos do Art. 8º § 3º devem ser informados se a entidade
+       beneficiária mantém sítio na internet.
+
+  4. Todos os requisitos da Divulgação das Informações devem ser informados se
+       a entidade beneficiária mantém sítio na internet.
+
+35Retificação da Prestação de Contas
+
+"retificacao": true
+
+35.1 Campos
+
+       • retificacao: indica se o documento JSON é de uma retificação de
+           prestação de contas.
+
+35.2 Regras
+
+  1. A prestação de contas correspondente às informações fornecidas no descritor
+       e campo código_ajuste deverá estar armazenada na base de dados.
+
+  2. Caso pertinente, a retificação deverá ter sido autorizada.
+
+36Declaração Negativa
+
+"descritor": {
+   "tipo_documento": "Prestação de Contas de Convênio",
+   "municipio": 7107,
+   "entidade": 10048,
+   "ano": 2025,
+   "mes": 12
+
+},
+"codigo_ajuste": "2023000000000001"
+
+36.1 Campos
+
+       • descritor: ver descritor
+       • codigo_ajuste: ver codigo_ajuste
+
+36.2 Regras
+
+  1. Aplicam-se ao descritor e codigo_ajuste as mesmas regras da prestação de
+       contas (regras descritor e regras código_ajuste).
+
+  2. Não poderá haver uma prestação de contas armazenada para o mesmo
+       período da declaração negativa.
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     53
+                               TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+                               DTI – Departamento de Tecnologia da Informação
+                               DSis-1 – Sistemas para Prestação de Contas
+
+3. Não poderá haver outra declaração negativa armazenada para o mesmo
+    período.
+
+Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+(11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br                     54
+               TRIBUNAL DE CONTAS DO ESTADO DE SÃO PAULO
+               DTI – Departamento de Tecnologia da Informação
+               DSis-1 – Sistemas para Prestação de Contas
+
+37 Glossário
+
+APIs RESTFUL   Uma API RESTful (Representational State Transfer) é um
+               estilo arquitetural para a criação de serviços web que permite
+               a comunicação entre sistemas através do protocolo HTTP.
+
+Data corrente  Data do envio da prestação de contas.
+
+CPF Válido     CPF cadastrado e válido na Receita Federal.
+
+CNPJ Válido    CNPJ cadastrado e válido na Receita Federal.
+
+JSON           JavaScript Object Notation é um formato de troca de dados
+               entre sistemas.
+
+JSON Schema    É uma linguagem declarativa utilizada na validação de
+               arquivos JSON.
+
+Período da prestação de contas
+                          Período de datas a que se referem as informações prestadas
+                          no documento JSON, restrito ao exercício informado no
+                          campo ano do descritor.
+
+      Av. Rangel Pestana, 315 – Centro - São Paulo / SP | CEP 01017-906
+
+               (11) 3292.3321 / 3292.3673 | www.tce.sp.gov.br            55
+

@@ -1,0 +1,118 @@
+Manual de orientação para o Sistema AUDESP
+ Fase V - Repasses Públicos ao Terceiro Setor
+
+                   Módulo Ajustes
+      Alteração ou Exclusão de Cadastros
+
+                                                                                                                   1
+Sumário
+
+Introdução .................................................................................................................................................................... 3
+Alteração ou Exclusão de um Ajuste informado ao TCESP .......................................................................................... 4
+
+   Alteração .................................................................................................................................................................. 4
+      Ajustes não prestados .......................................................................................................................................... 4
+      Ajustes prestados ................................................................................................................................................. 5
+
+   Exclusão.................................................................................................................................................................... 8
+      Exclusão antes de encaminhar a prestação de contas......................................................................................... 8
+      Exclusão após encaminhar a prestação de contas ............................................................................................... 8
+
+                                                                                                                                          2
+Introdução
+
+A Fase V – Repasses ao Terceiro Setor do Sistema Audesp nasceu da necessidade de acompanhamento mais
+próximo, por parte da Fiscalização, dos atos realizados pelos gestores públicos relativos à prestação de serviços
+para uma parcela da sociedade, uma vez que o Estado passou a delegar a terceiros algumas funções sob sua
+responsabilidade.
+Este acompanhamento vem ao encontro da necessidade de aperfeiçoamento do processo de fiscalização que o
+TCESP vem adotando nos últimos anos, em aderência à Missão e Visão estabelecidas no Planejamento Estratégico
+institucional.
+No contexto de aperfeiçoamento da Fiscalização, este manual traz orientações ao jurisdicionado quando da
+necessidade de alterar ou excluir dados do cadastro, em processo de registro (ainda não prestados) ou já
+encaminhados ao TCESP.
+Desta forma, espera-se que este instrumento de orientação ajude os jurisdicionados no cumprimento das
+responsabilidades perante a sociedade e TCESP, permitindo que a prestação seja sempre a mais correta possível.
+
+                                                                                                                                          3
+Alteração ou Exclusão de um Ajuste
+
+Alteração
+
+Para realizar a alteração de um Ajuste, duas possíveis situações podem ser observadas:
+    1. Ajustes que começaram a ser informados (em elaboração), porém não enviados ao TCESP
+    2. Ajustes que foram prestados ao TCESP (enviado).
+
+Ajustes não prestados
+Em relação ao item “1”, como o Ajuste está sendo informado no Sistema, mas não foi prestado ao TCESP, caso o
+jurisdicionado queira realizar alguma alteração basta pesquisar o ajuste na tela inicial e clicar no botão “Atualizar
+Ajuste” :
+
+Observe que o botão está em negrito, evidenciando que está habilitado (seta azul). Na coluna “Situação” se vê que
+o Ajuste está “Em elaboração” (seta verde).
+Será aberta a tela com todos os campos habilitados para a alteração. Após realizar a correção, clique no botão
+“Gravar” (seta azul):
+
+                                                                                                                                          4
+Se todas as abas estiverem preenchidas e devidamente corretas, finalize a prestação de contas clicando no botão
+“Concluir Ajuste”, na parte superior direita da tela.
+Ajustes prestados
+No caso citado em “2”, quando o Ajuste foi prestado ao TCESP (enviado), o jurisdicionado, após localizar o Ajuste a
+ser alterado, deve clicar na opção “Solicitações à Fiscalização”, botão .
+
+Observe que na coluna “Situação” o Ajuste se encontra “Enviado” (seta vermelha).
+Será aberta uma tela para escolha da opção desejada bem como inclusão da justificativa para a alteração. Após,
+clique em “Solicitar”:
+
+                                                                                                                                          5
+Uma mensagem confirmando que o pedido de alteração foi realizado será exibida. Após a Fiscalização aprovar seu
+pedido, será possível realizar a alteração.
+Será enviado um e-mail ao usuário solicitante da alteração quando a autorização for concedida ou rejeitada pela
+equipe de fiscalização responsável.
+Após realizar seu pedido e a Fiscalização aprovar, o botão “Atualizar Ajuste” será habilitado para realizar a
+alteração. Porém, isto somente irá ocorrer no Ajuste onde se deu o pedido de alteração. Portanto, é preciso
+pesquisar o ajuste em primeiro lugar, inserindo o número do ajuste e seu ano nos campos respectivos e clicando
+em “Pesquisar Ajustes” (seta verde), conforme segue:
+
+                                                                                                                                          6
+Clique no botão “Atualizar Ajuste” . E proceda a alteração dos dados, conforme descrito na situação “1”, ou
+seja, altere o registro na guia respectiva e grave. Após isto, deve-se clicar no botão “Concluir Ajuste” novamente
+para finalização da prestação de contas, conforme imagem a seguir:
+
+                                                                                                                                          7
+Exclusão
+
+A Exclusão de Ajustes pode ser realizada em duas situações:
+    1. Ajustes que começaram a ser informados (em elaboração), porém não enviados ao TCESP;
+    2. Ajustes que foram prestados ao TCESP (enviado).
+
+Exclusão antes de encaminhar a prestação de contas
+Neste caso houve o preenchimento de parte ou mesmo de todos os campos exigidos, mas o usuário responsável
+pela prestação não clicou no botão “Concluir Ajuste”.
+Caso seja necessário fazer a exclusão, deve-se realizar a pesquisa do ajuste. Observe que o botão “Excluir” está
+habilitado, permitindo a exclusão.
+
+Exclusão após encaminhar a prestação de contas
+Neste caso, o usuário já encaminhou o Ajuste ao TCESP. Para solicitar a exclusão do ajuste deve-se clicar no botão
+“Solicitações à Fiscalização” .
+
+                                                                                                                                          8
+Em seguida será exibida uma tela para preenchimento. Selecione a opção “Exclusão”, informe a “Justificativa” e
+clique no botão “Solicitar”, conforme segue:
+
+Uma mensagem confirmando que o pedido de exclusão foi realizado será exibida. Após a Fiscalização aprovar seu
+pedido, será possível realizar a alteração.
+Será enviado um e-mail ao usuário solicitante da exclusão quando a autorização for concedida ou rejeitada pela
+equipe de fiscalização responsável.
+Após a Fiscalização aprovar seu pedido, entre no Sistema Audesp Fase V, pesquise o Ajuste em questão.
+
+                                                                                                                                          9
+Veja que o botão “Excluir” estará ativo. Clique nele e confirme a exclusão:
+
+Caso queira desistir da exclusão, clique no botão “Cancelar”.
+Em caso de dúvidas, deve-se encaminhar um Fale conosco, conforme segue:
+
+Ou
+                                                                                                                                         10
+11
+

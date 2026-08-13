@@ -1,8 +1,10 @@
-import { useState } from 'react';
-import { Menu, Search, Bell, Info, LogOut } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Menu, Search, Bell, Info, LogOut, Sparkles } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/cn';
+import { http } from '@/services/http';
+import { Assistente } from './Assistente';
 import { BuscaGlobal } from './BuscaGlobal';
 import { SobreModal } from './SobreModal';
 
@@ -20,6 +22,17 @@ export function Topbar({ onOpenSidebar }: TopbarProps) {
   const { usuario, sair } = useAuth();
   const [sobreAberto, setSobreAberto] = useState(false);
   const [buscaAberta, setBuscaAberta] = useState(false);
+  const [assistenteAberto, setAssistenteAberto] = useState(false);
+  // O botão só aparece onde o assistente está configurado — um ícone que abre
+  // um painel com erro é pior que ícone nenhum.
+  const [temAssistente, setTemAssistente] = useState(false);
+
+  useEffect(() => {
+    http
+      .get<{ disponivel: boolean }>('/assistente/status')
+      .then((r) => setTemAssistente(r.data.disponivel))
+      .catch(() => setTemAssistente(false));
+  }, []);
 
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-ink-200/70 bg-white/80 px-4 backdrop-blur-md dark:border-ink-800/70 dark:bg-ink-950/70 sm:px-6">
@@ -54,6 +67,23 @@ export function Topbar({ onOpenSidebar }: TopbarProps) {
         >
           <Search className="h-[18px] w-[18px]" />
         </button>
+
+        {temAssistente && (
+          <button
+            onClick={() => setAssistenteAberto((v) => !v)}
+            aria-label="Assistente da Fase V"
+            aria-expanded={assistenteAberto}
+            title="Assistente da Fase V"
+            className={cn(
+              'focus-ring inline-flex h-9 w-9 items-center justify-center rounded-xl transition-colors hover:bg-ink-100 hover:text-ink-800 dark:hover:bg-ink-800 dark:hover:text-ink-100',
+              assistenteAberto
+                ? 'bg-ink-100 text-brand-600 dark:bg-ink-800 dark:text-brand-400'
+                : 'text-ink-500 dark:text-ink-400',
+            )}
+          >
+            <Sparkles className="h-[18px] w-[18px]" />
+          </button>
+        )}
 
         <ThemeToggle />
 
@@ -101,6 +131,7 @@ export function Topbar({ onOpenSidebar }: TopbarProps) {
         </button>
       </div>
 
+      <Assistente aberto={assistenteAberto} onFechar={() => setAssistenteAberto(false)} />
       <SobreModal open={sobreAberto} onClose={() => setSobreAberto(false)} />
     </header>
   );
