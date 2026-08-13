@@ -92,6 +92,7 @@ export const navigation: NavNode[] = [
       { label: 'Usuários', to: '/usuarios' },
       { label: 'Grupos de Usuários', to: '/grupos' },
       { label: 'Auditoria', to: '/auditoria', grupos: GRUPOS_ADMIN },
+      { label: 'Privacidade e LGPD', to: '/privacidade' },
     ],
   },
 ];
