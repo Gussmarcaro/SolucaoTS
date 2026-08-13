@@ -19,6 +19,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { listarUsuarios } from '@/services/usuarios.service';
 import { extrairMensagemErro } from '@/services/http';
 import { mascaraCelular, mascaraCep, mascaraCpf } from '@/lib/masks';
+import { mascararCpf } from '@/lib/dadosPessoais';
+import { BotaoDadosPessoais, useDadosPessoais } from '@/hooks/useDadosPessoais';
 import { cn } from '@/lib/cn';
 import type { FiltrosUsuario, Paginado, Usuario } from '@/types/usuario';
 
@@ -52,6 +54,7 @@ interface Props {
 
 export function UsuariosList({ refreshKey, onVisualizar, onEditar, onAlternarStatus }: Props) {
   const { usuario: logado } = useAuth();
+  const { revelado, alternar } = useDadosPessoais('Usuario', 'Cadastro de Usuários');
   const [busca, setBusca] = useState('');
   const [status, setStatus] = useState<StatusFiltro>('');
   const [page, setPage] = useState(1);
@@ -126,7 +129,11 @@ export function UsuariosList({ refreshKey, onVisualizar, onEditar, onAlternarSta
       case 'nome':
         return <span className={`${txt} font-medium text-ink-800 dark:text-ink-100`} title={u.nome}>{u.nome}</span>;
       case 'documento':
-        return <span className={`${txt} font-mono text-xs text-ink-600 dark:text-ink-300`}>{mascaraCpf(u.documento)}</span>;
+        return (
+          <span className={`${txt} font-mono text-xs text-ink-600 dark:text-ink-300`}>
+            {revelado ? mascaraCpf(u.documento) : mascararCpf(u.documento)}
+          </span>
+        );
       case 'email':
         return <span className={`${txt} text-ink-600 dark:text-ink-300`} title={u.email}>{u.email}</span>;
       case 'celular':
@@ -166,17 +173,20 @@ export function UsuariosList({ refreshKey, onVisualizar, onEditar, onAlternarSta
             className="focus-ring h-9 w-full rounded-lg border border-ink-200 bg-ink-50 pl-9 pr-3 text-sm text-ink-800 placeholder:text-ink-400 dark:border-ink-800 dark:bg-ink-900 dark:text-ink-100"
           />
         </div>
-        <div className="w-full sm:w-44">
-          <Select
-            name="status"
-            value={status}
-            onChange={(e) => setStatus(e.target.value as StatusFiltro)}
-            options={[
-              { value: 'ativos', label: 'Ativos' },
-              { value: 'inativos', label: 'Inativos' },
-            ]}
-            placeholder="Status (todos)"
-          />
+        <div className="flex items-center gap-2">
+          <BotaoDadosPessoais revelado={revelado} onAlternar={alternar} />
+          <div className="w-full sm:w-44">
+            <Select
+              name="status"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as StatusFiltro)}
+              options={[
+                { value: 'ativos', label: 'Ativos' },
+                { value: 'inativos', label: 'Inativos' },
+              ]}
+              placeholder="Status (todos)"
+            />
+          </div>
         </div>
       </div>
 

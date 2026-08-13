@@ -1,5 +1,12 @@
 /** Ação registrada na trilha. */
-export type AcaoAuditoria = 'ALTERACAO' | 'EXCLUSAO' | 'INATIVACAO' | 'REATIVACAO' | 'CRIACAO';
+export type AcaoAuditoria =
+  | 'ALTERACAO'
+  | 'EXCLUSAO'
+  | 'INATIVACAO'
+  | 'REATIVACAO'
+  | 'CRIACAO'
+  /** Dados pessoais mascarados foram revelados na tela (LGPD art. 37). */
+  | 'VISUALIZACAO';
 
 /**
  * Entrada da trilha de auditoria.

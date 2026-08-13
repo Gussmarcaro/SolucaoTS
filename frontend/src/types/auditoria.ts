@@ -1,4 +1,11 @@
-export type AcaoAuditoria = 'ALTERACAO' | 'EXCLUSAO' | 'INATIVACAO' | 'REATIVACAO' | 'CRIACAO';
+export type AcaoAuditoria =
+  | 'ALTERACAO'
+  | 'EXCLUSAO'
+  | 'INATIVACAO'
+  | 'REATIVACAO'
+  | 'CRIACAO'
+  /** Dados pessoais mascarados foram revelados na tela (LGPD art. 37). */
+  | 'VISUALIZACAO';
 
 /** Um campo alterado, como gravado no diff. */
 export interface CampoAlterado {
@@ -31,6 +38,7 @@ export const ACAO_LABEL: Record<AcaoAuditoria, string> = {
   INATIVACAO: 'Inativação',
   REATIVACAO: 'Reativação',
   CRIACAO: 'Inclusão',
+  VISUALIZACAO: 'Consulta a dados pessoais',
 };
 
 export const ACAO_TONE: Record<AcaoAuditoria, 'brand' | 'success' | 'warning' | 'danger' | 'neutral'> = {
@@ -39,6 +47,7 @@ export const ACAO_TONE: Record<AcaoAuditoria, 'brand' | 'success' | 'warning' | 
   INATIVACAO: 'warning',
   REATIVACAO: 'success',
   CRIACAO: 'success',
+  VISUALIZACAO: 'neutral',
 };
 
 /** Nome amigável do model, para a tela não expor o jargão do schema. */

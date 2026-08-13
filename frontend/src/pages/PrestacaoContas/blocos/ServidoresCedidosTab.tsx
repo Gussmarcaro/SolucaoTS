@@ -9,6 +9,8 @@ import type { ColunaDef } from '@/hooks/useResizableColumns';
 import { enterComoTab } from '@/lib/enterComoTab';
 import { apenasDigitos, dataBr, mascaraCpfCnpj, mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
 import { MESES } from '@/lib/dominios';
+import { mascararDocumento } from '@/lib/dadosPessoais';
+import { BotaoDadosPessoais, useDadosPessoais } from '@/hooks/useDadosPessoais';
 import { ONUS_PAGAMENTO } from '@/lib/dominiosFaseV';
 import { isCpfValido } from '@/lib/validators';
 import { extrairCodigoErro, extrairMensagemErro } from '@/services/http';
@@ -32,6 +34,7 @@ const COLUNAS: ColunaDef[] = [
 type LinhaPeriodo = { mes: string; carga: string; remun: string };
 
 export function ServidoresCedidosTab({ prestacaoId }: { prestacaoId: string }) {
+  const { revelado, alternar } = useDadosPessoais('ServidorCedido', 'Prestação de Contas › Servidores Cedidos');
   const [lista, setLista] = useState<ServidorPrestacao[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -55,7 +58,10 @@ export function ServidoresCedidosTab({ prestacaoId }: { prestacaoId: string }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-ink-500 dark:text-ink-400">Servidores do órgão concessor cedidos à entidade (não se aplica a Colaboração/Fomento).</p>
-        <Button size="sm" onClick={() => setModal({ tipo: 'form', item: null })}><Plus className="h-4 w-4" />Adicionar</Button>
+        <div className="flex items-center gap-2">
+          <BotaoDadosPessoais revelado={revelado} onAlternar={alternar} />
+          <Button size="sm" onClick={() => setModal({ tipo: 'form', item: null })}><Plus className="h-4 w-4" />Adicionar</Button>
+        </div>
       </div>
 
       <GradeSimples
@@ -84,7 +90,11 @@ export function ServidoresCedidosTab({ prestacaoId }: { prestacaoId: string }) {
                 </div>
               );
             case 'cpf':
-              return <span className="block truncate font-mono text-xs text-ink-800 dark:text-ink-100">{mascaraCpfCnpj(s.cpf)}</span>;
+              return (
+                <span className="block truncate font-mono text-xs text-ink-800 dark:text-ink-100">
+                  {revelado ? mascaraCpfCnpj(s.cpf) : mascararDocumento(s.cpf)}
+                </span>
+              );
             case 'cargo':
               return <span className="block truncate text-ink-600 dark:text-ink-300" title={s.cargoPublico}>{s.cargoPublico}</span>;
             case 'cessao':

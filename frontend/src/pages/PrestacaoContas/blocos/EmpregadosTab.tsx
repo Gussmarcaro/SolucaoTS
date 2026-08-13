@@ -7,10 +7,11 @@ import { Modal } from '@/components/ui/Modal';
 import { GradeSimples } from '@/components/ui/GradeSimples';
 import type { ColunaDef } from '@/hooks/useResizableColumns';
 import { enterComoTab } from '@/lib/enterComoTab';
-import { Badge } from '@/components/ui/Badge';
 import { BuscaCbo } from '@/components/ui/BuscaCbo';
 import { apenasDigitos, dataBr, formatarMoeda, mascaraCpfCnpj, mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
 import { MESES, ehMedico } from '@/lib/dominios';
+import { mascararDocumento } from '@/lib/dadosPessoais';
+import { BotaoDadosPessoais, useDadosPessoais } from '@/hooks/useDadosPessoais';
 import { isCpfValido } from '@/lib/validators';
 import { extrairCodigoErro, extrairMensagemErro } from '@/services/http';
 import { empregadosApi } from '@/services/prestacaoBlocos2.service';
@@ -32,6 +33,7 @@ const COLUNAS: ColunaDef[] = [
 type LinhaPeriodo = { mes: string; carga: string; remun: string };
 
 export function EmpregadosTab({ prestacaoId }: { prestacaoId: string }) {
+  const { revelado, alternar } = useDadosPessoais('RelacaoEmpregado', 'Prestação de Contas › Empregados');
   const [lista, setLista] = useState<Empregado[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -55,7 +57,10 @@ export function EmpregadosTab({ prestacaoId }: { prestacaoId: string }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-ink-500 dark:text-ink-400">Carga horária e remuneração referem-se à parte da parceria (§12).</p>
-        <Button size="sm" onClick={() => setModal({ tipo: 'form', item: null })}><Plus className="h-4 w-4" />Adicionar</Button>
+        <div className="flex items-center gap-2">
+          <BotaoDadosPessoais revelado={revelado} onAlternar={alternar} />
+          <Button size="sm" onClick={() => setModal({ tipo: 'form', item: null })}><Plus className="h-4 w-4" />Adicionar</Button>
+        </div>
       </div>
 
       <GradeSimples
@@ -85,14 +90,17 @@ export function EmpregadosTab({ prestacaoId }: { prestacaoId: string }) {
                 </div>
               );
             case 'cpf':
-              return <span className="block truncate font-mono text-xs text-ink-800 dark:text-ink-100">{mascaraCpfCnpj(e.cpf)}</span>;
-            case 'cbo':
               return (
-                <span className="flex min-w-0 items-center gap-1 text-ink-600 dark:text-ink-300">
-                  <span className="truncate">{e.cbo}</span>
-                  {ehMedico(e.cbo) && <Badge tone="brand">médico</Badge>}
+                <span className="block truncate font-mono text-xs text-ink-800 dark:text-ink-100">
+                  {revelado ? mascaraCpfCnpj(e.cpf) : mascararDocumento(e.cpf)}
                 </span>
               );
+            case 'cbo':
+              // Sem o selo "médico": ele revelava profissão de saúde — dado
+              // sensível (LGPD art. 5º, II) — a quem só passasse os olhos na
+              // lista. O código CBO continua, e a regra do CNS segue valendo
+              // no formulário, onde é preenchido.
+              return <span className="block truncate text-ink-600 dark:text-ink-300">{e.cbo}</span>;
             case 'admissao':
               return <span className="block truncate text-ink-600 dark:text-ink-300">{dataBr(e.dataAdmissao)}</span>;
             case 'salario':

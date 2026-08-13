@@ -1331,6 +1331,9 @@ enum AcaoAuditoria {
   INATIVACAO // soft delete: `ativo` passou a false
   REATIVACAO // `ativo` voltou a true
   CRIACAO // só para blocos da prestação, que não têm `criadoPor`
+  /// Alguém revelou dados pessoais que a tela mostra mascarados (LGPD art. 37:
+  /// registro das operações de tratamento). Não altera nada — só registra.
+  VISUALIZACAO
 }
 
 model RegistroAuditoria {

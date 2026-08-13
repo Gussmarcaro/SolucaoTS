@@ -19,6 +19,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { listarServidoresCedidos } from '@/services/servidoresCedidos.service';
 import { extrairMensagemErro } from '@/services/http';
 import { formatarMoeda, mascaraCpfCnpj } from '@/lib/masks';
+import { mascararDocumento } from '@/lib/dadosPessoais';
+import { BotaoDadosPessoais, useDadosPessoais } from '@/hooks/useDadosPessoais';
 import { cn } from '@/lib/cn';
 import type { ServidorCedido, FiltrosServidorCedido, Paginado } from '@/types/servidorCedido';
 
@@ -45,6 +47,7 @@ type StatusFiltro = '' | 'ativos' | 'inativos';
 
 export function ServidoresCedidosList({ refreshKey, onVisualizar, onEditar, onAlternarStatus }: Props) {
   const { usuario: logado } = useAuth();
+  const { revelado, alternar } = useDadosPessoais('ServidorCedidoCadastro', 'Cadastro de Servidores Cedidos');
   const [busca, setBusca] = useState('');
   const [status, setStatus] = useState<StatusFiltro>('');
   const [page, setPage] = useState(1);
@@ -126,7 +129,7 @@ export function ServidoresCedidosList({ refreshKey, onVisualizar, onEditar, onAl
           </div>
         );
       case 'cpf':
-        return <span className="block truncate font-mono text-xs text-ink-600 dark:text-ink-300">{mascaraCpfCnpj(s.cpf)}</span>;
+        return <span className="block truncate font-mono text-xs text-ink-600 dark:text-ink-300">{revelado ? mascaraCpfCnpj(s.cpf) : mascararDocumento(s.cpf)}</span>;
       case 'onus':
         return <span className="block truncate text-ink-600 dark:text-ink-300">{s.onusPagamento}</span>;
       case 'remuneracao':
@@ -150,7 +153,9 @@ export function ServidoresCedidosList({ refreshKey, onVisualizar, onEditar, onAl
             className="focus-ring h-9 w-full rounded-lg border border-ink-200 bg-ink-50 pl-9 pr-3 text-sm text-ink-800 placeholder:text-ink-400 dark:border-ink-800 dark:bg-ink-900 dark:text-ink-100"
           />
         </div>
-        <div className="w-full sm:w-44">
+        <div className="flex items-center gap-2">
+          <BotaoDadosPessoais revelado={revelado} onAlternar={alternar} />
+          <div className="w-full sm:w-44">
           <Select
             name="status"
             value={status}
@@ -161,6 +166,7 @@ export function ServidoresCedidosList({ refreshKey, onVisualizar, onEditar, onAl
             ]}
             placeholder="Status (todos)"
           />
+          </div>
         </div>
       </div>
 

@@ -19,6 +19,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { listarFornecedores } from '@/services/fornecedores.service';
 import { extrairMensagemErro } from '@/services/http';
 import { mascaraCpfCnpj } from '@/lib/masks';
+import { mascararDocumento } from '@/lib/dadosPessoais';
+import { BotaoDadosPessoais, useDadosPessoais } from '@/hooks/useDadosPessoais';
 import { cn } from '@/lib/cn';
 import type { Fornecedor, FiltrosFornecedor, Paginado } from '@/types/fornecedor';
 
@@ -44,6 +46,7 @@ type StatusFiltro = '' | 'ativos' | 'inativos';
 
 export function FornecedoresList({ refreshKey, onVisualizar, onEditar, onAlternarStatus }: Props) {
   const { usuario: logado } = useAuth();
+  const { revelado, alternar } = useDadosPessoais('Fornecedor', 'Cadastro de Fornecedores');
   const [busca, setBusca] = useState('');
   const [status, setStatus] = useState<StatusFiltro>('');
   const [page, setPage] = useState(1);
@@ -125,7 +128,7 @@ export function FornecedoresList({ refreshKey, onVisualizar, onEditar, onAlterna
           </div>
         );
       case 'documento':
-        return <span className="block truncate font-mono text-xs text-ink-600 dark:text-ink-300">{mascaraCpfCnpj(f.documento)}</span>;
+        return <span className="block truncate font-mono text-xs text-ink-600 dark:text-ink-300">{revelado ? mascaraCpfCnpj(f.documento) : mascararDocumento(f.documento)}</span>;
       case 'cidadeuf':
         return <span className="block truncate text-ink-600 dark:text-ink-300">{f.cidade} / {f.uf}</span>;
       default:
@@ -147,7 +150,9 @@ export function FornecedoresList({ refreshKey, onVisualizar, onEditar, onAlterna
             className="focus-ring h-9 w-full rounded-lg border border-ink-200 bg-ink-50 pl-9 pr-3 text-sm text-ink-800 placeholder:text-ink-400 dark:border-ink-800 dark:bg-ink-900 dark:text-ink-100"
           />
         </div>
-        <div className="w-full sm:w-44">
+        <div className="flex items-center gap-2">
+          <BotaoDadosPessoais revelado={revelado} onAlternar={alternar} />
+          <div className="w-full sm:w-44">
           <Select
             name="status"
             value={status}
@@ -158,6 +163,7 @@ export function FornecedoresList({ refreshKey, onVisualizar, onEditar, onAlterna
             ]}
             placeholder="Status (todos)"
           />
+          </div>
         </div>
       </div>
 

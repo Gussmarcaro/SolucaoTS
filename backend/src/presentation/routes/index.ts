@@ -15,6 +15,7 @@ import { dominioRoutes } from './dominio.routes';
 import { authRoutes } from './auth.routes';
 import { auditoriaRoutes } from './auditoria.routes';
 import { BuscaController } from '@/presentation/controllers/BuscaController';
+import { LgpdController } from '@/presentation/controllers/LgpdController';
 import { autenticar } from '@/presentation/middlewares/autenticar';
 
 const routes = Router();
@@ -45,5 +46,10 @@ routes.use('/auditoria', auditoriaRoutes);
 // Busca global da barra superior — percorre todos os cadastros de uma vez.
 const busca = new BuscaController();
 routes.get('/busca', (req, res, next) => busca.buscar(req, res, next));
+
+// LGPD — registro das operações de tratamento (art. 37). Aberta a qualquer
+// usuário autenticado: cada um gera o registro do próprio acesso.
+const lgpd = new LgpdController();
+routes.post('/lgpd/acesso-dados', (req, res, next) => lgpd.acessoDados(req, res, next));
 
 export { routes };
