@@ -6,7 +6,8 @@
       "Bash(node scripts/validate_palette.js \"#2c5f9a,#b45309,#047857,#6d28d9,#be123c,#0e7490\" --mode light)",
       "Bash(rm components/ui/StatCard.tsx)",
       "Bash(npx tsc *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(node -e ' *)"
     ]
   }
 }

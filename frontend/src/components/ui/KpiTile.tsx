@@ -2,24 +2,27 @@ import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
 /**
- * Paleta dos cartões — validada com o script do guia de visualização
- * (`validate_palette.js`, modos claro e escuro): faixa de luminosidade, piso de
- * croma, separação para daltonismo e contraste contra a superfície.
+ * Rampa azul dos cartões — seis passos do azul da marca ao azul-marinho,
+ * interpolados em **OKLab** para o espaçamento ser perceptualmente uniforme (em
+ * RGB os tons do meio ficariam amontoados).
  *
- * São os passos **700** das rampas, e não os 600: o texto branco sobre o 600 fica
- * em 3,2:1 no âmbar e 3,7:1 no verde, abaixo dos 4,5:1 que um rótulo em corpo
- * pequeno exige. Nos 700 o pior caso é 5,0:1.
+ * É uma rampa **sequencial**, não uma paleta categórica: quem identifica o
+ * cadastro é o rótulo e o ícone, não a cor. Por isso a verificação que vale aqui
+ * é outra — luminosidade monotônica e contraste do texto, não separação de
+ * matizes para daltonismo.
  *
- * A ordem importa — o validador mede pares vizinhos, e é nela que âmbar e verde
- * ficam separados de rosa e violeta.
+ * Ambas conferidas: L(OKLab) cai 0,554 → 0,282 em passos de ~0,054, e o texto
+ * branco fica entre 4,8:1 e 14,7:1. O primeiro passo é o teto de claridade
+ * possível — o azul da marca (#4a90d9) daria só 3,3:1 com texto branco, abaixo
+ * dos 4,5:1 exigidos para corpo pequeno.
  */
 export const CORES_KPI = [
-  '#2c5f9a', // brand 700
-  '#b45309', // amber 700
-  '#047857', // emerald 700
-  '#6d28d9', // violet 700
-  '#be123c', // rose 700
-  '#a21caf', // fuchsia 700
+  '#3574bd',
+  '#2f63a7',
+  '#295391',
+  '#23437c',
+  '#1d3468',
+  '#172554',
 ] as const;
 
 interface Props {
@@ -27,7 +30,7 @@ interface Props {
   /** Já formatado; `null` enquanto carrega. */
   valor: string | null;
   icone: LucideIcon;
-  /** Índice na paleta — mantém a cor colada ao cadastro, não à posição na tela. */
+  /** Passo da rampa; segue a ordem dos cartões na tela. */
   cor: number;
   /** Linha de apoio no rodapé. */
   rodape?: React.ReactNode;
