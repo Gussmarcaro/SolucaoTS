@@ -79,8 +79,13 @@ export function Auditoria() {
 
   useEffect(() => setPage(1), [consulta, pageSize]);
 
+  // Ordena pelo rótulo, não pelo nome do model: quem procura "Entidade
+  // beneficiária" na lista não sabe que ela se chama `EntidadeBeneficiaria`.
   const opcoesEntidade = useMemo(
-    () => entidades.map((e) => ({ value: e, label: rotuloEntidade(e) })),
+    () =>
+      entidades
+        .map((e) => ({ value: e, label: rotuloEntidade(e) }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR')),
     [entidades],
   );
 

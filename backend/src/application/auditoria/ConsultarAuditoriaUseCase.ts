@@ -43,7 +43,15 @@ export class ConsultarAuditoriaUseCase {
     return this.repo.historico(entidade.trim(), registroId.trim());
   }
 
+  /**
+   * Cadastros que o filtro da tela oferece.
+   *
+   * A lista vem do modelo de dados, não do que já foi registrado: procurar
+   * alterações num cadastro que ainda não teve nenhuma é uma pergunta legítima,
+   * e "nenhuma alteração" é uma resposta diferente de "essa opção não existe".
+   * Quem conhece os models é a camada de dados — por isso passa pela porta.
+   */
   async entidades(): Promise<string[]> {
-    return this.repo.entidadesRegistradas();
+    return this.repo.entidadesAuditaveis();
   }
 }

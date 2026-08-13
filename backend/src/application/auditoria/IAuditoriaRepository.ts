@@ -34,6 +34,6 @@ export interface IAuditoriaRepository {
   /** Histórico de um registro específico, do mais recente para o mais antigo. */
   historico(entidade: string, registroId: string): Promise<RegistroAuditoria[]>;
 
-  /** Entidades já presentes na trilha, para alimentar o filtro da tela. */
-  entidadesRegistradas(): Promise<string[]>;
+  /** Cadastros que a trilha cobre, para alimentar o filtro da tela. */
+  entidadesAuditaveis(): Promise<string[]>;
 }

@@ -4,9 +4,13 @@
  *
  *   npm run verificar:auditoria
  */
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { Prisma } from '@prisma/client';
 import {
   MODELS_COM_CRIADO_POR,
+  NAO_AUDITAR,
   descrever,
   diferenca,
   limpar,
@@ -95,6 +99,32 @@ ok(
   semAutoria.length
     ? `models em grade sem criadoPor: ${semAutoria.join(', ')} — acrescente o campo ou justifique em FORA_DA_REGRA`
     : `todas as ${MODELS_COM_CRIADO_POR.size} grades registram quem incluiu`,
+);
+
+/*
+ * Rótulo de cada cadastro no filtro da auditoria.
+ *
+ * O filtro lista todo model auditável. Sem rótulo, a opção aparece com o nome
+ * cru do banco — "DocumentoRegularidade" no meio de "Entidade beneficiária" —
+ * e quem opera não reconhece o que está escolhendo.
+ */
+console.log('\n--- rótulos do filtro de auditoria ---');
+
+const mapa = readFileSync(
+  join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'frontend', 'src', 'types', 'auditoria.ts'),
+  'utf8',
+);
+
+const semRotulo = Prisma.dmmf.datamodel.models
+  .map((m) => m.name)
+  .filter((nome) => !NAO_AUDITAR.has(nome))
+  .filter((nome) => !new RegExp(`^\\s+${nome}:`, 'm').test(mapa));
+
+ok(
+  semRotulo.length === 0,
+  semRotulo.length
+    ? `sem rótulo em ENTIDADE_LABEL: ${semRotulo.join(', ')}`
+    : 'todo cadastro auditável tem rótulo legível',
 );
 
 console.log(falhas ? `\n${falhas} FALHA(S)` : '\nTudo ok.');

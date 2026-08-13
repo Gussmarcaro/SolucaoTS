@@ -23,7 +23,7 @@ export const MODELS_COM_CRIADO_POR = new Set(
  * cada recarga) e a própria auditoria, que é append-only e não pode se auditar
  * sob pena de laço infinito.
  */
-const NAO_AUDITAR = new Set([
+export const NAO_AUDITAR = new Set([
   'Cbo',
   'ClassificacaoEconomica',
   'ComponenteDespesa',

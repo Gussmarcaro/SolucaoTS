@@ -1,5 +1,6 @@
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
+import { NAO_AUDITAR } from './extensaoAuditoria';
 import type {
   FiltrosAuditoria,
   IAuditoriaRepository,
@@ -55,12 +56,21 @@ export class PrismaAuditoriaRepository implements IAuditoriaRepository {
     });
   }
 
-  async entidadesRegistradas(): Promise<string[]> {
-    const linhas = await prisma.registroAuditoria.findMany({
-      distinct: ['entidade'],
-      select: { entidade: true },
-      orderBy: { entidade: 'asc' },
-    });
-    return linhas.map((l) => l.entidade);
+  /**
+   * Todos os cadastros que a trilha cobre, lidos do schema.
+   *
+   * Antes vinha de um `distinct` sobre a própria trilha, o que listava só o que
+   * já tinha sido alterado alguma vez — o filtro nascia incompleto e ia se
+   * completando conforme o sistema era usado. Cadastro novo agora aparece
+   * sozinho, sem precisar de uma primeira alteração para existir na lista.
+   */
+  async entidadesAuditaveis(): Promise<string[]> {
+    const models = Prisma.dmmf.datamodel.models
+      .map((m) => m.name)
+      .filter((nome) => !NAO_AUDITAR.has(nome));
+
+    // `Titular` não é model: é o registro da consulta por CPF (LGPD, art. 18),
+    // gravado na trilha com esse nome.
+    return [...models, 'Titular'].sort((a, b) => a.localeCompare(b, 'pt-BR'));
   }
 }
