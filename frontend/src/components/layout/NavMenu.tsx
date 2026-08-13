@@ -34,9 +34,13 @@ function grupoContémAtivo(node: NavNode, pathname: string): boolean {
 }
 
 const linhaBase =
-  'focus-ring group flex w-full items-center gap-2.5 rounded-xl px-3 text-sm font-medium transition-colors';
+  'focus-ring group flex w-full items-center gap-2.5 rounded-xl px-3 text-[13px] font-normal tracking-[0.005em] transition-colors';
+// A opacidade sobe de 80% para 90% junto com a fonte menor e mais leve: texto
+// branco fino sobre o azul do menu perde legibilidade rápido, e as três
+// mudanças na mesma direção somariam. No escuro o contraste já é folgado, então
+// só o tom do texto acompanha.
 const inativo =
-  'text-white/80 hover:bg-white/10 hover:text-white dark:text-ink-300 dark:hover:bg-ink-800 dark:hover:text-ink-50';
+  'text-white/90 hover:bg-white/10 hover:text-white dark:text-ink-300 dark:hover:bg-ink-800 dark:hover:text-ink-50';
 const ativo = 'bg-white/20 text-white dark:bg-brand-500/15 dark:text-brand-200';
 
 function Marcador({ node }: { node: NavNode }) {
