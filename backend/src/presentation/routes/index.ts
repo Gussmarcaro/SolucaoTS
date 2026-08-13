@@ -14,6 +14,7 @@ import { clienteRoutes } from './cliente.routes';
 import { dominioRoutes } from './dominio.routes';
 import { authRoutes } from './auth.routes';
 import { auditoriaRoutes } from './auditoria.routes';
+import { BuscaController } from '@/presentation/controllers/BuscaController';
 import { autenticar } from '@/presentation/middlewares/autenticar';
 
 const routes = Router();
@@ -40,5 +41,9 @@ routes.use('/grupos', grupoRoutes);
 routes.use('/orgaos', clienteRoutes);
 routes.use('/dominios', dominioRoutes);
 routes.use('/auditoria', auditoriaRoutes);
+
+// Busca global da barra superior — percorre todos os cadastros de uma vez.
+const busca = new BuscaController();
+routes.get('/busca', (req, res, next) => busca.buscar(req, res, next));
 
 export { routes };

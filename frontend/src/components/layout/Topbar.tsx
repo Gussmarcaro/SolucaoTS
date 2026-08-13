@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Menu, Search, Bell, Info, LogOut } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/cn';
+import { BuscaGlobal } from './BuscaGlobal';
 import { SobreModal } from './SobreModal';
 
 interface TopbarProps {
@@ -19,15 +20,6 @@ export function Topbar({ onOpenSidebar }: TopbarProps) {
   const { usuario, sair } = useAuth();
   const [sobreAberto, setSobreAberto] = useState(false);
   const [buscaAberta, setBuscaAberta] = useState(false);
-  const campoBusca = useRef<HTMLInputElement>(null);
-
-  // O campo continua montado (só encolhe), então o foco precisa ser movido na
-  // mão: ao abrir, para dentro dele; ao fechar, para fora, senão o cursor
-  // ficaria num campo invisível.
-  useEffect(() => {
-    if (buscaAberta) campoBusca.current?.focus();
-    else campoBusca.current?.blur();
-  }, [buscaAberta]);
 
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-ink-200/70 bg-white/80 px-4 backdrop-blur-md dark:border-ink-800/70 dark:bg-ink-950/70 sm:px-6">
@@ -39,33 +31,9 @@ export function Topbar({ onOpenSidebar }: TopbarProps) {
         <Menu className="h-5 w-5" />
       </button>
 
-      {/* Busca — nasce fechada e abre pelo botão da lupa. O campo não é
-          desmontado: encolher a largura anima a abertura, o que remontá-lo não
-          faria. `ml-auto` empurra a busca e tudo que vem depois dela (ações e
-          perfil) para a direita da barra. */}
-      <div
-        aria-hidden={!buscaAberta}
-        className={cn(
-          'relative ml-auto hidden shrink-0 transition-[width,opacity] duration-200 sm:block',
-          // Larguras fixas em vez de `w-full max-w-md`: dentro de um flex, uma
-          // largura percentual depende de como a linha foi distribuída e pode
-          // resolver para zero — aberto e fechado ficariam iguais.
-          // O recorte vale só enquanto fechado: aberto, ele cortaria o anel de
-          // foco do campo e deixaria um risco na borda.
-          buscaAberta ? 'w-72 opacity-100 lg:w-96' : 'w-0 overflow-hidden opacity-0',
-        )}
-      >
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
-        <input
-          ref={campoBusca}
-          type="text"
-          tabIndex={buscaAberta ? 0 : -1}
-          placeholder="Buscar ajustes, entidades, tarefas..."
-          onKeyDown={(e) => e.key === 'Escape' && setBuscaAberta(false)}
-          onBlur={() => setBuscaAberta(false)}
-          className="focus-ring h-10 w-full rounded-xl border border-ink-200 bg-ink-50 pl-10 pr-4 text-sm text-ink-800 placeholder:text-ink-400 transition-colors dark:border-ink-800 dark:bg-ink-900 dark:text-ink-100"
-        />
-      </div>
+      {/* Busca — nasce fechada e abre pelo botão da lupa. `ml-auto` empurra a
+          busca e tudo que vem depois dela (ações e perfil) para a direita. */}
+      <BuscaGlobal aberta={buscaAberta} onFechar={() => setBuscaAberta(false)} />
 
       <div className="flex flex-1 items-center justify-end gap-1.5 sm:flex-none">
         {/* `preventDefault` no mouse down: sem ele, o clique tiraria o foco do
