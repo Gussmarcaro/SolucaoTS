@@ -1,5 +1,4 @@
 import { Badge } from '@/components/ui/Badge';
-import { HistoricoRegistro } from '@/pages/Auditoria/HistoricoRegistro';
 import { dataBr, formatarMoeda } from '@/lib/masks';
 import type { BemCedido } from '@/types/bemCedido';
 
@@ -32,11 +31,6 @@ export function BemCedidoView({ bem }: { bem: BemCedido }) {
           <Campo label="Observação" valor={bem.observacao} />
         </div>
       </dl>
-
-      <div>
-        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-400">Histórico de alterações</h4>
-        <HistoricoRegistro entidade="BemCedido" registroId={bem.id} />
-      </div>
     </div>
   );
 }

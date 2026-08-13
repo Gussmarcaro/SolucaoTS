@@ -1,5 +1,4 @@
 import { Badge } from '@/components/ui/Badge';
-import { HistoricoRegistro } from '@/pages/Auditoria/HistoricoRegistro';
 import type { Grupo } from '@/types/grupo';
 
 export function GrupoView({ grupo }: { grupo: Grupo }) {
@@ -16,11 +15,6 @@ export function GrupoView({ grupo }: { grupo: Grupo }) {
       <div>
         <dt className="text-xs font-medium uppercase tracking-wider text-ink-400">Descrição</dt>
         <dd className="mt-0.5 text-sm text-ink-800 dark:text-ink-100">{grupo.descricao?.trim() || '—'}</dd>
-      </div>
-
-      <div>
-        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-400">Histórico de alterações</h4>
-        <HistoricoRegistro entidade="GrupoUsuario" registroId={grupo.id} />
       </div>
     </div>
   );

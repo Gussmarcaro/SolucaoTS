@@ -1,5 +1,4 @@
 import { Badge } from '@/components/ui/Badge';
-import { HistoricoRegistro } from '@/pages/Auditoria/HistoricoRegistro';
 import { dataBr, formatarMoeda, mascaraCpfCnpj } from '@/lib/masks';
 import type { Contrato } from '@/types/contrato';
 
@@ -41,11 +40,6 @@ export function ContratoView({ contrato }: { contrato: Contrato }) {
           <Campo label="Objeto" valor={contrato.objeto} />
         </div>
       </dl>
-
-      <div>
-        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-400">Histórico de alterações</h4>
-        <HistoricoRegistro entidade="ContratoFirmado" registroId={contrato.id} />
-      </div>
     </div>
   );
 }

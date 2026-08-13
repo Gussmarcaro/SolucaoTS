@@ -1,5 +1,4 @@
 import { Badge } from '@/components/ui/Badge';
-import { HistoricoRegistro } from '@/pages/Auditoria/HistoricoRegistro';
 import { dataBr, formatarMoeda, mascaraCpfCnpj } from '@/lib/masks';
 import type { ServidorCedido } from '@/types/servidorCedido';
 
@@ -37,11 +36,6 @@ export function ServidorCedidoView({ servidor }: { servidor: ServidorCedido }) {
         <Campo label="Remuneração Bruta" valor={formatarMoeda(servidor.remuneracaoBruta)} />
         <Campo label="Cessão" valor={vigencia} />
       </dl>
-
-      <div>
-        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-400">Histórico de alterações</h4>
-        <HistoricoRegistro entidade="ServidorCedidoCadastro" registroId={servidor.id} />
-      </div>
     </div>
   );
 }

@@ -1,5 +1,4 @@
 import { Badge } from '@/components/ui/Badge';
-import { HistoricoRegistro } from '@/pages/Auditoria/HistoricoRegistro';
 import { mascaraCelular, mascaraCep, mascaraCpf } from '@/lib/masks';
 import type { Usuario } from '@/types/usuario';
 
@@ -40,11 +39,6 @@ export function UsuarioView({ usuario }: { usuario: Usuario }) {
         <Campo label="Bairro" valor={usuario.bairro} />
         <Campo label="Cidade / UF" valor={`${usuario.cidade} / ${usuario.uf}`} />
       </dl>
-
-      <div>
-        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-400">Histórico de alterações</h4>
-        <HistoricoRegistro entidade="Usuario" registroId={usuario.id} />
-      </div>
     </div>
   );
 }

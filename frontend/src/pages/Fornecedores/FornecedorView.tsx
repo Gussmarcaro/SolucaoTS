@@ -1,5 +1,4 @@
 import { Badge } from '@/components/ui/Badge';
-import { HistoricoRegistro } from '@/pages/Auditoria/HistoricoRegistro';
 import { mascaraCep, mascaraCelular, mascaraCpfCnpj, mascaraTelefoneFixo } from '@/lib/masks';
 import type { Fornecedor } from '@/types/fornecedor';
 
@@ -41,11 +40,6 @@ export function FornecedorView({ fornecedor }: { fornecedor: Fornecedor }) {
         <Campo label="Cidade / UF" valor={`${fornecedor.cidade} / ${fornecedor.uf}`} />
         <Campo label="CEP" valor={mascaraCep(fornecedor.cep)} />
       </dl>
-
-      <div>
-        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-400">Histórico de alterações</h4>
-        <HistoricoRegistro entidade="Fornecedor" registroId={fornecedor.id} />
-      </div>
     </div>
   );
 }
