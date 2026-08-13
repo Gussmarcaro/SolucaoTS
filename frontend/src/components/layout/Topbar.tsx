@@ -28,8 +28,11 @@ export function Topbar({ onOpenSidebar }: TopbarProps) {
         <Menu className="h-5 w-5" />
       </button>
 
-      {/* Busca */}
-      <div className="relative hidden max-w-md flex-1 sm:block">
+      {/* Busca — `ml-auto` empurra a busca e tudo que vem depois dela (ações e
+          perfil) para a direita da barra. Sem `flex-1`: crescer até o limite
+          consumiria a folga que a margem automática precisa para deslocar o
+          bloco. */}
+      <div className="relative ml-auto hidden w-full min-w-0 max-w-md sm:block">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
         <input
           type="text"
