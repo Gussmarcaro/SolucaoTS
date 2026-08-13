@@ -24,7 +24,7 @@ import { BotaoDadosPessoais, useDadosPessoais } from '@/hooks/useDadosPessoais';
 import { cn } from '@/lib/cn';
 import type { FiltrosUsuario, Paginado, Usuario } from '@/types/usuario';
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 15;
 
 const COLUNAS: ColunaDef[] = [
   { key: 'acoes', label: 'Ações', width: 120, minWidth: 100, align: 'center' },

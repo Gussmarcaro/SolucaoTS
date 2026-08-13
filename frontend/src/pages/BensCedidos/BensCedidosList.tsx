@@ -22,7 +22,7 @@ import { dataBr, formatarMoeda } from '@/lib/masks';
 import { cn } from '@/lib/cn';
 import type { BemCedido, FiltrosBemCedido, Paginado } from '@/types/bemCedido';
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 15;
 const vazio: Paginado<BemCedido> = { data: [], total: 0, page: 1, pageSize: PAGE_SIZE, totalPages: 1 };
 
 const COLUNAS: ColunaDef[] = [

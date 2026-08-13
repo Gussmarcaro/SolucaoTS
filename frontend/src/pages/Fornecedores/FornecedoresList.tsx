@@ -24,7 +24,7 @@ import { BotaoDadosPessoais, useDadosPessoais } from '@/hooks/useDadosPessoais';
 import { cn } from '@/lib/cn';
 import type { Fornecedor, FiltrosFornecedor, Paginado } from '@/types/fornecedor';
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 15;
 const vazio: Paginado<Fornecedor> = { data: [], total: 0, page: 1, pageSize: PAGE_SIZE, totalPages: 1 };
 
 const COLUNAS: ColunaDef[] = [

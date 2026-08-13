@@ -24,7 +24,7 @@ import {
 } from '@/types/prestacao';
 import { TIPO_AJUSTE_LABEL } from '@/types/ajuste';
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 15;
 const vazio: Paginado<Prestacao> = { data: [], total: 0, page: 1, pageSize: PAGE_SIZE, totalPages: 1 };
 
 /** Ações sempre primeiro, como nas grades dos cadastros. */

@@ -22,7 +22,7 @@ import { mascaraCpfCnpj } from '@/lib/masks';
 import { cn } from '@/lib/cn';
 import { TIPO_ORGAO_LABEL, PERIODICIDADE_LABEL, type FiltrosOrgao, type Orgao, type Paginado } from '@/types/orgao';
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 15;
 const vazio: Paginado<Orgao> = { data: [], total: 0, page: 1, pageSize: PAGE_SIZE, totalPages: 1 };
 
 const COLUNAS: ColunaDef[] = [
