@@ -79,6 +79,13 @@ export function Auditoria() {
 
   useEffect(() => setPage(1), [consulta, pageSize]);
 
+  // A tela já carrega os usuários para o filtro; o mesmo dado serve para
+  // traduzir os ids que aparecem dentro do log.
+  const nomePorUsuario = useMemo(
+    () => new Map(usuarios.map((u) => [u.value, u.label])),
+    [usuarios],
+  );
+
   // Ordena pelo rótulo, não pelo nome do model: quem procura "Entidade
   // beneficiária" na lista não sabe que ela se chama `EntidadeBeneficiaria`.
   const opcoesEntidade = useMemo(
@@ -196,7 +203,7 @@ export function Auditoria() {
                   </span>
                 </div>
                 <div className="mt-1">
-                  <Alteracoes acao={r.acao} alteracoes={r.alteracoes} />
+                  <Alteracoes acao={r.acao} alteracoes={r.alteracoes} usuarios={nomePorUsuario} />
                 </div>
               </button>
             ))
@@ -221,7 +228,7 @@ export function Auditoria() {
       </div>
 
       <Modal open={!!detalhe} onClose={() => setDetalhe(null)} title="Detalhe do registro" size="lg">
-        {detalhe && <DetalheRegistro registro={detalhe} />}
+        {detalhe && <DetalheRegistro registro={detalhe} usuarios={nomePorUsuario} />}
       </Modal>
     </>
   );
@@ -236,7 +243,13 @@ function Linha({ rotulo, valor }: { rotulo: string; valor: string }) {
   );
 }
 
-function DetalheRegistro({ registro: r }: { registro: RegistroAuditoria }) {
+function DetalheRegistro({
+  registro: r,
+  usuarios,
+}: {
+  registro: RegistroAuditoria;
+  usuarios: Map<string, string>;
+}) {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-2">
@@ -258,7 +271,7 @@ function DetalheRegistro({ registro: r }: { registro: RegistroAuditoria }) {
         <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-400">
           {r.acao === 'EXCLUSAO' ? 'Dados do registro excluído' : 'O que mudou'}
         </h4>
-        <Alteracoes acao={r.acao} alteracoes={r.alteracoes} />
+        <Alteracoes acao={r.acao} alteracoes={r.alteracoes} usuarios={usuarios} />
       </div>
     </div>
   );

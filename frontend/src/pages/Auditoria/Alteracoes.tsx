@@ -14,9 +14,14 @@ function formatar(v: unknown): string {
 const ehDiff = (v: unknown): v is CampoAlterado =>
   typeof v === 'object' && v !== null && 'de' in v && 'para' in v;
 
+/** Campos que guardam o id de um usuário e devem aparecer como nome. */
+const CAMPOS_DE_USUARIO = new Set(['criadoPor']);
+
 interface Props {
   acao: AcaoAuditoria;
   alteracoes: Record<string, unknown> | null;
+  /** id → nome, para traduzir os campos de usuário. */
+  usuarios?: Map<string, string>;
 }
 
 /**
@@ -24,7 +29,20 @@ interface Props {
  * depois de cada campo; em exclusão, o retrato do que existia; em operação de
  * lote, a quantidade afetada.
  */
-export function Alteracoes({ acao, alteracoes }: Props) {
+export function Alteracoes({ acao, alteracoes, usuarios }: Props) {
+  /**
+   * Traduz id de usuário em nome. A tradução é feita na leitura, não na
+   * gravação: a trilha é append-only, então resolver o nome na hora de gravar
+   * não consertaria nenhuma das linhas que já estão lá — e, se o usuário for
+   * renomeado depois, o log passaria a exibir um nome que não existia à época.
+   * Usuário removido, ou fora da lista carregada, cai de volta no id: um
+   * identificador feio é melhor que um nome errado.
+   */
+  const legivel = (campo: string, valor: unknown): unknown =>
+    CAMPOS_DE_USUARIO.has(campo) && typeof valor === 'string'
+      ? (usuarios?.get(valor) ?? valor)
+      : valor;
+
   const campos = Object.entries(alteracoes ?? {});
   if (campos.length === 0) return <span className="text-xs text-ink-400">Sem detalhes.</span>;
 
@@ -46,13 +64,13 @@ export function Alteracoes({ acao, alteracoes }: Props) {
           <dd className="truncate text-ink-500 dark:text-ink-400">
             {ehDiff(valor) ? (
               <>
-                <span className="text-red-500 line-through">{formatar(valor.de)}</span>
+                <span className="text-red-500 line-through">{formatar(legivel(campo, valor.de))}</span>
                 <span className="mx-1 text-ink-400">→</span>
-                <span className="text-emerald-600 dark:text-emerald-400">{formatar(valor.para)}</span>
+                <span className="text-emerald-600 dark:text-emerald-400">{formatar(legivel(campo, valor.para))}</span>
               </>
             ) : (
               // Exclusão: retrato do registro, sem "de/para".
-              formatar(valor)
+              formatar(legivel(campo, valor))
             )}
           </dd>
         </div>
