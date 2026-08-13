@@ -48,7 +48,7 @@ interface Props {
   className?: string;
 }
 
-const BASE = 'mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-300';
+const BASE = 'mb-1.5 block text-[13px] font-normal text-ink-700 dark:text-ink-300';
 
 /**
  * Rótulo de campo. O asterisco fica em destaque enquanto o campo obrigatório

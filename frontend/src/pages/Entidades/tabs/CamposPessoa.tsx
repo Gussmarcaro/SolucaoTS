@@ -179,7 +179,7 @@ export function CamposPessoa({ valores, erros, set, preencher }: Props) {
 export function PainelVigencia({ valores, erros, set }: Omit<Props, 'preencher'>) {
   return (
     <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700">
-      <legend className="px-1 text-sm font-medium text-ink-700 dark:text-ink-200">Vigência</legend>
+      <legend className="px-1 text-sm font-normal text-ink-600 dark:text-ink-300">Vigência</legend>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Input label="Data de Entrada" name="dataEntrada" type="date" value={valores.dataEntrada} onChange={(e) => set('dataEntrada', e.target.value)} />
         <Input

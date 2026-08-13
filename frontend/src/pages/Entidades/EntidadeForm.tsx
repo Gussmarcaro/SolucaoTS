@@ -281,7 +281,7 @@ export function EntidadeForm({ entidade, onSuccess, onCancel }: Props) {
 
           {/* Finalidade estatutária */}
           <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700 sm:col-span-12">
-            <legend className="px-1 text-sm font-medium text-ink-700 dark:text-ink-200">Finalidade Estatutária</legend>
+            <legend className="px-1 text-sm font-normal text-ink-600 dark:text-ink-300">Finalidade Estatutária</legend>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
               <div className="sm:col-span-8">
                 <label htmlFor="finalidadeDescricao" className="mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-300">Descrição</label>
@@ -303,7 +303,7 @@ export function EntidadeForm({ entidade, onSuccess, onCancel }: Props) {
 
           {/* Estatuto */}
           <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700 sm:col-span-12">
-            <legend className="px-1 text-sm font-medium text-ink-700 dark:text-ink-200">Estatuto</legend>
+            <legend className="px-1 text-sm font-normal text-ink-600 dark:text-ink-300">Estatuto</legend>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
               <div className="sm:col-span-6">
                 <span className="mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-300">Upload Estatuto</span>

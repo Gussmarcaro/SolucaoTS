@@ -441,7 +441,7 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
 
           {/* Previsão por fontes de recursos */}
           <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700 sm:col-span-2">
-            <legend className="px-1 text-sm font-medium text-ink-700 dark:text-ink-200">Previsão por Fontes de Recursos</legend>
+            <legend className="px-1 text-sm font-normal text-ink-600 dark:text-ink-300">Previsão por Fontes de Recursos</legend>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <Input label="Federal (R$)" name="previsaoFederal" value={form.previsaoFederal} onChange={(e) => set('previsaoFederal', mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
               <Input label="Estadual (R$)" name="previsaoEstadual" value={form.previsaoEstadual} onChange={(e) => set('previsaoEstadual', mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
@@ -451,7 +451,7 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
 
           {/* Responsável pelo Ajuste */}
           <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700 sm:col-span-2">
-            <legend className="px-1 text-sm font-medium text-ink-700 dark:text-ink-200">Responsável pelo Ajuste</legend>
+            <legend className="px-1 text-sm font-normal text-ink-600 dark:text-ink-300">Responsável pelo Ajuste</legend>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
               <div className="sm:col-span-5">
                 <Input label="Nome" name="responsavelNome" value={form.responsavelNome} onChange={(e) => set('responsavelNome', capitalizarNome(e.target.value))} />
@@ -512,7 +512,7 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
 
           {/* Vigência do Responsável */}
           <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700 sm:col-span-2">
-            <legend className="px-1 text-sm font-medium text-ink-700 dark:text-ink-200">Vigência do Responsável</legend>
+            <legend className="px-1 text-sm font-normal text-ink-600 dark:text-ink-300">Vigência do Responsável</legend>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Input label="Data Entrada" name="responsavelDataEntrada" type="date" value={form.responsavelDataEntrada} onChange={(e) => set('responsavelDataEntrada', e.target.value)} />
               <Input label="Data Saída" name="responsavelDataSaida" type="date" value={form.responsavelDataSaida} onChange={(e) => set('responsavelDataSaida', e.target.value)} error={erros.responsavelDataSaida} />
@@ -521,7 +521,7 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
 
           {/* Termo de Ciência e Notificação */}
           <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700 sm:col-span-2">
-            <legend className="px-1 text-sm font-medium text-ink-700 dark:text-ink-200">Termo de Ciência e Notificação</legend>
+            <legend className="px-1 text-sm font-normal text-ink-600 dark:text-ink-300">Termo de Ciência e Notificação</legend>
             <span className="mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-300">Anexar arquivo PDF</span>
             {anexado && !arquivo ? (
               <div className="flex items-center gap-2 rounded-xl border border-ink-200 bg-ink-50/60 px-3 py-2 text-sm dark:border-ink-700 dark:bg-ink-800/40">
@@ -550,7 +550,7 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
 
           {/* Publicação do ajuste */}
           <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700 sm:col-span-2">
-            <legend className="px-1 text-sm font-medium text-ink-700 dark:text-ink-200">Publicação do Ajuste</legend>
+            <legend className="px-1 text-sm font-normal text-ink-600 dark:text-ink-300">Publicação do Ajuste</legend>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
               <div className="sm:col-span-4">
                 <Input label="Local" name="publicacaoLocal" value={form.publicacaoLocal} onChange={(e) => set('publicacaoLocal', e.target.value)} placeholder="ex.: Diário Oficial do Município" />
