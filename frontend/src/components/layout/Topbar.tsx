@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Menu, Search, Bell, Info, LogOut, X } from 'lucide-react';
+import { Menu, Search, Bell, Info, LogOut } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/cn';
@@ -46,11 +46,13 @@ export function Topbar({ onOpenSidebar }: TopbarProps) {
       <div
         aria-hidden={!buscaAberta}
         className={cn(
-          'relative ml-auto hidden shrink-0 overflow-hidden transition-[width,opacity] duration-200 sm:block',
+          'relative ml-auto hidden shrink-0 transition-[width,opacity] duration-200 sm:block',
           // Larguras fixas em vez de `w-full max-w-md`: dentro de um flex, uma
           // largura percentual depende de como a linha foi distribuída e pode
           // resolver para zero — aberto e fechado ficariam iguais.
-          buscaAberta ? 'w-72 opacity-100 lg:w-96' : 'w-0 opacity-0',
+          // O recorte vale só enquanto fechado: aberto, ele cortaria o anel de
+          // foco do campo e deixaria um risco na borda.
+          buscaAberta ? 'w-72 opacity-100 lg:w-96' : 'w-0 overflow-hidden opacity-0',
         )}
       >
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
@@ -60,19 +62,29 @@ export function Topbar({ onOpenSidebar }: TopbarProps) {
           tabIndex={buscaAberta ? 0 : -1}
           placeholder="Buscar ajustes, entidades, tarefas..."
           onKeyDown={(e) => e.key === 'Escape' && setBuscaAberta(false)}
+          onBlur={() => setBuscaAberta(false)}
           className="focus-ring h-10 w-full rounded-xl border border-ink-200 bg-ink-50 pl-10 pr-4 text-sm text-ink-800 placeholder:text-ink-400 transition-colors dark:border-ink-800 dark:bg-ink-900 dark:text-ink-100"
         />
       </div>
 
       <div className="flex flex-1 items-center justify-end gap-1.5 sm:flex-none">
+        {/* `preventDefault` no mouse down: sem ele, o clique tiraria o foco do
+            campo, o `onBlur` fecharia a busca e o clique em seguida a abriria
+            de novo — o botão nunca conseguiria fechar. */}
         <button
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => setBuscaAberta((v) => !v)}
-          aria-label={buscaAberta ? 'Fechar busca' : 'Buscar'}
+          aria-label="Buscar"
           aria-expanded={buscaAberta}
-          title={buscaAberta ? 'Fechar busca' : 'Buscar'}
-          className="focus-ring hidden h-9 w-9 items-center justify-center rounded-xl text-ink-500 transition-colors hover:bg-ink-100 hover:text-ink-800 dark:text-ink-400 dark:hover:bg-ink-800 dark:hover:text-ink-100 sm:inline-flex"
+          title="Buscar"
+          className={cn(
+            'focus-ring hidden h-9 w-9 items-center justify-center rounded-xl transition-colors hover:bg-ink-100 hover:text-ink-800 dark:hover:bg-ink-800 dark:hover:text-ink-100 sm:inline-flex',
+            buscaAberta
+              ? 'bg-ink-100 text-ink-800 dark:bg-ink-800 dark:text-ink-100'
+              : 'text-ink-500 dark:text-ink-400',
+          )}
         >
-          {buscaAberta ? <X className="h-[18px] w-[18px]" /> : <Search className="h-[18px] w-[18px]" />}
+          <Search className="h-[18px] w-[18px]" />
         </button>
 
         <ThemeToggle />
