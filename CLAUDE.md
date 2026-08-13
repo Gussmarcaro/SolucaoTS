@@ -109,7 +109,7 @@ Armadilhas já verificadas: a spec em PDF (v1.1) está **defasada** — `categor
 
 A trilha é gravada por uma **extension do Prisma Client** (`extensaoAuditoria.ts`), não por chamadas espalhadas pelos use cases: assim vale para qualquer caminho que grave, inclusive código novo.
 
-- **Inclusão não gera log**, em nenhum model. Nos cadastros a autoria fica no campo `criadoPor` do próprio registro, preenchido pela extension — é onde ela é consultada na prática. Os blocos da prestação não têm esse campo, então deles não fica registro de quem incluiu; se essa autoria fizer falta, o caminho é acrescentar `criadoPor` a esses models, não devolver o log. `CRIACAO` segue no enum e nos filtros por causa das linhas gravadas antes dessa mudança.
+- **Inclusão não gera log**, em nenhum model. A autoria fica no campo `criadoPor` do próprio registro, preenchido pela extension — é onde ela é consultada na prática. Todas as **40 grades de registros** têm o campo; blocos 1:1 da prestação e ligações do RBAC ficam de fora. A lista de models com o campo é **derivada do schema**, não escrita à mão, então um cadastro novo é reconhecido sozinho. `CRIACAO` segue no enum e nos filtros por causa das linhas gravadas antes dessa mudança.
 - `ALTERACAO` guarda **só o diff** (`{ campo: { de, para } }`); `EXCLUSAO` guarda o registro inteiro (última chance de saber o que havia). Soft delete (`definirAtivo`) vira `INATIVACAO`/`REATIVACAO`.
 - Operações em lote (a reimportação de CSV apaga e recria tudo) viram **uma** linha com a quantidade, não centenas.
 - **Nunca logar** `senhaHash`, `resetTokenHash`, `resetTokenExpiresAt`; `buscaTexto` e `atualizadoEm` também ficam de fora, por serem derivados que mudam a cada gravação e só poluiriam o diff.

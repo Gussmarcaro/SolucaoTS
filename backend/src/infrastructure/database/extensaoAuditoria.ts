@@ -2,25 +2,21 @@ import { Prisma, type PrismaClient } from '@prisma/client';
 import { contextoAtual } from '@/shared/contexto';
 
 /**
- * Cadastros que guardam quem incluiu o registro no campo `criadoPor`.
+ * Models que guardam quem incluiu o registro no campo `criadoPor`.
  *
- * A extension preenche esse campo na criação. Nenhum model gera linha de
- * trilha por inclusão — a trilha cobre alteração, exclusão e consulta a dados
- * pessoais.
+ * Lido do schema, não escrito à mão. A lista fixa que existia aqui já estava
+ * desatualizada — quatro models tinham a coluna e não constavam dela, então o
+ * campo nunca era preenchido neles e a inclusão ainda ia para a trilha. Um
+ * cadastro novo com o campo passa a ser reconhecido sozinho.
+ *
+ * Nenhum model gera linha de trilha por inclusão: a autoria fica no registro,
+ * e a trilha cobre alteração, exclusão e consulta a dados pessoais.
  */
-export const MODELS_COM_CRIADO_POR = new Set([
-  'Cliente',
-  'Usuario',
-  'Empresa',
-  'Fornecedor',
-  'Colaborador',
-  'ContratoFirmado',
-  'BemCedido',
-  'ServidorCedidoCadastro',
-  'GrupoUsuario',
-  'EntidadeBeneficiaria',
-  'Ajuste',
-]);
+export const MODELS_COM_CRIADO_POR = new Set(
+  Prisma.dmmf.datamodel.models
+    .filter((m) => m.fields.some((f) => f.name === 'criadoPor'))
+    .map((m) => m.name),
+);
 
 /**
  * Fora da trilha: tabelas de domínio (carga de seed — gerariam ~4.500 linhas a

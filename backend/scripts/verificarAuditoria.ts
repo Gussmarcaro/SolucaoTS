@@ -4,7 +4,13 @@
  *
  *   npm run verificar:auditoria
  */
-import { descrever, diferenca, limpar } from '../src/infrastructure/database/extensaoAuditoria';
+import { Prisma } from '@prisma/client';
+import {
+  MODELS_COM_CRIADO_POR,
+  descrever,
+  diferenca,
+  limpar,
+} from '../src/infrastructure/database/extensaoAuditoria';
 
 let falhas = 0;
 const ok = (cond: boolean, msg: string) => {
@@ -52,6 +58,44 @@ ok(descrever('ContratoFirmado', { numero: '77' }) === 'Contrato nº 77', 'prefix
 ok(descrever('Pagamento', {}) === null, 'sem campo descritivo devolve null');
 ok(descrever('Fornecedor', null) === null, 'registro nulo devolve null');
 ok((descrever('BemCedido', { descricao: 'x'.repeat(300) }) ?? '').length <= 200, 'descrição longa é truncada');
+
+/*
+ * Autoria da inclusão nos cadastros novos.
+ *
+ * A trilha não registra inclusão — a autoria vive no campo `criadoPor` do
+ * próprio registro. Um cadastro criado sem esse campo perde a autoria em
+ * silêncio: nada quebra, ninguém percebe, e o dado só faz falta numa
+ * fiscalização. Esta conferência é o que avisa na hora.
+ *
+ * O critério é "aparece como lista em algum pai", que é o mesmo de grade de
+ * registros. Blocos 1:1 da prestação e tabelas de ligação ficam de fora.
+ */
+console.log('\n--- criadoPor nas grades de registros ---');
+
+const FORA_DA_REGRA = new Set([
+  'RegistroAuditoria', // append-only, não se audita
+  'Cbo',
+  'ClassificacaoEconomica',
+  'ComponenteDespesa', // tabelas de domínio, carregadas por seed
+  'UsuarioGrupo',
+  'GrupoUsuarioPermissao', // ligações do RBAC, não são registros de cadastro
+]);
+
+const emLista = new Set<string>();
+for (const m of Prisma.dmmf.datamodel.models)
+  for (const f of m.fields) if (f.kind === 'object' && f.isList) emLista.add(f.type);
+
+const semAutoria = Prisma.dmmf.datamodel.models
+  .filter((m) => !FORA_DA_REGRA.has(m.name) && emLista.has(m.name))
+  .filter((m) => !m.fields.some((f) => f.name === 'criadoPor'))
+  .map((m) => m.name);
+
+ok(
+  semAutoria.length === 0,
+  semAutoria.length
+    ? `models em grade sem criadoPor: ${semAutoria.join(', ')} — acrescente o campo ou justifique em FORA_DA_REGRA`
+    : `todas as ${MODELS_COM_CRIADO_POR.size} grades registram quem incluiu`,
+);
 
 console.log(falhas ? `\n${falhas} FALHA(S)` : '\nTudo ok.');
 process.exit(falhas ? 1 : 0);

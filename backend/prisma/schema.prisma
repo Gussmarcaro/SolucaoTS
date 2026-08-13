@@ -595,6 +595,7 @@ model Certidao {
   vigenciaFinal          DateTime? @db.Date
   concluida              Boolean   @default(false)
 
+  criadoPor            String?               @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   cliente              Cliente               @relation(fields: [clienteId], references: [id])
   entidadeBeneficiaria EntidadeBeneficiaria? @relation(fields: [entidadeBeneficiariaId], references: [id])
 
@@ -679,7 +680,8 @@ model TermoAditivo {
   valorAcrescido Decimal? @db.Decimal(15, 2)
   valorSuprimido Decimal? @db.Decimal(15, 2)
 
-  ajuste Ajuste @relation(fields: [ajusteId], references: [id])
+  criadoPor String? @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
+  ajuste    Ajuste  @relation(fields: [ajusteId], references: [id])
 
   @@index([ajusteId])
 }
@@ -690,8 +692,9 @@ model Programa {
   ajusteId String @db.Uuid
   nome     String
 
-  ajuste Ajuste @relation(fields: [ajusteId], references: [id])
-  metas  Meta[]
+  criadoPor String? @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
+  ajuste    Ajuste  @relation(fields: [ajusteId], references: [id])
+  metas     Meta[]
 
   @@unique([ajusteId, nome])
 }
@@ -703,7 +706,8 @@ model Meta {
   descricao     String?
   quantificavel Boolean @default(true) // define se usa quantidade_realizada ou resultado_meta
 
-  programa Programa @relation(fields: [programaId], references: [id])
+  criadoPor String?  @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
+  programa  Programa @relation(fields: [programaId], references: [id])
 
   @@unique([programaId, codigoMeta])
 }
@@ -719,7 +723,8 @@ model PlanoAplicacaoItem {
   valor        Decimal @db.Decimal(15, 2)
   descricao    String?
 
-  ajuste Ajuste @relation(fields: [ajusteId], references: [id])
+  criadoPor String? @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
+  ajuste    Ajuste  @relation(fields: [ajusteId], references: [id])
 
   @@index([ajusteId])
 }
@@ -732,7 +737,8 @@ model CronogramaDesembolsoItem {
   mes      Int // normalizado 1-12
   valor    Decimal @db.Decimal(15, 2)
 
-  ajuste Ajuste @relation(fields: [ajusteId], references: [id])
+  criadoPor String? @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
+  ajuste    Ajuste  @relation(fields: [ajusteId], references: [id])
 
   @@index([ajusteId])
 }
@@ -746,7 +752,8 @@ model BemCedidoCadastro {
   valor         Decimal  @db.Decimal(15, 2)
   codigo        String
 
-  ajuste Ajuste @relation(fields: [ajusteId], references: [id])
+  criadoPor String? @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
+  ajuste    Ajuste  @relation(fields: [ajusteId], references: [id])
 
   @@index([ajusteId])
 }
@@ -760,7 +767,8 @@ model EmpenhoCadastro {
   retificacao        Boolean  @default(false)
   dataEmissaoEmpenho DateTime @db.Date
 
-  ajuste Ajuste @relation(fields: [ajusteId], references: [id])
+  criadoPor String? @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
+  ajuste    Ajuste  @relation(fields: [ajusteId], references: [id])
 
   @@unique([ajusteId, numeroEmpenho, anoEmpenho])
 }
@@ -784,6 +792,7 @@ model PrestacaoContas {
   ehRetificacao   Boolean         @default(false)
   dataEnvio       DateTime?
   inconformidades Json? // lista de erros quando REJEITADO
+  criadoPor       String?         @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   criadoEm        DateTime        @default(now())
   atualizadoEm    DateTime        @updatedAt
 
@@ -1001,6 +1010,7 @@ model RelacaoEmpregado {
   salarioContratual Decimal   @db.Decimal(15, 2)
   periodos          Json // [{ mes, carga_horaria, remuneracao_bruta }]
 
+  criadoPor String?         @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id])
 
   @@unique([prestacaoId, cpf, dataAdmissao])
@@ -1015,6 +1025,7 @@ model BemPrestacao {
   data             DateTime @db.Date // aquisição/cessão/baixa conforme categoria
   valor            Decimal? @db.Decimal(15, 2) // valor_cessao obrigatório p/ móvel cedido
 
+  criadoPor String?         @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id])
 
   @@index([prestacaoId])
@@ -1040,6 +1051,7 @@ model Contrato {
   valorMontante            Decimal       @db.Decimal(15, 2)
   valorTipo                Int?
 
+  criadoPor String?         @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id])
 
   @@unique([prestacaoId, numero, dataAssinatura, credorTipoDoc, credorNumeroDoc])
@@ -1062,6 +1074,7 @@ model DocumentoFiscal {
   rateioProveniente    Boolean       @default(false)
   rateioPercentual     Decimal?      @db.Decimal(5, 2)
 
+  criadoPor  String?         @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   prestacao  PrestacaoContas @relation(fields: [prestacaoId], references: [id])
   pagamentos Pagamento[]
   glosas     Glosa[]
@@ -1082,6 +1095,7 @@ model Pagamento {
   contaCorrente     String?
   numeroTransacao   String?       @db.VarChar(40)
 
+  criadoPor       String?          @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   prestacao       PrestacaoContas  @relation(fields: [prestacaoId], references: [id])
   documentoFiscal DocumentoFiscal? @relation(fields: [documentoFiscalId], references: [id])
 
@@ -1098,6 +1112,7 @@ model Disponibilidade {
   saldoBancario Decimal @db.Decimal(15, 2)
   saldoContabil Decimal @db.Decimal(15, 2)
 
+  criadoPor String?         @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id])
 
   @@unique([prestacaoId, banco, agencia, conta, contaTipo])
@@ -1113,6 +1128,7 @@ model Receita {
   fonteRecursoTipo Int?
   valor            Decimal   @db.Decimal(15, 2)
 
+  criadoPor String?         @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id])
 
   @@index([prestacaoId])
@@ -1129,6 +1145,7 @@ model ServidorCedido {
   onusPagamento     Int
   periodos          Json // [{ mes, carga_horaria, remuneracao_bruta }]
 
+  criadoPor String?         @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id])
 
   @@unique([prestacaoId, cpf, dataInicialCessao])
@@ -1141,6 +1158,7 @@ model Desconto {
   descricao   String
   valor       Decimal  @db.Decimal(15, 2)
 
+  criadoPor String?         @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id])
 
   @@index([prestacaoId])
@@ -1153,6 +1171,7 @@ model Devolucao {
   naturezaDevolucaoTipo Int
   valor                 Decimal  @db.Decimal(15, 2)
 
+  criadoPor String?         @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id])
 
   @@index([prestacaoId])
@@ -1166,6 +1185,7 @@ model Glosa {
   resultadoAnalise  ResultadoAnaliseGlosa
   valorGlosa        Decimal?              @db.Decimal(15, 2) // obrigatório se APROVADO_PARCIALMENTE
 
+  criadoPor       String?          @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   prestacao       PrestacaoContas  @relation(fields: [prestacaoId], references: [id])
   documentoFiscal DocumentoFiscal? @relation(fields: [documentoFiscalId], references: [id])
 
@@ -1183,6 +1203,7 @@ model EmpenhoPrestacao {
   historico              String?
   cpfOrdenadorDespesa    String   @db.VarChar(11)
 
+  criadoPor String?            @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   prestacao PrestacaoContas    @relation(fields: [prestacaoId], references: [id])
   repasses  RepassePrestacao[]
 
@@ -1205,6 +1226,7 @@ model RepassePrestacao {
   agencia                Int?
   conta                  String?
 
+  criadoPor String?           @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   prestacao PrestacaoContas   @relation(fields: [prestacaoId], references: [id])
   empenho   EmpenhoPrestacao? @relation(fields: [empenhoId], references: [id])
 
@@ -1224,6 +1246,7 @@ model RelatorioAtividadeMeta {
   metaAtendida         Boolean?
   justificativaMeta    String?
 
+  criadoPor String?         @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id])
 
   @@index([prestacaoId])
@@ -1239,9 +1262,10 @@ model Projeto {
   ajusteId  String? @db.Uuid
   nome      String
 
-  cliente Cliente  @relation(fields: [clienteId], references: [id])
-  ajuste  Ajuste?  @relation(fields: [ajusteId], references: [id])
-  tarefas Tarefa[]
+  criadoPor String?  @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
+  cliente   Cliente  @relation(fields: [clienteId], references: [id])
+  ajuste    Ajuste?  @relation(fields: [ajusteId], references: [id])
+  tarefas   Tarefa[]
 
   @@index([clienteId])
 }
@@ -1255,6 +1279,7 @@ model Tarefa {
   prioridade    PrioridadeTarefa @default(MEDIA)
   prazoLegal    DateTime         @db.Date
   status        StatusTarefa     @default(PENDENTE)
+  criadoPor     String?          @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   criadoEm      DateTime         @default(now())
 
   projeto     Projeto  @relation(fields: [projetoId], references: [id])
