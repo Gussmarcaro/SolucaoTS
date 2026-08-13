@@ -46,8 +46,11 @@ export function Topbar({ onOpenSidebar }: TopbarProps) {
       <div
         aria-hidden={!buscaAberta}
         className={cn(
-          'relative ml-auto hidden min-w-0 transition-[width,opacity] duration-200 sm:block',
-          buscaAberta ? 'w-full max-w-md opacity-100' : 'w-0 opacity-0',
+          'relative ml-auto hidden shrink-0 overflow-hidden transition-[width,opacity] duration-200 sm:block',
+          // Larguras fixas em vez de `w-full max-w-md`: dentro de um flex, uma
+          // largura percentual depende de como a linha foi distribuída e pode
+          // resolver para zero — aberto e fechado ficariam iguais.
+          buscaAberta ? 'w-72 opacity-100 lg:w-96' : 'w-0 opacity-0',
         )}
       >
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />

@@ -7,7 +7,8 @@
       "Bash(rm components/ui/StatCard.tsx)",
       "Bash(npx tsc *)",
       "Bash(npm run *)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(grep -o \"transition-\\\\\\\\\\\\\\\\\\\\[width[^}]*}\" dist/assets/*.css)"
     ]
   }
 }
