@@ -232,7 +232,7 @@ function ArquivosAtas({
 
   return (
     <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700">
-      <legend className="px-1 text-sm font-normal text-ink-600 dark:text-ink-300">Arquivos</legend>
+      <legend className="px-1 text-[13px] font-normal text-ink-600 dark:text-ink-300">Arquivos</legend>
       <div className="space-y-2">
         <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-ink-300 px-3 py-2 text-sm text-ink-500 transition-colors hover:border-brand-400 hover:text-ink-700 dark:border-ink-600 dark:text-ink-400 dark:hover:text-ink-200">
           {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4 shrink-0" />}
@@ -355,7 +355,7 @@ function MembroForm({
         <PainelVigencia valores={pessoa} erros={erros} set={set} />
 
         <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700">
-          <legend className="px-1 text-sm font-normal text-ink-600 dark:text-ink-300">Ata de Eleição</legend>
+          <legend className="px-1 text-[13px] font-normal text-ink-600 dark:text-ink-300">Ata de Eleição</legend>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <Input label="Data da Eleição" name="ataDataEleicao" type="date" value={ataEleicao} onChange={(e) => setAtaEleicao(e.target.value)} />
             <Input label="Data do Registro" name="ataDataRegistro" type="date" value={ataRegistro} onChange={(e) => setAtaRegistro(e.target.value)} />
@@ -364,7 +364,7 @@ function MembroForm({
         </fieldset>
 
         <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-2 dark:border-ink-700">
-          <legend className="px-1 text-sm font-normal text-ink-600 dark:text-ink-300">Possui Remuneração</legend>
+          <legend className="px-1 text-[13px] font-normal text-ink-600 dark:text-ink-300">Possui Remuneração</legend>
           <div className="space-y-3">
             <SlideButton name="possuiRemuneracao" checked={remunerado} onChange={setRemunerado} />
 
@@ -373,7 +373,7 @@ function MembroForm({
             {remunerado && (
               <>
                 <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700">
-                  <legend className="px-1 text-sm font-normal text-ink-600 dark:text-ink-300">Previsão Estatutária</legend>
+                  <legend className="px-1 text-[13px] font-normal text-ink-600 dark:text-ink-300">Previsão Estatutária</legend>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
                     <div className="sm:col-span-8">
                       <Input label="Descrição" name="remuneracaoDescricao" value={remDescricao} onChange={(e) => setRemDescricao(e.target.value)} />

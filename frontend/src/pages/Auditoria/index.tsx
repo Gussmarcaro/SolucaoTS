@@ -124,7 +124,7 @@ export function Auditoria() {
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder="Buscar pelo registro afetado (razão social, nome, número...)"
-              className="focus-ring h-9 w-full rounded-lg border border-ink-200 bg-ink-50 pl-9 pr-3 text-[13px] text-ink-800 placeholder:text-ink-400 dark:border-ink-800 dark:bg-ink-900 dark:text-ink-100"
+              className="focus-ring h-9 w-full rounded-lg border border-ink-200 bg-ink-50 pl-9 pr-3 text-[12px] text-ink-800 placeholder:text-ink-400 dark:border-ink-800 dark:bg-ink-900 dark:text-ink-100"
             />
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-5">

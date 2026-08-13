@@ -318,7 +318,7 @@ function MembroForm({
         <PainelVigencia valores={pessoa} erros={erros} set={set} />
 
         <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700">
-          <legend className="px-1 text-sm font-normal text-ink-600 dark:text-ink-300">Ata de Nomeação</legend>
+          <legend className="px-1 text-[13px] font-normal text-ink-600 dark:text-ink-300">Ata de Nomeação</legend>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
             <div className="sm:col-span-3">
               <Input label="Data da Nomeação" name="ataDataNomeacao" type="date" value={nomeacao} onChange={(e) => setNomeacao(e.target.value)} />

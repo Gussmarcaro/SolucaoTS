@@ -147,7 +147,7 @@ export function BensCedidosList({ refreshKey, onVisualizar, onEditar, onAlternar
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             placeholder="Buscar por descrição, tipo, identificador..."
-            className="focus-ring h-9 w-full rounded-lg border border-ink-200 bg-ink-50 pl-9 pr-3 text-[13px] text-ink-800 placeholder:text-ink-400 dark:border-ink-800 dark:bg-ink-900 dark:text-ink-100"
+            className="focus-ring h-9 w-full rounded-lg border border-ink-200 bg-ink-50 pl-9 pr-3 text-[12px] text-ink-800 placeholder:text-ink-400 dark:border-ink-800 dark:bg-ink-900 dark:text-ink-100"
           />
         </div>
         <div className="w-full sm:w-44">

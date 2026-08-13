@@ -154,7 +154,7 @@ export function SelectDominio({
           disabled={disabled}
           autoComplete="off"
           className={cn(
-            'focus-ring h-10 w-full rounded-xl border bg-white pl-3 pr-16 text-[13px] text-ink-800 placeholder:text-ink-400 transition-colors disabled:cursor-not-allowed disabled:opacity-60 dark:bg-ink-900 dark:text-ink-100',
+            'focus-ring h-10 w-full rounded-xl border bg-white pl-3 pr-16 text-[12px] text-ink-800 placeholder:text-ink-400 transition-colors disabled:cursor-not-allowed disabled:opacity-60 dark:bg-ink-900 dark:text-ink-100',
             error ? 'border-red-400 dark:border-red-500' : 'border-ink-200 dark:border-ink-700',
           )}
         />

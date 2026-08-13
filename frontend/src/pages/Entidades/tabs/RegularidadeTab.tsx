@@ -112,7 +112,7 @@ function Painel({
 }) {
   return (
     <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700">
-      <legend className="px-1 text-sm font-normal text-ink-600 dark:text-ink-300">{painel.titulo}</legend>
+      <legend className="px-1 text-[13px] font-normal text-ink-600 dark:text-ink-300">{painel.titulo}</legend>
 
       <div className="space-y-3">
         {documentos.map((doc) => (
