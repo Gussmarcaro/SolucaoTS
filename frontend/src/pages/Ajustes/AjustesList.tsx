@@ -15,6 +15,8 @@ import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { ResizableHead, type SortState } from '@/components/ui/ResizableHead';
 import { useDebounce } from '@/hooks/useDebounce';
+import { SeletorPagina } from '@/components/ui/SeletorPagina';
+import { PAGE_SIZE_PADRAO, usePageSize } from '@/lib/paginacao';
 import { useResizableColumns, type ColunaDef } from '@/hooks/useResizableColumns';
 import { useAuth } from '@/contexts/AuthContext';
 import { listarAjustes } from '@/services/ajustes.service';
@@ -29,8 +31,7 @@ import {
   type Paginado,
 } from '@/types/ajuste';
 
-const PAGE_SIZE = 15;
-const vazio: Paginado<Ajuste> = { data: [], total: 0, page: 1, pageSize: PAGE_SIZE, totalPages: 1 };
+const vazio: Paginado<Ajuste> = { data: [], total: 0, page: 1, pageSize: PAGE_SIZE_PADRAO, totalPages: 1 };
 
 const COLUNAS: ColunaDef[] = [
   { key: 'acoes', label: 'Ações', width: 110, minWidth: 90, align: 'center' },
@@ -52,6 +53,7 @@ type StatusFiltro = '' | 'EM_ELABORACAO' | 'ENVIADO';
 export function AjustesList({ refreshKey, onVisualizar, onEditar }: Props) {
   const navigate = useNavigate();
   const { usuario: logado } = useAuth();
+  const [pageSize, setPageSize] = usePageSize('ajustes');
   const [busca, setBusca] = useState('');
   const [status, setStatus] = useState<StatusFiltro>('');
   const [page, setPage] = useState(1);
@@ -82,7 +84,7 @@ export function AjustesList({ refreshKey, onVisualizar, onEditar }: Props) {
       orderBy: sort?.campo,
       orderDir: sort?.direcao,
       page,
-      pageSize: PAGE_SIZE,
+      pageSize,
     })
       .then((r) => ativo && setResultado(r))
       .catch((e) => {
@@ -94,9 +96,9 @@ export function AjustesList({ refreshKey, onVisualizar, onEditar }: Props) {
     return () => {
       ativo = false;
     };
-  }, [filtros, buscaDebounced, sort, page, refreshKey]);
+  }, [filtros, buscaDebounced, sort, page, pageSize, refreshKey]);
 
-  useEffect(() => setPage(1), [filtros, buscaDebounced, sort]);
+  useEffect(() => setPage(1), [filtros, buscaDebounced, sort, pageSize]);
 
   function handleSort(sortKey: string) {
     setSort((prev) =>
@@ -229,6 +231,7 @@ export function AjustesList({ refreshKey, onVisualizar, onEditar }: Props) {
 
       <div className="flex flex-col items-center justify-between gap-3 border-t border-ink-100 px-4 py-3 text-xs text-ink-400 dark:border-ink-800 sm:flex-row">
         <span>{total > 0 ? `${total} ajuste(s)` : 'Sem registros'}</span>
+        <SeletorPagina valor={pageSize} onChange={setPageSize} />
         <div className="flex items-center gap-2">
           <Button variant="secondary" size="sm" disabled={page <= 1 || carregando} onClick={() => setPage((p) => Math.max(1, p - 1))}>
             <ChevronLeft className="h-4 w-4" />

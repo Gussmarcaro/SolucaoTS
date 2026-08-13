@@ -1,8 +1,7 @@
 import type { RegistroAuditoria, AcaoAuditoria } from '@/core/auditoria/RegistroAuditoria';
 import type { FiltrosAuditoria, IAuditoriaRepository, Paginado } from './IAuditoriaRepository';
 
-const PAGE_SIZE_PADRAO = 25;
-const PAGE_SIZE_MAX = 100;
+import { PAGE_SIZE_MAX, PAGE_SIZE_PADRAO } from '@/shared/paginacao';
 
 const ACOES: AcaoAuditoria[] = ['ALTERACAO', 'EXCLUSAO', 'INATIVACAO', 'REATIVACAO', 'CRIACAO'];
 

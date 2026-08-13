@@ -2,8 +2,7 @@ import type { Empresa } from '@/core/empresa/Empresa';
 import type { IEmpresaRepository } from './IEmpresaRepository';
 import type { FiltrosEmpresa, Paginado } from './dtos';
 
-const PAGE_SIZE_PADRAO = 10;
-const PAGE_SIZE_MAX = 100;
+import { PAGE_SIZE_MAX, PAGE_SIZE_PADRAO } from '@/shared/paginacao';
 
 /** Campos permitidos para ordenação. */
 const CAMPOS_ORDENAVEIS = ['razaoSocial', 'nomeFantasia', 'cnpj', 'cidade', 'uf', 'ativo', 'criadoEm'];

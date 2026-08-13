@@ -2,8 +2,7 @@ import type { Ajuste } from '@/core/ajuste/Ajuste';
 import type { IAjusteRepository } from './IAjusteRepository';
 import type { FiltrosAjuste, Paginado } from './dtos';
 
-const PAGE_SIZE_PADRAO = 10;
-const PAGE_SIZE_MAX = 100;
+import { PAGE_SIZE_MAX, PAGE_SIZE_PADRAO } from '@/shared/paginacao';
 const CAMPOS_ORDENAVEIS = [
   'codigoAjuste',
   'tipoAjuste',

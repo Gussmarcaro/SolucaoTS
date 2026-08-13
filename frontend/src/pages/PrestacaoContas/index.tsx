@@ -22,10 +22,11 @@ import {
   type Prestacao,
   type StatusPrestacao,
 } from '@/types/prestacao';
+import { SeletorPagina } from '@/components/ui/SeletorPagina';
+import { PAGE_SIZE_PADRAO, usePageSize } from '@/lib/paginacao';
 import { TIPO_AJUSTE_LABEL } from '@/types/ajuste';
 
-const PAGE_SIZE = 15;
-const vazio: Paginado<Prestacao> = { data: [], total: 0, page: 1, pageSize: PAGE_SIZE, totalPages: 1 };
+const vazio: Paginado<Prestacao> = { data: [], total: 0, page: 1, pageSize: PAGE_SIZE_PADRAO, totalPages: 1 };
 
 /** Ações sempre primeiro, como nas grades dos cadastros. */
 const COLUNAS: ColunaDef[] = [
@@ -39,6 +40,7 @@ const COLUNAS: ColunaDef[] = [
 
 export function PrestacaoContas() {
   const navigate = useNavigate();
+  const [pageSize, setPageSize] = usePageSize('prestacoes');
   const [busca, setBusca] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
@@ -55,7 +57,7 @@ export function PrestacaoContas() {
     let vivo = true;
     setCarregando(true);
     setErro(null);
-    listarPrestacoes({ filtros, busca: buscaDebounced, page, pageSize: PAGE_SIZE })
+    listarPrestacoes({ filtros, busca: buscaDebounced, page, pageSize })
       .then((r) => vivo && setResultado(r))
       .catch((e) => {
         if (!vivo) return;
@@ -66,9 +68,9 @@ export function PrestacaoContas() {
     return () => {
       vivo = false;
     };
-  }, [filtros, buscaDebounced, page, refreshKey]);
+  }, [filtros, buscaDebounced, page, pageSize, refreshKey]);
 
-  useEffect(() => setPage(1), [filtros, buscaDebounced]);
+  useEffect(() => setPage(1), [filtros, buscaDebounced, pageSize]);
 
   const { data, total, totalPages } = resultado;
 
@@ -163,6 +165,7 @@ export function PrestacaoContas() {
 
         <div className="flex flex-col items-center justify-between gap-3 border-t border-ink-100 px-4 py-3 text-xs text-ink-400 dark:border-ink-800 sm:flex-row">
           <span>{total > 0 ? `${total} prestação(ões)` : 'Sem registros'}</span>
+        <SeletorPagina valor={pageSize} onChange={setPageSize} />
           <div className="flex items-center gap-2">
             <Button variant="secondary" size="sm" disabled={page <= 1 || carregando} onClick={() => setPage((p) => Math.max(1, p - 1))}>
               <ChevronLeft className="h-4 w-4" />

@@ -11,10 +11,11 @@ import { extrairMensagemErro } from '@/services/http';
 import { auditoriaApi, type FiltrosAuditoria } from '@/services/auditoria.service';
 import { listarUsuarios } from '@/services/usuarios.service';
 import { ACAO_LABEL, ACAO_TONE, rotuloEntidade, type RegistroAuditoria } from '@/types/auditoria';
+import { SeletorPagina } from '@/components/ui/SeletorPagina';
+import { usePageSize } from '@/lib/paginacao';
 import { Alteracoes } from './Alteracoes';
 import { baixarCsv } from './exportarCsv';
 
-const PAGE_SIZE = 25;
 
 const ACOES = [
   { value: 'ALTERACAO', label: 'Alteração' },
@@ -31,6 +32,7 @@ export function dataHora(iso: string): string {
 
 export function Auditoria() {
   const [filtros, setFiltros] = useState<FiltrosAuditoria>({});
+  const [pageSize, setPageSize] = usePageSize('auditoria');
   const [busca, setBusca] = useState('');
   const buscaDebounced = useDebounce(busca, 400);
   const [entidades, setEntidades] = useState<string[]>([]);
@@ -63,7 +65,7 @@ export function Auditoria() {
     setCarregando(true);
     setErro(null);
     auditoriaApi
-      .listar({ ...consulta, page, pageSize: PAGE_SIZE })
+      .listar({ ...consulta, page, pageSize })
       .then((r) => {
         if (!vivo) return;
         setLista(r.data);
@@ -75,7 +77,7 @@ export function Auditoria() {
     return () => { vivo = false; };
   }, [consulta, page]);
 
-  useEffect(() => setPage(1), [consulta]);
+  useEffect(() => setPage(1), [consulta, pageSize]);
 
   const opcoesEntidade = useMemo(
     () => entidades.map((e) => ({ value: e, label: rotuloEntidade(e) })),
@@ -198,6 +200,7 @@ export function Auditoria() {
 
         <div className="flex flex-col items-center justify-between gap-3 border-t border-ink-100 px-4 py-3 text-xs text-ink-400 dark:border-ink-800 sm:flex-row">
           <span>{total} registro(s)</span>
+        <SeletorPagina valor={pageSize} onChange={setPageSize} />
           <div className="flex items-center gap-2">
             <Button variant="secondary" size="sm" disabled={page <= 1 || carregando} onClick={() => setPage((p) => p - 1)}>
               <ChevronLeft className="h-4 w-4" />

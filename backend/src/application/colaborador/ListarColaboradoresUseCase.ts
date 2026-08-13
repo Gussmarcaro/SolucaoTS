@@ -2,8 +2,7 @@ import type { Colaborador } from '@/core/colaborador/Colaborador';
 import type { IColaboradorRepository } from './IColaboradorRepository';
 import type { FiltrosColaborador, Paginado } from './dtos';
 
-const PAGE_SIZE_PADRAO = 10;
-const PAGE_SIZE_MAX = 100;
+import { PAGE_SIZE_MAX, PAGE_SIZE_PADRAO } from '@/shared/paginacao';
 const CAMPOS_ORDENAVEIS = ['nome', 'cpf', 'cargo', 'dataAdmissao', 'salarioContratual', 'ativo', 'criadoEm'];
 
 export class ListarColaboradoresUseCase {

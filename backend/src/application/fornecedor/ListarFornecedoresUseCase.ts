@@ -2,8 +2,7 @@ import type { Fornecedor } from '@/core/fornecedor/Fornecedor';
 import type { IFornecedorRepository } from './IFornecedorRepository';
 import type { FiltrosFornecedor, Paginado } from './dtos';
 
-const PAGE_SIZE_PADRAO = 10;
-const PAGE_SIZE_MAX = 100;
+import { PAGE_SIZE_MAX, PAGE_SIZE_PADRAO } from '@/shared/paginacao';
 const CAMPOS_ORDENAVEIS = ['nome', 'documento', 'cidade', 'uf', 'ativo', 'criadoEm'];
 
 export class ListarFornecedoresUseCase {

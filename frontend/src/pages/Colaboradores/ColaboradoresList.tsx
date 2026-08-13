@@ -14,6 +14,8 @@ import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { ResizableHead, type SortState } from '@/components/ui/ResizableHead';
 import { useDebounce } from '@/hooks/useDebounce';
+import { SeletorPagina } from '@/components/ui/SeletorPagina';
+import { PAGE_SIZE_PADRAO, usePageSize } from '@/lib/paginacao';
 import { useResizableColumns, type ColunaDef } from '@/hooks/useResizableColumns';
 import { useAuth } from '@/contexts/AuthContext';
 import { listarColaboradores } from '@/services/colaboradores.service';
@@ -24,8 +26,7 @@ import { BotaoDadosPessoais, useDadosPessoais } from '@/hooks/useDadosPessoais';
 import { cn } from '@/lib/cn';
 import type { Colaborador, FiltrosColaborador, Paginado } from '@/types/colaborador';
 
-const PAGE_SIZE = 15;
-const vazio: Paginado<Colaborador> = { data: [], total: 0, page: 1, pageSize: PAGE_SIZE, totalPages: 1 };
+const vazio: Paginado<Colaborador> = { data: [], total: 0, page: 1, pageSize: PAGE_SIZE_PADRAO, totalPages: 1 };
 
 const COLUNAS: ColunaDef[] = [
   { key: 'acoes', label: 'Ações', width: 120, minWidth: 100, align: 'center' },
@@ -48,6 +49,7 @@ type StatusFiltro = '' | 'ativos' | 'inativos';
 export function ColaboradoresList({ refreshKey, onVisualizar, onEditar, onAlternarStatus }: Props) {
   const { usuario: logado } = useAuth();
   const { revelado, alternar } = useDadosPessoais('Colaborador', 'Cadastro de Colaboradores');
+  const [pageSize, setPageSize] = usePageSize('colaboradores');
   const [busca, setBusca] = useState('');
   const [status, setStatus] = useState<StatusFiltro>('');
   const [page, setPage] = useState(1);
@@ -79,7 +81,7 @@ export function ColaboradoresList({ refreshKey, onVisualizar, onEditar, onAltern
       orderBy: sort?.campo,
       orderDir: sort?.direcao,
       page,
-      pageSize: PAGE_SIZE,
+      pageSize,
     })
       .then((r) => ativo && setResultado(r))
       .catch((e) => {
@@ -91,9 +93,9 @@ export function ColaboradoresList({ refreshKey, onVisualizar, onEditar, onAltern
     return () => {
       ativo = false;
     };
-  }, [filtros, buscaDebounced, sort, page, refreshKey]);
+  }, [filtros, buscaDebounced, sort, page, pageSize, refreshKey]);
 
-  useEffect(() => setPage(1), [filtros, buscaDebounced, sort]);
+  useEffect(() => setPage(1), [filtros, buscaDebounced, sort, pageSize]);
 
   function handleSort(sortKey: string) {
     setSort((prev) =>
@@ -216,6 +218,7 @@ export function ColaboradoresList({ refreshKey, onVisualizar, onEditar, onAltern
 
       <div className="flex flex-col items-center justify-between gap-3 border-t border-ink-100 px-4 py-3 text-xs text-ink-400 dark:border-ink-800 sm:flex-row">
         <span>{total > 0 ? `${total} colaborador(es)` : 'Sem registros'}</span>
+        <SeletorPagina valor={pageSize} onChange={setPageSize} />
         <div className="flex items-center gap-2">
           <Button variant="secondary" size="sm" disabled={page <= 1 || carregando} onClick={() => setPage((p) => Math.max(1, p - 1))}>
             <ChevronLeft className="h-4 w-4" />

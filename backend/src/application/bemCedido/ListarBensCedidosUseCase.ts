@@ -2,8 +2,7 @@ import type { BemCedido } from '@/core/bemCedido/BemCedido';
 import type { IBemCedidoRepository } from './IBemCedidoRepository';
 import type { FiltrosBemCedido, Paginado } from './dtos';
 
-const PAGE_SIZE_PADRAO = 10;
-const PAGE_SIZE_MAX = 100;
+import { PAGE_SIZE_MAX, PAGE_SIZE_PADRAO } from '@/shared/paginacao';
 const CAMPOS_ORDENAVEIS = ['descricao', 'tipo', 'identificador', 'valor', 'dataCessao', 'ativo', 'criadoEm'];
 
 export class ListarBensCedidosUseCase {

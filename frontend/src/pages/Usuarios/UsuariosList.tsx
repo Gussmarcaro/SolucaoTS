@@ -14,6 +14,8 @@ import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { ResizableHead, type SortState } from '@/components/ui/ResizableHead';
 import { useDebounce } from '@/hooks/useDebounce';
+import { SeletorPagina } from '@/components/ui/SeletorPagina';
+import { PAGE_SIZE_PADRAO, usePageSize } from '@/lib/paginacao';
 import { useResizableColumns, type ColunaDef } from '@/hooks/useResizableColumns';
 import { useAuth } from '@/contexts/AuthContext';
 import { listarUsuarios } from '@/services/usuarios.service';
@@ -24,7 +26,6 @@ import { BotaoDadosPessoais, useDadosPessoais } from '@/hooks/useDadosPessoais';
 import { cn } from '@/lib/cn';
 import type { FiltrosUsuario, Paginado, Usuario } from '@/types/usuario';
 
-const PAGE_SIZE = 15;
 
 const COLUNAS: ColunaDef[] = [
   { key: 'acoes', label: 'Ações', width: 120, minWidth: 100, align: 'center' },
@@ -40,7 +41,7 @@ const COLUNAS: ColunaDef[] = [
   { key: 'uf', label: 'UF', width: 70, minWidth: 50, sortKey: 'uf' },
 ];
 
-const vazio: Paginado<Usuario> = { data: [], total: 0, page: 1, pageSize: PAGE_SIZE, totalPages: 1 };
+const vazio: Paginado<Usuario> = { data: [], total: 0, page: 1, pageSize: PAGE_SIZE_PADRAO, totalPages: 1 };
 const txt = 'block truncate';
 
 type StatusFiltro = '' | 'ativos' | 'inativos';
@@ -55,6 +56,7 @@ interface Props {
 export function UsuariosList({ refreshKey, onVisualizar, onEditar, onAlternarStatus }: Props) {
   const { usuario: logado } = useAuth();
   const { revelado, alternar } = useDadosPessoais('Usuario', 'Cadastro de Usuários');
+  const [pageSize, setPageSize] = usePageSize('usuarios');
   const [busca, setBusca] = useState('');
   const [status, setStatus] = useState<StatusFiltro>('');
   const [page, setPage] = useState(1);
@@ -86,7 +88,7 @@ export function UsuariosList({ refreshKey, onVisualizar, onEditar, onAlternarSta
       orderBy: sort?.campo,
       orderDir: sort?.direcao,
       page,
-      pageSize: PAGE_SIZE,
+      pageSize,
     })
       .then((r) => ativo && setResultado(r))
       .catch((e) => {
@@ -98,9 +100,9 @@ export function UsuariosList({ refreshKey, onVisualizar, onEditar, onAlternarSta
     return () => {
       ativo = false;
     };
-  }, [filtros, buscaDebounced, sort, page, refreshKey]);
+  }, [filtros, buscaDebounced, sort, page, pageSize, refreshKey]);
 
-  useEffect(() => setPage(1), [filtros, buscaDebounced, sort]);
+  useEffect(() => setPage(1), [filtros, buscaDebounced, sort, pageSize]);
 
   function handleSort(sortKey: string) {
     setSort((prev) =>
@@ -158,8 +160,8 @@ export function UsuariosList({ refreshKey, onVisualizar, onEditar, onAlternarSta
   }
 
   const { data, total, totalPages } = resultado;
-  const inicio = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
-  const fim = Math.min(page * PAGE_SIZE, total);
+  const inicio = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const fim = Math.min(page * pageSize, total);
 
   return (
     <div className="overflow-hidden rounded-2xl border border-ink-200/70 bg-white shadow-card dark:border-ink-800/70 dark:bg-ink-900">
@@ -251,6 +253,7 @@ export function UsuariosList({ refreshKey, onVisualizar, onEditar, onAlternarSta
 
       <div className="flex flex-col items-center justify-between gap-3 border-t border-ink-100 px-4 py-3 text-xs text-ink-400 dark:border-ink-800 sm:flex-row">
         <span>{total > 0 ? `Mostrando ${inicio}–${fim} de ${total}` : 'Sem registros'}</span>
+        <SeletorPagina valor={pageSize} onChange={setPageSize} />
         <div className="flex items-center gap-2">
           <Button variant="secondary" size="sm" disabled={page <= 1 || carregando} onClick={() => setPage((p) => Math.max(1, p - 1))}>
             <ChevronLeft className="h-4 w-4" />

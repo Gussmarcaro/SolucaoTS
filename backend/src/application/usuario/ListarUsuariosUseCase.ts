@@ -2,8 +2,7 @@ import type { Usuario } from '@/core/usuario/Usuario';
 import type { IUsuarioRepository } from './IUsuarioRepository';
 import type { FiltrosUsuario, ListarUsuariosParams, Paginado } from './dtos';
 
-const PAGE_SIZE_PADRAO = 10;
-const PAGE_SIZE_MAX = 100;
+import { PAGE_SIZE_MAX, PAGE_SIZE_PADRAO } from '@/shared/paginacao';
 
 /** Campos permitidos para ordenação (evita ordenar por coluna arbitrária). */
 const CAMPOS_ORDENAVEIS = [

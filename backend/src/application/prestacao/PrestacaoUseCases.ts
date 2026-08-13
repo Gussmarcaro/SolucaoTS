@@ -4,8 +4,7 @@ import type { IAjusteRepository } from '@/application/ajuste/IAjusteRepository';
 import type { CriarPrestacaoDTO, FiltrosPrestacao, Paginado } from './dtos';
 import { BusinessError, ConflictError, NotFoundError } from '@/shared/errors';
 
-const PAGE_SIZE_PADRAO = 10;
-const PAGE_SIZE_MAX = 100;
+import { PAGE_SIZE_MAX, PAGE_SIZE_PADRAO } from '@/shared/paginacao';
 const CAMPOS_ORDENAVEIS = ['ano', 'status', 'criadoEm'];
 const MES_ANUAL = 12; // prestação anual consolidada (descritor mes = 12)
 

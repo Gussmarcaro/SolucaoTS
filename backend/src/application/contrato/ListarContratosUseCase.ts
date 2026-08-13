@@ -2,8 +2,7 @@ import type { Contrato } from '@/core/contrato/Contrato';
 import type { IContratoRepository } from './IContratoRepository';
 import type { FiltrosContrato, Paginado } from './dtos';
 
-const PAGE_SIZE_PADRAO = 10;
-const PAGE_SIZE_MAX = 100;
+import { PAGE_SIZE_MAX, PAGE_SIZE_PADRAO } from '@/shared/paginacao';
 const CAMPOS_ORDENAVEIS = [
   'numero',
   'credorNome',
