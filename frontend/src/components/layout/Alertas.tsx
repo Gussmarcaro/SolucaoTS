@@ -71,12 +71,13 @@ export function Alertas({ aberto, onFechar }: { aberto: boolean; onFechar: () =>
     onFechar();
   }
 
+  // Fechar clicando fora é responsabilidade da Topbar: um `fixed inset-0` aqui
+  // dentro não cobriria a página. O cabeçalho tem `backdrop-blur`, e filtro
+  // (como transform) faz o elemento virar bloco de contenção dos filhos
+  // `fixed` — a camada ficaria presa à faixa do topo, deixando passar
+  // justamente os cliques no miolo da tela.
   return (
     <>
-      {/* Fecha ao clicar em qualquer lugar fora — inclusive no próprio sino,
-          que fica sob esta camada enquanto o painel está aberto. */}
-      <div className="fixed inset-0 z-30" onClick={onFechar} aria-hidden />
-
       <div
         role="dialog"
         aria-label="Prazos e pendências"

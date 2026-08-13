@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Menu, Search, Bell, Info, LogOut, Sparkles } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useAuth } from '@/contexts/AuthContext';
@@ -27,6 +27,29 @@ export function Topbar({ onOpenSidebar }: TopbarProps) {
   const [alertasAbertos, setAlertasAbertos] = useState(false);
   const [pendentes, setPendentes] = useState(0);
   const [temVencido, setTemVencido] = useState(false);
+  const sino = useRef<HTMLDivElement>(null);
+
+  // Fecha o painel ao clicar fora ou apertar Esc.
+  //
+  // O teste é "está dentro do bloco do sino?", que abrange o botão e o painel.
+  // Fosse só o painel, o clique no próprio sino fecharia aqui e o `onClick` do
+  // botão reabriria em seguida — ele nunca conseguiria fechar.
+  useEffect(() => {
+    if (!alertasAbertos) return;
+    const foraOuEsc = (e: MouseEvent | KeyboardEvent) => {
+      if (e instanceof KeyboardEvent) {
+        if (e.key === 'Escape') setAlertasAbertos(false);
+        return;
+      }
+      if (!sino.current?.contains(e.target as Node)) setAlertasAbertos(false);
+    };
+    document.addEventListener('mousedown', foraOuEsc);
+    document.addEventListener('keydown', foraOuEsc);
+    return () => {
+      document.removeEventListener('mousedown', foraOuEsc);
+      document.removeEventListener('keydown', foraOuEsc);
+    };
+  }, [alertasAbertos]);
 
   // Contagem para o distintivo do sino. Falha aqui não mostra erro: um número
   // ausente é melhor que um aviso de erro para algo que ninguém pediu.
@@ -103,7 +126,7 @@ export function Topbar({ onOpenSidebar }: TopbarProps) {
 
         <ThemeToggle />
 
-        <div className="relative">
+        <div className="relative" ref={sino}>
           <button
             onClick={() => setAlertasAbertos((v) => !v)}
             aria-label={
