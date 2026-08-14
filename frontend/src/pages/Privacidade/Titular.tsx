@@ -70,13 +70,23 @@ export function TitularLgpd() {
   return (
     <Card className="mt-6">
       <CardHeader>
-        <CardTitle>Consulta por titular</CardTitle>
+        <CardTitle>Responder a um pedido de acesso do titular</CardTitle>
         {relatorio && <Badge tone="brand">{relatorio.encontradoEm} ocorrência(s)</Badge>}
       </CardHeader>
       <CardBody className="pt-3">
-        <p className="mb-3 text-sm text-ink-500 dark:text-ink-400">
-          Reúne tudo que o sistema guarda de uma pessoa, para responder a um pedido de acesso. A
-          consulta fica registrada na auditoria, com o CPF pesquisado.
+        {/* O texto explica a situação de uso, não o mecanismo: quem opera não
+            reconhece "consulta por titular", mas reconhece "fulano pediu para
+            saber o que vocês têm sobre ele". */}
+        <p className="text-sm text-ink-600 dark:text-ink-300">
+          Quando alguém pede para saber quais dados o sistema guarda sobre ela — um ex-empregado da
+          entidade, um dirigente que saiu, um fornecedor pessoa física —, informe o CPF abaixo. O
+          sistema procura em todos os cadastros e prestações de uma vez e monta a resposta, que pode
+          ser exportada para anexar ao pedido.
+        </p>
+        <p className="mb-3 mt-2 text-xs text-ink-400">
+          É o direito de acesso do art. 18 da LGPD. Não encontrar nada também é resposta: significa
+          que o sistema não trata dados dessa pessoa. Só aceita CPF completo — buscar por nome
+          exporia pessoas homônimas. A consulta fica registrada na auditoria, com o CPF pesquisado.
         </p>
 
         <form onSubmit={consultar} className="flex items-end gap-2">
@@ -111,8 +121,8 @@ export function TitularLgpd() {
 
         {relatorio && relatorio.encontradoEm === 0 && (
           <p className="mt-4 text-sm text-ink-500 dark:text-ink-400">
-            Nenhum registro para este CPF. A resposta ao titular pode afirmar que o sistema não trata
-            dados dele.
+            Nenhum registro para este CPF em nenhum cadastro ou prestação. A resposta ao titular pode
+            afirmar que o sistema não trata dados dele.
           </p>
         )}
 
