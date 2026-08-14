@@ -1,5 +1,5 @@
 import { prisma } from './prisma';
-import { limparCachePermissoes } from './permissoesCache';
+import { MARCA_CONFIGURADO, limparCachePermissoes } from './permissoesCache';
 import { RECURSOS_POR_ID, type AcaoPermissao } from '@/core/permissao/Recurso';
 import type { IPermissaoRepository } from '@/application/permissao/PermissaoUseCases';
 
@@ -39,9 +39,15 @@ export class PrismaPermissaoRepository implements IPermissaoRepository {
     grupoId: string,
     acoes: { recursoId: string; acao: AcaoPermissao }[],
   ): Promise<void> {
+    // A marca entra sempre, mesmo quando a matriz é salva toda em "sem acesso".
+    // É ela que separa "grupo nunca configurado" — que acessa tudo — de "grupo
+    // configurado para não acessar nada". Sem isso, restringir um grupo até o
+    // fim o liberaria por completo, o oposto exato da intenção de quem salvou.
+    const comMarca = [...acoes, { recursoId: MARCA_CONFIGURADO, acao: 'READ' as AcaoPermissao }];
+
     // Garante o catálogo das combinações usadas antes de vincular.
     const ids = new Map<string, string>();
-    for (const { recursoId, acao } of acoes) {
+    for (const { recursoId, acao } of comMarca) {
       const chave = `${recursoId}:${acao}`;
       if (ids.has(chave)) continue;
       const permissao = await prisma.permissao.upsert({

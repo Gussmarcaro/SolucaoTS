@@ -1,3 +1,4 @@
+import { AcoesGrade, IconBtn } from '@/components/ui/AcoesGrade';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -112,17 +113,17 @@ export function AjustesList({ refreshKey, onVisualizar, onEditar }: Props) {
     switch (key) {
       case 'acoes':
         return (
-          <div className="flex items-center justify-center gap-1">
+          <AcoesGrade recurso="CADASTRO_AJUSTES">
             <IconBtn title="Abrir (abas)" onClick={() => navigate(`/cadastro/ajustes/${a.id}`)}>
               <FolderOpen className="h-4 w-4" />
             </IconBtn>
             <IconBtn title="Visualizar" onClick={() => onVisualizar(a)}>
               <Eye className="h-4 w-4" />
             </IconBtn>
-            <IconBtn title="Editar" onClick={() => onEditar(a)}>
+            <IconBtn exige="EDICAO" title="Editar" onClick={() => onEditar(a)}>
               <Pencil className="h-4 w-4" />
             </IconBtn>
-          </div>
+          </AcoesGrade>
         );
       case 'status':
         return (
@@ -245,25 +246,5 @@ export function AjustesList({ refreshKey, onVisualizar, onEditar }: Props) {
         </div>
       </div>
     </div>
-  );
-}
-
-function IconBtn({
-  children,
-  title,
-  onClick,
-}: {
-  children: React.ReactNode;
-  title: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      title={title}
-      onClick={onClick}
-      className="focus-ring rounded-lg p-1.5 text-ink-400 transition-colors hover:bg-ink-100 hover:text-ink-700 dark:hover:bg-ink-800 dark:hover:text-ink-200"
-    >
-      {children}
-    </button>
   );
 }

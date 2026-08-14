@@ -17,30 +17,30 @@ const TTL_MS = 30_000;
 
 const cache = new Map<string, Entrada>();
 
-let configuradoEm = 0;
-let configurado = false;
+/**
+ * Marca que um grupo já passou pela tela de permissões.
+ *
+ * Existe para separar "nunca configurado" de "configurado para não acessar
+ * nada". Sem ela, as duas situações seriam a mesma linha zero no banco — e
+ * quem restringisse um grupo até o fim acabaria liberando tudo para ele, o
+ * oposto exato da intenção.
+ *
+ * É gravada como uma permissão comum, num módulo reservado que nenhum recurso
+ * usa, então não precisou de coluna nova no schema.
+ */
+export const MARCA_CONFIGURADO = '__CONFIGURADO__';
 
 /**
- * O sistema já teve alguma permissão configurada?
+ * O grupo ainda não tem permissões configuradas?
  *
- * Enquanto a resposta for não, o gate fica aberto: um sistema recém-instalado
- * funciona como antes, sem ninguém precisar rodar seed nem configurar nada para
- * conseguir entrar. Na primeira configuração, o controle passa a valer.
- *
- * A pergunta é **global**, e isso é o que torna a regra segura. Se fosse por
- * grupo ("grupo sem permissão vê tudo"), remover todas as permissões de um
- * grupo daria acesso total a ele — o contrário exato do que quem configurou
- * quis dizer. Do jeito que está, grupo sem permissão num sistema configurado
- * não acessa nada, que é a leitura óbvia da tela.
+ * Enquanto a resposta for sim, ele acessa tudo — o sistema funciona como antes
+ * de existir controle, sem ninguém precisar rodar seed nem configurar nada para
+ * entrar. Cada grupo passa a ser controlado no momento em que **ele** é
+ * configurado, sem que a configuração de um afete os outros.
  */
-export async function sistemaSemPermissoes(): Promise<boolean> {
-  const agora = Date.now();
-  if (configuradoEm > agora - TTL_MS) return !configurado;
-
-  const alguma = await prisma.grupoUsuarioPermissao.findFirst({ select: { grupoId: true } });
-  configurado = alguma !== null;
-  configuradoEm = agora;
-  return !configurado;
+export async function grupoSemPermissoes(grupoNome: string): Promise<boolean> {
+  const concessoes = await permissoesDoGrupo(grupoNome);
+  return concessoes.size === 0;
 }
 
 /**
@@ -78,5 +78,4 @@ export async function permissoesDoGrupo(grupoNome: string): Promise<Concessoes> 
 /** Descarta o cache — chamado ao gravar a matriz, para o efeito ser imediato. */
 export function limparCachePermissoes(): void {
   cache.clear();
-  configuradoEm = 0;
 }

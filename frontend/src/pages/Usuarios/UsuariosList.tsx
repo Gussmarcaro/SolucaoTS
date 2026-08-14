@@ -1,3 +1,4 @@
+import { AcoesGrade, IconBtn } from '@/components/ui/AcoesGrade';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   ChevronLeft,
@@ -116,17 +117,17 @@ export function UsuariosList({ refreshKey, onVisualizar, onEditar, onAlternarSta
     switch (key) {
       case 'acoes':
         return (
-          <div className="flex items-center justify-center gap-1">
+          <AcoesGrade recurso="CONFIG_USUARIOS">
             <IconBtn title="Visualizar" onClick={() => onVisualizar(u)}>
               <Eye className="h-4 w-4" />
             </IconBtn>
-            <IconBtn title="Editar" onClick={() => onEditar(u)}>
+            <IconBtn exige="EDICAO" title="Editar" onClick={() => onEditar(u)}>
               <Pencil className="h-4 w-4" />
             </IconBtn>
-            <IconBtn title={u.ativo ? 'Inativar' : 'Reativar'} danger={u.ativo} onClick={() => onAlternarStatus(u)}>
+            <IconBtn exige="EDICAO" title={u.ativo ? 'Inativar' : 'Reativar'} danger={u.ativo} onClick={() => onAlternarStatus(u)}>
               <Power className="h-4 w-4" />
             </IconBtn>
-          </div>
+          </AcoesGrade>
         );
       case 'nome':
         return <span className={`${txt} font-medium text-ink-800 dark:text-ink-100`} title={u.nome}>{u.nome}</span>;
@@ -267,31 +268,5 @@ export function UsuariosList({ refreshKey, onVisualizar, onEditar, onAlternarSta
         </div>
       </div>
     </div>
-  );
-}
-
-function IconBtn({
-  children,
-  title,
-  onClick,
-  danger,
-}: {
-  children: React.ReactNode;
-  title: string;
-  onClick: () => void;
-  danger?: boolean;
-}) {
-  return (
-    <button
-      title={title}
-      onClick={onClick}
-      className={`focus-ring rounded-lg p-1.5 transition-colors ${
-        danger
-          ? 'text-ink-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10'
-          : 'text-ink-400 hover:bg-ink-100 hover:text-ink-700 dark:hover:bg-ink-800 dark:hover:text-ink-200'
-      }`}
-    >
-      {children}
-    </button>
   );
 }

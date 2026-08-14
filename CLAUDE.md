@@ -195,12 +195,13 @@ O que cada grupo pode fazer em cada tela. `GrupoUsuario` → matriz de recursos 
 
 `APPROVE` fica fora da escala: transmitir a prestação ao TCESP não é "editar mais forte", é assinar — alguém pode ter acesso total ao conteúdo e não poder transmitir.
 
-- **Sistema sem nenhuma permissão configurada = tudo liberado.** Enquanto a matriz nunca
-  tiver sido usada, o gate fica aberto e nada muda — não é preciso rodar seed nem configurar
-  nada para entrar. Na primeira configuração o controle passa a valer em todo o sistema.
-  A pergunta é **global**, e é isso que a torna segura: fosse por grupo (“grupo sem permissão
-  vê tudo”), remover todas as permissões de um grupo daria acesso total a ele — o contrário
-  exato do que quem configurou quis dizer.
+- **Grupo sem permissão configurada = acesso a tudo.** Enquanto um grupo nunca tiver passado
+  pela matriz, ele acessa tudo — o sistema funciona como antes de existir controle, sem seed
+  nem configuração prévia. A verificação é **por grupo**: configurar um grupo não pode trancar
+  os demais (a primeira versão desta regra era global e trancou todo mundo na primeira gravação).
+- **Uma marca separa `nunca configurado` de `configurado para não acessar nada`.** Salvar a
+  matriz grava sempre uma permissão no módulo reservado `__CONFIGURADO__`. Sem ela, restringir
+  um grupo até o fim o liberaria por completo — o oposto exato da intenção de quem salvou.
 - **Recurso não declarado = bloqueado.** O gate (`exigirPermissao`) roda por família de rotas e tira a ação do método HTTP (GET→READ, DELETE→DELETE, resto grava). Rota nova sem recurso não responde a ninguém, em vez de responder a todos.
 - **`npm run verificar:permissoes`** reprova rota sem gate e recurso sem rota. É a verificação mais importante do conjunto: a falha aqui é silenciosa — rota sem `exigirPermissao` funciona perfeitamente para quem a criou, e para todo mundo mais também. Quem precisa ficar de fora se declara em `LIBERADAS`, **com o motivo**.
 - **As permissões não entram no JWT.** Ficam no banco, com cache de 30s por grupo (`permissoesCache.ts`). No token, mudar uma permissão só valeria no próximo login — quem configurasse alteraria, testaria e concluiria que não funciona.

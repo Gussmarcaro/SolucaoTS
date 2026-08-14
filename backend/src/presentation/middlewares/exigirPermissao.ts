@@ -2,7 +2,7 @@ import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import { AppError } from '@/shared/errors';
 import type { AcaoPermissao } from '@/core/permissao/Recurso';
 import { RECURSOS_POR_ID } from '@/core/permissao/Recurso';
-import { permissoesDoGrupo, sistemaSemPermissoes } from '@/infrastructure/database/permissoesCache';
+import { grupoSemPermissoes, permissoesDoGrupo } from '@/infrastructure/database/permissoesCache';
 
 /**
  * Ação exigida por método HTTP.
@@ -44,16 +44,17 @@ export function exigirPermissao(recursoId: string, acao?: AcaoPermissao): Reques
 
   return async (req: Request, _res: Response, next: NextFunction) => {
     try {
-      // Sistema sem nenhuma permissão configurada: tudo liberado, como era
-      // antes de existir controle de acesso. Basta configurar qualquer coisa
-      // na matriz para o gate passar a valer em todo o sistema.
-      if (await sistemaSemPermissoes()) return next();
-
       const grupo = req.usuario?.grupo;
       if (!grupo)
         return next(
           new AppError('Seu usuário não está em nenhum grupo de acesso.', 403, 'SEM_GRUPO'),
         );
+
+      // Grupo ainda não configurado na matriz: acessa tudo, como antes de
+      // existir controle de acesso. A verificação é **por grupo** — configurar
+      // um grupo não pode trancar os demais, que foi exatamente o efeito da
+      // primeira versão desta regra.
+      if (await grupoSemPermissoes(grupo)) return next();
 
       if (recurso.restrito && !GRUPOS_ADMIN.includes(normalizar(grupo)))
         return next(new AppError('Acesso restrito à administração.', 403, 'ACESSO_NEGADO'));

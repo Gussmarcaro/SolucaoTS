@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { PermissaoUseCases } from '@/application/permissao/PermissaoUseCases';
 import { PrismaPermissaoRepository } from '@/infrastructure/database/PrismaPermissaoRepository';
-import { permissoesDoGrupo, sistemaSemPermissoes } from '@/infrastructure/database/permissoesCache';
+import { grupoSemPermissoes, permissoesDoGrupo } from '@/infrastructure/database/permissoesCache';
 import { RECURSOS, nivelDasAcoes } from '@/core/permissao/Recurso';
 
 const casos = new PermissaoUseCases(new PrismaPermissaoRepository());
@@ -45,16 +45,17 @@ export class PermissaoController {
    */
   async minhas(req: Request, res: Response, next: NextFunction) {
     try {
-      // Sistema ainda sem permissão configurada: a interface mostra tudo, na
-      // mesma regra que o gate aplica. Fossem diferentes, o menu esconderia
-      // telas que a API está liberando — ou pior, mostraria as que ela barra.
-      if (await sistemaSemPermissoes())
+      const grupo = req.usuario?.grupo;
+
+      // Grupo ainda não configurado: a interface mostra tudo, na mesma regra
+      // que o gate aplica. Fossem diferentes, o menu esconderia telas que a API
+      // está liberando — ou pior, mostraria as que ela barra.
+      if (!grupo || (await grupoSemPermissoes(grupo)))
         return res.json(
           RECURSOS.map((r) => ({ recursoId: r.id, nivel: 'TOTAL', aprovacao: true })),
         );
 
-      const grupo = req.usuario?.grupo;
-      const concessoes = grupo ? await permissoesDoGrupo(grupo) : new Map();
+      const concessoes = await permissoesDoGrupo(grupo);
 
       return res.json(
         RECURSOS.map((r) => {

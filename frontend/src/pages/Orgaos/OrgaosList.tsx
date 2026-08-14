@@ -1,3 +1,4 @@
+import { AcoesGrade, IconBtn } from '@/components/ui/AcoesGrade';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   ChevronLeft,
@@ -98,11 +99,11 @@ export function OrgaosList({ refreshKey, onVisualizar, onEditar, onAlternarStatu
     switch (key) {
       case 'acoes':
         return (
-          <div className="flex items-center justify-center gap-1">
+          <AcoesGrade recurso="CONFIG_ORGAOS">
             <IconBtn title="Visualizar" onClick={() => onVisualizar(o)}><Eye className="h-4 w-4" /></IconBtn>
-            <IconBtn title="Editar" onClick={() => onEditar(o)}><Pencil className="h-4 w-4" /></IconBtn>
-            <IconBtn title={o.ativo ? 'Inativar' : 'Reativar'} danger={o.ativo} onClick={() => onAlternarStatus(o)}><Power className="h-4 w-4" /></IconBtn>
-          </div>
+            <IconBtn exige="EDICAO" title="Editar" onClick={() => onEditar(o)}><Pencil className="h-4 w-4" /></IconBtn>
+            <IconBtn exige="EDICAO" title={o.ativo ? 'Inativar' : 'Reativar'} danger={o.ativo} onClick={() => onAlternarStatus(o)}><Power className="h-4 w-4" /></IconBtn>
+          </AcoesGrade>
         );
       case 'status':
         return <Badge tone={o.ativo ? 'success' : 'neutral'}>{o.ativo ? 'Ativo' : 'Inativo'}</Badge>;
@@ -183,17 +184,5 @@ export function OrgaosList({ refreshKey, onVisualizar, onEditar, onAlternarStatu
         </div>
       </div>
     </div>
-  );
-}
-
-function IconBtn({ children, title, onClick, danger }: { children: React.ReactNode; title: string; onClick: () => void; danger?: boolean }) {
-  return (
-    <button
-      title={title}
-      onClick={onClick}
-      className={`focus-ring rounded-lg p-1.5 transition-colors ${danger ? 'text-ink-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10' : 'text-ink-400 hover:bg-ink-100 hover:text-ink-700 dark:hover:bg-ink-800 dark:hover:text-ink-200'}`}
-    >
-      {children}
-    </button>
   );
 }

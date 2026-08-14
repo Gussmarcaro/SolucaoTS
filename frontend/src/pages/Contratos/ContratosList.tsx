@@ -1,3 +1,4 @@
+import { AcoesGrade, IconBtn } from '@/components/ui/AcoesGrade';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   ChevronLeft,
@@ -107,17 +108,17 @@ export function ContratosList({ refreshKey, onVisualizar, onEditar, onAlternarSt
     switch (key) {
       case 'acoes':
         return (
-          <div className="flex items-center justify-center gap-1">
+          <AcoesGrade recurso="CADASTRO_CONTRATOS">
             <IconBtn title="Visualizar" onClick={() => onVisualizar(c)}>
               <Eye className="h-4 w-4" />
             </IconBtn>
-            <IconBtn title="Editar" onClick={() => onEditar(c)}>
+            <IconBtn exige="EDICAO" title="Editar" onClick={() => onEditar(c)}>
               <Pencil className="h-4 w-4" />
             </IconBtn>
-            <IconBtn title={c.ativo ? 'Inativar' : 'Reativar'} danger={c.ativo} onClick={() => onAlternarStatus(c)}>
+            <IconBtn exige="EDICAO" title={c.ativo ? 'Inativar' : 'Reativar'} danger={c.ativo} onClick={() => onAlternarStatus(c)}>
               <Power className="h-4 w-4" />
             </IconBtn>
-          </div>
+          </AcoesGrade>
         );
       case 'status':
         return <Badge tone={c.ativo ? 'success' : 'neutral'}>{c.ativo ? 'Ativo' : 'Inativo'}</Badge>;
@@ -229,31 +230,5 @@ export function ContratosList({ refreshKey, onVisualizar, onEditar, onAlternarSt
         </div>
       </div>
     </div>
-  );
-}
-
-function IconBtn({
-  children,
-  title,
-  onClick,
-  danger,
-}: {
-  children: React.ReactNode;
-  title: string;
-  onClick: () => void;
-  danger?: boolean;
-}) {
-  return (
-    <button
-      title={title}
-      onClick={onClick}
-      className={`focus-ring rounded-lg p-1.5 transition-colors ${
-        danger
-          ? 'text-ink-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10'
-          : 'text-ink-400 hover:bg-ink-100 hover:text-ink-700 dark:hover:bg-ink-800 dark:hover:text-ink-200'
-      }`}
-    >
-      {children}
-    </button>
   );
 }

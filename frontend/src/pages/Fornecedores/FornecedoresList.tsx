@@ -1,3 +1,4 @@
+import { AcoesGrade, IconBtn } from '@/components/ui/AcoesGrade';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   ChevronLeft,
@@ -108,17 +109,17 @@ export function FornecedoresList({ refreshKey, onVisualizar, onEditar, onAlterna
     switch (key) {
       case 'acoes':
         return (
-          <div className="flex items-center justify-center gap-1">
+          <AcoesGrade recurso="CADASTRO_FORNECEDORES">
             <IconBtn title="Visualizar" onClick={() => onVisualizar(f)}>
               <Eye className="h-4 w-4" />
             </IconBtn>
-            <IconBtn title="Editar" onClick={() => onEditar(f)}>
+            <IconBtn exige="EDICAO" title="Editar" onClick={() => onEditar(f)}>
               <Pencil className="h-4 w-4" />
             </IconBtn>
-            <IconBtn title={f.ativo ? 'Inativar' : 'Reativar'} danger={f.ativo} onClick={() => onAlternarStatus(f)}>
+            <IconBtn exige="EDICAO" title={f.ativo ? 'Inativar' : 'Reativar'} danger={f.ativo} onClick={() => onAlternarStatus(f)}>
               <Power className="h-4 w-4" />
             </IconBtn>
-          </div>
+          </AcoesGrade>
         );
       case 'status':
         return <Badge tone={f.ativo ? 'success' : 'neutral'}>{f.ativo ? 'Ativo' : 'Inativo'}</Badge>;
@@ -229,31 +230,5 @@ export function FornecedoresList({ refreshKey, onVisualizar, onEditar, onAlterna
         </div>
       </div>
     </div>
-  );
-}
-
-function IconBtn({
-  children,
-  title,
-  onClick,
-  danger,
-}: {
-  children: React.ReactNode;
-  title: string;
-  onClick: () => void;
-  danger?: boolean;
-}) {
-  return (
-    <button
-      title={title}
-      onClick={onClick}
-      className={`focus-ring rounded-lg p-1.5 transition-colors ${
-        danger
-          ? 'text-ink-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10'
-          : 'text-ink-400 hover:bg-ink-100 hover:text-ink-700 dark:hover:bg-ink-800 dark:hover:text-ink-200'
-      }`}
-    >
-      {children}
-    </button>
   );
 }

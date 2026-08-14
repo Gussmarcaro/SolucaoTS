@@ -1,3 +1,4 @@
+import { AcoesGrade, IconBtn } from '@/components/ui/AcoesGrade';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   ChevronLeft,
@@ -98,13 +99,13 @@ export function GruposList({ refreshKey, onVisualizar, onPermissoes, onEditar, o
     switch (key) {
       case 'acoes':
         return (
-          <div className="flex items-center justify-center gap-1">
+          <AcoesGrade recurso="CONFIG_GRUPOS">
             <IconBtn title="Visualizar" onClick={() => onVisualizar(g)}><Eye className="h-4 w-4" /></IconBtn>
-            <IconBtn title="Permissões" onClick={() => onPermissoes(g)}><ShieldCheck className="h-4 w-4" /></IconBtn>
-            <IconBtn title="Editar" onClick={() => onEditar(g)}><Pencil className="h-4 w-4" /></IconBtn>
-            <IconBtn title={g.ativo ? 'Inativar' : 'Reativar'} danger={g.ativo} onClick={() => onAlternarStatus(g)}><Power className="h-4 w-4" /></IconBtn>
-            <IconBtn title="Excluir" danger onClick={() => onExcluir(g)}><Trash2 className="h-4 w-4" /></IconBtn>
-          </div>
+            <IconBtn exige="TOTAL" title="Permissões" onClick={() => onPermissoes(g)}><ShieldCheck className="h-4 w-4" /></IconBtn>
+            <IconBtn exige="EDICAO" title="Editar" onClick={() => onEditar(g)}><Pencil className="h-4 w-4" /></IconBtn>
+            <IconBtn exige="EDICAO" title={g.ativo ? 'Inativar' : 'Reativar'} danger={g.ativo} onClick={() => onAlternarStatus(g)}><Power className="h-4 w-4" /></IconBtn>
+            <IconBtn exige="TOTAL" title="Excluir" danger onClick={() => onExcluir(g)}><Trash2 className="h-4 w-4" /></IconBtn>
+          </AcoesGrade>
         );
       case 'status':
         return <Badge tone={g.ativo ? 'success' : 'neutral'}>{g.ativo ? 'Ativo' : 'Inativo'}</Badge>;
@@ -179,17 +180,5 @@ export function GruposList({ refreshKey, onVisualizar, onPermissoes, onEditar, o
         </div>
       </div>
     </div>
-  );
-}
-
-function IconBtn({ children, title, onClick, danger }: { children: React.ReactNode; title: string; onClick: () => void; danger?: boolean }) {
-  return (
-    <button
-      title={title}
-      onClick={onClick}
-      className={`focus-ring rounded-lg p-1.5 transition-colors ${danger ? 'text-ink-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10' : 'text-ink-400 hover:bg-ink-100 hover:text-ink-700 dark:hover:bg-ink-800 dark:hover:text-ink-200'}`}
-    >
-      {children}
-    </button>
   );
 }
