@@ -22,7 +22,9 @@
     "verificar:auditoria": "tsx scripts/verificarAuditoria.ts",
     "assistente:base": "tsx scripts/gerarBaseAssistente.ts",
     "verificar:assistente": "tsx scripts/verificarAssistente.ts",
-    "verificar:alertas": "tsx scripts/verificarAlertas.ts"
+    "verificar:alertas": "tsx scripts/verificarAlertas.ts",
+    "permissoes:seed": "tsx prisma/seeds/permissoes.ts",
+    "verificar:permissoes": "tsx scripts/verificarPermissoes.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.116.0",

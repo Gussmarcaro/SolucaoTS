@@ -5,6 +5,7 @@ import {
   Eye,
   Loader2,
   Pencil,
+  ShieldCheck,
   Power,
   Search,
   ServerCrash,
@@ -36,6 +37,7 @@ const COLUNAS: ColunaDef[] = [
 interface Props {
   refreshKey: number;
   onVisualizar: (grupo: Grupo) => void;
+  onPermissoes: (grupo: Grupo) => void;
   onEditar: (grupo: Grupo) => void;
   onAlternarStatus: (grupo: Grupo) => void;
   onExcluir: (grupo: Grupo) => void;
@@ -43,7 +45,7 @@ interface Props {
 
 type StatusFiltro = '' | 'ativos' | 'inativos';
 
-export function GruposList({ refreshKey, onVisualizar, onEditar, onAlternarStatus, onExcluir }: Props) {
+export function GruposList({ refreshKey, onVisualizar, onPermissoes, onEditar, onAlternarStatus, onExcluir }: Props) {
   const { usuario: logado } = useAuth();
   const [pageSize, setPageSize] = usePageSize('grupos');
   const [busca, setBusca] = useState('');
@@ -98,6 +100,7 @@ export function GruposList({ refreshKey, onVisualizar, onEditar, onAlternarStatu
         return (
           <div className="flex items-center justify-center gap-1">
             <IconBtn title="Visualizar" onClick={() => onVisualizar(g)}><Eye className="h-4 w-4" /></IconBtn>
+            <IconBtn title="Permissões" onClick={() => onPermissoes(g)}><ShieldCheck className="h-4 w-4" /></IconBtn>
             <IconBtn title="Editar" onClick={() => onEditar(g)}><Pencil className="h-4 w-4" /></IconBtn>
             <IconBtn title={g.ativo ? 'Inativar' : 'Reativar'} danger={g.ativo} onClick={() => onAlternarStatus(g)}><Power className="h-4 w-4" /></IconBtn>
             <IconBtn title="Excluir" danger onClick={() => onExcluir(g)}><Trash2 className="h-4 w-4" /></IconBtn>

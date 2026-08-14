@@ -6,6 +6,7 @@ import { Modal } from '@/components/ui/Modal';
 import { GrupoForm } from './GrupoForm';
 import { GruposList } from './GruposList';
 import { GrupoView } from './GrupoView';
+import { PermissoesGrupo } from './PermissoesGrupo';
 import { definirStatusGrupo, excluirGrupo } from '@/services/grupos.service';
 import { extrairMensagemErro } from '@/services/http';
 import type { Grupo } from '@/types/grupo';
@@ -15,6 +16,7 @@ type ModalState =
   | { tipo: 'novo' }
   | { tipo: 'editar'; grupo: Grupo }
   | { tipo: 'ver'; grupo: Grupo }
+  | { tipo: 'permissoes'; grupo: Grupo }
   | { tipo: 'status'; grupo: Grupo }
   | { tipo: 'excluir'; grupo: Grupo };
 
@@ -75,6 +77,7 @@ export function Grupos() {
       <GruposList
         refreshKey={refreshKey}
         onVisualizar={(grupo) => setModal({ tipo: 'ver', grupo })}
+        onPermissoes={(grupo) => setModal({ tipo: 'permissoes', grupo })}
         onEditar={(grupo) => setModal({ tipo: 'editar', grupo })}
         onAlternarStatus={(grupo) => { setErroAcao(null); setModal({ tipo: 'status', grupo }); }}
         onExcluir={(grupo) => { setErroAcao(null); setModal({ tipo: 'excluir', grupo }); }}
@@ -95,6 +98,16 @@ export function Grupos() {
       {/* Visualização */}
       <Modal open={modal.tipo === 'ver'} onClose={fechar} title="Dados do Grupo" size="lg">
         {modal.tipo === 'ver' && <GrupoView grupo={modal.grupo} />}
+      </Modal>
+
+      {/* Permissões — a matriz de acesso do grupo. */}
+      <Modal
+        open={modal.tipo === 'permissoes'}
+        onClose={fechar}
+        title="Permissões do Grupo"
+        size="lg"
+      >
+        {modal.tipo === 'permissoes' && <PermissoesGrupo grupo={modal.grupo} />}
       </Modal>
 
       {/* (In)ativação */}

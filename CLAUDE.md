@@ -181,3 +181,23 @@ Cinco fontes, todas em dados que já existem: prestação `REJEITADO`; `Document
 - Janela: aparece a partir de 30 dias do vencimento e some 60 dias depois de vencido — passado isso é pendência antiga, não alerta.
 - O prazo de cadastro de Ajuste/Aditivo é **lembrete**, não status: esse cadastro é feito na tela do TCESP, fora daqui, então o sistema não sabe se já foi enviado. O texto do alerta não pode sugerir que sabe.
 - **`npm run verificar:alertas`** roda as regras contra datas fixas, sem banco. Foi ele que mostrou que minha contagem de 10 dias úteis estava errada na cabeça, não no código.
+
+## Permissões por grupo (RBAC)
+
+O que cada grupo pode fazer em cada tela. `GrupoUsuario` → matriz de recursos × faixa; o banco guarda ações (`Permissao.modulo` + `acao`), a faixa é conceito de interface.
+
+| Faixa | Ações gravadas |
+|---|---|
+| Sem acesso | — |
+| Consulta | `READ` |
+| Edição | `READ`, `CREATE`, `UPDATE` |
+| Total | + `DELETE` |
+
+`APPROVE` fica fora da escala: transmitir a prestação ao TCESP não é "editar mais forte", é assinar — alguém pode ter acesso total ao conteúdo e não poder transmitir.
+
+- **Recurso não declarado = bloqueado.** O gate (`exigirPermissao`) roda por família de rotas e tira a ação do método HTTP (GET→READ, DELETE→DELETE, resto grava). Rota nova sem recurso não responde a ninguém, em vez de responder a todos.
+- **`npm run verificar:permissoes`** reprova rota sem gate e recurso sem rota. É a verificação mais importante do conjunto: a falha aqui é silenciosa — rota sem `exigirPermissao` funciona perfeitamente para quem a criou, e para todo mundo mais também. Quem precisa ficar de fora se declara em `LIBERADAS`, **com o motivo**.
+- **As permissões não entram no JWT.** Ficam no banco, com cache de 30s por grupo (`permissoesCache.ts`). No token, mudar uma permissão só valeria no próximo login — quem configurasse alteraria, testaria e concluiria que não funciona.
+- **Trava contra auto-bloqueio:** Administrador e Suporte não podem perder acesso total a `CONFIG_GRUPOS`, senão o primeiro erro de configuração tranca todos para fora da própria tela de permissões.
+- `npm run permissoes:seed` concede tudo à administração e consulta aos demais — só para grupos que ainda não têm nenhuma permissão, então rodar de novo não desfaz configuração feita à mão.
+- A tela fica em **Configurações → Grupos de Usuários**, no ícone de escudo da grade.
