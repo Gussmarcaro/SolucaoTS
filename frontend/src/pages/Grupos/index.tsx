@@ -1,3 +1,4 @@
+import { usePermissoes } from '@/contexts/PermissoesContext';
 import { useState } from 'react';
 import { Plus, Loader2, Power, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -21,6 +22,8 @@ type ModalState =
   | { tipo: 'excluir'; grupo: Grupo };
 
 export function Grupos() {
+  // Esconder o botão é conveniência; quem barra a gravação é o servidor.
+  const podeEditar = usePermissoes().pode('CONFIG_GRUPOS', 'EDICAO');
   const [modal, setModal] = useState<ModalState>({ tipo: 'fechado' });
   const [refreshKey, setRefreshKey] = useState(0);
   const [processando, setProcessando] = useState(false);
@@ -67,10 +70,12 @@ export function Grupos() {
         title="Grupos de Usuários"
         subtitle="Organize os usuários por perfil de acesso (base para o controle de permissões)."
         actions={
+          podeEditar && (
           <Button variant="success" onClick={() => setModal({ tipo: 'novo' })}>
             <Plus className="h-4 w-4" />
             Novo Grupo
           </Button>
+          )
         }
       />
 

@@ -1,3 +1,4 @@
+import { usePermissoes } from '@/contexts/PermissoesContext';
 import { useState } from 'react';
 import { Plus, Loader2, Power } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -18,6 +19,8 @@ type ModalState =
   | { tipo: 'status'; colaborador: Colaborador };
 
 export function Colaboradores() {
+  // Esconder o botão é conveniência; quem barra a gravação é o servidor.
+  const podeEditar = usePermissoes().pode('CADASTRO_COLABORADORES', 'EDICAO');
   const [modal, setModal] = useState<ModalState>({ tipo: 'fechado' });
   const [refreshKey, setRefreshKey] = useState(0);
   const [processando, setProcessando] = useState(false);
@@ -50,10 +53,12 @@ export function Colaboradores() {
         title="Colaboradores"
         subtitle="Empregados da entidade beneficiária (base para a Relação de Empregados da prestação de contas)."
         actions={
+          podeEditar && (
           <Button variant="success" onClick={() => setModal({ tipo: 'novo' })}>
             <Plus className="h-4 w-4" />
             Novo Colaborador
           </Button>
+          )
         }
       />
 

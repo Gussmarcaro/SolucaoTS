@@ -1,3 +1,4 @@
+import { usePermissoes } from '@/contexts/PermissoesContext';
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -15,6 +16,8 @@ type ModalState =
   | { tipo: 'ver'; ajuste: Ajuste };
 
 export function Ajustes() {
+  // Esconder o botão é conveniência; quem barra a gravação é o servidor.
+  const podeEditar = usePermissoes().pode('CADASTRO_AJUSTES', 'EDICAO');
   const [modal, setModal] = useState<ModalState>({ tipo: 'fechado' });
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -31,10 +34,12 @@ export function Ajustes() {
         title="Ajustes Celebrados"
         subtitle="Convênios, termos e contratos de gestão firmados com o Terceiro Setor."
         actions={
+          podeEditar && (
           <Button variant="success" onClick={() => setModal({ tipo: 'novo' })}>
             <Plus className="h-4 w-4" />
             Novo Ajuste
           </Button>
+          )
         }
       />
 

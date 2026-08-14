@@ -1,3 +1,4 @@
+import { usePermissoes } from '@/contexts/PermissoesContext';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, ChevronLeft, ChevronRight, FolderOpen, Loader2, Plus, Search } from 'lucide-react';
@@ -39,6 +40,8 @@ const COLUNAS: ColunaDef[] = [
 ];
 
 export function PrestacaoContas() {
+  // Esconder o botão é conveniência; quem barra a gravação é o servidor.
+  const podeEditar = usePermissoes().pode('PRESTACAO_CONTAS', 'EDICAO');
   const navigate = useNavigate();
   const [pageSize, setPageSize] = usePageSize('prestacoes');
   const [busca, setBusca] = useState('');
@@ -80,10 +83,12 @@ export function PrestacaoContas() {
         title="Prestação de Contas"
         subtitle="Montagem, validação e transmissão dos documentos à API do Audesp (TCESP)."
         actions={
+          podeEditar && (
           <Button variant="success" onClick={() => setNovo(true)}>
             <Plus className="h-4 w-4" />
             Nova Prestação
           </Button>
+          )
         }
       />
 

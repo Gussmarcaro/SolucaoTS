@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
-import { filtrarPorGrupo, navigation, type NavNode } from '@/lib/navigation';
+import { filtrarPorGrupo, filtrarPorPermissao, navigation, type NavNode } from '@/lib/navigation';
+import { usePermissoes } from '@/contexts/PermissoesContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/cn';
 
@@ -103,7 +104,18 @@ export function NavMenu({ collapsed, onNavigate, onExpandSidebar }: Props) {
   const { usuario } = useAuth();
   // Itens restritos somem para quem não é do grupo. É só a interface — o
   // backend barra a rota de qualquer forma.
-  const menu = useMemo(() => filtrarPorGrupo(navigation, usuario?.grupo ?? null), [usuario?.grupo]);
+  const { pode } = usePermissoes();
+
+  // Dois filtros em série: o grupo esconde as telas administrativas, a
+  // permissão esconde o que a matriz não concedeu. Ambos são conveniência —
+  // o servidor barra de todo jeito.
+  const menu = useMemo(
+    () =>
+      filtrarPorPermissao(filtrarPorGrupo(navigation, usuario?.grupo ?? null), (r) =>
+        pode(r, 'CONSULTA'),
+      ),
+    [usuario?.grupo, pode],
+  );
   const [abertos, setAbertos] = useState<Set<string>>(() => new Set(caminhoAtivo(navigation, pathname) ?? []));
 
   // Ao navegar, garante que o ramo da rota ativa esteja aberto.

@@ -1,3 +1,4 @@
+import { usePermissoes } from '@/contexts/PermissoesContext';
 import { useState } from 'react';
 import { Plus, Loader2, Power } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -18,6 +19,8 @@ type ModalState =
   | { tipo: 'status'; bem: BemCedido };
 
 export function BensCedidos() {
+  // Esconder o botão é conveniência; quem barra a gravação é o servidor.
+  const podeEditar = usePermissoes().pode('CADASTRO_BENS_CEDIDOS', 'EDICAO');
   const [modal, setModal] = useState<ModalState>({ tipo: 'fechado' });
   const [refreshKey, setRefreshKey] = useState(0);
   const [processando, setProcessando] = useState(false);
@@ -50,10 +53,12 @@ export function BensCedidos() {
         title="Bens Cedidos"
         subtitle="Bens patrimoniais cedidos à / pela entidade beneficiária."
         actions={
+          podeEditar && (
           <Button variant="success" onClick={() => setModal({ tipo: 'novo' })}>
             <Plus className="h-4 w-4" />
             Novo Bem
           </Button>
+          )
         }
       />
 

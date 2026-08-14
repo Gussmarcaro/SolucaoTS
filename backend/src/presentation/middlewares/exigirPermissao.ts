@@ -2,7 +2,7 @@ import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import { AppError } from '@/shared/errors';
 import type { AcaoPermissao } from '@/core/permissao/Recurso';
 import { RECURSOS_POR_ID } from '@/core/permissao/Recurso';
-import { permissoesDoGrupo } from '@/infrastructure/database/permissoesCache';
+import { permissoesDoGrupo, sistemaSemPermissoes } from '@/infrastructure/database/permissoesCache';
 
 /**
  * Ação exigida por método HTTP.
@@ -44,6 +44,11 @@ export function exigirPermissao(recursoId: string, acao?: AcaoPermissao): Reques
 
   return async (req: Request, _res: Response, next: NextFunction) => {
     try {
+      // Sistema sem nenhuma permissão configurada: tudo liberado, como era
+      // antes de existir controle de acesso. Basta configurar qualquer coisa
+      // na matriz para o gate passar a valer em todo o sistema.
+      if (await sistemaSemPermissoes()) return next();
+
       const grupo = req.usuario?.grupo;
       if (!grupo)
         return next(

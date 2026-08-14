@@ -1,3 +1,4 @@
+import { usePermissoes } from '@/contexts/PermissoesContext';
 import { useState } from 'react';
 import { Plus, Loader2, Power } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -18,6 +19,8 @@ type ModalState =
   | { tipo: 'status'; usuario: Usuario };
 
 export function Usuarios() {
+  // Esconder o botão é conveniência; quem barra a gravação é o servidor.
+  const podeEditar = usePermissoes().pode('CONFIG_USUARIOS', 'EDICAO');
   const [modal, setModal] = useState<ModalState>({ tipo: 'fechado' });
   const [refreshKey, setRefreshKey] = useState(0);
   const [processando, setProcessando] = useState(false);
@@ -51,10 +54,12 @@ export function Usuarios() {
         title="Usuários"
         subtitle="Cadastro de pessoas físicas, com consulta automática de CEP e trava de duplicidade de CPF."
         actions={
+          podeEditar && (
           <Button variant="success" onClick={() => setModal({ tipo: 'novo' })}>
             <Plus className="h-4 w-4" />
             Novo Usuário
           </Button>
+          )
         }
       />
 
