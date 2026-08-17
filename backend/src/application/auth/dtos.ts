@@ -6,7 +6,14 @@ export interface LoginDTO {
 
 export interface LoginResultado {
   token: string;
-  usuario: { id: string; nome: string; email: string; grupo: string | null };
+  usuario: {
+    id: string;
+    nome: string;
+    email: string;
+    grupo: string | null;
+    /** Órgão do usuário; null enquanto o backfill do multi-tenant não rodou. */
+    clienteId: string | null;
+  };
 }
 
 export interface SolicitarRecuperacaoDTO {

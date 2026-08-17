@@ -14,6 +14,20 @@ export interface ContextoRequisicao {
   usuarioNome: string;
   /** Método e caminho, guardados no registro de auditoria. */
   rota: string;
+  /**
+   * Órgão (tenant) do usuário — de onde sai o isolamento dos dados.
+   *
+   * `null` significa **sem filtro**, e hoje isso acontece em três situações
+   * legítimas: token emitido antes desta versão, usuário ainda sem órgão
+   * atribuído (o backfill é a fase 4) e os caminhos sem requisição — seeds,
+   * scripts e o startup da API, que precisam enxergar tudo.
+   *
+   * É uma abertura transitória e conhecida: enquanto ela existe, o isolamento
+   * vale para quem tem órgão e não vale para quem não tem. Ela fecha quando
+   * `Usuario.clienteId` virar obrigatório, e `verificar:tenant` passa a cobrar
+   * isso.
+   */
+  clienteId: string | null;
 }
 
 const armazenamento = new AsyncLocalStorage<ContextoRequisicao>();
@@ -29,4 +43,15 @@ export function comContexto<T>(contexto: ContextoRequisicao, fn: () => T): T {
  */
 export function contextoAtual(): ContextoRequisicao | undefined {
   return armazenamento.getStore();
+}
+
+/**
+ * Órgão da requisição em curso, ou `null` quando não há filtro a aplicar.
+ *
+ * Existe como função própria para que a camada de dados leia o tenant sem
+ * conhecer o resto do contexto — e para haver **um** lugar a mudar quando a
+ * abertura transitória descrita acima for fechada.
+ */
+export function tenantAtual(): string | null {
+  return armazenamento.getStore()?.clienteId ?? null;
 }

@@ -10,6 +10,8 @@ export interface UsuarioAutenticado {
   email: string;
   /** Nome do grupo de acesso; null em tokens emitidos antes desta versão. */
   grupo: string | null;
+  /** Órgão do usuário; null em tokens antigos e antes do backfill. */
+  clienteId: string | null;
 }
 
 declare module 'express-serve-static-core' {
@@ -41,13 +43,20 @@ export function autenticar(req: Request, _res: Response, next: NextFunction) {
     return next(new AppError('Sessão expirada ou inválida. Entre novamente.', 401, 'NAO_AUTENTICADO'));
   }
 
-  req.usuario = { id: payload.sub, nome: payload.nome, email: payload.email, grupo: payload.grupo ?? null };
+  req.usuario = {
+    id: payload.sub,
+    nome: payload.nome,
+    email: payload.email,
+    grupo: payload.grupo ?? null,
+    clienteId: payload.cli ?? null,
+  };
 
   comContexto(
     {
       usuarioId: payload.sub,
       usuarioNome: payload.nome,
       rota: `${req.method} ${req.baseUrl}${req.path}`,
+      clienteId: payload.cli ?? null,
     },
     next,
   );

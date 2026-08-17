@@ -17,6 +17,19 @@ export interface TokenPayload {
    * entrar de novo para o grupo passar a valer.
    */
   grupo?: string | null;
+  /**
+   * Órgão (tenant) a que o usuário pertence — a origem do isolamento de dados.
+   *
+   * Vem do token, e não de uma consulta por requisição, porque é lido em toda
+   * consulta ao banco: buscar o órgão a cada chamada dobraria o número de idas
+   * ao banco só para descobrir algo que não muda dentro da sessão.
+   *
+   * Vai como `cli` e não como `clienteId` por ser curto e aparecer em todo
+   * token; e é **opcional** por duas razões que se somam: tokens emitidos antes
+   * desta versão não o têm, e `Usuario.clienteId` ainda é nulo até o backfill.
+   * Enquanto for nulo, o usuário não é filtrado — ver `contextoAtual`.
+   */
+  cli?: string | null;
 }
 
 /** Assina um JWT. Com "lembrar de mim", usa expiração estendida. */

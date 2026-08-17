@@ -19,6 +19,20 @@ export const MODELS_COM_CRIADO_POR = new Set(
 );
 
 /**
+ * Models que carregam o órgão dono do registro — as **raízes de tenant**.
+ *
+ * Derivada do schema, como a lista acima. Os demais models alcançam o órgão
+ * pelo pai (bloco da prestação → prestação → ajuste → cliente) e por isso não
+ * têm nem precisam da coluna: dar `clienteId` a todos seria denormalizar 44
+ * tabelas para responder a uma pergunta que a relação já responde.
+ */
+export const MODELS_COM_CLIENTE = new Set(
+  Prisma.dmmf.datamodel.models
+    .filter((m) => m.fields.some((f) => f.name === 'clienteId'))
+    .map((m) => m.name),
+);
+
+/**
  * Fora da trilha: tabelas de domínio (carga de seed — gerariam ~4.500 linhas a
  * cada recarga) e a própria auditoria, que é append-only e não pode se auditar
  * sob pena de laço infinito.
@@ -239,6 +253,12 @@ export const extensaoAuditoria = Prisma.defineExtension({
         const ctx = contextoAtual();
         const dados = args.data as Registro;
         if (ctx && MODELS_COM_CRIADO_POR.has(model)) dados.criadoPor ??= ctx.usuarioId;
+        // Carimba o órgão de quem está criando. Aqui, e não em cada
+        // repositório, pelo mesmo motivo do `criadoPor`: vale para todo
+        // caminho que grave, inclusive código futuro. Sem isto, corrigir os
+        // registros antigos no backfill não adiantaria — os novos continuariam
+        // nascendo órfãos.
+        if (ctx?.clienteId && MODELS_COM_CLIENTE.has(model)) dados.clienteId ??= ctx.clienteId;
         return query(args);
       },
 

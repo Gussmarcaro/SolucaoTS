@@ -33,14 +33,30 @@ export class LoginUseCase {
       throw new AppError('Usuário inativo. Contate o administrador.', 403, 'USUARIO_INATIVO');
     }
 
+    // O órgão entra no token no login — é o único momento em que ele é lido do
+    // banco. Trocar o usuário de órgão só passa a valer no próximo login, o que
+    // é aceitável: mudança de lotação é rara, e o contrário (consultar o órgão
+    // a cada requisição) custaria uma ida ao banco em toda chamada da API.
     const token = assinarToken(
-      { sub: usuario.id, nome: usuario.nome, email: usuario.email, grupo: usuario.grupoNome },
+      {
+        sub: usuario.id,
+        nome: usuario.nome,
+        email: usuario.email,
+        grupo: usuario.grupoNome,
+        cli: usuario.clienteId,
+      },
       !!lembrar,
     );
 
     return {
       token,
-      usuario: { id: usuario.id, nome: usuario.nome, email: usuario.email, grupo: usuario.grupoNome },
+      usuario: {
+        id: usuario.id,
+        nome: usuario.nome,
+        email: usuario.email,
+        grupo: usuario.grupoNome,
+        clienteId: usuario.clienteId,
+      },
     };
   }
 }

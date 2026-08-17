@@ -60,6 +60,8 @@ export interface UsuarioAuth {
   ativo: boolean;
   /** Nome do grupo de acesso — vai para o token e decide o que o usuário vê. */
   grupoNome: string | null;
+  /** Órgão do usuário — vai para o token e isola os dados que ele alcança. */
+  clienteId: string | null;
 }
 
 /** Filtros de listagem — todos os campos são pesquisáveis. */
