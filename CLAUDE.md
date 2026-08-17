@@ -210,3 +210,14 @@ O que cada grupo pode fazer em cada tela. `GrupoUsuario` → matriz de recursos 
 - **Sem acesso não vê mensagem, vê o Dashboard.** O item já não aparece no menu; quem chega pela URL é redirecionado sem aviso (`RequerPermissao`). Uma tela de "acesso restrito" informaria a existência do que não deveria ser procurado.
 - `npm run permissoes:seed` concede tudo à administração e consulta aos demais — só para grupos que ainda não têm nenhuma permissão, então rodar de novo não desfaz configuração feita à mão.
 - A tela fica em **Configurações → Grupos de Usuários**, no ícone de escudo da grade.
+
+## Espelho da Prestação de Contas
+
+`/prestacao-contas/:id/espelho` — o documento inteiro numa página, para conferência antes de transmitir e para arquivo impresso. Botão **Espelho** no rodapé do dossiê da prestação.
+
+Renderiza o **mesmo `documentoJSON`** que vai ao TCESP (`GET /prestacoes/:id/json`), não uma consulta própria. Se montasse os números por conta própria, poderia mostrar um total e o Tribunal receber outro — e a conferência esconderia justamente o erro que deveria revelar.
+
+- **Bloco novo no montador aparece sozinho.** A renderização é genérica (lista vira tabela, objeto vira lista de campos) e `BLOCO_LABEL` só traduz o nome; sem rótulo, o bloco aparece com o nome humanizado em vez de sumir.
+- **Erros e avisos no topo**, antes dos 29 blocos: quem abre o espelho para transmitir precisa saber o que barra o envio antes de ler o documento.
+- Impressão pelo navegador (`@media print` em `index.css`): menu e barra somem, cabeçalho de tabela repete entre páginas, e `break-inside-avoid` evita bloco partido ao meio.
+- Basta faixa **Consulta** em `PRESTACAO_CONTAS` — revisar não deveria exigir permissão de editar.

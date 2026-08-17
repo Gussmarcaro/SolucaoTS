@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { AlertTriangle, ArrowLeft, Braces, CheckCircle2, Circle, Copy, Download, Loader2, RefreshCw, Send, ServerCrash, ShieldAlert, Trash2 } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Braces, CheckCircle2, Circle, Copy, Download, FileText, Loader2, RefreshCw, Send, ServerCrash, ShieldAlert, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
@@ -395,6 +395,12 @@ export function PrestacaoDetalhe() {
           <div className="mt-5 flex flex-col gap-2 border-t border-ink-100 pt-4 dark:border-ink-800 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-ink-400">Gere a prévia do JSON e transmita ao Audesp. Teste sempre no <span className="font-medium">piloto</span> antes da produção.</p>
             <div className="flex items-center gap-2">
+              <Link to={`/prestacao-contas/${prestacao.id}/espelho`}>
+                <Button variant="secondary" size="sm">
+                  <FileText className="h-4 w-4" />
+                  Espelho
+                </Button>
+              </Link>
               <Button variant="secondary" size="sm" onClick={gerarJson} disabled={gerandoJson}>
                 {gerandoJson ? <Loader2 className="h-4 w-4 animate-spin" /> : <Braces className="h-4 w-4" />}
                 Gerar JSON (prévia)

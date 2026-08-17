@@ -9,6 +9,7 @@ import { Ajustes } from '@/pages/Ajustes';
 import { AjusteDetalhe } from '@/pages/Ajustes/AjusteDetalhe';
 import { PrestacaoContas } from '@/pages/PrestacaoContas';
 import { PrestacaoDetalhe } from '@/pages/PrestacaoContas/PrestacaoDetalhe';
+import { Espelho } from '@/pages/PrestacaoContas/Espelho';
 import { Usuarios } from '@/pages/Usuarios';
 import { Grupos } from '@/pages/Grupos';
 import { Auditoria } from '@/pages/Auditoria';
@@ -145,6 +146,14 @@ export default function App() {
             element={
               <RequerPermissao recurso="PRESTACAO_CONTAS">
                 <PrestacaoDetalhe />
+              </RequerPermissao>
+            }
+          />
+          <Route
+            path="/prestacao-contas/:id/espelho"
+            element={
+              <RequerPermissao recurso="PRESTACAO_CONTAS">
+                <Espelho />
               </RequerPermissao>
             }
           />

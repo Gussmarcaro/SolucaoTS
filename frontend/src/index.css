@@ -41,3 +41,39 @@
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-ink-950;
   }
 }
+
+/*
+ * Impressão — usada pelo Espelho da Prestação de Contas.
+ *
+ * O layout da aplicação (menu lateral, barra superior, cartões flutuantes) não
+ * tem sentido no papel e rouba a folha inteira. Aqui só sobra o conteúdo, em
+ * preto no branco: o espelho costuma virar peça de arquivo do órgão, e cinza
+ * claro sobre cinza escuro sai ilegível em impressora comum.
+ */
+@media print {
+  aside,
+  header.sticky {
+    display: none !important;
+  }
+
+  main,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Repete o cabeçalho da tabela quando ela atravessa páginas. */
+  thead {
+    display: table-header-group;
+  }
+
+  a[href]::after {
+    content: '';
+  }
+
+  @page {
+    margin: 14mm;
+  }
+}
