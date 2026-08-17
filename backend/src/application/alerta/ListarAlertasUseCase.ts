@@ -1,6 +1,10 @@
 import type { Alerta, UrgenciaAlerta } from '@/core/alerta/Alerta';
+import { ALERTAS_SILENCIAVEIS } from '@/core/tarefa/Tarefa';
 import { diasAte, somarDiasUteis } from '@/shared/diasUteis';
 import { parseDataISO } from '@/shared/datas';
+
+/** Alerta antes de saber se há tarefa — a ligação é feita no fim. */
+type AlertaBase = Omit<Alerta, 'tarefa'>;
 
 /** Linhas cruas que o repositório entrega; as regras ficam aqui. */
 export interface DadosAlertas {
@@ -12,6 +16,8 @@ export interface DadosAlertas {
   orgaos: { id: string; nome: string; periodicidade: 'QUADRIMESTRAL' | 'ANUAL' }[];
   /** Ajustes do exercício ainda sem prestação Armazenada. */
   ajustesSemPrestacao: number;
+  /** Tarefas de acompanhamento nascidas de um alerta (as não canceladas). */
+  tarefasDeAlerta: { id: string; origemAlerta: string; status: string }[];
 }
 
 export interface IAlertaRepository {
@@ -65,7 +71,7 @@ export class ListarAlertasUseCase {
     desde.setUTCDate(desde.getUTCDate() - JANELA_PASSADA);
     const dados = await this.repo.coletar(desde.toISOString().slice(0, 10));
 
-    const alertas: Alerta[] = [
+    const base: AlertaBase[] = [
       ...this.rejeitadas(dados),
       ...this.certidoes(dados, hoje),
       ...this.cadastros(dados, hoje),
@@ -73,14 +79,42 @@ export class ListarAlertasUseCase {
       ...this.prestacaoDeContas(dados, hoje),
     ];
 
+    const alertas = this.comTarefas(base, dados);
+
     // Vencido primeiro; dentro do mesmo grupo, o prazo mais apertado na frente.
     return alertas.sort(
       (a, b) => PESO[a.urgencia] - PESO[b.urgencia] || (a.dias ?? 0) - (b.dias ?? 0),
     );
   }
 
+  /**
+   * Liga cada alerta à sua tarefa de acompanhamento — e some com o que já foi
+   * resolvido, mas só onde isso é honesto.
+   *
+   * Um alerta é silenciado por tarefa concluída **apenas** quando o ato é
+   * praticado fora daqui e o sistema não tem como conferir sozinho: cadastro de
+   * ajuste e de aditivo no Audesp, Declaração Negativa (`ALERTAS_SILENCIAVEIS`).
+   * Nesses, a tarefa concluída é a única prova disponível, e continuar cobrando
+   * seria ignorar o registro do próprio usuário.
+   *
+   * Nos demais — certidão, prestação rejeitada, prestação do exercício — o
+   * alerta **permanece**, por mais concluída que esteja a tarefa. Concluir não
+   * renova certidão nem muda o status no Tribunal; deixar a tarefa apagar o
+   * aviso faria o sistema desmentir os próprios dados, que é exatamente o que o
+   * sino existe para não fazer. Ali a tarefa aparece ligada, e nada mais.
+   */
+  private comTarefas(base: AlertaBase[], d: DadosAlertas): Alerta[] {
+    const porOrigem = new Map(d.tarefasDeAlerta.map((t) => [t.origemAlerta, t]));
+
+    return base.flatMap((a): Alerta[] => {
+      const t = porOrigem.get(a.id);
+      if (t?.status === 'CONCLUIDA' && ALERTAS_SILENCIAVEIS.has(a.tipo)) return [];
+      return [{ ...a, tarefa: t ? { id: t.id, status: t.status } : null }];
+    });
+  }
+
   /** Rejeição não tem prazo — tem urgência. Sempre no topo. */
-  private rejeitadas(d: DadosAlertas): Alerta[] {
+  private rejeitadas(d: DadosAlertas): AlertaBase[] {
     return d.prestacoesRejeitadas.map((p) => ({
       id: `prestacao-rejeitada:${p.id}`,
       tipo: 'PRESTACAO_REJEITADA' as const,
@@ -92,7 +126,7 @@ export class ListarAlertasUseCase {
     }));
   }
 
-  private certidoes(d: DadosAlertas, hoje: Date): Alerta[] {
+  private certidoes(d: DadosAlertas, hoje: Date): AlertaBase[] {
     return d.certidoes.flatMap((c) => {
       const dias = diasAte(parseDataISO(c.vencimento), hoje);
       if (dias > JANELA_FUTURA || dias < -JANELA_PASSADA) return [];
@@ -118,11 +152,11 @@ export class ListarAlertasUseCase {
    * assinatura, não uma afirmação sobre o que existe no Tribunal, e o texto
    * precisa deixar isso claro.
    */
-  private cadastros(d: DadosAlertas, hoje: Date): Alerta[] {
+  private cadastros(d: DadosAlertas, hoje: Date): AlertaBase[] {
     const doPrazo = (assinatura: string) =>
       diasAte(somarDiasUteis(parseDataISO(assinatura), DIAS_UTEIS_CADASTRO), hoje);
 
-    const ajustes = d.ajustesRecentes.flatMap((a): Alerta[] => {
+    const ajustes = d.ajustesRecentes.flatMap((a): AlertaBase[] => {
       const dias = doPrazo(a.dataAssinatura);
       if (dias > JANELA_FUTURA || dias < -JANELA_PASSADA) return [];
       return [
@@ -138,7 +172,7 @@ export class ListarAlertasUseCase {
       ];
     });
 
-    const aditivos = d.aditivosRecentes.flatMap((t): Alerta[] => {
+    const aditivos = d.aditivosRecentes.flatMap((t): AlertaBase[] => {
       const dias = doPrazo(t.dataAssinatura);
       if (dias > JANELA_FUTURA || dias < -JANELA_PASSADA) return [];
       return [
@@ -164,8 +198,8 @@ export class ListarAlertasUseCase {
    * o exercício. Só interessa o período encerrado mais recente: o anterior já
    * passou da janela e o seguinte ainda não começou a contar.
    */
-  private declaracoesNegativas(d: DadosAlertas, hoje: Date): Alerta[] {
-    return d.orgaos.flatMap((o): Alerta[] => {
+  private declaracoesNegativas(d: DadosAlertas, hoje: Date): AlertaBase[] {
+    return d.orgaos.flatMap((o): AlertaBase[] => {
       const fins =
         o.periodicidade === 'QUADRIMESTRAL'
           ? fimDosQuadrimestres(hoje)
@@ -194,7 +228,7 @@ export class ListarAlertasUseCase {
   }
 
   /** Prestação anual e consolidada: até 30/06 do exercício seguinte. */
-  private prestacaoDeContas(d: DadosAlertas, hoje: Date): Alerta[] {
+  private prestacaoDeContas(d: DadosAlertas, hoje: Date): AlertaBase[] {
     if (d.ajustesSemPrestacao === 0) return [];
 
     const exercicio = hoje.getUTCMonth() >= 6 ? hoje.getUTCFullYear() : hoje.getUTCFullYear() - 1;

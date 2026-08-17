@@ -9,6 +9,7 @@ import { bemCedidoRoutes } from './bemCedido.routes';
 import { servidorCedidoRoutes } from './servidorCedido.routes';
 import { ajusteRoutes } from './ajuste.routes';
 import { prestacaoRoutes } from './prestacao.routes';
+import { tarefaRoutes } from './tarefa.routes';
 import { grupoRoutes } from './grupo.routes';
 import { clienteRoutes } from './cliente.routes';
 import { dominioRoutes } from './dominio.routes';
@@ -54,6 +55,7 @@ routes.use('/bens-cedidos', exigirPermissao('CADASTRO_BENS_CEDIDOS'), bemCedidoR
 routes.use('/servidores-cedidos', exigirPermissao('CADASTRO_SERVIDORES_CEDIDOS'), servidorCedidoRoutes);
 routes.use('/ajustes', exigirPermissao('CADASTRO_AJUSTES'), ajusteRoutes);
 routes.use('/prestacoes', exigirPermissao('PRESTACAO_CONTAS'), prestacaoRoutes);
+routes.use('/tarefas', exigirPermissao('FISCALIZACAO'), tarefaRoutes);
 routes.use('/grupos', exigirPermissao('CONFIG_GRUPOS'), grupoRoutes);
 routes.use('/orgaos', exigirPermissao('CONFIG_ORGAOS'), clienteRoutes);
 routes.use('/auditoria', exigirPermissao('CONFIG_AUDITORIA'), auditoriaRoutes);

@@ -102,7 +102,7 @@ export const navigation: NavNode[] = [
   },
   { label: 'Prestação de Contas', icon: ClipboardCheck, to: '/prestacao-contas', recurso: 'PRESTACAO_CONTAS' },
   { label: 'Relatórios', icon: BarChart3, to: '/relatorios' },
-  { label: 'Fiscalização | Monitoramento', icon: ShieldCheck, to: '/fiscalizacao' },
+  { label: 'Fiscalização | Monitoramento', icon: ShieldCheck, to: '/fiscalizacao', recurso: 'FISCALIZACAO' },
   { label: 'Transparência', icon: Eye, to: '/transparencia', recurso: 'TRANSPARENCIA' },
   {
     label: 'Configurações',

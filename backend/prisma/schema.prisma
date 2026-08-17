@@ -668,6 +668,7 @@ model Ajuste {
   empenhosCadastro EmpenhoCadastro[]
   prestacoesContas PrestacaoContas[]
   projetos         Projeto[]
+  tarefas          Tarefa[]
 
   @@index([tipoAjuste])
 }
@@ -1256,6 +1257,11 @@ model RelatorioAtividadeMeta {
 // DOMÍNIO: WORKFLOW (Gestão de Projetos e Tarefas / prazos legais)
 // ============================================================================
 
+// Agrupamento de tarefas. **Ainda sem uso na aplicação**: a tarefa se liga
+// direto ao Ajuste, que é o recorte que o acompanhamento usa no dia a dia.
+// Fica aqui para quando um agrupamento próprio fizer falta (uma "força-tarefa"
+// que atravessa vários ajustes, por exemplo) — inventar projeto invisível só
+// para satisfazer uma FK criaria linha que ninguém administra.
 model Projeto {
   id        String  @id @default(uuid()) @db.Uuid
   clienteId String  @db.Uuid
@@ -1272,21 +1278,34 @@ model Projeto {
 
 model Tarefa {
   id            String           @id @default(uuid()) @db.Uuid
-  projetoId     String           @db.Uuid
+  projetoId     String?          @db.Uuid // agrupamento opcional (ver Projeto)
+  ajusteId      String?          @db.Uuid // ajuste acompanhado; nulo em tarefa avulsa
   responsavelId String?          @db.Uuid
   titulo        String
   descricao     String?
   prioridade    PrioridadeTarefa @default(MEDIA)
   prazoLegal    DateTime         @db.Date
   status        StatusTarefa     @default(PENDENTE)
-  criadoPor     String?          @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
-  criadoEm      DateTime         @default(now())
 
-  projeto     Projeto  @relation(fields: [projetoId], references: [id])
+  // Alerta do sino que originou a tarefa (`cadastro-ajuste:<id>`, `certidao:<id>`…).
+  // É a chave estável do alerta, não um id de tabela: alerta não é gravado.
+  // Guardá-la é o que permite ao sino saber que a providência já foi tomada.
+  origemAlerta String?
+  concluidaEm  DateTime? // quando saiu para CONCLUIDA — a prova de que foi feito
+
+  criadoPor    String?  @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  projeto     Projeto? @relation(fields: [projetoId], references: [id])
+  ajuste      Ajuste?  @relation(fields: [ajusteId], references: [id])
   responsavel Usuario? @relation(fields: [responsavelId], references: [id])
 
   @@index([projetoId])
+  @@index([ajusteId])
   @@index([prazoLegal])
+  @@index([status])
+  @@index([origemAlerta])
 }
 
 // ============================================================================

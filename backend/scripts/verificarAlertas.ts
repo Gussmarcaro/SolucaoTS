@@ -25,6 +25,7 @@ const VAZIO: DadosAlertas = {
   aditivosRecentes: [],
   orgaos: [],
   ajustesSemPrestacao: 0,
+  tarefasDeAlerta: [],
 };
 
 const executar = (dados: Partial<DadosAlertas>, hoje: Date) =>
@@ -143,6 +144,73 @@ const hoje = new Date('2026-08-13T00:00:00Z'); // quinta-feira
 
   const [b] = await executar({ ajustesSemPrestacao: 3 }, new Date('2026-08-13T00:00:00Z'));
   conferir('depois de junho, o exercício vira o corrente', b?.id === 'prestacao-contas:2026' || !b);
+}
+
+// --- tarefa de acompanhamento ----------------------------------------------
+// A regra que separa "o sistema não tem como saber" de "o sistema sabe".
+// Errar aqui é grave nos dois sentidos: silenciar demais esconde um prazo real,
+// silenciar de menos faz o sino cobrar o que já foi feito e ensina a ignorá-lo.
+{
+  const ajuste = {
+    ajustesRecentes: [
+      { id: 'a1', codigoAjuste: '999', entidadeNome: 'OSC X', dataAssinatura: '2026-08-13' },
+    ],
+  };
+  const tarefa = (status: string, origem: string) => [{ id: 't1', origemAlerta: origem, status }];
+
+  const [semTarefa] = await executar(ajuste, hoje);
+  conferir('sem tarefa, o alerta não menciona nenhuma', semTarefa?.tarefa === null);
+
+  const [pendente] = await executar(
+    { ...ajuste, tarefasDeAlerta: tarefa('PENDENTE', 'cadastro-ajuste:a1') },
+    hoje,
+  );
+  conferir(
+    'tarefa aberta aparece no alerta, sem silenciá-lo',
+    pendente?.tarefa?.id === 't1' && pendente?.tarefa?.status === 'PENDENTE',
+  );
+
+  const concluida = await executar(
+    { ...ajuste, tarefasDeAlerta: tarefa('CONCLUIDA', 'cadastro-ajuste:a1') },
+    hoje,
+  );
+  conferir(
+    'tarefa concluída encerra o lembrete de cadastro no Audesp',
+    concluida.length === 0,
+    'é ato praticado fora do sistema — a tarefa é a única prova possível',
+  );
+
+  // Certidão é fato nosso: concluir tarefa não renova nada.
+  const certidao = { certidoes: [{ id: 'c1', descricao: 'CND', vencimento: '2026-08-18', onde: 'OSC X' }] };
+  const [aindaVence] = await executar(
+    { ...certidao, tarefasDeAlerta: tarefa('CONCLUIDA', 'certidao:c1') },
+    hoje,
+  );
+  conferir(
+    'tarefa concluída NÃO silencia certidão a vencer',
+    aindaVence?.id === 'certidao:c1' && aindaVence?.tarefa?.status === 'CONCLUIDA',
+    'a data de validade está nos nossos dados — concluir tarefa não a renova',
+  );
+
+  const [rejeitada] = await executar(
+    {
+      prestacoesRejeitadas: [{ id: 'p1', ajusteCodigo: '123', entidadeNome: 'OSC X', ano: 2025 }],
+      tarefasDeAlerta: tarefa('CONCLUIDA', 'prestacao-rejeitada:p1'),
+    },
+    hoje,
+  );
+  conferir(
+    'tarefa concluída NÃO silencia prestação rejeitada',
+    rejeitada?.id === 'prestacao-rejeitada:p1',
+    'o status vem do Tribunal, não da nossa marcação',
+  );
+
+  // Tarefa de outro alerta não pode encostar neste.
+  const [outra] = await executar(
+    { ...ajuste, tarefasDeAlerta: tarefa('CONCLUIDA', 'cadastro-ajuste:OUTRO') },
+    hoje,
+  );
+  conferir('tarefa de outro alerta não interfere', outra?.id === 'cadastro-ajuste:a1' && outra?.tarefa === null);
 }
 
 console.log(falhas.length ? `\n${falhas.length} falha(s).\n` : '\nTudo ok.\n');

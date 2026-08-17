@@ -173,6 +173,7 @@ const CAMPOS_DESCRITIVOS = [
   'razaoSocial',
   'nome',
   'nomePrograma',
+  'titulo',
   'descricao',
   'codigoAjuste',
   'codigoMeta',

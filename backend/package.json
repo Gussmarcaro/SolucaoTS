@@ -25,7 +25,8 @@
     "verificar:alertas": "tsx scripts/verificarAlertas.ts",
     "permissoes:seed": "tsx prisma/seeds/permissoes.ts",
     "verificar:permissoes": "tsx scripts/verificarPermissoes.ts",
-    "permissoes:liberar": "tsx prisma/seeds/liberarPermissoes.ts"
+    "permissoes:liberar": "tsx prisma/seeds/liberarPermissoes.ts",
+    "verificar:workflow": "tsx scripts/verificarWorkflow.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.116.0",

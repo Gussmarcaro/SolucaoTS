@@ -16,6 +16,41 @@ export interface Alerta {
   detalhe: string;
   dias: number | null;
   referenciaId: string | null;
+  /** Tarefa de acompanhamento aberta para este prazo, quando existe. */
+  tarefa: { id: string; status: string } | null;
+}
+
+/**
+ * Alertas que uma tarefa concluída faz sumir do sino — espelha
+ * `ALERTAS_SILENCIAVEIS` do backend, que é quem de fato decide.
+ *
+ * Aqui serve só para o texto do painel: nos demais tipos a tarefa é registro
+ * do trabalho, e o aviso continua até o dado mudar (a certidão ser renovada, a
+ * prestação ser aceita). Dizer o contrário na tela seria prometer o que o
+ * servidor não faz.
+ */
+export const ALERTAS_SILENCIAVEIS: TipoAlerta[] = [
+  'CADASTRO_AJUSTE',
+  'CADASTRO_ADITIVO',
+  'DECLARACAO_NEGATIVA',
+];
+
+/** Esboço da tarefa que o alerta gera — o formulário abre já preenchido. */
+export function tarefaDoAlerta(a: Alerta) {
+  const prazo = new Date();
+  prazo.setDate(prazo.getDate() + Math.max(0, a.dias ?? 0));
+  return {
+    titulo: a.titulo,
+    descricao: a.detalhe,
+    prazoLegal: prazo.toISOString().slice(0, 10),
+    prioridade: a.urgencia === 'PROXIMO' ? ('ALTA' as const) : ('URGENTE' as const),
+    // Só os alertas de ajuste/aditivo carregam id de Ajuste; nos outros o
+    // `referenciaId` aponta para outra coisa (certidão, órgão, prestação) e
+    // usá-lo como ajuste criaria um vínculo falso.
+    ajusteId:
+      a.tipo === 'CADASTRO_AJUSTE' || a.tipo === 'CADASTRO_ADITIVO' ? a.referenciaId : null,
+    origemAlerta: a.id,
+  };
 }
 
 export const URGENCIA_LABEL: Record<UrgenciaAlerta, string> = {

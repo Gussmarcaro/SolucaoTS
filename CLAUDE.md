@@ -47,7 +47,7 @@ Definido em `backend/prisma/schema.prisma`. Dois módulos Audesp em sequência +
 1. **Cadastro de Ajuste** — `Ajuste` é a entidade **central** (não `Convenio`), com `tipoAjuste` entre 5 valores (Contrato de Gestão, Convênio, Termo de Colaboração, Termo de Fomento, Termo de Parceria). Agrega `TermoAditivo`, `Certidao`, `EntidadeBeneficiaria`, `Programa`/`Meta`, `PlanoAplicacaoItem`, `CronogramaDesembolsoItem`, `BemCedidoCadastro`, `EmpenhoCadastro`.
 2. **Prestação de Contas** — `PrestacaoContas` (filha de `Ajuste`) é a raiz de ~15 blocos filhos (empregados, bens, contratos, documentos fiscais, pagamentos, disponibilidades, receitas, servidores cedidos, descontos, devoluções, glosas, empenhos, repasses, relatório de atividades). **Este módulo não tem tela no TCESP: é transmitido só via API REST** montando um documento JSON.
 3. **Segurança** — `Cliente` (órgão) → `Usuario`; RBAC via `GrupoUsuario` / `Permissao` (`modulo` + `acao`).
-4. **Workflow** — `Projeto` (liga a `Ajuste` opcional) → `Tarefa` (`prazoLegal`, `prioridade`, `status`).
+4. **Workflow** — `Tarefa` (`prazoLegal`, `prioridade`, `status`), ligada opcionalmente a um `Ajuste` e ao alerta do sino que a originou (`origemAlerta`). `Projeto` existe no schema e ainda não é usado — ver "Fiscalização | Monitoramento".
 
 Convenções do schema: PKs `uuid`, dinheiro `Decimal(15,2)`, datas `@db.Date`. As **regras de unicidade dos manuais viraram `@@unique` compostos** (ex.: documento fiscal único por `numero+credor`, empenho por `numero+dataEmissao`, empregado por `cpf+dataAdmissao`) — preserve-as ao evoluir o schema.
 
@@ -154,6 +154,7 @@ No `backend/`:
 - `npm run dominios:fase-v` — regerar as tabelas de domínio do JSON Schema (front + back).
 - `npm run verificar:montador` — conferir o montador contra o schema e as regras de negócio (sem banco).
 - `npm run verificar:auditoria` — conferir as regras da trilha de auditoria (sem banco).
+- `npm run verificar:workflow` — conferir as regras das tarefas de acompanhamento (sem banco).
 
 No `frontend/`: `npm run dev` (Vite em :5173) e `npm run build`.
 
@@ -181,6 +182,21 @@ Cinco fontes, todas em dados que já existem: prestação `REJEITADO`; `Document
 - Janela: aparece a partir de 30 dias do vencimento e some 60 dias depois de vencido — passado isso é pendência antiga, não alerta.
 - O prazo de cadastro de Ajuste/Aditivo é **lembrete**, não status: esse cadastro é feito na tela do TCESP, fora daqui, então o sistema não sabe se já foi enviado. O texto do alerta não pode sugerir que sabe.
 - **`npm run verificar:alertas`** roda as regras contra datas fixas, sem banco. Foi ele que mostrou que minha contagem de 10 dias úteis estava errada na cabeça, não no código.
+
+## Fiscalização | Monitoramento (Workflow)
+
+`/fiscalizacao` — as providências e seus prazos. É a outra metade do sino: ele **calcula** prazos a partir dos dados, esta tela **registra o que foi feito** a respeito. Sem ela o sistema sabe cobrar e não sabe que já foi atendido, e um aviso que continua piscando depois de resolvido ensina o usuário a ignorá-lo.
+
+Grade + formulário no padrão dos cadastros, com quatro recortes (Em aberto / Atrasadas / Minhas / Todas), KPIs no topo e **concluir a um clique** na grade — é o caminho comum do módulo, não algo escondido dentro do formulário.
+
+- **Uma tarefa concluída só silencia o alerta que o sistema não consegue conferir sozinho.** É a regra central (`ALERTAS_SILENCIAVEIS`, em `core/tarefa/Tarefa.ts`): cadastro de Ajuste, cadastro de Aditivo e Declaração Negativa são atos praticados **na tela do TCESP**, fora daqui — a tarefa concluída é a única prova possível, e continuar cobrando seria ignorar o registro do usuário. Já **certidão, prestação rejeitada e prestação do exercício ficam de fora**: são fatos dos nossos próprios dados, e concluir tarefa não renova certidão nem muda o status no Tribunal. Nesses, a tarefa aparece ligada ao alerta e o alerta **permanece** — silenciá-los faria o sistema desmentir o que ele mesmo sabe.
+- **`Tarefa.origemAlerta` guarda a chave do alerta** (`cadastro-ajuste:<id>`, `certidao:<id>`…), não um id de tabela: alerta não é gravado. É esse campo que liga as duas pontas, e por isso é **imutável na edição** — trocá-lo desligaria a tarefa do prazo que ela existe para atender.
+- **Tarefa nascida de alerta é idempotente.** O botão "Gerar tarefa" fica a um clique e o sino é consultado por várias telas; sem isso, dois cliques viram duas tarefas para o mesmo prazo. Repetir a origem devolve a que já existe — exceto se ela foi **cancelada**, caso em que a providência foi descartada e o alerta volta a cobrar.
+- **A criação acontece na tela, não com um POST do sino.** O botão leva a `/fiscalizacao` com o formulário já preenchido (título, prazo, ajuste e a chave de origem): o usuário ainda escolhe responsável e confere o prazo, e uma tarefa criada em silêncio apareceria depois sem dono nem contexto.
+- `concluidaEm` é decidido pelo servidor a partir do status, nunca vem do payload: carimba na virada e **preserva o carimbo** enquanto continuar concluída, para uma edição de texto não reescrever a data do feito.
+- **`Projeto` continua no schema e sem uso.** A tarefa liga direto ao `Ajuste`, que é o recorte do dia a dia; inventar projeto invisível só para satisfazer uma FK criaria linha que ninguém administra. `Tarefa.projetoId` virou opcional para isso.
+- **`npm run verificar:workflow`** (sem banco) cobre validação, o carimbo da conclusão, a idempotência, a imutabilidade da origem e a própria lista de silenciáveis — acrescentar `CERTIDAO` a ela é o erro mais caro do módulo. O comportamento do silêncio é provado em `verificar:alertas`.
+- Recurso `FISCALIZACAO`. Excluir exige faixa **Total**; para encerrar sem apagar histórico, o caminho é o status **Cancelada**.
 
 ## Permissões por grupo (RBAC)
 

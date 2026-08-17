@@ -26,6 +26,7 @@ import { Colaboradores } from '@/pages/Colaboradores';
 import { Contratos } from '@/pages/Contratos';
 import { BensCedidos } from '@/pages/BensCedidos';
 import { ServidoresCedidos } from '@/pages/ServidoresCedidos';
+import { Fiscalizacao } from '@/pages/Fiscalizacao';
 import { Transparencia } from '@/pages/Transparencia';
 import { TransparenciaRelatorio } from '@/pages/Transparencia/Relatorio';
 import { Placeholder } from '@/pages/Placeholder';
@@ -160,7 +161,14 @@ export default function App() {
             }
           />
           <Route path="/relatorios" element={<Placeholder title="Relatórios" />} />
-          <Route path="/fiscalizacao" element={<Placeholder title="Fiscalização | Monitoramento" />} />
+          <Route
+            path="/fiscalizacao"
+            element={
+              <RequerPermissao recurso="FISCALIZACAO">
+                <Fiscalizacao />
+              </RequerPermissao>
+            }
+          />
           <Route
             path="/transparencia"
             element={

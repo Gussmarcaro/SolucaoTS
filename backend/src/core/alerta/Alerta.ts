@@ -27,4 +27,13 @@ export interface Alerta {
   dias: number | null;
   /** Id do registro de origem — a tela decide para onde levar. */
   referenciaId: string | null;
+  /**
+   * Tarefa de acompanhamento aberta para este alerta, quando existe.
+   *
+   * É o que fecha o ciclo: o sino deixa de só cobrar e passa a mostrar que a
+   * providência já está registrada — e, nos alertas que o sistema não consegue
+   * conferir sozinho, a tarefa concluída encerra a cobrança
+   * (`ALERTAS_SILENCIAVEIS`, em `core/tarefa/Tarefa.ts`).
+   */
+  tarefa: { id: string; status: string } | null;
 }

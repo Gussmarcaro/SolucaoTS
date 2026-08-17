@@ -3,13 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import {
   Building2,
   CalendarClock,
+  CheckCheck,
   ClipboardCheck,
   FileWarning,
+  ListPlus,
   Loader2,
   ShieldAlert,
   type LucideIcon,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
+import { usePermissoes } from '@/contexts/PermissoesContext';
 import { cn } from '@/lib/cn';
 import { http } from '@/services/http';
 import {
@@ -17,6 +20,7 @@ import {
   URGENCIA_TONE,
   rotaDoAlerta,
   rotuloDias,
+  tarefaDoAlerta,
   type Alerta,
   type TipoAlerta,
   type UrgenciaAlerta,
@@ -42,6 +46,9 @@ const ORDEM: UrgenciaAlerta[] = ['VENCIDO', 'CRITICO', 'PROXIMO'];
  */
 export function Alertas({ aberto, onFechar }: { aberto: boolean; onFechar: () => void }) {
   const navigate = useNavigate();
+  // Sem permissão de editar em Fiscalização não há como criar a tarefa —
+  // oferecer o botão só para receber 403 seria pior que não oferecê-lo.
+  const podeFiscalizar = usePermissoes().pode('FISCALIZACAO', 'EDICAO');
   const [alertas, setAlertas] = useState<Alerta[] | null>(null);
   const [erro, setErro] = useState(false);
 
@@ -68,6 +75,23 @@ export function Alertas({ aberto, onFechar }: { aberto: boolean; onFechar: () =>
 
   function abrir(a: Alerta) {
     navigate(rotaDoAlerta(a));
+    onFechar();
+  }
+
+  /**
+   * Leva à tela de Fiscalização com a tarefa já esboçada.
+   *
+   * A criação acontece lá, no formulário, e não com um POST daqui: o usuário
+   * ainda precisa escolher responsável e conferir o prazo — e uma tarefa criada
+   * em silêncio pelo sino apareceria depois sem dono nem contexto.
+   */
+  function gerarTarefa(a: Alerta) {
+    navigate('/fiscalizacao', { state: { novaTarefa: tarefaDoAlerta(a) } });
+    onFechar();
+  }
+
+  function irParaTarefas() {
+    navigate('/fiscalizacao');
     onFechar();
   }
 
@@ -112,38 +136,71 @@ export function Alertas({ aberto, onFechar }: { aberto: boolean; onFechar: () =>
             const Icone = ICONES[a.tipo];
             const prazo = rotuloDias(a.dias);
             return (
-              <button
+              <div
                 key={a.id}
-                type="button"
-                onClick={() => abrir(a)}
-                className="flex w-full items-start gap-2.5 px-4 py-2.5 text-left transition-colors hover:bg-ink-50 dark:hover:bg-ink-800/60"
+                className="group px-4 py-2.5 transition-colors hover:bg-ink-50 dark:hover:bg-ink-800/60"
               >
-                <Icone
-                  className={cn(
-                    'mt-0.5 h-4 w-4 shrink-0',
-                    urgencia === 'VENCIDO'
-                      ? 'text-red-500'
-                      : urgencia === 'CRITICO'
-                        ? 'text-amber-500'
-                        : 'text-ink-400',
-                  )}
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-start justify-between gap-2">
-                    <span className="text-sm font-medium text-ink-800 dark:text-ink-100">
-                      {a.titulo}
-                    </span>
-                    {prazo && (
-                      <span className="shrink-0">
-                        <Badge tone={URGENCIA_TONE[urgencia]}>{prazo}</Badge>
-                      </span>
+                <button
+                  type="button"
+                  onClick={() => abrir(a)}
+                  className="flex w-full items-start gap-2.5 text-left"
+                >
+                  <Icone
+                    className={cn(
+                      'mt-0.5 h-4 w-4 shrink-0',
+                      urgencia === 'VENCIDO'
+                        ? 'text-red-500'
+                        : urgencia === 'CRITICO'
+                          ? 'text-amber-500'
+                          : 'text-ink-400',
                     )}
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-start justify-between gap-2">
+                      <span className="text-sm font-medium text-ink-800 dark:text-ink-100">
+                        {a.titulo}
+                      </span>
+                      {prazo && (
+                        <span className="shrink-0">
+                          <Badge tone={URGENCIA_TONE[urgencia]}>{prazo}</Badge>
+                        </span>
+                      )}
+                    </span>
+                    <span className="mt-0.5 block text-xs text-ink-500 dark:text-ink-400">
+                      {a.detalhe}
+                    </span>
                   </span>
-                  <span className="mt-0.5 block text-xs text-ink-500 dark:text-ink-400">
-                    {a.detalhe}
-                  </span>
-                </span>
-              </button>
+                </button>
+
+                {/*
+                 * A providência. O sino cobra; sem isto não há onde registrar
+                 * que foi atendido, e o mesmo aviso volta amanhã idêntico.
+                 * Com tarefa aberta o botão vira o caminho até ela.
+                 */}
+                {podeFiscalizar && (
+                  <div className="mt-1.5 pl-[26px]">
+                    {a.tarefa ? (
+                      <button
+                        type="button"
+                        onClick={() => irParaTarefas()}
+                        className="flex items-center gap-1 text-[11px] font-medium text-emerald-600 hover:underline dark:text-emerald-400"
+                      >
+                        <CheckCheck className="h-3.5 w-3.5" />
+                        Tarefa {a.tarefa.status === 'CONCLUIDA' ? 'concluída' : 'em acompanhamento'}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => gerarTarefa(a)}
+                        className="flex items-center gap-1 text-[11px] font-medium text-brand-600 hover:underline dark:text-brand-300"
+                      >
+                        <ListPlus className="h-3.5 w-3.5" />
+                        Gerar tarefa
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>

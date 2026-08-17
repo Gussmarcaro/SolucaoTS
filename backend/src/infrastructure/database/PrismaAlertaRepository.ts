@@ -18,7 +18,7 @@ export class PrismaAlertaRepository implements IAlertaRepository {
     const horizonte = new Date();
     horizonte.setUTCDate(horizonte.getUTCDate() + 30);
 
-    const [rejeitadas, docs, certidoesAjuste, ajustes, aditivos, orgaos, comArmazenada, totalAjustes] =
+    const [rejeitadas, docs, certidoesAjuste, ajustes, aditivos, orgaos, comArmazenada, totalAjustes, tarefas] =
       await Promise.all([
         prisma.prestacaoContas.findMany({
           where: { status: 'REJEITADO' },
@@ -78,6 +78,13 @@ export class PrismaAlertaRepository implements IAlertaRepository {
           distinct: ['ajusteId'],
         }),
         prisma.ajuste.count(),
+        // Tarefas nascidas de alerta. Canceladas ficam de fora: quem cancelou
+        // descartou aquela providência, e o prazo volta a cobrar sozinho.
+        prisma.tarefa.findMany({
+          where: { origemAlerta: { not: null }, status: { not: 'CANCELADA' } },
+          select: { id: true, origemAlerta: true, status: true },
+          take: 500,
+        }),
       ]);
 
     return {
@@ -116,6 +123,7 @@ export class PrismaAlertaRepository implements IAlertaRepository {
       })),
       orgaos: orgaos.map((o) => ({ id: o.id, nome: o.nome, periodicidade: o.periodicidade })),
       ajustesSemPrestacao: Math.max(0, totalAjustes - comArmazenada.length),
+      tarefasDeAlerta: tarefas.map((t) => ({ id: t.id, origemAlerta: t.origemAlerta as string, status: t.status })),
     };
   }
 }
