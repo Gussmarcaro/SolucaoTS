@@ -221,3 +221,14 @@ Renderiza o **mesmo `documentoJSON`** que vai ao TCESP (`GET /prestacoes/:id/jso
 - **Erros e avisos no topo**, antes dos 29 blocos: quem abre o espelho para transmitir precisa saber o que barra o envio antes de ler o documento.
 - Impressão pelo navegador (`@media print` em `index.css`): menu e barra somem, cabeçalho de tabela repete entre páginas, e `break-inside-avoid` evita bloco partido ao meio.
 - Basta faixa **Consulta** em `PRESTACAO_CONTAS` — revisar não deveria exigir permissão de editar.
+
+## Transparência
+
+`/transparencia` — relação das parcerias para publicação no portal do órgão (Lei 13.019/2014, art. 10): data e identificação do instrumento, OSC e CNPJ, objeto, valor, vigência e situação da prestação de contas.
+
+**A tela não publica nada.** Reúne o conteúdo e aponta o que falta; publicar segue sendo ato do órgão no portal oficial. Sugerir o contrário daria sensação falsa de conformidade.
+
+- **A lista de pendências é o valor da tela.** A relação de parcerias qualquer sistema produz — dizer *qual delas está irregular* é o que evita a notificação do Tribunal. As regras estão em `ListarTransparenciaUseCase.pendenciasDe`.
+- A situação vem da **prestação mais recente** de cada ajuste (art. 10, VII).
+- Export em CSV com `;` e BOM — abre direto no Excel em português, que costuma ser a etapa seguinte da publicação.
+- Recurso `TRANSPARENCIA`, faixa Consulta basta.

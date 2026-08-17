@@ -19,6 +19,7 @@ import { LgpdController } from '@/presentation/controllers/LgpdController';
 import { AssistenteController } from '@/presentation/controllers/AssistenteController';
 import { AlertaController } from '@/presentation/controllers/AlertaController';
 import { AutoriaController } from '@/presentation/controllers/AutoriaController';
+import { TransparenciaController } from '@/presentation/controllers/TransparenciaController';
 import { PermissaoController } from '@/presentation/controllers/PermissaoController';
 import { autenticar } from '@/presentation/middlewares/autenticar';
 import { exigirGrupo } from '@/presentation/middlewares/exigirGrupo';
@@ -85,6 +86,12 @@ routes.get('/busca', (req, res, next) => busca.buscar(req, res, next));
 // Quem incluiu o registro — uma rota para todos os cadastros que têm o campo.
 const autoria = new AutoriaController();
 routes.get('/autoria/:entidade/:id', (req, res, next) => autoria.consultar(req, res, next));
+
+// Transparência — relação de parcerias para publicação (Lei 13.019, art. 10).
+const transparencia = new TransparenciaController();
+routes.get('/transparencia', exigirPermissao('TRANSPARENCIA'), (req, res, next) =>
+  transparencia.listar(req, res, next),
+);
 
 // Alertas do sino — prazos legais e pendências, calculados a cada consulta.
 const alertas = new AlertaController();
