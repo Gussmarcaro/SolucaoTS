@@ -28,7 +28,9 @@ export class PermissaoController {
   /** `PUT /permissoes/:grupoId` — grava a matriz inteira do grupo. */
   async salvar(req: Request, res: Response, next: NextFunction) {
     try {
-      await casos.salvar(req.params.grupoId, req.body?.acessos ?? []);
+      // O grupo de quem salva vai junto: é o que permite recusar uma gravação
+      // que deixaria a própria pessoa sem caminho de volta.
+      await casos.salvar(req.params.grupoId, req.body?.acessos ?? [], req.usuario?.grupo ?? undefined);
       return res.status(204).end();
     } catch (e) {
       return next(e);

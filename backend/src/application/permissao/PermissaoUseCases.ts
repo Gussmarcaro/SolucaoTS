@@ -63,21 +63,36 @@ export class PermissaoUseCases {
    * completo, e comparar item a item abriria espaço para uma permissão sobrar
    * de uma configuração anterior — numa tela de acesso, sobra é falha.
    */
-  async salvar(grupoId: string, acessos: AcessoDoRecurso[]): Promise<void> {
+  async salvar(grupoId: string, acessos: AcessoDoRecurso[], grupoDeQuemSalva?: string): Promise<void> {
     const nome = await this.repo.nomeDoGrupo(grupoId);
     if (!nome) throw new BusinessError('Grupo não encontrado.');
 
     const porRecurso = new Map(acessos.map((a) => [a.recursoId, a]));
 
-    // Trava contra auto-bloqueio: sem ela, tirar o acesso do Administrador à
-    // tela de permissões tranca todo mundo para fora dela em definitivo, e a
-    // correção passa a exigir mexer direto no banco.
-    if (GRUPOS_ADMIN.includes(normalizar(nome))) {
+    /*
+     * Trava contra auto-bloqueio.
+     *
+     * A primeira versão olhava só para os grupos chamados Administrador e
+     * Suporte — o que deixou de fora exatamente o caso que aconteceu: um
+     * administrador de outro grupo salvando a própria matriz sem acesso a nada
+     * e ficando sem caminho de volta, porque a matriz é o único lugar de onde
+     * se reconfigura permissão.
+     *
+     * Agora vale para quem está salvando, qualquer que seja o nome do grupo.
+     */
+    const ehOProprioGrupo =
+      !!grupoDeQuemSalva && normalizar(grupoDeQuemSalva) === normalizar(nome);
+
+    if (ehOProprioGrupo || GRUPOS_ADMIN.includes(normalizar(nome))) {
       const indispensavel = porRecurso.get(RECURSO_INDISPENSAVEL);
       if (!indispensavel || indispensavel.nivel !== 'TOTAL')
         throw new BusinessError(
-          `O grupo ${nome} precisa manter acesso total a ${RECURSOS_POR_ID.get(RECURSO_INDISPENSAVEL)?.rotulo}: ` +
-            'sem isso ninguém conseguiria voltar a configurar permissões.',
+          ehOProprioGrupo
+            ? `Você ficaria sem acesso a ${RECURSOS_POR_ID.get(RECURSO_INDISPENSAVEL)?.rotulo}, que é ` +
+              'a única tela de onde se reconfigura permissão — e não conseguiria desfazer isto. ' +
+              'Mantenha o acesso total nela, ou peça a outro grupo que faça a alteração.'
+            : `O grupo ${nome} precisa manter acesso total a ${RECURSOS_POR_ID.get(RECURSO_INDISPENSAVEL)?.rotulo}: ` +
+              'sem isso ninguém conseguiria voltar a configurar permissões.',
         );
     }
 

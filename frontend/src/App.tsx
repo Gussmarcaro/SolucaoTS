@@ -13,6 +13,7 @@ import { Usuarios } from '@/pages/Usuarios';
 import { Grupos } from '@/pages/Grupos';
 import { Auditoria } from '@/pages/Auditoria';
 import { RequerGrupo } from '@/components/auth/RequerGrupo';
+import { RequerPermissao } from '@/components/auth/RequerPermissao';
 import { GRUPOS_ADMIN } from '@/lib/navigation';
 import { Orgaos } from '@/pages/Orgaos';
 import { Empresas } from '@/pages/Empresas';
@@ -40,16 +41,86 @@ export default function App() {
           <Route path="/" element={<Dashboard />} />
 
           {/* Cadastro */}
-          <Route path="/cadastro/entidades" element={<Entidades />} />
-          <Route path="/cadastro/entidades/:id" element={<EntidadeDetalhe />} />
-          <Route path="/privacidade" element={<Privacidade />} />
-          <Route path="/cadastro/ajustes" element={<Ajustes />} />
-          <Route path="/cadastro/ajustes/:id" element={<AjusteDetalhe />} />
-          <Route path="/cadastro/fornecedores" element={<Fornecedores />} />
-          <Route path="/cadastro/contratos" element={<Contratos />} />
-          <Route path="/cadastro/colaboradores" element={<Colaboradores />} />
-          <Route path="/cadastro/bens-cedidos" element={<BensCedidos />} />
-          <Route path="/cadastro/servidores-cedidos" element={<ServidoresCedidos />} />
+          <Route
+            path="/cadastro/entidades"
+            element={
+              <RequerPermissao recurso="CADASTRO_ENTIDADES">
+                <Entidades />
+              </RequerPermissao>
+            }
+          />
+          <Route
+            path="/cadastro/entidades/:id"
+            element={
+              <RequerPermissao recurso="CADASTRO_ENTIDADES">
+                <EntidadeDetalhe />
+              </RequerPermissao>
+            }
+          />
+          <Route
+            path="/privacidade"
+            element={
+              <RequerPermissao recurso="CONFIG_PRIVACIDADE">
+                <Privacidade />
+              </RequerPermissao>
+            }
+          />
+          <Route
+            path="/cadastro/ajustes"
+            element={
+              <RequerPermissao recurso="CADASTRO_AJUSTES">
+                <Ajustes />
+              </RequerPermissao>
+            }
+          />
+          <Route
+            path="/cadastro/ajustes/:id"
+            element={
+              <RequerPermissao recurso="CADASTRO_AJUSTES">
+                <AjusteDetalhe />
+              </RequerPermissao>
+            }
+          />
+          <Route
+            path="/cadastro/fornecedores"
+            element={
+              <RequerPermissao recurso="CADASTRO_FORNECEDORES">
+                <Fornecedores />
+              </RequerPermissao>
+            }
+          />
+          <Route
+            path="/cadastro/contratos"
+            element={
+              <RequerPermissao recurso="CADASTRO_CONTRATOS">
+                <Contratos />
+              </RequerPermissao>
+            }
+          />
+          <Route
+            path="/cadastro/colaboradores"
+            element={
+              <RequerPermissao recurso="CADASTRO_COLABORADORES">
+                <Colaboradores />
+              </RequerPermissao>
+            }
+          />
+          <Route
+            path="/cadastro/bens-cedidos"
+            element={
+              <RequerPermissao recurso="CADASTRO_BENS_CEDIDOS">
+                <BensCedidos />
+              </RequerPermissao>
+            }
+          />
+          <Route
+            path="/cadastro/servidores-cedidos"
+            element={
+              <RequerPermissao recurso="CADASTRO_SERVIDORES_CEDIDOS">
+                <ServidoresCedidos />
+              </RequerPermissao>
+            }
+          />
 
           {/* Execução */}
           <Route path="/execucao/financeiro/contas-bancarias" element={<Placeholder title="Contas Bancárias" />} />
@@ -61,22 +132,66 @@ export default function App() {
           <Route path="/execucao/tecnico" element={<Placeholder title="Técnico" />} />
 
           {/* Demais */}
-          <Route path="/prestacao-contas" element={<PrestacaoContas />} />
-          <Route path="/prestacao-contas/:id" element={<PrestacaoDetalhe />} />
+          <Route
+            path="/prestacao-contas"
+            element={
+              <RequerPermissao recurso="PRESTACAO_CONTAS">
+                <PrestacaoContas />
+              </RequerPermissao>
+            }
+          />
+          <Route
+            path="/prestacao-contas/:id"
+            element={
+              <RequerPermissao recurso="PRESTACAO_CONTAS">
+                <PrestacaoDetalhe />
+              </RequerPermissao>
+            }
+          />
           <Route path="/relatorios" element={<Placeholder title="Relatórios" />} />
           <Route path="/fiscalizacao" element={<Placeholder title="Fiscalização | Monitoramento" />} />
           <Route path="/transparencia" element={<Placeholder title="Transparência" />} />
 
           {/* Configurações */}
-          <Route path="/empresas" element={<Empresas />} />
-          <Route path="/orgaos" element={<Orgaos />} />
-          <Route path="/usuarios" element={<Usuarios />} />
-          <Route path="/grupos" element={<Grupos />} />
+          <Route
+            path="/empresas"
+            element={
+              <RequerPermissao recurso="CADASTRO_EMPRESAS">
+                <Empresas />
+              </RequerPermissao>
+            }
+          />
+          <Route
+            path="/orgaos"
+            element={
+              <RequerPermissao recurso="CONFIG_ORGAOS">
+                <Orgaos />
+              </RequerPermissao>
+            }
+          />
+          <Route
+            path="/usuarios"
+            element={
+              <RequerPermissao recurso="CONFIG_USUARIOS">
+                <Usuarios />
+              </RequerPermissao>
+            }
+          />
+          <Route
+            path="/grupos"
+            element={
+              <RequerPermissao recurso="CONFIG_GRUPOS">
+                <Grupos />
+              </RequerPermissao>
+            }
+          />
           <Route
             path="/auditoria"
             element={
               <RequerGrupo grupos={GRUPOS_ADMIN}>
-                <Auditoria />
+                <RequerPermissao recurso="CONFIG_AUDITORIA">
+                  <Auditoria />
+                </RequerPermissao>
               </RequerGrupo>
             }
           />
