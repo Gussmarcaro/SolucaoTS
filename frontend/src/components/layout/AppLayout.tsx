@@ -34,10 +34,14 @@ export function AppLayout() {
         onToggleCollapse={() => setCollapsed((c) => !c)}
       />
 
-      {/* A área de conteúdo acompanha a largura do menu (com animação). */}
+      {/*
+       * A área de conteúdo acompanha a largura do menu (com animação). Na
+       * impressão o menu some, então o recuo tem de sumir junto — senão a
+       * folha sai com uma faixa em branco à esquerda.
+       */}
       <div
         className={cn(
-          'transition-[padding] duration-300',
+          'transition-[padding] duration-300 print:!pl-0',
           collapsed ? 'lg:pl-[76px]' : 'lg:pl-[264px]',
         )}
       >

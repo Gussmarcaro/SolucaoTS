@@ -15,6 +15,8 @@ export interface ParceriaPublicavel {
   objeto: string;
   entidadeNome: string;
   entidadeCnpj: string;
+  /** Órgão concessor da parceria — cabeçalho do documento publicado. */
+  orgaoNome: string | null;
   valorGlobal: number;
   dataAssinatura: string;
   vigenciaInicial: string | null;

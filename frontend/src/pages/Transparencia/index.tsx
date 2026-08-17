@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle2, Download, ExternalLink, Loader2, TriangleAlert } from 'lucide-react';
+import { CheckCircle2, Download, ExternalLink, Loader2, Printer, TriangleAlert } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -8,28 +8,9 @@ import { SeletorPagina } from '@/components/ui/SeletorPagina';
 import { usePageSize } from '@/lib/paginacao';
 import { formatarMoeda, dataBr } from '@/lib/masks';
 import { http, extrairMensagemErro } from '@/services/http';
-import { STATUS_PRESTACAO_LABEL, STATUS_PRESTACAO_TONE, type StatusPrestacao } from '@/types/prestacao';
+import { STATUS_PRESTACAO_LABEL, STATUS_PRESTACAO_TONE } from '@/types/prestacao';
 import { TIPO_AJUSTE_LABEL } from '@/types/ajuste';
-
-interface Parceria {
-  ajusteId: string;
-  codigoAjuste: string;
-  numero: string | null;
-  tipoAjuste: string;
-  objeto: string;
-  entidadeNome: string;
-  entidadeCnpj: string;
-  valorGlobal: number;
-  dataAssinatura: string;
-  vigenciaInicial: string | null;
-  vigenciaFinal: string | null;
-  publicacaoLocal: string | null;
-  publicacaoData: string | null;
-  publicacaoLink: string | null;
-  prestacaoStatus: StatusPrestacao | null;
-  prestacaoAno: number | null;
-  pendencias: string[];
-}
+import type { Parceria } from './tipos';
 
 /** Colunas do CSV — a mesma relação que vai ao portal do órgão. */
 const CABECALHO = [
@@ -119,10 +100,18 @@ export function Transparencia() {
         title="Transparência"
         subtitle="Relação das parcerias para publicação no portal do órgão, conforme o art. 10 da Lei 13.019/2014."
         actions={
-          <Button variant="secondary" onClick={exportar} disabled={!parcerias?.length}>
-            <Download className="h-4 w-4" />
-            Exportar CSV
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" onClick={exportar} disabled={!parcerias?.length}>
+              <Download className="h-4 w-4" />
+              Exportar CSV
+            </Button>
+            <Link to="/transparencia/relatorio">
+              <Button disabled={!parcerias?.length}>
+                <Printer className="h-4 w-4" />
+                Relatório / PDF
+              </Button>
+            </Link>
+          </div>
         }
       />
 

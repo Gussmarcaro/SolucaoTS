@@ -27,6 +27,7 @@ import { Contratos } from '@/pages/Contratos';
 import { BensCedidos } from '@/pages/BensCedidos';
 import { ServidoresCedidos } from '@/pages/ServidoresCedidos';
 import { Transparencia } from '@/pages/Transparencia';
+import { TransparenciaRelatorio } from '@/pages/Transparencia/Relatorio';
 import { Placeholder } from '@/pages/Placeholder';
 
 export default function App() {
@@ -161,13 +162,21 @@ export default function App() {
           <Route path="/relatorios" element={<Placeholder title="Relatórios" />} />
           <Route path="/fiscalizacao" element={<Placeholder title="Fiscalização | Monitoramento" />} />
           <Route
-                      path="/transparencia"
-                      element={
-                        <RequerPermissao recurso="TRANSPARENCIA">
-                          <Transparencia />
-                        </RequerPermissao>
-                      }
-                    />
+            path="/transparencia"
+            element={
+              <RequerPermissao recurso="TRANSPARENCIA">
+                <Transparencia />
+              </RequerPermissao>
+            }
+          />
+          <Route
+            path="/transparencia/relatorio"
+            element={
+              <RequerPermissao recurso="TRANSPARENCIA">
+                <TransparenciaRelatorio />
+              </RequerPermissao>
+            }
+          />
 
           {/* Configurações */}
           <Route

@@ -232,3 +232,12 @@ Renderiza o **mesmo `documentoJSON`** que vai ao TCESP (`GET /prestacoes/:id/jso
 - A situação vem da **prestação mais recente** de cada ajuste (art. 10, VII).
 - Export em CSV com `;` e BOM — abre direto no Excel em português, que costuma ser a etapa seguinte da publicação.
 - Recurso `TRANSPARENCIA`, faixa Consulta basta.
+
+### Relatório para publicar (`/transparencia/relatorio`)
+
+Botão **Relatório / PDF** na tela. Documento formal — cabeçalho institucional, base legal, resumo (parcerias, valor global, quantas têm prestação), tabela de 7 colunas com rodapé de total e linha de assinatura —, impresso pelo navegador (`window.print()` → salvar em PDF).
+
+- **As pendências ficam de fora, de propósito.** A tela serve para caçá-las; o relatório é o que vai ao portal e ao processo, e publicar a própria lista de irregularidades não é o objetivo.
+- **Sem variantes `dark:`.** É a folha de papel na tela, como um visualizador de PDF: no modo escuro o documento continua branco e o que se vê é o que sai na impressora. Com tema, quem trabalha no escuro imprimiria texto claro sobre papel branco — o navegador não imprime o fundo.
+- O cabeçalho só nomeia o órgão quando **todas** as parcerias são do mesmo (`orgaoNome`, vindo de `Ajuste.cliente.nome`); com vários, um nome só seria mentira.
+- O `@media print` do `index.css` é compartilhado com o Espelho; `print:!pl-0` no `AppLayout` tira o recuo do menu escondido.

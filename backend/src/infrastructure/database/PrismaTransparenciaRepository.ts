@@ -24,6 +24,7 @@ export class PrismaTransparenciaRepository implements ITransparenciaRepository {
         publicacaoData: true,
         publicacaoLink: true,
         entidadeBeneficiaria: { select: { razaoSocial: true, cnpj: true } },
+        cliente: { select: { nome: true } },
         // A prestação mais recente representa a situação atual da parceria —
         // é o que o art. 10 pede que se publique.
         prestacoesContas: {
@@ -45,6 +46,7 @@ export class PrismaTransparenciaRepository implements ITransparenciaRepository {
       objeto: a.objeto,
       entidadeNome: a.entidadeBeneficiaria.razaoSocial,
       entidadeCnpj: a.entidadeBeneficiaria.cnpj,
+      orgaoNome: a.cliente?.nome ?? null,
       valorGlobal: Number(a.valorGlobal),
       dataAssinatura: paraDataISO(a.dataAssinatura),
       vigenciaInicial: iso(a.vigenciaInicial),
