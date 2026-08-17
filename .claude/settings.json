@@ -14,7 +14,8 @@
       "Bash(npx tsx *)",
       "Bash(node -e \"console.log\\('ANTHROPIC_API_KEY:', process.env.ANTHROPIC_API_KEY ? 'definida' : 'ausente'\\)\")",
       "Bash(ant auth *)",
-      "Bash(node -e \"const s=require\\('fs'\\).readFileSync\\('pages/Usuarios/UsuariosList.tsx','utf8'\\); console.log\\('CRLF:', \\(s.match\\(/\\\\r\\\\n/g\\)||[]\\).length, ' LF puro:', \\(s.match\\(/\\(?<!\\\\r\\)\\\\n/g\\)||[]\\).length\\);\")"
+      "Bash(node -e \"const s=require\\('fs'\\).readFileSync\\('pages/Usuarios/UsuariosList.tsx','utf8'\\); console.log\\('CRLF:', \\(s.match\\(/\\\\r\\\\n/g\\)||[]\\).length, ' LF puro:', \\(s.match\\(/\\(?<!\\\\r\\)\\\\n/g\\)||[]\\).length\\);\")",
+      "Bash(npx prisma *)"
     ]
   }
 }

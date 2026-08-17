@@ -140,6 +140,13 @@ model Cliente {
   certidoes             Certidao[]
   ajustes               Ajuste[]
   projetos              Projeto[]
+  tarefas               Tarefa[]
+  empresas              Empresa[]
+  fornecedores          Fornecedor[]
+  colaboradores         Colaborador[]
+  contratosFirmados     ContratoFirmado[]
+  bensCedidos           BemCedido[]
+  servidoresCedidos     ServidorCedidoCadastro[]
 
   @@unique([codigoMunicipio, codigoEntidade])
   @@index([tipoOrgao])
@@ -185,6 +192,7 @@ model Usuario {
 // Dados da Empresa / Contratante (suporta multi-empresa / filiais)
 model Empresa {
   id                 String   @id @default(uuid()) @db.Uuid
+  clienteId          String?  @db.Uuid // órgão dono do registro — opcional até o backfill
   razaoSocial        String
   nomeFantasia       String?
   cnpj               String   @unique @db.VarChar(14) // só dígitos — trava de duplicidade
@@ -206,6 +214,9 @@ model Empresa {
   criadoEm           DateTime @default(now())
   atualizadoEm       DateTime @updatedAt
 
+  cliente Cliente? @relation(fields: [clienteId], references: [id])
+
+  @@index([clienteId])
   @@index([cidade])
   @@index([uf])
   @@index([ativo])
@@ -214,6 +225,7 @@ model Empresa {
 // Fornecedores / Prestadores (credores de documentos fiscais e contratos)
 model Fornecedor {
   id                String        @id @default(uuid()) @db.Uuid
+  clienteId         String?       @db.Uuid // órgão dono do registro — opcional até o backfill
   nome              String // Nome Completo / Razão Social
   documento         String        @unique @db.VarChar(14) // CPF (11) ou CNPJ (14), só dígitos
   documentoTipo     TipoDocumento // CPF | CNPJ
@@ -234,6 +246,9 @@ model Fornecedor {
   criadoEm          DateTime      @default(now())
   atualizadoEm      DateTime      @updatedAt
 
+  cliente Cliente? @relation(fields: [clienteId], references: [id])
+
+  @@index([clienteId])
   @@index([cidade])
   @@index([uf])
   @@index([ativo])
@@ -242,6 +257,7 @@ model Fornecedor {
 // Colaboradores / Empregados da entidade beneficiária (bloco "Relação de Empregados")
 model Colaborador {
   id                String    @id @default(uuid()) @db.Uuid
+  clienteId         String?   @db.Uuid // órgão dono do registro — opcional até o backfill
   nome              String
   cpf               String    @unique @db.VarChar(11) // só dígitos
   cargo             String // função / cargo
@@ -256,6 +272,9 @@ model Colaborador {
   criadoEm          DateTime  @default(now())
   atualizadoEm      DateTime  @updatedAt
 
+  cliente Cliente? @relation(fields: [clienteId], references: [id])
+
+  @@index([clienteId])
   @@index([nome])
   @@index([cargo])
   @@index([ativo])
@@ -265,6 +284,7 @@ model Colaborador {
 // prestação `Contrato`, que é a versão transmitida ao TCESP).
 model ContratoFirmado {
   id                  String        @id @default(uuid()) @db.Uuid
+  clienteId           String?       @db.Uuid // órgão dono do registro — opcional até o backfill
   numero              String
   credorNome          String
   credorDocumento     String        @db.VarChar(14) // CPF (11) ou CNPJ (14), só dígitos
@@ -281,7 +301,10 @@ model ContratoFirmado {
   criadoEm            DateTime      @default(now())
   atualizadoEm        DateTime      @updatedAt
 
+  cliente Cliente? @relation(fields: [clienteId], references: [id])
+
   @@unique([numero, credorDocumento])
+  @@index([clienteId])
   @@index([dataAssinatura])
   @@index([ativo])
 }
@@ -289,6 +312,7 @@ model ContratoFirmado {
 // Cadastro de Bens Cedidos (standalone) — distinto do BemCedidoCadastro do Ajuste
 model BemCedido {
   id            String    @id @default(uuid()) @db.Uuid
+  clienteId     String?   @db.Uuid // órgão dono do registro — opcional até o backfill
   descricao     String
   tipo          String // Móvel, Imóvel, Veículo, Equipamento, Outros
   identificador String    @unique // nº de patrimônio / placa / identificação
@@ -302,6 +326,9 @@ model BemCedido {
   criadoEm      DateTime  @default(now())
   atualizadoEm  DateTime  @updatedAt
 
+  cliente Cliente? @relation(fields: [clienteId], references: [id])
+
+  @@index([clienteId])
   @@index([tipo])
   @@index([ativo])
 }
@@ -309,6 +336,7 @@ model BemCedido {
 // Cadastro de Servidores Cedidos (standalone) — precede o bloco de prestação ServidorCedido
 model ServidorCedidoCadastro {
   id                String    @id @default(uuid()) @db.Uuid
+  clienteId         String?   @db.Uuid // órgão dono do registro — opcional até o backfill
   nome              String
   cpf               String    @unique @db.VarChar(11) // só dígitos
   cargoPublico      String
@@ -324,6 +352,9 @@ model ServidorCedidoCadastro {
   criadoEm          DateTime  @default(now())
   atualizadoEm      DateTime  @updatedAt
 
+  cliente Cliente? @relation(fields: [clienteId], references: [id])
+
+  @@index([clienteId])
   @@index([nome])
   @@index([ativo])
 }
@@ -1278,6 +1309,9 @@ model Projeto {
 
 model Tarefa {
   id            String           @id @default(uuid()) @db.Uuid
+  // Órgão dono da tarefa. Não dá para herdar do ajuste: tarefa avulsa não tem
+  // ajuste, e é justamente ela que ficaria sem dono.
+  clienteId     String?          @db.Uuid // opcional até o backfill
   projetoId     String?          @db.Uuid // agrupamento opcional (ver Projeto)
   ajusteId      String?          @db.Uuid // ajuste acompanhado; nulo em tarefa avulsa
   responsavelId String?          @db.Uuid
@@ -1297,10 +1331,12 @@ model Tarefa {
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
+  cliente     Cliente? @relation(fields: [clienteId], references: [id])
   projeto     Projeto? @relation(fields: [projetoId], references: [id])
   ajuste      Ajuste?  @relation(fields: [ajusteId], references: [id])
   responsavel Usuario? @relation(fields: [responsavelId], references: [id])
 
+  @@index([clienteId])
   @@index([projetoId])
   @@index([ajusteId])
   @@index([prazoLegal])
