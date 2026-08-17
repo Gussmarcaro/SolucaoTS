@@ -59,6 +59,19 @@ export async function permissoesDoGrupo(grupoNome: string): Promise<Concessoes> 
   const emCache = cache.get(grupoNome);
   if (emCache && emCache.expiraEm > agora) return emCache.concessoes;
 
+  /*
+   * ATENÇÃO — esta consulta passa pelo filtro multi-tenant (`GrupoUsuario` é
+   * raiz). É o comportamento correto: com dois órgãos tendo um grupo chamado
+   * "Administrador", resolver por nome sem recorte pegaria um deles ao acaso.
+   *
+   * Mas cria um acoplamento que precisa ser conhecido: **grupo não encontrado
+   * vira "nenhuma permissão configurada", e isso libera tudo** (a regra de
+   * quem nunca passou pela matriz). Ou seja, um usuário com órgão cujo grupo
+   * ainda esteja sem órgão não fica trancado — fica com acesso total.
+   *
+   * Daí a ordem obrigatória do backfill: `Usuario.clienteId` só pode ser
+   * preenchido junto com o das demais raízes, nunca antes.
+   */
   const grupo = await prisma.grupoUsuario.findFirst({
     where: { nome: grupoNome, ativo: true },
     select: { permissoes: { select: { permissao: { select: { modulo: true, acao: true } } } } },

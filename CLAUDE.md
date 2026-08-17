@@ -155,6 +155,7 @@ No `backend/`:
 - `npm run verificar:montador` — conferir o montador contra o schema e as regras de negócio (sem banco).
 - `npm run verificar:auditoria` — conferir as regras da trilha de auditoria (sem banco).
 - `npm run verificar:workflow` — conferir as regras das tarefas de acompanhamento (sem banco).
+- `npm run verificar:tenant` — conferir o isolamento multi-tenant (sem banco).
 
 No `frontend/`: `npm run dev` (Vite em :5173) e `npm run build`.
 
@@ -197,6 +198,21 @@ Grade + formulário no padrão dos cadastros, com quatro recortes (Em aberto / A
 - **`Projeto` continua no schema e sem uso.** A tarefa liga direto ao `Ajuste`, que é o recorte do dia a dia; inventar projeto invisível só para satisfazer uma FK criaria linha que ninguém administra. `Tarefa.projetoId` virou opcional para isso.
 - **`npm run verificar:workflow`** (sem banco) cobre validação, o carimbo da conclusão, a idempotência, a imutabilidade da origem e a própria lista de silenciáveis — acrescentar `CERTIDAO` a ela é o erro mais caro do módulo. O comportamento do silêncio é provado em `verificar:alertas`.
 - Recurso `FISCALIZACAO`. Excluir exige faixa **Total**; para encerrar sem apagar histórico, o caminho é o status **Cancelada**.
+
+## Isolamento multi-tenant (em migração)
+
+Cada órgão só enxerga os próprios dados. O filtro vive numa **extension do Prisma** (`extensaoTenant.ts`), como a auditoria, e pelo mesmo motivo: vale para todo caminho que consulte, inclusive código futuro. Repositório novo sem a cláusula funcionaria perfeitamente para quem o escreveu — e para os outros órgãos também.
+
+- **Só as raízes são filtradas.** `MODELS_COM_CLIENTE` sai do schema (13 models com `clienteId`) mais o `Cliente`, recortado pelo próprio `id`. Os outros 44 alcançam o órgão pelo pai — bloco da prestação → prestação → ajuste —, então filtrar a raiz fecha o caminho. Denormalizar `clienteId` nas 44 tabelas responderia com uma coluna o que a relação já responde.
+- **Limite conhecido:** buscar um filho direto por id, com id de outro órgão, passa. São UUID v4, que não se adivinha, mas isso não é isolamento — filho que ganhar rota própria de consulta por id precisa conferir o dono pela raiz.
+- Operação de chave única (`findUnique`, `update`, `delete`, `upsert`) recebe o filtro **ao lado** da chave (o Prisma exige uma no topo); as demais recebem por **`AND`**, para um filtro do chamador com a mesma chave não sobrescrever o do tenant.
+- **Contexto sem órgão = sem filtro.** É o caso de seeds, scripts e startup — que precisam enxergar tudo — e, transitoriamente, de tokens antigos e usuários ainda sem órgão. O token leva o órgão no claim `cli`, lido no login; trocar um usuário de órgão só vale no próximo login.
+- **`create` não é filtrado, é carimbado** — a extension de auditoria preenche `clienteId` junto do `criadoPor`, senão o backfill consertaria o passado enquanto o presente seguisse gerando órfãos.
+- **`npm run verificar:tenant`** exercita a regra como função pura, sem banco.
+
+**Ordem obrigatória do backfill (fase 4).** `Usuario.clienteId` só pode ser preenchido **junto** com o das demais raízes, nunca antes. Motivo: `permissoesCache` resolve o grupo por nome e passa pelo filtro; grupo não encontrado vira "nenhuma permissão configurada", que **libera tudo**. Um usuário com órgão cujo grupo ainda esteja sem órgão ganharia acesso total — não ficaria trancado.
+
+Falta a fase 4: backfill, `@unique` compostos com `clienteId` (hoje `cnpj`/`cpf`/`codigoAjuste` são únicos no sistema inteiro, o que já impede dois órgãos de cadastrarem a mesma OSC), colunas obrigatórias e a tela de escolher o órgão ao criar usuário.
 
 ## Permissões por grupo (RBAC)
 
