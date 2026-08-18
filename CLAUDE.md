@@ -228,6 +228,10 @@ Duas camadas de checagem automatizada:
 
   É a única camada que prova a ligação inteira — claim `cli` → `AsyncLocalStorage` → as duas extensions na ordem certa → o SQL com o recorte. Qualquer elo pode se soltar num refactor sem nada quebrar visivelmente: o sistema continua funcionando, e vazando.
 
+No `frontend/`, **`npm test`** (vitest) cobre a lógica pura que erra em silêncio: dígitos verificadores de CPF/CNPJ, a ida-e-volta da máscara de moeda (é ela que transforma o que o usuário digitou no valor da prestação) e `dataBr` sem deslocamento de fuso.
+
+**A regra de prazo das tarefas está escrita duas vezes** — `core/tarefa/Tarefa.ts` no backend e `types/tarefa.ts` no front. Podem divergir sem nada quebrar: a grade diria "em dia" e o servidor consideraria atrasada. `src/types/tarefa.test.ts` fixa os mesmos limiares dos dois lados (inclusive o `≤ 7 dias` inclusivo) e é onde a divergência aparece.
+
 ## Assistente da Fase V
 
 Ícone ao lado da lupa na barra superior. Responde sobre a Fase V e sobre o uso do sistema **ancorado na documentação embarcada** — não no conhecimento geral do modelo. Backend: `POST /assistente` (streaming SSE) e `GET /assistente/status`.

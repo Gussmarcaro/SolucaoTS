@@ -106,6 +106,9 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit
 
+      - name: Testes
+        run: npm test
+
       # O build é a verificação final: pega o que o typecheck deixa passar
       # (importação de arquivo inexistente, por exemplo).
       - name: Build
