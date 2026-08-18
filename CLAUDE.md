@@ -156,10 +156,11 @@ No `backend/`:
 - `npm run verificar:auditoria` — conferir as regras da trilha de auditoria (sem banco).
 - `npm run verificar:workflow` — conferir as regras das tarefas de acompanhamento (sem banco).
 - `npm run verificar:tenant` — conferir o isolamento multi-tenant (sem banco).
+- `npm run tenant:backfill` — atribuir um órgão aos registros anteriores ao multi-tenant (roda **uma vez**).
 
 No `frontend/`: `npm run dev` (Vite em :5173) e `npm run build`.
 
-Não há framework de testes ainda; `verificar:montador` é a única checagem automatizada e roda como script.
+Não há framework de testes ainda. As checagens automatizadas são os scripts `verificar:*` (montador, auditoria, alertas, permissões, assistente, workflow, tenant) — todos rodam sem banco.
 
 ## Assistente da Fase V
 
