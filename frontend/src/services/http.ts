@@ -44,7 +44,17 @@ http.interceptors.response.use(
 /** Extrai a mensagem de erro amigável de uma resposta da API. */
 export function extrairMensagemErro(error: unknown, fallback = 'Ocorreu um erro inesperado.'): string {
   if (axios.isAxiosError(error)) {
-    return error.response?.data?.message ?? error.message ?? fallback;
+    const dados = error.response?.data;
+    const mensagem = dados?.message ?? error.message ?? fallback;
+    /*
+     * Erro inesperado vem com o id da requisição. Mostrá-lo é o que fecha o
+     * ciclo do log: o usuário lê o código na tela, repassa no chamado, e a
+     * busca no servidor é imediata — em vez de "consegue reproduzir?".
+     *
+     * Só aparece no 500. Nas recusas previstas (senha errada, dado inválido) o
+     * usuário resolve sozinho, e um código na mensagem só assustaria.
+     */
+    return dados?.requisicaoId ? `${mensagem} (código ${dados.requisicaoId})` : mensagem;
   }
   return fallback;
 }

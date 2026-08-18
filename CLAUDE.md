@@ -103,6 +103,24 @@ Esse cruzamento também confirmou que a extração da ND 2025 está fiel: 1717 l
 
 Armadilhas já verificadas: a spec em PDF (v1.1) está **defasada** — `categoria_despesas_tipo` foi renumerada por inteiro entre a v1.1 e a v1.14, então código capturado por aquela lista está errado. A planilha da STN ("Fonte ou Destinação de Recursos") é a tabela **nacional** e não corresponde ao `fonte_recurso_tipo` do TCESP. E o PDF erra ao dizer "3 – Outros" em `tipo_documento_bancario`: o schema define `2 = Outros` e `3 = Cheque`.
 
+## Log estruturado (`shared/log.ts`)
+
+Uma linha JSON por requisição, no stdout — que toda hospedagem já captura, sem nada a instalar ou manter no ar.
+
+```json
+{"t":"…","nivel":"erro","evento":"requisicao","req":"a3f9","metodo":"POST",
+ "rota":"/api/prestacoes/:id/transmitir","status":500,"ms":1840,"usuario":"…","orgao":"…"}
+```
+
+- **`orgao` é o campo que justifica tudo isso.** Num sistema multi-tenant, é a diferença entre saber que algo falhou e saber *para quem* falhou. A linha sai no `finish` da resposta justamente porque o órgão só existe depois de o `autenticar` ler o token.
+- **Não é a trilha de auditoria.** A auditoria responde "quem alterou este fornecedor" para o órgão e o Tribunal, e guarda para sempre; isto responde "por que a requisição das 14h32 falhou" para quem opera, e pode ser descartado em semanas. A auditoria **não** registra requisição que falhou — se a gravação estourou não há alteração a registrar, e é justo esse o caso a investigar.
+- **`AppError` não vira linha de erro.** Senha errada e dado inválido são uso normal; a linha da requisição já marca o 4xx como `aviso`. Só o inesperado (5xx) gera `erro-inesperado`, com o stack recortado em 6 linhas.
+- **O id da requisição volta ao usuário** no corpo do 500 e aparece na mensagem da tela (`código a3f9`). É o que troca "consegue reproduzir?" por uma busca de um segundo.
+- **Nada de corpo de requisição no log**, e `ocultarSensiveis` apaga senha, token, CPF/CNPJ em qualquer profundidade. Log é lugar clássico de vazamento de dado pessoal.
+- Identificador em caminho de URL vira `:id` (e número longo, `:n`) — sem isso cada requisição seria uma "rota" distinta e não haveria o que agrupar. A query string fica de fora, que é onde o usuário digita nome e CPF na busca.
+- `/health` não é registrado: o ping de minuto em minuto enterraria o resto.
+- Coberto por `npm test` (`tests/log.test.ts`), que **roda sem banco**.
+
 ## Limites de taxa (`middlewares/limites.ts`)
 
 `/auth/*` é a única família que responde **antes** da autenticação — a única porta que um estranho consegue empurrar. Três limites, por IP:

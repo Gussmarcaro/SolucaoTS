@@ -3,6 +3,7 @@ import cors from 'cors';
 import { routes } from '@/presentation/routes';
 import { errorHandler } from '@/presentation/middlewares/errorHandler';
 import { limiteGeral } from '@/presentation/middlewares/limites';
+import { registrarRequisicao } from '@/presentation/middlewares/registrarRequisicao';
 
 export const app = express();
 
@@ -25,6 +26,9 @@ const corsOrigin = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
   : '*';
 
+// Primeiro de todos: carimba o id da requisição e mede a duração, para que
+// até o que for recusado pelo CORS ou pelo limite de taxa apareça no log.
+app.use(registrarRequisicao);
 app.use(cors({ origin: corsOrigin }));
 app.use(express.json());
 app.use(limiteGeral);

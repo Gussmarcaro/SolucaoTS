@@ -1,5 +1,6 @@
 import { Prisma, type PrismaClient } from '@prisma/client';
 import { contextoAtual } from '@/shared/contexto';
+import { registrar as logar } from '@/shared/log';
 
 /**
  * Models que guardam quem incluiu o registro no campo `criadoPor`.
@@ -130,7 +131,11 @@ async function registrar(params: {
       },
     });
   } catch (err) {
-    console.error('[auditoria] falha ao registrar (não crítico):', err);
+    logar('aviso', 'auditoria-falhou', {
+      entidade: params.entidade,
+      acao: params.acao,
+      erro: err instanceof Error ? err.message : String(err),
+    });
   }
 }
 

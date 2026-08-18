@@ -1,10 +1,14 @@
 import type { NextFunction, Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 import { AppError } from '@/shared/errors';
+import { normalizarRota, registrar } from '@/shared/log';
 
 /** Middleware central de tratamento de erros. */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction) {
+export function errorHandler(err: unknown, req: Request, res: Response, _next: NextFunction) {
+  // `AppError` é recusa prevista (senha errada, sem permissão, dado inválido).
+  // Não vai para o log de erro: a linha da requisição já registra o 4xx, e
+  // registrar de novo transformaria uso normal em ruído de investigação.
   if (err instanceof AppError) {
     return res.status(err.statusCode).json({ code: err.code, message: err.message });
   }
@@ -18,6 +22,29 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     return res.status(409).json({ code: 'CONFLICT', message });
   }
 
-  console.error('[erro-inesperado]', err);
-  return res.status(500).json({ code: 'INTERNAL', message: 'Erro interno do servidor.' });
+  /*
+   * Erro não previsto: aqui é o único lugar que registra o stack.
+   *
+   * O id da requisição vai no log **e** na resposta. É o que transforma "não
+   * funcionou ontem" em uma busca de um segundo: o usuário lê o código na tela
+   * e você filtra por ele. Sem isso, resta perguntar se dá para reproduzir.
+   */
+  registrar('erro', 'erro-inesperado', {
+    req: req.id,
+    metodo: req.method,
+    rota: normalizarRota(req.originalUrl.split('?')[0]),
+    usuario: req.usuario?.id ?? null,
+    orgao: req.usuario?.clienteId ?? null,
+    erro: err instanceof Error ? err.message : String(err),
+    tipo: err instanceof Error ? err.name : typeof err,
+    // O corpo da requisição fica de fora de propósito: carregaria CPF, e-mail e
+    // às vezes senha para dentro do log. Rota e identificadores bastam.
+    stack: err instanceof Error ? err.stack?.split('\n').slice(0, 6).join('\n') : undefined,
+  });
+
+  return res.status(500).json({
+    code: 'INTERNAL',
+    message: 'Erro interno do servidor.',
+    requisicaoId: req.id,
+  });
 }
