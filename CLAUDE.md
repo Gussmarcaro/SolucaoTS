@@ -148,6 +148,7 @@ Ou seja, a periodicidade Quadrimestral/Anual do `Fase_V_entidades` dirige o praz
 No `backend/`:
 - `npm run dev` / `npm start` — sobe a API (`/api`, healthcheck em `/api/health`).
 - `npm run typecheck` — `tsc --noEmit`.
+- `npm test` — testes de integração (precisa de `DATABASE_URL_TEST`; sem ela, pula).
 - `npx prisma format` / `npx prisma generate` — formatar o schema / gerar o client tipado.
 - `npm run db:push` — aplicar o schema no banco (é o que o Render roda no deploy).
 - `npm run dominios:gerar` / `npm run dominios:seed` — regerar e carregar CBO e classificação econômica (tabelas grandes, no banco).
@@ -162,7 +163,20 @@ No `backend/`:
 
 No `frontend/`: `npm run dev` (Vite em :5173) e `npm run build`.
 
-Não há framework de testes ainda. As checagens automatizadas são os scripts `verificar:*` (montador, auditoria, alertas, permissões, assistente, workflow, tenant) — todos rodam sem banco.
+Duas camadas de checagem automatizada:
+
+- **`verificar:*`** (montador, auditoria, alertas, permissões, assistente, workflow, tenant) — regras puras, **sem banco**. Rodam em qualquer lugar e são a rede do dia a dia.
+- **`npm test`** (vitest + supertest) — integração de verdade, **com Postgres**. Hoje cobre o isolamento multi-tenant de ponta a ponta: dois órgãos provisionados, e cada cenário provando que um **não** alcança o outro (listagem, busca por id, alteração, busca global, contagem, usuários, `/orgaos`).
+
+  Sem `DATABASE_URL_TEST` a suíte **pula** em vez de falhar — quem clonou para mexer no frontend não deve ver vermelho por não ter Postgres. Para rodar de fato:
+
+  ```
+  DATABASE_URL_TEST="postgresql://…/solucaots_test" npm test
+  ```
+
+  O banco apontado é **truncado** a cada rodada; a variável é separada de `DATABASE_URL` exatamente para isso.
+
+  É a única camada que prova a ligação inteira — claim `cli` → `AsyncLocalStorage` → as duas extensions na ordem certa → o SQL com o recorte. Qualquer elo pode se soltar num refactor sem nada quebrar visivelmente: o sistema continua funcionando, e vazando.
 
 ## Assistente da Fase V
 
