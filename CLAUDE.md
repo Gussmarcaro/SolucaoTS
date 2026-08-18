@@ -103,6 +103,22 @@ Esse cruzamento também confirmou que a extração da ND 2025 está fiel: 1717 l
 
 Armadilhas já verificadas: a spec em PDF (v1.1) está **defasada** — `categoria_despesas_tipo` foi renumerada por inteiro entre a v1.1 e a v1.14, então código capturado por aquela lista está errado. A planilha da STN ("Fonte ou Destinação de Recursos") é a tabela **nacional** e não corresponde ao `fonte_recurso_tipo` do TCESP. E o PDF erra ao dizer "3 – Outros" em `tipo_documento_bancario`: o schema define `2 = Outros` e `3 = Cheque`.
 
+## Limites de taxa (`middlewares/limites.ts`)
+
+`/auth/*` é a única família que responde **antes** da autenticação — a única porta que um estranho consegue empurrar. Três limites, por IP:
+
+| Rota | Limite | Conta o quê |
+|---|---|---|
+| `/auth/login` | 10 / 15 min | **só as falhas** (`skipSuccessfulRequests`) |
+| `/auth/esqueci-senha`, `/auth/redefinir-senha` | 5 / hora | tudo, inclusive sucesso |
+| API inteira | 300 / min | tudo, menos `/health` |
+
+- **Por IP, nunca por e-mail.** Limitar por conta deixaria qualquer um trancar a conta de qualquer outro só errando a senha dele — trocaria força bruta por negação de serviço dirigida.
+- **Sucesso no login não consome cota.** Sem isso, um escritório inteiro atrás do mesmo IP se tranca no meio do expediente. Na recuperação é o contrário, e de propósito: é o pedido *bem-sucedido* que dispara e-mail na caixa de outra pessoa.
+- O teto geral não é contra ataque, é contra o laço acidental — um `useEffect` mal escrito disparando mil requisições por minuto derruba o banco de todos os órgãos.
+- **`app.set('trust proxy', 1)`** é obrigatório em produção e vem antes dos limites: atrás do proxy da hospedagem, sem isso o `req.ip` de todo mundo é o mesmo e as dez primeiras senhas erradas do sistema trancam todos os órgãos. É **um salto**, não `true` — confiar em todos deixaria forjar o `X-Forwarded-For` e escapar do limite. Ajustável por `TRUST_PROXY`.
+- Coberto por `npm test` (`tests/limites.test.ts`), que **roda sem banco**.
+
 ## Autenticação e auditoria
 
 **Toda rota exige JWT**, exceto `/health` e `/auth/*`. O middleware `autenticar` valida o Bearer, popula `req.usuario` e abre um **`AsyncLocalStorage`** (`shared/contexto.ts`) com usuário e rota. É esse contexto que permite à camada de dados saber *quem* está operando sem que use cases e repositórios recebam o usuário como parâmetro — a regra de dependência continua intacta.
