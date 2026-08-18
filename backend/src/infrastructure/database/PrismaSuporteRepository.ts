@@ -72,7 +72,13 @@ export class PrismaSuporteRepository implements ISuporteRepository {
       tipoOrgao: string;
       periodicidade: string;
     };
-    admin: { nome: string; email: string; documento: string; senhaHash: string };
+    admin: {
+      nome: string;
+      email: string;
+      documento: string;
+      senhaHash: string;
+      suporte?: boolean;
+    };
   }): Promise<ProvisionarResultado> {
     return prismaGlobal.$transaction(async (tx) => {
       const cliente = await tx.cliente.create({
@@ -109,6 +115,7 @@ export class PrismaSuporteRepository implements ISuporteRepository {
           documento: dados.admin.documento,
           email: dados.admin.email,
           senhaHash: dados.admin.senhaHash,
+          suporte: dados.admin.suporte === true,
           // Endereço e celular são obrigatórios no cadastro, mas o suporte não
           // os conhece no provisionamento. Ficam em branco para o próprio
           // administrador completar no primeiro acesso.

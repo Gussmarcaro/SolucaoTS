@@ -158,6 +158,7 @@ No `backend/`:
 - `npm run verificar:tenant` — conferir o isolamento multi-tenant (sem banco).
 - `npm run tenant:backfill` — atribuir um órgão aos registros anteriores ao multi-tenant (roda **uma vez**).
 - `npm run suporte:conceder -- <email>` / `suporte:revogar` / `suporte:listar` — marca da equipe do fornecedor.
+- `npm run bootstrap -- --orgao … --cnpj … --email … --senha …` — **banco vazio**: cria o primeiro órgão, o grupo e o primeiro usuário (com marca de suporte). Recusa rodar se já houver usuário.
 
 No `frontend/`: `npm run dev` (Vite em :5173) e `npm run build`.
 
@@ -238,6 +239,8 @@ O carimbo automático resolve o dia a dia (o admin da Prefeitura X só cria usu�
 - **`prismaGlobal`** (em `prisma.ts`) é o único client sem o recorte por órgão, e existe só para isso. `verificar:tenant` reprova qualquer import dele fora de `PrismaSuporteRepository` — é um furo que nenhum teste de funcionalidade pegaria, porque tudo continua funcionando.
 
 **Provisionar um segundo órgão só funciona depois do aperto (4b).** Enquanto os `@unique` globais estiverem de pé, o grupo `Administrador` do segundo cliente colide com o do primeiro.
+
+**Banco vazio não se alcança sozinho.** Sem usuário não há login, sem login não há token, e sem token não há como chamar `/suporte/provisionar`. `npm run bootstrap` é o único caminho que cria usuário sem ninguém autenticado: primeiro órgão + grupo + primeiro usuário **com a marca de suporte**, para que daí em diante tudo aconteça pela interface. Recusa rodar se já existir usuário.
 
 ## Permissões por grupo (RBAC)
 

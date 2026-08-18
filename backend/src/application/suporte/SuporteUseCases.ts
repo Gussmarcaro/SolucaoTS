@@ -60,7 +60,14 @@ export interface ISuporteRepository {
       tipoOrgao: string;
       periodicidade: string;
     };
-    admin: { nome: string; email: string; documento: string; senhaHash: string };
+    admin: {
+      nome: string;
+      email: string;
+      documento: string;
+      senhaHash: string;
+      /** Marca de equipe do fornecedor — só o bootstrap do sistema usa. */
+      suporte?: boolean;
+    };
   }): Promise<ProvisionarResultado>;
   emailEmUso(email: string): Promise<boolean>;
   documentoEmUso(documento: string): Promise<boolean>;
