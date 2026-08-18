@@ -121,6 +121,20 @@ Uma linha JSON por requisição, no stdout — que toda hospedagem já captura, 
 - `/health` não é registrado: o ping de minuto em minuto enterraria o resto.
 - Coberto por `npm test` (`tests/log.test.ts`), que **roda sem banco**.
 
+### Agregação de erros (`shared/monitoramento.ts`)
+
+Sentry, **ligado só quando `SENTRY_DSN` existe** — sem a variável nada é iniciado e nada sai, como o assistente sem `ANTHROPIC_API_KEY`.
+
+O log responde *"o que houve nesta requisição"*. Isto responde *"este erro é novo ou já acontece há semanas?"* e *"quantos órgãos ele atinge?"*, e avisa antes do telefonema.
+
+- **Por que serviço externo e não uma tabela nossa:** o erro que mais importa investigar é o que acontece **quando o banco está com problema** — e aí uma tabela não registra nada.
+- **Tudo que carrega dado pessoal está desligado explicitamente**, porque os padrões do SDK são permissivos: ele mandaria cookies, cabeçalhos (inclusive o `Authorization`), corpo das requisições, query string e parâmetros de SQL. Cada linha de `dataCollection` é uma decisão, não cópia de exemplo. `beforeSend` (`limparEvento`) é o cinto e suspensório: se uma atualização do SDK mudar um padrão, não vira vazamento silencioso.
+- **`AppError` não é reportado.** Senha errada e dado inválido são uso normal; no painel virariam ruído até o alerta ser ignorado.
+- **O órgão vai como _tag_**, não no corpo: tag é o que o painel agrupa e filtra. É a diferença entre "500 erros" e "500 erros, todos da Prefeitura X" — que costuma ser a resposta inteira.
+- `tracesSampleRate: 0`: o que se quer é erro; traço de transação carregaria consulta e parâmetro para fora sem necessidade.
+- O `server.ts` também registra `uncaughtException` e `unhandledRejection` — sem isso, "a API reiniciou sozinha às 3h" não deixa rastro nenhum.
+- Coberto por `tests/monitoramento.test.ts`, **sem rede e sem banco**: exercita quem decide *se* o erro sai e *o que* vai junto.
+
 ## Limites de taxa (`middlewares/limites.ts`)
 
 `/auth/*` é a única família que responde **antes** da autenticação — a única porta que um estranho consegue empurrar. Três limites, por IP:

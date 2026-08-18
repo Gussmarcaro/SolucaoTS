@@ -39,6 +39,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.116.0",
     "@prisma/client": "^5.19.1",
+    "@sentry/node": "^10.70.0",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
     "bcryptjs": "^2.4.3",

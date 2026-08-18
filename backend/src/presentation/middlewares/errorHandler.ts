@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 import { AppError } from '@/shared/errors';
 import { normalizarRota, registrar } from '@/shared/log';
+import { reportarErro } from '@/shared/monitoramento';
 
 /** Middleware central de tratamento de erros. */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -40,6 +41,16 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
     // O corpo da requisição fica de fora de propósito: carregaria CPF, e-mail e
     // às vezes senha para dentro do log. Rota e identificadores bastam.
     stack: err instanceof Error ? err.stack?.split('\n').slice(0, 6).join('\n') : undefined,
+  });
+
+  // Mesmo erro, dois destinos e dois propósitos: o log responde "o que houve
+  // nesta requisição", o agregador responde "isto é novo? atinge quantos
+  // órgãos?" — e avisa sem depender de alguém estar lendo log.
+  reportarErro(err, {
+    req: req.id,
+    rota: normalizarRota(req.originalUrl.split('?')[0]),
+    orgao: req.usuario?.clienteId ?? null,
+    usuario: req.usuario?.id ?? null,
   });
 
   return res.status(500).json({
