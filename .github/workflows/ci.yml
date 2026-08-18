@@ -1,0 +1,112 @@
+# Verificação automática a cada push e pull request.
+#
+# O repositório acumulou sete scripts `verificar:*` e uma suíte de testes, mas
+# até aqui nada os executava sozinho — uma rede de segurança que ninguém
+# segurava. É o que este arquivo resolve.
+#
+# Um ganho de tabela: o Postgres de serviço faz os testes de isolamento
+# multi-tenant rodarem **de verdade** a cada push. Eles foram escritos numa
+# máquina sem banco e, sem isto, ficariam sempre pulados — provando nada.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Push seguido de push cancela a execução anterior: o que importa é o estado
+# final do branch, não a fila de estados intermediários.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: solucaots
+          POSTGRES_PASSWORD: solucaots
+          POSTGRES_DB: solucaots_test
+        ports: ['5432:5432']
+        # Sem o healthcheck, os passos começam antes de o banco aceitar conexão
+        # e a falha aparece como erro de teste, não como banco ainda subindo.
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL_TEST: postgresql://solucaots:solucaots@localhost:5432/solucaots_test
+      # O `prisma generate` e os `verificar:*` não tocam o banco, mas o Prisma
+      # exige a variável para carregar o schema.
+      DATABASE_URL: postgresql://solucaots:solucaots@localhost:5432/solucaots_test
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - run: npm ci
+
+      # Os `verificar:*` leem `Prisma.dmmf` para derivar as listas de models —
+      # sem o client gerado, nenhum deles roda.
+      - name: Gerar o Prisma Client
+        run: npx prisma generate
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Verificações sem banco
+        run: |
+          npm run verificar:montador
+          npm run verificar:auditoria
+          npm run verificar:alertas
+          npm run verificar:permissoes
+          npm run verificar:assistente
+          npm run verificar:workflow
+          npm run verificar:tenant
+
+      # Aqui os 11 testes de isolamento deixam de ser pulados.
+      - name: Testes de integração
+        run: npm test
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      # O build é a verificação final: pega o que o typecheck deixa passar
+      # (importação de arquivo inexistente, por exemplo).
+      - name: Build
+        run: npm run build

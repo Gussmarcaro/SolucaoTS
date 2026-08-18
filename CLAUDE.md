@@ -211,6 +211,8 @@ No `backend/`:
 
 No `frontend/`: `npm run dev` (Vite em :5173) e `npm run build`.
 
+**A CI roda tudo isso a cada push e pull request** (`.github/workflows/ci.yml`): typecheck dos dois projetos, os sete `verificar:*`, o `npm test` e o build do frontend. O job do backend sobe um **Postgres de serviço** e aponta `DATABASE_URL_TEST` para ele — é lá que os testes de isolamento multi-tenant efetivamente rodam, já que a máquina de desenvolvimento pode não ter banco.
+
 Duas camadas de checagem automatizada:
 
 - **`verificar:*`** (montador, auditoria, alertas, permissões, assistente, workflow, tenant) — regras puras, **sem banco**. Rodam em qualquer lugar e são a rede do dia a dia.
