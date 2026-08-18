@@ -68,6 +68,45 @@ console.log('\nIsolamento multi-tenant\n');
   conferir('tabela de domínio não é raiz', !ehRaizDeTenant('Cbo'), 'catálogo oficial é comum a todos');
 }
 
+// --- chaves de duplicidade --------------------------------------------------
+// Um `@unique` global num cadastro de órgão é bug dos dois lados: impede a
+// Prefeitura B de cadastrar a mesma OSC que a A já cadastrou, e some com a
+// trava assim que a coluna do órgão entra no jogo.
+{
+  const CHAVES: Record<string, string> = {
+    Fornecedor: 'documento',
+    Colaborador: 'cpf',
+    BemCedido: 'identificador',
+    ServidorCedidoCadastro: 'cpf',
+    EntidadeBeneficiaria: 'cnpj',
+    Empresa: 'cnpj',
+    GrupoUsuario: 'nome',
+    Ajuste: 'codigoAjuste',
+  };
+
+  for (const [model, campo] of Object.entries(CHAVES)) {
+    const meta = Prisma.dmmf.datamodel.models.find((m) => m.name === model);
+    const composta = (meta?.uniqueFields ?? []).some(
+      (campos) => campos.length === 2 && campos.includes('clienteId') && campos.includes(campo),
+    );
+    conferir(`${model}.${campo} é único por órgão`, composta);
+  }
+
+  // Enquanto o backfill não roda, o `@unique` global continua de pé — é ele que
+  // segura a duplicidade, já que no Postgres NULL nunca conflita com NULL.
+  // Quando estas duas linhas trocarem de sinal, o aperto foi aplicado.
+  const globais = Object.entries(CHAVES).filter(([model, campo]) => {
+    const meta = Prisma.dmmf.datamodel.models.find((m) => m.name === model);
+    return meta?.fields.some((f) => f.name === campo && f.isUnique);
+  });
+  console.log(
+    `  --   ${globais.length} chave(s) ainda únicas no sistema inteiro: ${
+      globais.map(([m]) => m).join(', ') || '(nenhuma)'
+    }`,
+  );
+  console.log('       elas saem no aperto do schema, depois do backfill.');
+}
+
 // --- sem órgão no contexto -------------------------------------------------
 {
   const args: ArgsPrisma = { where: { ativo: true } };

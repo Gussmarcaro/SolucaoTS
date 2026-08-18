@@ -216,6 +216,7 @@ model Empresa {
 
   cliente Cliente? @relation(fields: [clienteId], references: [id])
 
+  @@unique([clienteId, cnpj])
   @@index([clienteId])
   @@index([cidade])
   @@index([uf])
@@ -248,6 +249,7 @@ model Fornecedor {
 
   cliente Cliente? @relation(fields: [clienteId], references: [id])
 
+  @@unique([clienteId, documento])
   @@index([clienteId])
   @@index([cidade])
   @@index([uf])
@@ -274,6 +276,7 @@ model Colaborador {
 
   cliente Cliente? @relation(fields: [clienteId], references: [id])
 
+  @@unique([clienteId, cpf])
   @@index([clienteId])
   @@index([nome])
   @@index([cargo])
@@ -328,6 +331,7 @@ model BemCedido {
 
   cliente Cliente? @relation(fields: [clienteId], references: [id])
 
+  @@unique([clienteId, identificador])
   @@index([clienteId])
   @@index([tipo])
   @@index([ativo])
@@ -354,6 +358,7 @@ model ServidorCedidoCadastro {
 
   cliente Cliente? @relation(fields: [clienteId], references: [id])
 
+  @@unique([clienteId, cpf])
   @@index([clienteId])
   @@index([nome])
   @@index([ativo])
@@ -375,6 +380,7 @@ model GrupoUsuario {
   usuarios   UsuarioGrupo[] // legado RBAC N:N (não usado ainda)
   permissoes GrupoUsuarioPermissao[]
 
+  @@unique([clienteId, nome])
   @@index([ativo])
 }
 
@@ -459,6 +465,7 @@ model EntidadeBeneficiaria {
   documentosRegularidade DocumentoRegularidade[]
   atasDiretoria          AtaDiretoriaArquivo[]
 
+  @@unique([clienteId, cnpj])
   @@index([cidade])
   @@index([uf])
   @@index([ativo])
@@ -701,6 +708,7 @@ model Ajuste {
   projetos         Projeto[]
   tarefas          Tarefa[]
 
+  @@unique([clienteId, codigoAjuste])
   @@index([tipoAjuste])
 }
 

@@ -212,7 +212,20 @@ Cada órgão só enxerga os próprios dados. O filtro vive numa **extension do P
 
 **Ordem obrigatória do backfill (fase 4).** `Usuario.clienteId` só pode ser preenchido **junto** com o das demais raízes, nunca antes. Motivo: `permissoesCache` resolve o grupo por nome e passa pelo filtro; grupo não encontrado vira "nenhuma permissão configurada", que **libera tudo**. Um usuário com órgão cujo grupo ainda esteja sem órgão ganharia acesso total — não ficaria trancado.
 
-Falta a fase 4: backfill, `@unique` compostos com `clienteId` (hoje `cnpj`/`cpf`/`codigoAjuste` são únicos no sistema inteiro, o que já impede dois órgãos de cadastrarem a mesma OSC), colunas obrigatórias e a tela de escolher o órgão ao criar usuário.
+### A migração, em ordem
+
+As 8 chaves de duplicidade dos cadastros (`Fornecedor.documento`, `Colaborador.cpf`, `BemCedido.identificador`, `ServidorCedidoCadastro.cpf`, `EntidadeBeneficiaria.cnpj`, `Empresa.cnpj`, `GrupoUsuario.nome`, `Ajuste.codigoAjuste`) ganharam o par `@@unique([clienteId, …])` **sem perder o `@unique` global**. Os dois convivem de propósito: enquanto `clienteId` é nulo em todo lugar, o composto não trava nada (no Postgres, `NULL` nunca conflita com `NULL`) e é o global que segura a duplicidade. Trocar os dois de uma vez abriria uma janela sem trava nenhuma.
+
+Ordem obrigatória em produção:
+
+1. **`db:push`** — cria as colunas e os índices compostos. Nada muda de comportamento.
+2. **`npm run tenant:backfill`** — atribui um órgão a todos os registros sem dono, **numa transação só**. Com mais de um órgão cadastrado ele para e pede o id, em vez de adivinhar: adivinhar aqui é entregar os dados de um cliente a outro.
+3. **Todos relogam** — o token só leva o órgão a partir do próximo login.
+4. **O aperto** (ainda por fazer): remover os 8 `@unique` globais e tornar `clienteId` obrigatório nas 13 raízes. É o passo que consuma a migração, e só é seguro depois do backfill.
+
+Enquanto o passo 2 não roda, **ninguém pode ter `clienteId` atribuído à mão** — cai na armadilha do RBAC descrita acima.
+
+**Onboarding de um órgão novo ainda não tem caminho.** O `create` carimba o órgão de quem está criando, o que resolve o dia a dia (o admin da Prefeitura X cria usuários da Prefeitura X), mas não o primeiro usuário de um cliente novo, nem o acesso do Suporte do fornecedor a outro órgão. Isso é feature a desenhar — e a forma certa é uma troca de órgão explícita e auditada, não um grupo que enxerga tudo: nome de grupo é cadastro livre e não serve de fronteira de segurança.
 
 ## Permissões por grupo (RBAC)
 
