@@ -19,7 +19,7 @@ O cadastro de **Empresas** está **suspenso** (11/08/2026): saiu do menu em `nav
 
 O **usuário do sistema é sempre pessoa física**: `Usuario.documento` é CPF, sem `documentoTipo`. Fornecedor, Contrato e DocumentoFiscal continuam aceitando PF ou PJ — é lá que vive o enum `TipoDocumento`.
 
-Ainda **não há testes automatizados**. Antes de assumir que um comando existe, confira o `package.json` correspondente.
+Checagem automatizada em duas camadas: os scripts **`verificar:*`** (regras puras, sem banco) e **`npm test`** (integração com Postgres, hoje cobrindo o isolamento multi-tenant). Ver "Comandos". Antes de assumir que um comando existe, confira o `package.json` correspondente.
 
 ## Leitura obrigatória antes de codar o domínio
 
