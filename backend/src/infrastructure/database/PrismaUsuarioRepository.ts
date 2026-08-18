@@ -33,14 +33,16 @@ const selecao = {
   criadoEm: true,
   atualizadoEm: true,
   grupoUsuario: { select: { nome: true } },
+  cliente: { select: { nome: true } },
 } satisfies Prisma.UsuarioSelect;
 
 type UsuarioRow = Prisma.UsuarioGetPayload<{ select: typeof selecao }>;
 
 function toDomain(row: UsuarioRow): Usuario {
-  const { grupoUsuario, ...rest } = row;
+  const { grupoUsuario, cliente, ...rest } = row;
   return {
     ...rest,
+    orgaoNome: cliente?.nome ?? null,
     grupoNome: grupoUsuario?.nome ?? null,
   };
 }

@@ -1,6 +1,8 @@
 export interface Usuario {
   id: string;
   clienteId: string | null;
+  /** Nome do órgão a que o usuário pertence — o id não diz nada a ninguém. */
+  orgaoNome: string | null;
   grupoUsuarioId: string | null;
   grupoNome: string | null;
   nome: string;

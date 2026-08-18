@@ -32,6 +32,7 @@ const COLUNAS: ColunaDef[] = [
   { key: 'acoes', label: 'Ações', width: 120, minWidth: 100, align: 'center' },
   { key: 'status', label: 'Status', width: 110, sortKey: 'ativo' },
   { key: 'nome', label: 'Nome', width: 210, sortKey: 'nome' },
+  { key: 'orgao', label: 'Órgão', width: 200 },
   { key: 'documento', label: 'CPF', width: 140, sortKey: 'documento' },
   { key: 'email', label: 'E-mail', width: 220, sortKey: 'email' },
   { key: 'celular', label: 'Celular', width: 140, sortKey: 'celular' },
@@ -131,6 +132,16 @@ export function UsuariosList({ refreshKey, onVisualizar, onEditar, onAlternarSta
         );
       case 'nome':
         return <span className={`${txt} font-medium text-ink-800 dark:text-ink-100`} title={u.nome}>{u.nome}</span>;
+      case 'orgao':
+        // Usuário sem órgão fica visível em vez de virar bloqueio silencioso no
+        // dia seguinte — é o que sobra do backfill quando algo escapa.
+        return u.orgaoNome ? (
+          <span className={`${txt} text-ink-600 dark:text-ink-300`} title={u.orgaoNome}>
+            {u.orgaoNome}
+          </span>
+        ) : (
+          <span className="text-xs italic text-amber-600 dark:text-amber-400">Sem órgão</span>
+        );
       case 'documento':
         return (
           <span className={`${txt} font-mono text-xs text-ink-600 dark:text-ink-300`}>

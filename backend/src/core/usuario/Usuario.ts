@@ -2,6 +2,7 @@
 export interface Usuario {
   id: string;
   clienteId: string | null;
+  orgaoNome: string | null; // nome do órgão (join p/ exibição — o id não diz nada a ninguém)
   grupoUsuarioId: string | null;
   grupoNome: string | null; // nome do grupo (join p/ exibição)
   nome: string;

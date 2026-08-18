@@ -327,6 +327,25 @@ export function UsuarioForm({ usuario, onSuccess, onCancel }: UsuarioFormProps) 
               hint="Define o perfil de acesso."
             />
           </div>
+          {/*
+            Órgão: mostrado, nunca escolhido. O usuário novo herda o órgão de
+            quem o está cadastrando — e "mover usuário para outro órgão" é
+            justamente o que o administrador de um órgão não pode fazer.
+          */}
+          <div className="sm:col-span-12">
+            <Input
+              label="Órgão"
+              anotacao="(Automático)"
+              name="orgao"
+              value={usuario?.orgaoNome ?? (editando ? 'Sem órgão' : 'O seu órgão')}
+              readOnly
+              hint={
+                editando
+                  ? 'Definido no cadastro do usuário. Não é alterável por aqui.'
+                  : 'O usuário nasce no mesmo órgão de quem o cadastra.'
+              }
+            />
+          </div>
         </div>
 
         {/* Credenciais de acesso (o e-mail acima é o login) */}
