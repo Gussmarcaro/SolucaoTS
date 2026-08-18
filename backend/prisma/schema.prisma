@@ -171,6 +171,12 @@ model Usuario {
   senhaHash           String? // hash bcrypt da senha de login
   resetTokenHash      String?   @db.VarChar(64) // SHA-256 do token de recuperação (nunca o token puro)
   resetTokenExpiresAt DateTime? // validade do token de recuperação
+  // Equipe do fornecedor: provisiona órgãos novos e atende clientes trocando
+  // de órgão explicitamente. É uma marca **por usuário**, e não um nome de
+  // grupo, de propósito: grupo é cadastro livre, e qualquer um que criasse um
+  // chamado "Suporte" furaria o isolamento inteiro. Só se concede pelo
+  // comando `suporte:conceder`, nunca pela interface.
+  suporte             Boolean   @default(false)
   ativo               Boolean   @default(true)
   criadoPor           String?   @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   criadoEm            DateTime  @default(now())

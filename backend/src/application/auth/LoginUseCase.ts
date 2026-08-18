@@ -44,6 +44,7 @@ export class LoginUseCase {
         email: usuario.email,
         grupo: usuario.grupoNome,
         cli: usuario.clienteId,
+        sup: usuario.suporte,
       },
       !!lembrar,
     );
@@ -56,6 +57,7 @@ export class LoginUseCase {
         email: usuario.email,
         grupo: usuario.grupoNome,
         clienteId: usuario.clienteId,
+        suporte: usuario.suporte,
       },
     };
   }

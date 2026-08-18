@@ -6,13 +6,15 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { limparSessao, obterToken, obterUsuario, salvarSessao } from '@/lib/authStorage';
+import { limparSessao, obterToken, obterUsuario, salvarSessao, trocarSessao } from '@/lib/authStorage';
 import type { UsuarioAutenticado } from '@/types/auth';
 
 interface AuthContextValue {
   usuario: UsuarioAutenticado | null;
   isAuthenticated: boolean;
   entrar: (token: string, usuario: UsuarioAutenticado, lembrar: boolean) => void;
+  /** Adota um token novo sem refazer o login — a troca de órgão do suporte. */
+  trocarOrgao: (token: string, usuario: UsuarioAutenticado) => void;
   sair: () => void;
 }
 
@@ -31,14 +33,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const trocarOrgao = useCallback((token: string, user: UsuarioAutenticado) => {
+    trocarSessao(token, user);
+    setUsuario(user);
+  }, []);
+
   const sair = useCallback(() => {
     limparSessao();
     setUsuario(null);
   }, []);
 
   const value = useMemo(
-    () => ({ usuario, isAuthenticated: !!usuario, entrar, sair }),
-    [usuario, entrar, sair],
+    () => ({ usuario, isAuthenticated: !!usuario, entrar, trocarOrgao, sair }),
+    [usuario, entrar, trocarOrgao, sair],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

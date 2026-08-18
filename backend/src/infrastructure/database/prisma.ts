@@ -25,3 +25,18 @@ definirClienteAuditoria(base);
  * contrário a trilha leria uma linha que a requisição não podia enxergar.
  */
 export const prisma = base.$extends(extensaoAuditoria).$extends(extensaoTenant);
+
+/**
+ * Cliente **sem** o filtro por órgão — auditado, mas global.
+ *
+ * Existe para uma única finalidade: as operações da equipe do fornecedor que
+ * por definição acontecem fora de um órgão (listar os órgãos para atender,
+ * provisionar um cliente novo). Um órgão não pode ser criado de dentro de
+ * outro, e o primeiro usuário dele não pode herdar o órgão de quem o cadastra.
+ *
+ * **Não use em mais nada.** Todo import deste símbolo fora de
+ * `PrismaSuporteRepository` é um furo no isolamento — `verificar:tenant`
+ * reprova. A autorização de quem chega aqui é a marca `Usuario.suporte`,
+ * conferida em `SuporteUseCases`.
+ */
+export const prismaGlobal = base.$extends(extensaoAuditoria);

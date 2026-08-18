@@ -131,6 +131,7 @@ export class PrismaUsuarioRepository implements IUsuarioRepository {
         senhaHash: true,
         ativo: true,
         clienteId: true,
+        suporte: true,
         grupoUsuario: { select: { nome: true } },
       },
     });

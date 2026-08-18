@@ -32,6 +32,20 @@ export function obterUsuario(): UsuarioAutenticado | null {
   return raw ? (JSON.parse(raw) as UsuarioAutenticado) : null;
 }
 
+/**
+ * Substitui token e usuário mantendo o storage em uso.
+ *
+ * É o que a troca de órgão do suporte precisa: reemitir a credencial sem
+ * decidir de novo entre "lembrar de mim" ou não — trocar de cliente atendido
+ * não é um login novo, e mudar o storage aqui derrubaria a sessão de quem
+ * havia marcado a opção.
+ */
+export function trocarSessao(token: string, usuario: UsuarioAutenticado): void {
+  const store = storageAtual() ?? sessionStorage;
+  store.setItem(TOKEN_KEY, token);
+  store.setItem(USER_KEY, JSON.stringify(usuario));
+}
+
 export function limparSessao(): void {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);

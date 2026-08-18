@@ -30,6 +30,15 @@ export interface TokenPayload {
    * Enquanto for nulo, o usuário não é filtrado — ver `contextoAtual`.
    */
   cli?: string | null;
+  /**
+   * Equipe do fornecedor. Autoriza duas coisas que ninguém mais pode: criar um
+   * órgão novo com o primeiro administrador dele, e trocar o `cli` do próprio
+   * token para atender um cliente.
+   *
+   * Note que **não** é um passe-livre: o suporte continua operando dentro de um
+   * órgão de cada vez, e o token diz qual. A diferença é poder escolher.
+   */
+  sup?: boolean;
 }
 
 /** Assina um JWT. Com "lembrar de mim", usa expiração estendida. */

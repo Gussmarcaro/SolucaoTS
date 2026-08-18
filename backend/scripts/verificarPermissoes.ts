@@ -41,6 +41,9 @@ const LIBERADAS: Record<string, string> = {
   '/assistente/status': 'diz apenas se o assistente existe',
   '/lgpd/acesso-dados': 'cada usuário grava o registro do próprio acesso',
   '/permissoes/eu/resumo': 'o usuário lendo as próprias permissões',
+  '/suporte/orgaos': 'equipe do fornecedor — autorizada pela marca Usuario.suporte, não pela matriz',
+  '/suporte/atender': 'equipe do fornecedor — troca o órgão do próprio token',
+  '/suporte/provisionar': 'equipe do fornecedor — cria órgão novo, antes de existir matriz',
 };
 
 // Toda montagem de rota: routes.use('/x', ...) e routes.get/post/put/delete.

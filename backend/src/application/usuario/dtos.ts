@@ -62,6 +62,8 @@ export interface UsuarioAuth {
   grupoNome: string | null;
   /** Órgão do usuário — vai para o token e isola os dados que ele alcança. */
   clienteId: string | null;
+  /** Equipe do fornecedor — pode provisionar órgãos e trocar de contexto. */
+  suporte: boolean;
 }
 
 /** Filtros de listagem — todos os campos são pesquisáveis. */

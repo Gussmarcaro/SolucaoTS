@@ -157,6 +157,7 @@ No `backend/`:
 - `npm run verificar:workflow` — conferir as regras das tarefas de acompanhamento (sem banco).
 - `npm run verificar:tenant` — conferir o isolamento multi-tenant (sem banco).
 - `npm run tenant:backfill` — atribuir um órgão aos registros anteriores ao multi-tenant (roda **uma vez**).
+- `npm run suporte:conceder -- <email>` / `suporte:revogar` / `suporte:listar` — marca da equipe do fornecedor.
 
 No `frontend/`: `npm run dev` (Vite em :5173) e `npm run build`.
 
@@ -226,7 +227,17 @@ Ordem obrigatória em produção:
 
 Enquanto o passo 2 não roda, **ninguém pode ter `clienteId` atribuído à mão** — cai na armadilha do RBAC descrita acima.
 
-**Onboarding de um órgão novo ainda não tem caminho.** O `create` carimba o órgão de quem está criando, o que resolve o dia a dia (o admin da Prefeitura X cria usuários da Prefeitura X), mas não o primeiro usuário de um cliente novo, nem o acesso do Suporte do fornecedor a outro órgão. Isso é feature a desenhar — e a forma certa é uma troca de órgão explícita e auditada, não um grupo que enxerga tudo: nome de grupo é cadastro livre e não serve de fronteira de segurança.
+### Suporte — a equipe do fornecedor
+
+O carimbo automático resolve o dia a dia (o admin da Prefeitura X só cria usuários da Prefeitura X) mas não o começo: o **primeiro** usuário de um cliente novo nasceria no órgão de quem o criou. Daí a marca `Usuario.suporte`.
+
+- **A fronteira é um campo booleano do usuário, nunca um nome de grupo.** Grupo é cadastro livre — bastaria criar um chamado "Suporte" para furar o isolamento inteiro. A marca nasce desligada e só se concede por comando: `npm run suporte:conceder -- <email>` (`suporte:revogar`, `suporte:listar`). Vai no token como claim `sup`.
+- **Suporte não é passe-livre.** Ele continua operando **dentro de um órgão de cada vez** — o que ganha é poder escolher qual, em `POST /suporte/atender`, que reemite o token com outro `cli`. O órgão atendido fica sempre à vista, na barra superior (`SeletorOrgao`, em âmbar): quem atende vários clientes precisa saber em qual está *antes* de digitar, porque lançamento no órgão errado é indistinguível de lançamento certo até alguém conferir. A troca recarrega a página — telas já carregadas mostrariam dados de um cliente sob o rótulo de outro.
+- **Provisionar** (`/suporte/provisionar`) cria órgão + grupo `Administrador` + primeiro usuário **numa transação**. Meio provisionamento é pior que nenhum: órgão sem administrador não é acessável, e usuário sem grupo cai na regra de "grupo nunca configurado", que libera tudo. O endereço do admin fica em branco de propósito — o suporte não tem por que saber onde ele mora.
+- As rotas `/suporte/*` ficam **fora do `exigirPermissao`**: a matriz é por órgão, e elas existem justamente antes de haver um. Quem não tem a marca recebe **404**, não 403 — 403 confirmaria que existe uma administração global.
+- **`prismaGlobal`** (em `prisma.ts`) é o único client sem o recorte por órgão, e existe só para isso. `verificar:tenant` reprova qualquer import dele fora de `PrismaSuporteRepository` — é um furo que nenhum teste de funcionalidade pegaria, porque tudo continua funcionando.
+
+**Provisionar um segundo órgão só funciona depois do aperto (4b).** Enquanto os `@unique` globais estiverem de pé, o grupo `Administrador` do segundo cliente colide com o do primeiro.
 
 ## Permissões por grupo (RBAC)
 

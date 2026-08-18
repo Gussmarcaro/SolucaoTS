@@ -29,6 +29,7 @@ import { ServidoresCedidos } from '@/pages/ServidoresCedidos';
 import { Fiscalizacao } from '@/pages/Fiscalizacao';
 import { Transparencia } from '@/pages/Transparencia';
 import { TransparenciaRelatorio } from '@/pages/Transparencia/Relatorio';
+import { ProvisionarOrgao } from '@/pages/Suporte/ProvisionarOrgao';
 import { Placeholder } from '@/pages/Placeholder';
 
 export default function App() {
@@ -229,6 +230,10 @@ export default function App() {
               </RequerGrupo>
             }
           />
+
+          {/* Suporte — a própria tela confere a marca; o servidor responde 404
+              a quem não a tem, então não há recurso de permissão a exigir. */}
+          <Route path="/suporte/provisionar" element={<ProvisionarOrgao />} />
 
           <Route path="*" element={<Placeholder title="Página não encontrada" />} />
         </Route>

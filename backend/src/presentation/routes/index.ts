@@ -21,6 +21,7 @@ import { AssistenteController } from '@/presentation/controllers/AssistenteContr
 import { AlertaController } from '@/presentation/controllers/AlertaController';
 import { AutoriaController } from '@/presentation/controllers/AutoriaController';
 import { TransparenciaController } from '@/presentation/controllers/TransparenciaController';
+import { SuporteController } from '@/presentation/controllers/SuporteController';
 import { PermissaoController } from '@/presentation/controllers/PermissaoController';
 import { autenticar } from '@/presentation/middlewares/autenticar';
 import { exigirGrupo } from '@/presentation/middlewares/exigirGrupo';
@@ -94,6 +95,20 @@ const transparencia = new TransparenciaController();
 routes.get('/transparencia', exigirPermissao('TRANSPARENCIA'), (req, res, next) =>
   transparencia.listar(req, res, next),
 );
+
+/*
+ * Suporte — equipe do fornecedor. As únicas rotas que operam fora de um órgão:
+ * provisionar um cliente novo e escolher qual atender.
+ *
+ * Sem `exigirPermissao` de propósito: a matriz é por órgão, e estas rotas
+ * existem justamente antes de haver um. Quem autoriza é a marca
+ * `Usuario.suporte`, conferida no caso de uso — que responde **404** a quem
+ * não a tem, para não confirmar a existência de uma administração global.
+ */
+const suporte = new SuporteController();
+routes.get('/suporte/orgaos', (req, res, next) => suporte.orgaos(req, res, next));
+routes.post('/suporte/atender', (req, res, next) => suporte.atender(req, res, next));
+routes.post('/suporte/provisionar', (req, res, next) => suporte.provisionar(req, res, next));
 
 // Alertas do sino — prazos legais e pendências, calculados a cada consulta.
 const alertas = new AlertaController();

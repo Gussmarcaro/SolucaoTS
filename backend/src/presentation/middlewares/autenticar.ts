@@ -12,6 +12,8 @@ export interface UsuarioAutenticado {
   grupo: string | null;
   /** Órgão do usuário; null em tokens antigos e antes do backfill. */
   clienteId: string | null;
+  /** Equipe do fornecedor — provisiona órgãos e troca de contexto. */
+  suporte: boolean;
 }
 
 declare module 'express-serve-static-core' {
@@ -49,6 +51,7 @@ export function autenticar(req: Request, _res: Response, next: NextFunction) {
     email: payload.email,
     grupo: payload.grupo ?? null,
     clienteId: payload.cli ?? null,
+    suporte: payload.sup === true,
   };
 
   comContexto(

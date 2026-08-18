@@ -7,6 +7,7 @@ import { http } from '@/services/http';
 import { Alertas } from './Alertas';
 import { Assistente } from './Assistente';
 import { BuscaGlobal } from './BuscaGlobal';
+import { SeletorOrgao } from './SeletorOrgao';
 import { SobreModal } from './SobreModal';
 
 interface TopbarProps {
@@ -88,6 +89,10 @@ export function Topbar({ onOpenSidebar }: TopbarProps) {
       <BuscaGlobal aberta={buscaAberta} onFechar={() => setBuscaAberta(false)} />
 
       <div className="flex flex-1 items-center justify-end gap-1.5 sm:flex-none">
+        {/* Órgão em atendimento — só aparece para a equipe do fornecedor, e
+            fica antes das ações porque é o contexto de tudo o que vem depois. */}
+        <SeletorOrgao />
+
         {/* `preventDefault` no mouse down: sem ele, o clique tiraria o foco do
             campo, o `onBlur` fecharia a busca e o clique em seguida a abriria
             de novo — o botão nunca conseguiria fechar. */}

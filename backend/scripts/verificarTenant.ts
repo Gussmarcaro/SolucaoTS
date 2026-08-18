@@ -8,6 +8,8 @@
  *
  *   npm run verificar:tenant
  */
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { Prisma } from '@prisma/client';
 import {
   aplicarTenant,
@@ -215,6 +217,53 @@ console.log('\nIsolamento multi-tenant\n');
 
   const dominio: ArgsPrisma = { where: { codigo: '1234' } };
   conferir('tabela de domínio passa intacta', aplicarTenant('Cbo', 'findMany', dominio, T) === dominio);
+}
+
+// --- a fronteira do suporte -------------------------------------------------
+// `prismaGlobal` é o único caminho que fala com o banco sem recorte. Cada
+// import dele fora do repositório de suporte é um furo — e um furo que nenhum
+// teste de funcionalidade pegaria, porque tudo continua funcionando.
+{
+  const dir = 'src';
+  const arquivos: string[] = [];
+  const varrer = (p: string) => {
+    for (const e of readdirSync(p, { withFileTypes: true })) {
+      const caminho = join(p, e.name);
+      if (e.isDirectory()) varrer(caminho);
+      else if (e.name.endsWith('.ts')) arquivos.push(caminho);
+    }
+  };
+  varrer(dir);
+
+  const PERMITIDOS = [
+    join('src', 'infrastructure', 'database', 'prisma.ts'), // onde é declarado
+    join('src', 'infrastructure', 'database', 'PrismaSuporteRepository.ts'),
+  ];
+
+  const infratores = arquivos.filter(
+    (f) => !PERMITIDOS.includes(f) && /\bprismaGlobal\b/.test(readFileSync(f, 'utf8')),
+  );
+
+  conferir(
+    'só o repositório de suporte usa o client sem recorte',
+    infratores.length === 0,
+    infratores.length ? `usam prismaGlobal: ${infratores.join(', ')}` : 'prismaGlobal contido',
+  );
+
+  // A fronteira é um campo do usuário, não um nome de grupo. Grupo é cadastro
+  // livre: bastaria criar um chamado "Suporte" para furar o isolamento inteiro.
+  const usuario = Prisma.dmmf.datamodel.models.find((m) => m.name === 'Usuario');
+  const campo = usuario?.fields.find((f) => f.name === 'suporte');
+  conferir(
+    'a marca de suporte é um campo booleano de Usuario',
+    campo?.type === 'Boolean' && !campo.isList,
+    'não é nome de grupo, que é cadastro livre',
+  );
+  conferir(
+    'a marca nasce desligada',
+    campo?.hasDefaultValue === true && campo?.default === false,
+    'só se concede pelo comando suporte:conceder',
+  );
 }
 
 console.log(falhas.length ? `\n${falhas.length} falha(s).\n` : '\nTudo ok.\n');

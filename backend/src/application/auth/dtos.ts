@@ -13,6 +13,8 @@ export interface LoginResultado {
     grupo: string | null;
     /** Órgão do usuário; null enquanto o backfill do multi-tenant não rodou. */
     clienteId: string | null;
+    /** Equipe do fornecedor — habilita provisionar e trocar de órgão. */
+    suporte: boolean;
   };
 }
 
