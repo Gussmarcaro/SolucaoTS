@@ -27,6 +27,7 @@ import { Contratos } from '@/pages/Contratos';
 import { BensCedidos } from '@/pages/BensCedidos';
 import { ServidoresCedidos } from '@/pages/ServidoresCedidos';
 import { Fiscalizacao } from '@/pages/Fiscalizacao';
+import { Relatorios } from '@/pages/Relatorios';
 import { Transparencia } from '@/pages/Transparencia';
 import { TransparenciaRelatorio } from '@/pages/Transparencia/Relatorio';
 import { ProvisionarOrgao } from '@/pages/Suporte/ProvisionarOrgao';
@@ -161,7 +162,14 @@ export default function App() {
               </RequerPermissao>
             }
           />
-          <Route path="/relatorios" element={<Placeholder title="Relatórios" />} />
+          <Route
+            path="/relatorios"
+            element={
+              <RequerPermissao recurso="RELATORIOS">
+                <Relatorios />
+              </RequerPermissao>
+            }
+          />
           <Route
             path="/fiscalizacao"
             element={

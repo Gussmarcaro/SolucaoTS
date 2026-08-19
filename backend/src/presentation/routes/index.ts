@@ -22,6 +22,7 @@ import { AlertaController } from '@/presentation/controllers/AlertaController';
 import { AutoriaController } from '@/presentation/controllers/AutoriaController';
 import { TransparenciaController } from '@/presentation/controllers/TransparenciaController';
 import { SuporteController } from '@/presentation/controllers/SuporteController';
+import { RelatorioController } from '@/presentation/controllers/RelatorioController';
 import { PermissaoController } from '@/presentation/controllers/PermissaoController';
 import { autenticar } from '@/presentation/middlewares/autenticar';
 import { exigirGrupo } from '@/presentation/middlewares/exigirGrupo';
@@ -109,6 +110,18 @@ const suporte = new SuporteController();
 routes.get('/suporte/orgaos', (req, res, next) => suporte.orgaos(req, res, next));
 routes.post('/suporte/atender', (req, res, next) => suporte.atender(req, res, next));
 routes.post('/suporte/provisionar', (req, res, next) => suporte.provisionar(req, res, next));
+
+// Relatórios gerenciais — para dentro do órgão, não para o TCESP.
+const relatorios = new RelatorioController();
+routes.get('/relatorios/execucao', exigirPermissao('RELATORIOS'), (req, res, next) =>
+  relatorios.execucao(req, res, next),
+);
+routes.get('/relatorios/repasses', exigirPermissao('RELATORIOS'), (req, res, next) =>
+  relatorios.repasses(req, res, next),
+);
+routes.get('/relatorios/situacao', exigirPermissao('RELATORIOS'), (req, res, next) =>
+  relatorios.situacao(req, res, next),
+);
 
 // Alertas do sino — prazos legais e pendências, calculados a cada consulta.
 const alertas = new AlertaController();

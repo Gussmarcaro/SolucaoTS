@@ -350,6 +350,23 @@ Renderiza o **mesmo `documentoJSON`** que vai ao TCESP (`GET /prestacoes/:id/jso
 - Impressão pelo navegador (`@media print` em `index.css`): menu e barra somem, cabeçalho de tabela repete entre páginas, e `break-inside-avoid` evita bloco partido ao meio.
 - Basta faixa **Consulta** em `PRESTACAO_CONTAS` — revisar não deveria exigir permissão de editar.
 
+## Relatórios
+
+`/relatorios` — acompanhamento gerencial. **Para dentro do órgão**, não para o Tribunal (isso é o Espelho) nem para o portal (isso é a Transparência). Três recortes, com filtro por ajuste e exercício, export CSV e impressão:
+
+| Relatório | Responde |
+|---|---|
+| **Execução por ajuste** | do pactuado, quanto saiu do órgão e quanto a OSC já gastou |
+| **Repasses: previsto × realizado** | atraso em dias e diferença de valor em cada parcela |
+| **Prestações por situação** | panorama por exercício + **os ajustes que nunca prestaram contas** |
+
+- **"Em poder da OSC" (repassado − pago) é o número que ninguém tinha à mão.** Não é irregular por si, mas é o que mostra dinheiro parado na conta da entidade. Negativo aparece em vermelho: pagou mais do que recebeu.
+- **O atraso de repasse é achado clássico do TCESP**, e o dado sempre esteve ali — `RepassePrestacao` guarda `dataPrevista` e `dataRepasse` no mesmo registro. Faltava subtrair uma da outra. Linha com ≥ 5 dias ganha destaque.
+- **O relatório de execução parte dos ajustes, não das prestações**, para que ajuste sem prestação nenhuma apareça com execução zerada — que é justamente o que se quer enxergar. Some-se a lista explícita em "por situação".
+- **Cuidado de tenant, o primeiro que sai do papel:** `RepassePrestacao` e `Pagamento` **não** são raízes e a extension não os filtra. Toda consulta em `PrismaRelatorioRepository` parte das **prestações** (que descem de `Ajuste`, filtrado) e só então restringe os blocos aos ids obtidos. Agregar direto sobre os blocos somaria os valores de todos os órgãos — e daria um relatório errado sem erro nenhum.
+- `QuadroRelatorio` é o molde: cada coluna diz como se desenha (`celula`), como se exporta (`texto`) e o que soma no rodapé (`rodape`). Relatório novo custa uma lista de colunas, não uma tela.
+- Recurso `RELATORIOS`, faixa Consulta basta.
+
 ## Transparência
 
 `/transparencia` — relação das parcerias para publicação no portal do órgão (Lei 13.019/2014, art. 10): data e identificação do instrumento, OSC e CNPJ, objeto, valor, vigência e situação da prestação de contas.
