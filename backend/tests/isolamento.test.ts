@@ -44,18 +44,31 @@ describe.skipIf(!TEM_BANCO)('isolamento entre órgãos', () => {
     const repo = new PrismaSuporteRepository();
 
     // Dois órgãos completos, pelo mesmo caminho do provisionamento real.
+    //
+    // O `try` existe pelo diagnóstico: uma violação de chave única aqui vem do
+    // Prisma como um bloco enorme sem dizer *qual* órgão falhou, e foi
+    // exatamente assim que a primeira execução na CI apareceu — provisionar o
+    // segundo órgão esbarrava no `@unique` global de `GrupoUsuario.nome`.
     for (const n of [1, 2]) {
       const f = orgaoFake(n);
-      const r = await repo.provisionar({
-        orgao: f.orgao,
-        admin: {
-          nome: f.admin.nome,
-          email: f.admin.email,
-          documento: f.admin.documento,
-          senhaHash: await hashSenha(f.admin.senha),
-        },
-      });
-      if (n === 1) orgaoIdA = r.clienteId;
+      try {
+        const r = await repo.provisionar({
+          orgao: f.orgao,
+          admin: {
+            nome: f.admin.nome,
+            email: f.admin.email,
+            documento: f.admin.documento,
+            senhaHash: await hashSenha(f.admin.senha),
+          },
+        });
+        if (n === 1) orgaoIdA = r.clienteId;
+      } catch (e) {
+        throw new Error(
+          `Falha ao provisionar o órgão ${n} (${f.orgao.nome}): ${
+            e instanceof Error ? e.message : String(e)
+          }`,
+        );
+      }
     }
 
     app = (await import('@/app')).app;

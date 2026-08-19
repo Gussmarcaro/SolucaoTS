@@ -38,12 +38,27 @@ export function prepararAmbiente(): void {
   process.env.CORS_ORIGIN = '';
 }
 
-/** Aplica o schema no banco de teste (equivale ao que o deploy faz). */
+/**
+ * Aplica o schema no banco de teste (equivale ao que o deploy faz).
+ *
+ * A saída é capturada e **relançada no erro**, em vez de descartada: quando
+ * isto falha num runner de CI — onde não há como abrir um terminal e repetir —
+ * a mensagem do Prisma é a única pista, e engoli-la transforma um erro
+ * explicável em "o teste não passou".
+ */
 export function aplicarSchema(): void {
-  execSync('npx prisma db push --skip-generate --accept-data-loss', {
-    env: { ...process.env, DATABASE_URL: URL_TESTE },
-    stdio: 'ignore',
-  });
+  try {
+    execSync('npx prisma db push --skip-generate --accept-data-loss', {
+      env: { ...process.env, DATABASE_URL: URL_TESTE },
+      stdio: 'pipe',
+    });
+  } catch (e) {
+    const err = e as { stdout?: Buffer; stderr?: Buffer };
+    throw new Error(
+      `Falha ao aplicar o schema no banco de teste.\n` +
+        `${err.stderr?.toString() ?? ''}\n${err.stdout?.toString() ?? ''}`,
+    );
+  }
 }
 
 /** Esvazia tudo que a aplicação grava, preservando as tabelas de domínio. */
