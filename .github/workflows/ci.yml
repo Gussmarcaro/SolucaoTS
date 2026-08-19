@@ -53,9 +53,9 @@ jobs:
         working-directory: backend
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           # 22, e não 20: o `vitest@4` traz `vite@8` na árvore, que exige
           # Node ^20.19 || >=22.12. Fixar 22 tira a dúvida de qual 20.x o
@@ -96,9 +96,9 @@ jobs:
         working-directory: frontend
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           # 22, e não 20: o `vitest@4` traz `vite@8` na árvore, que exige
           # Node ^20.19 || >=22.12. Fixar 22 tira a dúvida de qual 20.x o
