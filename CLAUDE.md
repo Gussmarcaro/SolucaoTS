@@ -259,10 +259,10 @@ Cinco fontes, todas em dados que já existem: prestação `REJEITADO`; `Document
 
 A tela de entrada mostra, além das contagens dos cadastros:
 
-- **Faixa de execução das parcerias** no topo — valor global, repassado, pago e **em poder da OSC**. Fica acima das contagens de propósito: "quantos fornecedores tenho" é a informação menos acionável da tela e ocupava o lugar mais nobre. Reusa ; somar por conta própria faria o Dashboard mostrar um número e o relatório outro.
+- **Faixa de execução das parcerias** no topo — valor global, repassado, pago e **em poder da OSC**. Fica acima das contagens de propósito: "quantos fornecedores tenho" é a informação menos acionável da tela e ocupava o lugar mais nobre. Reusa `GET /relatorios/execucao`; somar por conta própria faria o Dashboard mostrar um número e o relatório outro.
 - **Cartão de Fiscalização** no rodapé — os quatro números do resumo e as **5 tarefas mais atrasadas**. Mostra atrasadas, não abertas: aberta é trabalho normal, atrasada é exceção que já passou despercebida.
 
-Cada painel **só aparece com permissão** no recurso correspondente (, ) e **some sozinho** se a consulta falhar ou se não houver dado — um cartão vazio na tela de entrada ensina a ignorá-la.
+Cada painel **só aparece com permissão** no recurso correspondente (`RELATORIOS`, `FISCALIZACAO`) e **some sozinho** se a consulta falhar ou se não houver dado — um cartão vazio na tela de entrada ensina a ignorá-la.
 
 ## Fiscalização | Monitoramento (Workflow)
 
