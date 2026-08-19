@@ -255,6 +255,15 @@ Cinco fontes, todas em dados que já existem: prestação `REJEITADO`; `Document
 - O prazo de cadastro de Ajuste/Aditivo é **lembrete**, não status: esse cadastro é feito na tela do TCESP, fora daqui, então o sistema não sabe se já foi enviado. O texto do alerta não pode sugerir que sabe.
 - **`npm run verificar:alertas`** roda as regras contra datas fixas, sem banco. Foi ele que mostrou que minha contagem de 10 dias úteis estava errada na cabeça, não no código.
 
+## Dashboard
+
+A tela de entrada mostra, além das contagens dos cadastros:
+
+- **Faixa de execução das parcerias** no topo — valor global, repassado, pago e **em poder da OSC**. Fica acima das contagens de propósito: "quantos fornecedores tenho" é a informação menos acionável da tela e ocupava o lugar mais nobre. Reusa ; somar por conta própria faria o Dashboard mostrar um número e o relatório outro.
+- **Cartão de Fiscalização** no rodapé — os quatro números do resumo e as **5 tarefas mais atrasadas**. Mostra atrasadas, não abertas: aberta é trabalho normal, atrasada é exceção que já passou despercebida.
+
+Cada painel **só aparece com permissão** no recurso correspondente (, ) e **some sozinho** se a consulta falhar ou se não houver dado — um cartão vazio na tela de entrada ensina a ignorá-la.
+
 ## Fiscalização | Monitoramento (Workflow)
 
 `/fiscalizacao` — as providências e seus prazos. É a outra metade do sino: ele **calcula** prazos a partir dos dados, esta tela **registra o que foi feito** a respeito. Sem ela o sistema sabe cobrar e não sabe que já foi atendido, e um aviso que continua piscando depois de resolvido ensina o usuário a ignorá-lo.

@@ -648,6 +648,7 @@ model Certidao {
   cliente              Cliente               @relation(fields: [clienteId], references: [id])
   entidadeBeneficiaria EntidadeBeneficiaria? @relation(fields: [entidadeBeneficiariaId], references: [id])
 
+  @@index([entidadeBeneficiariaId])
   @@index([clienteId])
 }
 
@@ -720,6 +721,7 @@ model Ajuste {
   tarefas          Tarefa[]
 
   @@unique([clienteId, codigoAjuste])
+  @@index([entidadeBeneficiariaId])
   @@index([tipoAjuste])
 }
 
@@ -879,6 +881,7 @@ model PrestacaoContas {
   termoBensCedidos        TermoBensCedidos?
   ajustesSaldo            AjustesSaldo?
 
+  @@index([responsavelId])
   @@index([ajusteId])
   @@index([status])
 }
@@ -1150,6 +1153,7 @@ model Pagamento {
   prestacao       PrestacaoContas  @relation(fields: [prestacaoId], references: [id])
   documentoFiscal DocumentoFiscal? @relation(fields: [documentoFiscalId], references: [id])
 
+  @@index([documentoFiscalId])
   @@index([prestacaoId])
 }
 
@@ -1240,6 +1244,7 @@ model Glosa {
   prestacao       PrestacaoContas  @relation(fields: [prestacaoId], references: [id])
   documentoFiscal DocumentoFiscal? @relation(fields: [documentoFiscalId], references: [id])
 
+  @@index([documentoFiscalId])
   @@index([prestacaoId])
 }
 
@@ -1281,6 +1286,7 @@ model RepassePrestacao {
   prestacao PrestacaoContas   @relation(fields: [prestacaoId], references: [id])
   empenho   EmpenhoPrestacao? @relation(fields: [empenhoId], references: [id])
 
+  @@index([empenhoId])
   @@index([prestacaoId])
 }
 
@@ -1355,6 +1361,7 @@ model Tarefa {
   ajuste      Ajuste?  @relation(fields: [ajusteId], references: [id])
   responsavel Usuario? @relation(fields: [responsavelId], references: [id])
 
+  @@index([responsavelId])
   @@index([clienteId])
   @@index([projetoId])
   @@index([ajusteId])

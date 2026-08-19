@@ -17,6 +17,9 @@ import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePermissoes } from '@/contexts/PermissoesContext';
+import { PainelExecucao } from './PainelExecucao';
+import { PainelFiscalizacao } from './PainelFiscalizacao';
 import { listarEntidades } from '@/services/entidades.service';
 import { listarFornecedores } from '@/services/fornecedores.service';
 import { listarColaboradores } from '@/services/colaboradores.service';
@@ -68,6 +71,9 @@ function saudacao(): string {
 export function Dashboard() {
   const navigate = useNavigate();
   const { usuario } = useAuth();
+  // Sem permissão o painel simplesmente não aparece — a regra da casa: quem
+  // não tem acesso não vê aviso, vê a tela sem o item.
+  const { pode } = usePermissoes();
   const primeiroNome = usuario?.nome?.trim().split(/\s+/)[0] ?? '';
   const [contagens, setContagens] = useState<Contagens | null>(null);
   const [prazos, setPrazos] = useState<PrazoItem[] | null>(null);
@@ -182,6 +188,8 @@ export function Dashboard() {
         }
       />
 
+      {pode('RELATORIOS', 'CONSULTA') && <PainelExecucao />}
+
       {/* KPIs — contagens reais dos cadastros */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {cards.map((c) => {
@@ -273,6 +281,8 @@ export function Dashboard() {
           </CardBody>
         </Card>
       </div>
+      {pode('FISCALIZACAO', 'CONSULTA') && <PainelFiscalizacao />}
+
     </>
   );
 }
