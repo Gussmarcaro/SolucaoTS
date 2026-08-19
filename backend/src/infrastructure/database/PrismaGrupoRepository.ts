@@ -37,7 +37,10 @@ export class PrismaGrupoRepository implements IGrupoRepository {
   }
 
   async buscarPorNome(nome: string): Promise<Grupo | null> {
-    const row = await prisma.grupoUsuario.findUnique({ where: { nome }, select: selecao });
+    // `findFirst`, e não `findUnique`: o nome é único **dentro do órgão**, e o
+    // recorte por tenant é quem restringe a busca ao grupo certo. Com dois
+    // órgãos, "Administrador" existe mais de uma vez no sistema.
+    const row = await prisma.grupoUsuario.findFirst({ where: { nome }, select: selecao });
     return row ? toDomain(row) : null;
   }
 

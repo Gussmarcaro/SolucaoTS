@@ -373,7 +373,12 @@ model ServidorCedidoCadastro {
 model GrupoUsuario {
   id           String   @id @default(uuid()) @db.Uuid
   clienteId    String?  @db.Uuid // opcional até o multi-tenant/auth
-  nome         String   @unique // ex: "Controladoria", "Gestores de Parceria"
+  // Único **por órgão**, não no sistema (ver `@@unique` abaixo). É a exceção
+  // entre as oito chaves de duplicidade: cnpj e cpf identificam a mesma pessoa
+  // em qualquer lugar, mas dois órgãos têm legitimamente um grupo chamado
+  // "Administrador" — a trava global aqui não protegia nada e impedia
+  // provisionar o segundo cliente.
+  nome         String
   descricao    String?
   buscaTexto   String   @default("") // texto normalizado para busca global
   ativo        Boolean  @default(true) // status Ativo/Inativo

@@ -285,7 +285,7 @@ Cada órgão só enxerga os próprios dados. O filtro vive numa **extension do P
 
 ### A migração, em ordem
 
-As 8 chaves de duplicidade dos cadastros (`Fornecedor.documento`, `Colaborador.cpf`, `BemCedido.identificador`, `ServidorCedidoCadastro.cpf`, `EntidadeBeneficiaria.cnpj`, `Empresa.cnpj`, `GrupoUsuario.nome`, `Ajuste.codigoAjuste`) ganharam o par `@@unique([clienteId, …])` **sem perder o `@unique` global**. Os dois convivem de propósito: enquanto `clienteId` é nulo em todo lugar, o composto não trava nada (no Postgres, `NULL` nunca conflita com `NULL`) e é o global que segura a duplicidade. Trocar os dois de uma vez abriria uma janela sem trava nenhuma.
+As chaves de duplicidade dos cadastros (`Fornecedor.documento`, `Colaborador.cpf`, `BemCedido.identificador`, `ServidorCedidoCadastro.cpf`, `EntidadeBeneficiaria.cnpj`, `Empresa.cnpj`, `Ajuste.codigoAjuste`) ganharam o par `@@unique([clienteId, …])` **sem perder o `@unique` global**. Os dois convivem de propósito: enquanto `clienteId` é nulo em todo lugar, o composto não trava nada (no Postgres, `NULL` nunca conflita com `NULL`) e é o global que segura a duplicidade. Trocar os dois de uma vez abriria uma janela sem trava nenhuma.
 
 Ordem obrigatória em produção:
 
@@ -306,7 +306,7 @@ O carimbo automático resolve o dia a dia (o admin da Prefeitura X só cria usu�
 - As rotas `/suporte/*` ficam **fora do `exigirPermissao`**: a matriz é por órgão, e elas existem justamente antes de haver um. Quem não tem a marca recebe **404**, não 403 — 403 confirmaria que existe uma administração global.
 - **`prismaGlobal`** (em `prisma.ts`) é o único client sem o recorte por órgão, e existe só para isso. `verificar:tenant` reprova qualquer import dele fora de `PrismaSuporteRepository` — é um furo que nenhum teste de funcionalidade pegaria, porque tudo continua funcionando.
 
-**Provisionar um segundo órgão só funciona depois do aperto (4b).** Enquanto os `@unique` globais estiverem de pé, o grupo `Administrador` do segundo cliente colide com o do primeiro.
+**`GrupoUsuario.nome` é a exceção entre as chaves: o `@unique` global já saiu.** As outras sete identificam a mesma pessoa ou o mesmo ajuste em qualquer lugar, então a trava global ainda protege enquanto `clienteId` é nulo. Nome de grupo, não: dois órgãos têm legitimamente um `Administrador`, a trava não protegia nada e impedia provisionar o segundo cliente — foi a CI que mostrou, ao reprovar o teste de isolamento.
 
 **Banco vazio não se alcança sozinho.** Sem usuário não há login, sem login não há token, e sem token não há como chamar `/suporte/provisionar`. `npm run bootstrap` é o único caminho que cria usuário sem ninguém autenticado: primeiro órgão + grupo + primeiro usuário **com a marca de suporte**, para que daí em diante tudo aconteça pela interface. Recusa rodar se já existir usuário.
 
