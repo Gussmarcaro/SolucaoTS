@@ -29,6 +29,7 @@
     "verificar:permissoes": "tsx scripts/verificarPermissoes.ts",
     "permissoes:liberar": "tsx prisma/seeds/liberarPermissoes.ts",
     "verificar:workflow": "tsx scripts/verificarWorkflow.ts",
+    "verificar:agenda": "tsx scripts/verificarAgenda.ts",
     "verificar:tenant": "tsx scripts/verificarTenant.ts",
     "tenant:backfill": "tsx prisma/seeds/backfillTenant.ts",
     "suporte:conceder": "tsx prisma/seeds/suporte.ts",

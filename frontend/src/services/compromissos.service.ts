@@ -2,37 +2,48 @@ import { http } from './http';
 import type {
   Compromisso,
   CompromissoPayload,
-  Paginado,
   ResumoAgenda,
   StatusCompromisso,
 } from '@/types/compromisso';
 
 export interface FiltrosCompromisso {
+  /** Obrigatórios: a agenda pede uma janela, não o histórico inteiro. */
+  de: string;
+  ate: string;
   tipo?: string;
   status?: string;
   ajusteId?: string;
   responsavelId?: string;
-  /** ISO — a agenda consulta por janela de datas. */
-  de?: string;
-  ate?: string;
+  participanteId?: string;
+  grupoId?: string;
+  busca?: string;
   pendentesDeRegistro?: boolean;
 }
 
-export async function listarCompromissos(params: {
-  filtros?: FiltrosCompromisso;
-  busca?: string;
-  page?: number;
-  pageSize?: number;
-}): Promise<Paginado<Compromisso>> {
-  const { filtros = {}, busca, page, pageSize } = params;
-  const { data } = await http.get<Paginado<Compromisso>>('/compromissos', {
-    params: { ...filtros, busca: busca || undefined, page, pageSize },
+/**
+ * Compromissos de um período.
+ *
+ * A janela é sempre enviada — é o que impede a tela de carregar anos de agenda
+ * ao abrir, e o que torna a expansão da recorrência barata no servidor.
+ */
+export async function listarCompromissos(f: FiltrosCompromisso): Promise<Compromisso[]> {
+  const { data } = await http.get<Compromisso[]>('/compromissos', {
+    params: {
+      ...f,
+      busca: f.busca || undefined,
+      pendentesDeRegistro: f.pendentesDeRegistro || undefined,
+    },
   });
   return data;
 }
 
 export async function resumoAgenda(): Promise<ResumoAgenda> {
   const { data } = await http.get<ResumoAgenda>('/compromissos/resumo');
+  return data;
+}
+
+export async function buscarCompromisso(id: string): Promise<Compromisso> {
+  const { data } = await http.get<Compromisso>(`/compromissos/${id}`);
   return data;
 }
 

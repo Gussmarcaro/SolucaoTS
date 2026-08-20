@@ -1,18 +1,39 @@
-import type { StatusCompromisso, TipoCompromisso } from '@/core/compromisso/Compromisso';
+import type {
+  CanalAlerta,
+  Recorrencia,
+  StatusCompromisso,
+  TipoCompromisso,
+} from '@/core/compromisso/Compromisso';
+import type { VisibilidadeCompromisso } from '@/core/compromisso/visibilidade';
+
+export interface AlertaDTO {
+  minutosAntes: number | string;
+  canal?: string | null;
+}
 
 export interface CriarCompromissoDTO {
-  tipo: string;
+  tipo?: string | null;
   titulo: string;
   pauta?: string | null;
   /** ISO com hora, ex.: '2026-09-12T14:00'. */
   inicioEm: string;
-  duracaoMinutos?: number | string | null;
+  fimEm?: string | null;
+  diaInteiro?: boolean;
   local?: string | null;
-  participantes?: string | null;
+  cor?: string | null;
+  visibilidade?: string | null;
+  recorrencia?: string | null;
+  recorrenciaIntervalo?: number | string | null;
+  recorrenciaAte?: string | null;
   ajusteId?: string | null;
   responsavelId?: string | null;
   status?: string | null;
   registro?: string | null;
+  /** Ids de usuários convidados. */
+  participantes?: string[];
+  /** Ids de grupos convidados. */
+  grupos?: string[];
+  alertas?: AlertaDTO[];
 }
 
 export type AtualizarCompromissoDTO = CriarCompromissoDTO;
@@ -23,13 +44,21 @@ export interface DadosCompromisso {
   titulo: string;
   pauta: string | null;
   inicioEm: Date;
-  duracaoMinutos: number | null;
+  fimEm: Date;
+  diaInteiro: boolean;
   local: string | null;
-  participantes: string | null;
+  cor: string | null;
+  visibilidade: VisibilidadeCompromisso;
+  recorrencia: Recorrencia;
+  recorrenciaIntervalo: number | null;
+  recorrenciaAte: Date | null;
   ajusteId: string | null;
   responsavelId: string | null;
   status: StatusCompromisso;
   registro: string | null;
+  participantes: string[];
+  grupos: string[];
+  alertas: { minutosAntes: number; canal: CanalAlerta }[];
 }
 
 export interface FiltrosCompromisso {
@@ -37,24 +66,19 @@ export interface FiltrosCompromisso {
   status?: StatusCompromisso;
   ajusteId?: string;
   responsavelId?: string;
-  /** Janela de datas — é como a agenda consulta. */
+  /** Só compromissos que incluem este usuário como participante. */
+  participanteId?: string;
+  grupoId?: string;
+  /** Janela obrigatória na agenda — ver `ListarCompromissosParams`. */
   de?: Date;
   ate?: Date;
-  /** Só os que já passaram e continuam AGENDADO. */
   pendentesDeRegistro?: boolean;
+  busca?: string;
 }
 
 export interface ListarCompromissosParams {
   filtros: FiltrosCompromisso;
-  busca?: string;
-  page: number;
-  pageSize: number;
-}
-
-export interface Paginado<T> {
-  data: T[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
+  /** Quem está consultando — define o que a consulta pode devolver. */
+  espectador: { usuarioId: string; grupoId: string | null };
+  limite: number;
 }

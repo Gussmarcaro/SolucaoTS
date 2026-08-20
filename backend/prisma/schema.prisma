@@ -100,6 +100,26 @@ enum StatusCompromisso {
   CANCELADO
 }
 
+/// Quem enxerga o compromisso. A ordem é de precedência: PARTICULAR vence.
+enum VisibilidadeCompromisso {
+  PARTICULAR // só o criador — nem administrador vê
+  RESTRITO // criador + participantes + membros dos grupos convidados
+  ORGAO // todos do órgão
+}
+
+enum Recorrencia {
+  NAO_REPETE
+  DIARIA
+  SEMANAL
+  MENSAL
+  ANUAL
+}
+
+enum CanalAlerta {
+  SISTEMA // aparece no sino, calculado na consulta
+  EMAIL // exige adapter de e-mail real e um processo que dispare
+}
+
 // 1=CPF, 2=CNPJ, 3=RNE (estrangeiro)
 enum TipoDocumento {
   CPF
@@ -202,12 +222,13 @@ model Usuario {
   criadoEm            DateTime  @default(now())
   atualizadoEm        DateTime  @updatedAt
 
-  cliente      Cliente?          @relation(fields: [clienteId], references: [id])
-  grupoUsuario GrupoUsuario?     @relation(fields: [grupoUsuarioId], references: [id])
+  cliente      Cliente?                  @relation(fields: [clienteId], references: [id])
+  grupoUsuario GrupoUsuario?             @relation(fields: [grupoUsuarioId], references: [id])
   grupos       UsuarioGrupo[]
   tarefas      Tarefa[]
   compromissos Compromisso[]
-  prestacoes   PrestacaoContas[] @relation("PrestacaoResponsavel")
+  convites     CompromissoParticipante[]
+  prestacoes   PrestacaoContas[]         @relation("PrestacaoResponsavel")
 
   @@index([clienteId])
   @@index([grupoUsuarioId])
@@ -407,10 +428,11 @@ model GrupoUsuario {
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
-  cliente    Cliente?                @relation(fields: [clienteId], references: [id])
-  membros    Usuario[] // usuários vinculados (1 grupo por usuário)
-  usuarios   UsuarioGrupo[] // legado RBAC N:N (não usado ainda)
-  permissoes GrupoUsuarioPermissao[]
+  cliente      Cliente?                @relation(fields: [clienteId], references: [id])
+  membros      Usuario[] // usuários vinculados (1 grupo por usuário)
+  usuarios     UsuarioGrupo[] // legado RBAC N:N (não usado ainda)
+  permissoes   GrupoUsuarioPermissao[]
+  compromissos CompromissoGrupo[]
 
   @@unique([clienteId, nome])
   @@index([ativo])
@@ -1397,38 +1419,47 @@ model Tarefa {
   @@index([origemAlerta])
 }
 
-/// Compromisso da agenda — um **evento**, não uma providência.
+/// Compromisso da agenda.
 ///
-/// A distinção com `Tarefa` é o que justifica a tabela separada: tarefa tem
-/// **data-limite** e pode atrasar; compromisso tem **momento** e acontece ou
-/// não. Uma reunião de monitoramento não fica "atrasada há 3 dias" — ela
-/// ocorreu, foi cancelada, ou ainda vai acontecer. E o que sobra dela é o
-/// **registro** do que foi tratado, não um check de conclusão.
+/// Um **evento** (acontece), não uma providência (vence) — a distinção com
+/// `Tarefa` é o que justifica a tabela separada. O que sobra de uma reunião é
+/// o registro do que foi tratado; o que sobra de uma tarefa é a conclusão.
 ///
-/// A ligação entre as duas é o que faz a agenda valer: da visita in loco saem
-/// providências, que viram `Tarefa` com `compromissoId` — e aí a Fiscalização,
-/// que já sabe cobrar prazo, cobra o que a visita apontou.
+/// **Visibilidade é regra de segurança, não de interface.** Quem enxerga o quê
+/// sai de `visibilidade` + as duas tabelas de vínculo, e é aplicada na consulta
+/// (ver `PrismaCompromissoRepository.filtroDeVisibilidade`) — nunca na tela.
 model Compromisso {
   id        String  @id @default(uuid()) @db.Uuid
   clienteId String? @db.Uuid // raiz de tenant; opcional até o backfill
   ajusteId  String? @db.Uuid // parceria tratada; nulo em compromisso avulso
 
-  tipo   TipoCompromisso
+  tipo   TipoCompromisso @default(OUTRO)
   titulo String
   pauta  String?
 
-  // Momento, com hora — é o que separa isto de um prazo. `duracaoMinutos` é
-  // opcional: muita coisa se marca sem hora de término definida.
-  inicioEm       DateTime
-  duracaoMinutos Int?
-  local          String?
+  /// Início e fim. `diaInteiro` ignora a hora na exibição, mas as colunas
+  /// continuam sendo instantes: consulta por janela de datas é uma comparação
+  /// só, sem caso especial para o dia inteiro.
+  inicioEm   DateTime
+  fimEm      DateTime
+  diaInteiro Boolean  @default(false)
 
-  /// Participantes em texto livre, um por linha.
-  ///
-  /// Não é tabela de vínculo de propósito: a reunião junta gente do órgão
-  /// (`Usuario`) e da OSC (que não tem cadastro de pessoas), e modelar os dois
-  /// lados criaria um N:N heterogêneo para resolver o que uma lista resolve.
-  participantes String?
+  local String?
+  /// Cor escolhida pelo usuário (token da paleta, não hex): a tela decide como
+  /// pintar, e o tema escuro continua legível.
+  cor   String?
+
+  /// Quem enxerga. PARTICULAR vence tudo — nem administrador vê, porque perfil
+  /// administrativo não é autorização para ler a agenda pessoal de ninguém.
+  visibilidade VisibilidadeCompromisso @default(ORGAO)
+
+  /// Recorrência guardada como **regra**, não como instâncias materializadas.
+  /// Expandir na leitura mantém a tabela pequena e faz "editar a série"
+  /// significar editar uma linha — em vez de varrer centenas de cópias.
+  recorrencia          Recorrencia @default(NAO_REPETE)
+  /// A cada quantos períodos (2 = a cada duas semanas). Nulo = 1.
+  recorrenciaIntervalo Int?
+  recorrenciaAte       DateTime?
 
   status        StatusCompromisso @default(AGENDADO)
   /// O que foi tratado. Só faz sentido depois de REALIZADO — é a ata.
@@ -1439,16 +1470,76 @@ model Compromisso {
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
-  cliente     Cliente? @relation(fields: [clienteId], references: [id])
-  ajuste      Ajuste?  @relation(fields: [ajusteId], references: [id])
-  responsavel Usuario? @relation(fields: [responsavelId], references: [id])
-  tarefas     Tarefa[]
+  cliente       Cliente?                  @relation(fields: [clienteId], references: [id])
+  ajuste        Ajuste?                   @relation(fields: [ajusteId], references: [id])
+  responsavel   Usuario?                  @relation(fields: [responsavelId], references: [id])
+  participantes CompromissoParticipante[]
+  grupos        CompromissoGrupo[]
+  alertas       CompromissoAlerta[]
+  tarefas       Tarefa[]
 
-  // A consulta da agenda é sempre "deste órgão, nesta janela de datas".
+  // A consulta da agenda é sempre "deste órgão, nesta janela" — daí o composto.
   @@index([clienteId, inicioEm])
+  @@index([inicioEm, fimEm])
   @@index([ajusteId])
   @@index([responsavelId])
   @@index([status])
+  @@index([criadoPor])
+}
+
+/// Usuário convidado para um compromisso.
+///
+/// Tabela própria, e não um campo dentro do compromisso, porque é **por aqui
+/// que a consulta filtra**: "os compromissos que eu enxergo" é um join, não uma
+/// varredura de texto.
+model CompromissoParticipante {
+  compromissoId String @db.Uuid
+  usuarioId     String @db.Uuid
+
+  compromisso Compromisso @relation(fields: [compromissoId], references: [id], onDelete: Cascade)
+  usuario     Usuario     @relation(fields: [usuarioId], references: [id])
+
+  @@id([compromissoId, usuarioId])
+  // O índice do usuário é o que serve à pergunta "o que é meu?".
+  @@index([usuarioId])
+}
+
+/// Grupo convidado para um compromisso.
+///
+/// O vínculo é com o **grupo**, não com a lista de membros do momento: quem
+/// entrar no grupo depois passa a enxergar os compromissos dele sem que nada
+/// precise ser reprocessado, que é o comportamento esperado de uma agenda de
+/// equipe.
+model CompromissoGrupo {
+  compromissoId String @db.Uuid
+  grupoId       String @db.Uuid
+
+  compromisso Compromisso  @relation(fields: [compromissoId], references: [id], onDelete: Cascade)
+  grupo       GrupoUsuario @relation(fields: [grupoId], references: [id])
+
+  @@id([compromissoId, grupoId])
+  @@index([grupoId])
+}
+
+/// Lembrete de um compromisso.
+///
+/// Guarda a **antecedência**, não o instante de disparo: se a reunião mudar de
+/// hora, o lembrete acompanha sozinho. Instante gravado viraria alerta de um
+/// horário que já não existe.
+model CompromissoAlerta {
+  id            String      @id @default(uuid()) @db.Uuid
+  compromissoId String      @db.Uuid
+  minutosAntes  Int
+  canal         CanalAlerta @default(SISTEMA)
+
+  /// Quando o e-mail foi efetivamente enviado. É o que impede envio duplicado:
+  /// o disparo confere isto antes de mandar, e a coluna é a marca do "já foi".
+  enviadoEm DateTime?
+
+  compromisso Compromisso @relation(fields: [compromissoId], references: [id], onDelete: Cascade)
+
+  @@unique([compromissoId, minutosAntes, canal])
+  @@index([canal, enviadoEm])
 }
 
 // ============================================================================

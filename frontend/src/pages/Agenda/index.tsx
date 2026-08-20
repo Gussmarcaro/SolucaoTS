@@ -8,9 +8,12 @@ import {
   FileWarning,
   List,
   Loader2,
+  Lock,
   Pencil,
   Plus,
+  Repeat,
   Trash2,
+  Users,
   XCircle,
 } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -34,7 +37,7 @@ import { cn } from '@/lib/cn';
 import {
   STATUS_LABEL,
   STATUS_TONE,
-  TIPO_COR,
+  classeDaCor,
   TIPO_LABEL,
   horaBr,
   pendenteDeRegistro,
@@ -78,26 +81,24 @@ export function Agenda() {
 
   // Janela consultada: no calendário, o mês inteiro (com as bordas das semanas
   // vizinhas, que a grade também mostra). Na lista, tudo que se aplica.
+  // A janela é **sempre** enviada — a API recusa consulta sem período, que é o
+  // que impede a tela de puxar anos de agenda ao abrir. Na lista vale o mesmo
+  // mês exibido no calendário, para as duas vistas contarem a mesma história.
   const janela = useMemo(() => {
-    if (vista !== 'calendario') return {};
     const de = new Date(mes.getFullYear(), mes.getMonth(), 1);
     de.setDate(de.getDate() - 7);
     const ate = new Date(mes.getFullYear(), mes.getMonth() + 1, 0);
     ate.setDate(ate.getDate() + 7);
     ate.setHours(23, 59, 59, 999);
     return { de: de.toISOString(), ate: ate.toISOString() };
-  }, [vista, mes]);
+  }, [mes]);
 
   useEffect(() => {
     let vivo = true;
     setErro(null);
     setCompromissos(null);
-    listarCompromissos({
-      filtros: { ...janela, pendentesDeRegistro: soPendentes || undefined },
-      page: 1,
-      pageSize: 200,
-    })
-      .then((r) => vivo && setCompromissos(r.data))
+    listarCompromissos({ ...janela, pendentesDeRegistro: soPendentes || undefined })
+      .then((r) => vivo && setCompromissos(r))
       .catch((e) => vivo && setErro(extrairMensagemErro(e, 'Não foi possível carregar a agenda.')));
     return () => {
       vivo = false;
@@ -255,7 +256,7 @@ export function Agenda() {
             <ul className="divide-y divide-ink-100 dark:divide-ink-800">
               {lista.map((c) => (
                 <li key={c.id} className="flex flex-wrap items-start gap-3 px-4 py-3 transition-colors hover:bg-ink-50/70 dark:hover:bg-ink-800/40">
-                  <span className={cn('mt-1.5 h-2 w-2 shrink-0 rounded-full', TIPO_COR[c.tipo])} />
+                  <span className={cn('mt-1.5 h-2 w-2 shrink-0 rounded-full', classeDaCor(c))} />
 
                   <div className="min-w-0 flex-1">
                     <p className={cn('truncate text-sm font-medium text-ink-800 dark:text-ink-100', c.status === 'CANCELADO' && 'line-through opacity-60')}>
@@ -263,7 +264,7 @@ export function Agenda() {
                     </p>
                     <p className="mt-0.5 truncate text-xs text-ink-400">
                       {dataBr(c.inicioEm.slice(0, 10))} às {horaBr(c.inicioEm)}
-                      {c.duracaoMinutos ? ` · ${c.duracaoMinutos} min` : ''}
+                      {c.diaInteiro ? ' · dia inteiro' : ` – ${horaBr(c.fimEm)}`}
                       {c.local ? ` · ${c.local}` : ''}
                       {c.responsavelNome ? ` · ${c.responsavelNome}` : ''}
                     </p>
@@ -284,6 +285,25 @@ export function Agenda() {
                   </div>
 
                   <div className="flex shrink-0 items-center gap-2">
+                    {/* Identificação visual do particular — a especificação pede
+                        que dê para distinguir de relance o que é só seu. */}
+                    {c.visibilidade === 'PARTICULAR' && (
+                      <span title="Particular — só você vê">
+                        <Lock className="h-3.5 w-3.5 text-ink-400" />
+                      </span>
+                    )}
+                    {c.visibilidade === 'RESTRITO' && (
+                      <span
+                        title={`Restrito a ${c.participantes.length} pessoa(s) e ${c.grupos.length} grupo(s)`}
+                      >
+                        <Users className="h-3.5 w-3.5 text-ink-400" />
+                      </span>
+                    )}
+                    {c.ocorrencia && (
+                      <span title="Repetição da série">
+                        <Repeat className="h-3.5 w-3.5 text-ink-400" />
+                      </span>
+                    )}
                     {pendenteDeRegistro(c) ? (
                       <Badge tone="warning">Sem registro</Badge>
                     ) : (

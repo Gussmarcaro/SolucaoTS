@@ -83,6 +83,13 @@ const FORA_DA_REGRA = new Set([
   'ComponenteDespesa', // tabelas de domínio, carregadas por seed
   'UsuarioGrupo',
   'GrupoUsuarioPermissao', // ligações do RBAC, não são registros de cadastro
+  // Vínculos e lembretes da agenda: são parte do compromisso, não registros de
+  // cadastro com vida própria. A edição os substitui em lote, e a trilha
+  // registra a operação em lote — `criadoPor` por linha não teria onde ser
+  // consultado, porque não existe grade de participantes.
+  'CompromissoParticipante',
+  'CompromissoGrupo',
+  'CompromissoAlerta',
 ]);
 
 const emLista = new Set<string>();

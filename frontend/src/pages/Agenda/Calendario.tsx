@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
-import { TIPO_COR, TIPO_LABEL, horaBr, type Compromisso } from '@/types/compromisso';
+import { TIPO_LABEL, classeDaCor, horaBr, type Compromisso } from '@/types/compromisso';
 
 const DIAS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
 
@@ -134,7 +134,7 @@ export function Calendario({ mes, onMes, compromissos, onAbrir, onDia }: Props) 
                       c.status === 'CANCELADO' && 'line-through opacity-50',
                     )}
                   >
-                    <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', TIPO_COR[c.tipo])} />
+                    <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', classeDaCor(c))} />
                     <span className="shrink-0 tabular-nums text-ink-400">{horaBr(c.inicioEm)}</span>
                     <span className="truncate text-ink-700 dark:text-ink-200">{c.titulo}</span>
                   </button>

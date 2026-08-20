@@ -205,6 +205,7 @@ No `backend/`:
 - `npm run verificar:montador` — conferir o montador contra o schema e as regras de negócio (sem banco).
 - `npm run verificar:auditoria` — conferir as regras da trilha de auditoria (sem banco).
 - `npm run verificar:workflow` — conferir as regras das tarefas de acompanhamento (sem banco).
+- `npm run verificar:agenda` — conferir visibilidade, recorrência e validação da agenda (sem banco).
 - `npm run verificar:tenant` — conferir o isolamento multi-tenant (sem banco).
 - `npm run tenant:backfill` — atribuir um órgão aos registros anteriores ao multi-tenant (roda **uma vez**).
 - `npm run suporte:conceder -- <email>` / `suporte:revogar` / `suporte:listar` — marca da equipe do fornecedor.
@@ -269,13 +270,45 @@ Cada painel **só aparece com permissão** no recurso correspondente (`RELATORIO
 
 `/agenda` — reuniões de monitoramento, visitas in loco, Comissão de Monitoramento e Avaliação (Lei 13.019, arts. 58-59), audiências e compromissos no TCESP. Calendário mensal + lista.
 
-- **Compromisso *acontece*; tarefa *vence*.** É a distinção que justifica a tabela separada em vez de mais um recorte da Fiscalização: uma reunião não fica "atrasada há 3 dias" — ela ocorreu, foi cancelada, ou ainda vem. E o que sobra dela é o **registro** do que foi tratado, não um check de conclusão.
-- **O registro só existe depois de REALIZADO** (`validarCompromisso`). Guardar a ata de um encontro que o próprio sistema considera não realizado deixaria o histórico afirmando o que foi discutido num evento que não houve. Voltar de realizado para agendado **apaga** o registro, pela mesma razão.
-- **"Sem registro" não é atraso.** Compromisso passado que continua `AGENDADO` significa que ninguém fechou o que houve — e reunião sem registro não deixou rastro nenhum. É o KPI que a agenda cobra.
-- **Do compromisso nascem providências.** `Tarefa.compromissoId` liga as duas pontas: o botão *Gerar providência* leva à Fiscalização com o formulário preenchido (como o sino já faz), e aí quem cobra prazo é o módulo que sabe cobrar. Compromisso que gerou tarefas **não pode ser excluído** — as tarefas ficariam sem origem; o caminho é **Cancelado**.
-- **Participantes em texto livre, um por linha.** A reunião junta gente do órgão (`Usuario`) e da OSC (que não tem cadastro de pessoas): modelar os dois lados criaria um N:N heterogêneo para resolver o que uma lista resolve.
-- Remarcar é **editar a data** — não há campo de remarcação, porque a trilha de auditoria já guarda o diff e responde "quando mudou".
-- Recurso `AGENDA`. Excluir exige faixa **Total**. Coberto por `npm run verificar:workflow`.
+**Compromisso *acontece*; tarefa *vence*.** É a distinção que justifica a tabela separada em vez de mais um recorte da Fiscalização: uma reunião não fica "atrasada há 3 dias" — ela ocorreu, foi cancelada, ou ainda vem. O que sobra dela é o **registro** do que foi tratado.
+
+### Visibilidade — a regra de segurança do módulo
+
+Três níveis, em ordem de precedência (`core/compromisso/visibilidade.ts`):
+
+| Nível | Quem vê |
+|---|---|
+| `PARTICULAR` | **só o criador** |
+| `RESTRITO` | criador + participantes + membros dos grupos convidados |
+| `ORGAO` | todos do órgão (o recorte por tenant continua valendo por cima) |
+
+- **Nem administrador vê um particular.** Perfil administrativo autoriza operar o sistema, não ler a agenda pessoal de um colega. Quem quiser essa exceção precisa criá-la de forma explícita e auditável, não herdá-la de um cargo.
+- **A regra é aplicada na consulta**, em `PrismaCompromissoRepository.filtroDeVisibilidade` — não na tela. Manipular filtro, URL ou id não revela nada, porque o SQL já sai recortado. O `podeVer` puro do core existe para provar a mesma regra sem banco; se os dois divergirem, `verificar:agenda` acusa.
+- **"Não é seu" e "não existe" devolvem a mesma resposta.** Um 403 distinguível de um 404 confirmaria que aquele id existe.
+- **O vínculo de grupo é com o grupo, não com a lista de membros do momento** — quem entrar depois passa a ver, sem nada ser reprocessado.
+- **Ver ≠ alterar.** Ser convidado dá direito de ver; alterar é do criador, do responsável, ou de quem tem faixa **Total** em `AGENDA` — e mesmo esse não alcança um particular. Reusa o RBAC existente em vez de criar uma escala paralela de ações.
+
+### Recorrência e desempenho
+
+- Guardada como **regra**, não materializada em linhas: um "toda semana, sem fim" seriam infinitas cópias, e editar a série passaria a ser varrer centenas delas. A expansão acontece na leitura (`expandirRecorrencia`), limitada por `MAX_OCORRENCIAS`.
+- **A janela de datas é obrigatória** na API e limitada a 92 dias. Sem isso, abrir a agenda carregaria anos — e a expansão tornaria o custo pior. O índice `[clienteId, inicioEm]` serve exatamente a essa consulta.
+- Ocorrência expandida vem marcada com `ocorrencia: true`; a tela avisa que editar ali altera a série inteira.
+
+### Regras menores que carregam peso
+
+- **O registro só existe depois de REALIZADO.** Guardar a ata de um encontro que o sistema considera não realizado deixaria o histórico afirmando o que foi tratado num evento que não houve. Voltar para agendado **apaga** o registro.
+- **`RESTRITO` exige alguém.** Restrito sem participante nem grupo é um particular com o rótulo errado — e o rótulo é lido pela regra de segurança.
+- **"Sem registro" não é atraso**: compromisso passado que continua `AGENDADO` significa que ninguém fechou o que houve.
+- **Do compromisso nascem providências** (`Tarefa.compromissoId`). Compromisso que gerou tarefas **não pode ser excluído** — o caminho é **Cancelado**.
+- Cor é **token da paleta**, não hex: a tela decide como pintar e o tema escuro continua legível.
+- Lembrete guarda a **antecedência**, não o instante: se a reunião mudar de hora, ele acompanha.
+- Os vínculos são substituídos por inteiro na edição — calcular o diff de participantes daria uma trilha mais fina, mas trocaria uma operação previsível por três.
+
+### O que ainda falta
+
+- **Envio de e-mail não funciona**: `IEmailService` é o `ConsoleEmailService`, um stub. E **não há agendador** no sistema — lembrete "30 min antes" por e-mail exige um processo que acorde. O canal `EMAIL` está modelado (com `enviadoEm` para impedir duplicidade), mas nada dispara.
+- Vistas **dia** e **semana**, arrastar/redimensionar, e notificação ao convidado na criação/alteração.
+- Recurso `AGENDA`. Coberto por `npm run verificar:agenda` (38 checagens, sem banco).
 
 ## Fiscalização | Monitoramento (Workflow)
 
