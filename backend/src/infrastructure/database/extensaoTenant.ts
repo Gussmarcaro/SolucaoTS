@@ -45,9 +45,48 @@ export type ArgsPrisma = {
   [k: string]: unknown;
 };
 
+/**
+ * Models sem coluna própria que **mesmo assim** precisam do recorte, porque
+ * alguma consulta os alcança sem passar pelo pai.
+ *
+ * A regra geral continua valendo — filho chegado pelo id do pai já está
+ * protegido, e denormalizar `clienteId` em 44 tabelas seria responder com uma
+ * coluna o que a relação responde. O que muda aqui é que alguns filhos são
+ * consultados **direto**, e para esses "o pai já foi filtrado" é falso:
+ *
+ * - **`PrestacaoContas`** é a porta de ~28 blocos. Todo caso de uso de bloco
+ *   começa por `garantirPrestacao(id)`, então recortar a prestação fecha a
+ *   subárvore inteira de uma vez — sem tocar em nenhum dos blocos.
+ * - **`TermoAditivo`** e **`DocumentoRegularidade`** são varridos pelo sino
+ *   (`PrismaAlertaRepository`) sem nenhuma amarra com o pai: sem isto, o alerta
+ *   de um órgão aparecia para outro.
+ * - Os demais são varridos **por CPF** pelo relatório do titular da LGPD
+ *   (`PrismaTitularRepository`) — uma busca que, sem recorte, encontraria a
+ *   mesma pessoa nos dados de todos os clientes.
+ *
+ * O valor é uma função porque o filtro carrega o órgão da requisição.
+ */
+const POR_RELACAO: Record<string, (tenant: string) => Record<string, unknown>> = {
+  PrestacaoContas: (t) => ({ ajuste: { clienteId: t } }),
+  TermoAditivo: (t) => ({ ajuste: { clienteId: t } }),
+  DocumentoRegularidade: (t) => ({ entidade: { clienteId: t } }),
+  MembroDiretoria: (t) => ({ entidade: { clienteId: t } }),
+  MembroConselho: (t) => ({ entidade: { clienteId: t } }),
+  AtaDiretoriaArquivo: (t) => ({ entidade: { clienteId: t } }),
+  RelacaoEmpregado: (t) => ({ prestacao: { ajuste: { clienteId: t } } }),
+  ServidorCedido: (t) => ({ prestacao: { ajuste: { clienteId: t } } }),
+  EmpenhoPrestacao: (t) => ({ prestacao: { ajuste: { clienteId: t } } }),
+  DocumentoFiscal: (t) => ({ prestacao: { ajuste: { clienteId: t } } }),
+};
+
 /** O model está sujeito ao filtro? `Cliente` entra por um caminho próprio. */
 export function ehRaizDeTenant(model: string): boolean {
   return model === 'Cliente' || MODELS_COM_CLIENTE.has(model);
+}
+
+/** O model é filtrado por relação, sem ter coluna própria? */
+export function ehFiltradoPorRelacao(model: string): boolean {
+  return model in POR_RELACAO;
 }
 
 /**
@@ -63,11 +102,16 @@ export function aplicarTenant(
   args: ArgsPrisma | undefined,
   tenant: string | null,
 ): ArgsPrisma | undefined {
-  if (!tenant || !ehRaizDeTenant(model)) return args;
+  if (!tenant || (!ehRaizDeTenant(model) && !ehFiltradoPorRelacao(model))) return args;
 
-  // O próprio órgão se identifica pelo id, não por uma coluna `clienteId` que
-  // ele não tem: um usuário só enxerga o Cliente que é o dele.
-  const filtro = model === 'Cliente' ? { id: tenant } : { clienteId: tenant };
+  // Três formas de chegar ao órgão, em ordem de precisão: o próprio id (o
+  // `Cliente`), a coluna própria (as raízes) e a relação até uma raiz.
+  const filtro =
+    model === 'Cliente'
+      ? { id: tenant }
+      : ehRaizDeTenant(model)
+        ? { clienteId: tenant }
+        : POR_RELACAO[model](tenant);
   const a: ArgsPrisma = { ...(args ?? {}) };
 
   if (POR_CHAVE_UNICA.has(operation)) {
@@ -77,7 +121,13 @@ export function aplicarTenant(
     // certa do ponto de vista de não revelar o que existe.
     a.where = { ...(a.where ?? {}), ...filtro };
     // `upsert` cria quando não acha: o registro novo nasce do órgão certo.
-    if (operation === 'upsert' && a.create) a.create = { ...a.create, ...filtro };
+    //
+    // Só nas raízes. Num model filtrado por relação, o "filtro" é
+    // `{ ajuste: { clienteId } }` — uma condição de leitura, que como dado de
+    // criação seria inválida. Lá o órgão vem do pai, que já está no payload.
+    if (operation === 'upsert' && a.create && ehRaizDeTenant(model) && model !== 'Cliente') {
+      a.create = { ...a.create, ...filtro };
+    }
     return a;
   }
 

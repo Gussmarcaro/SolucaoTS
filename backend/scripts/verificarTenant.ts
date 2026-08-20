@@ -13,6 +13,7 @@ import { join } from 'node:path';
 import { Prisma } from '@prisma/client';
 import {
   aplicarTenant,
+  ehFiltradoPorRelacao,
   ehRaizDeTenant,
   type ArgsPrisma,
 } from '../src/infrastructure/database/extensaoTenant';
@@ -76,6 +77,23 @@ console.log('\nIsolamento multi-tenant\n');
   // uma coluna que a relação já dispensa — e a mantê-la sincronizada.
   for (const m of ['Pagamento', 'DocumentoFiscal', 'PrestacaoContas', 'TermoAditivo', 'Meta']) {
     conferir(`${m} não é raiz (herda pelo pai)`, !ehRaizDeTenant(m));
+  }
+
+  // Mas alguns filhos são consultados **direto**, sem passar pelo pai — e para
+  // esses "o pai já foi filtrado" é falso. Eles ganham filtro por relação.
+  const PORTAS: Record<string, string> = {
+    PrestacaoContas: 'porta de ~28 blocos; todo caso de uso começa por garantirPrestacao',
+    TermoAditivo: 'o sino varre sem amarra com o ajuste',
+    DocumentoRegularidade: 'o sino e o relatório do titular varrem direto',
+    MembroDiretoria: 'o relatório do titular busca por CPF',
+    MembroConselho: 'o relatório do titular busca por CPF',
+    RelacaoEmpregado: 'o relatório do titular busca por CPF',
+    ServidorCedido: 'o relatório do titular busca por CPF',
+    EmpenhoPrestacao: 'o relatório do titular busca por CPF',
+    DocumentoFiscal: 'o relatório do titular busca por CPF',
+  };
+  for (const [m, porque] of Object.entries(PORTAS)) {
+    conferir(`${m} é filtrado por relação`, ehFiltradoPorRelacao(m), porque);
   }
   conferir('tabela de domínio não é raiz', !ehRaizDeTenant('Cbo'), 'catálogo oficial é comum a todos');
 }
@@ -207,6 +225,52 @@ console.log('\nIsolamento multi-tenant\n');
     'Cliente é recortado pelo id, não por clienteId',
     json(r?.where) === json({ id: T }),
     'o órgão não tem coluna apontando para si mesmo',
+  );
+}
+
+// --- filtro por relação -----------------------------------------------------
+{
+  const lista = aplicarTenant('PrestacaoContas', 'findMany', { where: { ano: 2025 } }, T);
+  conferir(
+    'prestação é recortada pelo ajuste',
+    json(lista?.where) === json({ AND: [{ ano: 2025 }, { ajuste: { clienteId: T } }] }),
+    json(lista?.where),
+  );
+
+  const porId = aplicarTenant('PrestacaoContas', 'findUnique', { where: { id: 'p1' } }, T);
+  conferir(
+    'buscar prestação por id de outro órgão vira "não encontrada"',
+    json(porId?.where) === json({ id: 'p1', ajuste: { clienteId: T } }),
+    'fecha a subárvore inteira: os blocos começam por garantirPrestacao',
+  );
+
+  const doisSaltos = aplicarTenant('DocumentoFiscal', 'findMany', { where: { credorNumeroDoc: '1' } }, T);
+  conferir(
+    'documento fiscal chega ao órgão em dois saltos',
+    json(doisSaltos?.where) ===
+      json({ AND: [{ credorNumeroDoc: '1' }, { prestacao: { ajuste: { clienteId: T } } }] }),
+    json(doisSaltos?.where),
+  );
+
+  const doSino = aplicarTenant('DocumentoRegularidade', 'findMany', {}, T);
+  conferir(
+    'certidão da entidade é recortada pela entidade',
+    json(doSino?.where) === json({ entidade: { clienteId: T } }),
+    'sem isto o alerta de um órgão aparecia no sino de outro',
+  );
+
+  // O filtro por relação é condição de leitura: como dado de criação seria
+  // inválido, e o órgão do filho vem do pai que já está no payload.
+  const ups = aplicarTenant(
+    'PrestacaoContas',
+    'upsert',
+    { where: { id: 'p1' }, create: { ano: 2025 }, update: {} },
+    T,
+  );
+  conferir(
+    'upsert de model por relação não carimba o create',
+    json(ups?.create) === json({ ano: 2025 }),
+    'o filtro é condição de leitura, não dado gravável',
   );
 }
 
