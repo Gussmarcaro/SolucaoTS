@@ -33,7 +33,7 @@ const selecao = {
   responsavel: { select: { nome: true } },
   participantes: { select: { usuarioId: true, usuario: { select: { nome: true } } } },
   grupos: { select: { grupoId: true, grupo: { select: { nome: true } } } },
-  alertas: { select: { id: true, minutosAntes: true, canal: true } },
+  alertas: { select: { id: true, minutosAntes: true }, orderBy: { minutosAntes: 'asc' } },
   _count: { select: { tarefas: true } },
 } satisfies Prisma.CompromissoSelect;
 
@@ -93,7 +93,7 @@ function filtroDeVisibilidade(quem: Espectador): Prisma.CompromissoWhereInput {
   return { OR: ramos };
 }
 
-/** Vínculos e alertas são substituídos por inteiro — ver `gravarVinculos`. */
+/** Campos escalares do compromisso; vínculos e alertas vão à parte. */
 function dadosDoCompromisso(d: DadosCompromisso) {
   return {
     tipo: d.tipo,
@@ -176,8 +176,7 @@ export class PrismaCompromissoRepository implements ICompromissoRepository {
    * Calcular o diff de participantes daria uma linha de auditoria mais fina,
    * mas trocaria uma operação previsível por três (incluir, remover, manter) —
    * e a trilha já registra o antes e o depois do compromisso. Alertas seguem a
-   * mesma regra; recriar zera `enviadoEm`, o que é correto: mudou o lembrete,
-   * ele volta a valer.
+   * mesma regra.
    */
   async atualizar(id: string, d: DadosCompromisso): Promise<Compromisso> {
     const [, , , row] = await prisma.$transaction([

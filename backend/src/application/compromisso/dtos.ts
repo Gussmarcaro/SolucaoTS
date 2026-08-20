@@ -1,5 +1,4 @@
 import type {
-  CanalAlerta,
   Recorrencia,
   StatusCompromisso,
   TipoCompromisso,
@@ -8,7 +7,6 @@ import type { VisibilidadeCompromisso } from '@/core/compromisso/visibilidade';
 
 export interface AlertaDTO {
   minutosAntes: number | string;
-  canal?: string | null;
 }
 
 export interface CriarCompromissoDTO {
@@ -58,7 +56,7 @@ export interface DadosCompromisso {
   registro: string | null;
   participantes: string[];
   grupos: string[];
-  alertas: { minutosAntes: number; canal: CanalAlerta }[];
+  alertas: { minutosAntes: number }[];
 }
 
 export interface FiltrosCompromisso {

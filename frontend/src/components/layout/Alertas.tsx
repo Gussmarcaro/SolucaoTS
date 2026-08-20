@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Building2,
   CalendarClock,
+  CalendarDays,
   CheckCheck,
   ClipboardCheck,
   FileWarning,
@@ -33,6 +34,7 @@ const ICONES: Record<TipoAlerta, LucideIcon> = {
   CADASTRO_ADITIVO: CalendarClock,
   DECLARACAO_NEGATIVA: Building2,
   PRESTACAO_CONTAS: ClipboardCheck,
+  COMPROMISSO: CalendarDays,
 };
 
 const ORDEM: UrgenciaAlerta[] = ['VENCIDO', 'CRITICO', 'PROXIMO'];

@@ -26,10 +26,14 @@ const VAZIO: DadosAlertas = {
   orgaos: [],
   ajustesSemPrestacao: 0,
   tarefasDeAlerta: [],
+  lembretes: [],
 };
 
+/** O sino passou a ter dono: lembretes de agenda dependem de quem pergunta. */
+const ESPECTADOR = { usuarioId: 'u1', grupoId: 'g1' };
+
 const executar = (dados: Partial<DadosAlertas>, hoje: Date) =>
-  new ListarAlertasUseCase({ coletar: async () => ({ ...VAZIO, ...dados }) }).execute(hoje);
+  new ListarAlertasUseCase({ coletar: async () => ({ ...VAZIO, ...dados }) }).execute(ESPECTADOR, hoje);
 
 console.log('\nAlertas do sino\n');
 
@@ -211,6 +215,49 @@ const hoje = new Date('2026-08-13T00:00:00Z'); // quinta-feira
     hoje,
   );
   conferir('tarefa de outro alerta não interfere', outra?.id === 'cadastro-ajuste:a1' && outra?.tarefa === null);
+}
+
+// --- lembretes da agenda ----------------------------------------------------
+// O sino passou a carregar a agenda. O que se prova aqui é a tradução: o
+// repositório entrega só o lembrete **maduro** (já é hora de avisar) e já
+// recortado pela visibilidade — este caso de uso apenas o veste.
+{
+  const lembrete = (minutosAntes: number, inicioEm: string) => ({
+    compromissoId: 'c1',
+    titulo: 'Reunião de monitoramento',
+    inicioEm,
+    local: 'Sede da OSC',
+    minutosAntes,
+  });
+
+  const agora = new Date('2026-08-13T13:30:00Z');
+  const [a] = await executar({ lembretes: [lembrete(30, '2026-08-13T14:00:00Z')] }, agora);
+
+  conferir('lembrete de compromisso vira alerta', a?.tipo === 'COMPROMISSO');
+  conferir('id do lembrete é estável', a?.id === 'compromisso:c1:30', a?.id);
+  conferir(
+    'lembrete não usa dias, e sim minutos',
+    a?.dias === null && /em 30 min/.test(a?.detalhe ?? ''),
+    a?.detalhe,
+  );
+  conferir('o local entra no detalhe', /Sede da OSC/.test(a?.detalhe ?? ''));
+  conferir('lembrete leva ao compromisso', a?.referenciaId === 'c1');
+
+  const [jaComecou] = await executar(
+    { lembretes: [lembrete(30, '2026-08-13T13:30:00Z')] },
+    agora,
+  );
+  conferir('na hora, o texto diz "agora"', /agora/.test(jaComecou?.detalhe ?? ''), jaComecou?.detalhe);
+
+  // Duas antecedências no mesmo compromisso são dois avisos distintos — e
+  // precisam de ids distintos, senão um sobrescreve o outro na tela.
+  const dois = await executar(
+    {
+      lembretes: [lembrete(30, '2026-08-13T14:00:00Z'), lembrete(60, '2026-08-13T14:00:00Z')],
+    },
+    agora,
+  );
+  conferir('duas antecedências geram dois ids distintos', new Set(dois.map((x) => x.id)).size === 2);
 }
 
 console.log(falhas.length ? `\n${falhas.length} falha(s).\n` : '\nTudo ok.\n');

@@ -1,10 +1,8 @@
 import { BusinessError } from '@/shared/errors';
 import {
-  CANAIS,
   RECORRENCIAS,
   STATUS,
   TIPOS,
-  type CanalAlerta,
   type Recorrencia,
   type StatusCompromisso,
   type TipoCompromisso,
@@ -138,16 +136,13 @@ export function normalizarEValidarCompromisso(input: CriarCompromissoDTO): Dados
     const minutosAntes = Number(a?.minutosAntes);
     if (!Number.isInteger(minutosAntes) || minutosAntes < 0 || minutosAntes > MAX_MINUTOS_ANTES)
       throw new BusinessError('Antecedência de alerta inválida.');
-    const canal = (a?.canal?.trim() || 'SISTEMA') as CanalAlerta;
-    if (!CANAIS.includes(canal)) throw new BusinessError('Canal de alerta inválido.');
-    return { minutosAntes, canal };
+    return { minutosAntes };
   });
 
-  // Mesma antecedência no mesmo canal, duas vezes, é o mesmo lembrete — e a
-  // chave única do banco recusaria com uma mensagem que não ajuda ninguém.
-  const chaves = new Set(alertas.map((a) => `${a.minutosAntes}|${a.canal}`));
-  if (chaves.size !== alertas.length)
-    throw new BusinessError('Há alertas repetidos com a mesma antecedência e canal.');
+  // A mesma antecedência duas vezes é o mesmo lembrete — e a chave única do
+  // banco recusaria com uma mensagem que não ajuda ninguém.
+  if (new Set(alertas.map((a) => a.minutosAntes)).size !== alertas.length)
+    throw new BusinessError('Há lembretes repetidos com a mesma antecedência.');
 
   return {
     tipo,

@@ -18,10 +18,23 @@ export interface DadosAlertas {
   ajustesSemPrestacao: number;
   /** Tarefas de acompanhamento nascidas de um alerta (as não canceladas). */
   tarefasDeAlerta: { id: string; origemAlerta: string; status: string }[];
+  /**
+   * Lembretes de compromisso já **maduros** — o repositório só entrega os que
+   * chegaram a hora de avisar, e só os que o usuário enxerga. A regra de
+   * visibilidade da agenda vale aqui igual: o sino não pode ser a porta dos
+   * fundos para a agenda particular de um colega.
+   */
+  lembretes: {
+    compromissoId: string;
+    titulo: string;
+    inicioEm: string;
+    local: string | null;
+    minutosAntes: number;
+  }[];
 }
 
 export interface IAlertaRepository {
-  coletar(desde: string): Promise<DadosAlertas>;
+  coletar(desde: string, espectador: { usuarioId: string; grupoId: string | null }): Promise<DadosAlertas>;
 }
 
 /** Prazo do TCESP para cadastrar Ajuste e Termo Aditivo (§5 das regras). */
@@ -66,10 +79,13 @@ function fimDosQuadrimestres(hoje: Date): Date[] {
 export class ListarAlertasUseCase {
   constructor(private readonly repo: IAlertaRepository) {}
 
-  async execute(hoje = new Date()): Promise<Alerta[]> {
+  async execute(
+    espectador: { usuarioId: string; grupoId: string | null },
+    hoje = new Date(),
+  ): Promise<Alerta[]> {
     const desde = new Date(hoje.getTime());
     desde.setUTCDate(desde.getUTCDate() - JANELA_PASSADA);
-    const dados = await this.repo.coletar(desde.toISOString().slice(0, 10));
+    const dados = await this.repo.coletar(desde.toISOString().slice(0, 10), espectador);
 
     const base: AlertaBase[] = [
       ...this.rejeitadas(dados),
@@ -77,6 +93,7 @@ export class ListarAlertasUseCase {
       ...this.cadastros(dados, hoje),
       ...this.declaracoesNegativas(dados, hoje),
       ...this.prestacaoDeContas(dados, hoje),
+      ...this.lembretes(dados, hoje),
     ];
 
     const alertas = this.comTarefas(base, dados);
@@ -224,6 +241,30 @@ export class ListarAlertasUseCase {
           referenciaId: o.id,
         },
       ];
+    });
+  }
+
+  /**
+   * Lembretes de compromisso da agenda.
+   *
+   * Diferente dos demais alertas, este é medido em **minutos**, não em dias — a
+   * reunião é daqui a pouco, não daqui a uma semana. Por isso `dias` vai nulo e
+   * a urgência é sempre crítica: o aviso só aparece quando já é hora de avisar.
+   */
+  private lembretes(d: DadosAlertas, hoje: Date): AlertaBase[] {
+    return (d.lembretes ?? []).map((l) => {
+      const faltam = Math.round((new Date(l.inicioEm).getTime() - hoje.getTime()) / 60000);
+      const quando =
+        faltam <= 0 ? 'agora' : faltam < 60 ? `em ${faltam} min` : `em ${Math.round(faltam / 60)}h`;
+      return {
+        id: `compromisso:${l.compromissoId}:${l.minutosAntes}`,
+        tipo: 'COMPROMISSO' as const,
+        urgencia: 'CRITICO' as const,
+        titulo: l.titulo,
+        detalhe: `Começa ${quando}${l.local ? ` · ${l.local}` : ''}.`,
+        dias: null,
+        referenciaId: l.compromissoId,
+      };
     });
   }
 

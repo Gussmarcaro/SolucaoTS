@@ -4,7 +4,8 @@ export type TipoAlerta =
   | 'CADASTRO_AJUSTE'
   | 'CADASTRO_ADITIVO'
   | 'DECLARACAO_NEGATIVA'
-  | 'PRESTACAO_CONTAS';
+  | 'PRESTACAO_CONTAS'
+  | 'COMPROMISSO';
 
 export type UrgenciaAlerta = 'VENCIDO' | 'CRITICO' | 'PROXIMO';
 
@@ -90,5 +91,7 @@ export function rotaDoAlerta(a: Alerta): string {
       return '/orgaos';
     case 'PRESTACAO_CONTAS':
       return '/prestacao-contas';
+    case 'COMPROMISSO':
+      return '/agenda';
   }
 }

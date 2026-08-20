@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AlertCircle, Bell, Info, Loader2, Lock, Repeat, Users, X } from 'lucide-react';
+import { AlertCircle, Bell, Loader2, Lock, Repeat, Users, X } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Combobox, type OpcaoCombo } from '@/components/ui/Combobox';
@@ -20,7 +20,6 @@ import {
   VISIBILIDADE_LABEL,
   paraInputDateTime,
   rotuloAntecedencia,
-  type CanalAlerta,
   type Compromisso,
   type CompromissoPayload,
   type Recorrencia,
@@ -186,7 +185,7 @@ export function CompromissoForm({ compromisso, diaInicial, onSuccess, onCancel }
       // que o usuário perca a edição por causa de uma lista esquecida na tela.
       participantes: particular ? [] : participantes.map((p) => p.id),
       grupos: particular ? [] : grupos.map((g) => g.id),
-      alertas: alertas.map((a) => ({ minutosAntes: a.minutosAntes, canal: a.canal })),
+      alertas: alertas.map((a) => ({ minutosAntes: a.minutosAntes })),
     };
 
     setSalvando(true);
@@ -449,8 +448,8 @@ export function CompromissoForm({ compromisso, diaInicial, onSuccess, onCancel }
                 onChange={(e) => {
                   const minutos = Number(e.target.value);
                   if (!minutos) return;
-                  if (alertas.some((a) => a.minutosAntes === minutos && a.canal === 'SISTEMA')) return;
-                  setAlertas([...alertas, { minutosAntes: minutos, canal: 'SISTEMA' as CanalAlerta }]);
+                  if (alertas.some((a) => a.minutosAntes === minutos)) return;
+                  setAlertas([...alertas, { minutosAntes: minutos }]);
                 }}
                 options={ANTECEDENCIAS.map((a) => ({ value: String(a.minutos), label: a.label }))}
                 placeholder="Adicionar lembrete..."
@@ -460,46 +459,29 @@ export function CompromissoForm({ compromisso, diaInicial, onSuccess, onCancel }
 
           {alertas.length > 0 && (
             <ul className="mt-2 space-y-1">
-              {alertas.map((a, i) => (
+              {alertas.map((a) => (
                 <li
-                  key={`${a.minutosAntes}-${a.canal}`}
+                  key={a.minutosAntes}
                   className="flex items-center justify-between gap-2 rounded-lg bg-ink-50 px-3 py-1.5 text-xs dark:bg-ink-800/40"
                 >
                   <span className="text-ink-700 dark:text-ink-200">
                     {rotuloAntecedencia(a.minutosAntes)}
                   </span>
-                  <span className="flex items-center gap-2">
-                    <select
-                      value={a.canal}
-                      onChange={(e) => {
-                        const canal = e.target.value as CanalAlerta;
-                        setAlertas(alertas.map((x, j) => (j === i ? { ...x, canal } : x)));
-                      }}
-                      className="rounded border border-ink-200 bg-white px-1.5 py-0.5 text-[11px] dark:border-ink-700 dark:bg-ink-900"
-                    >
-                      <option value="SISTEMA">No sistema</option>
-                      <option value="EMAIL">Por e-mail</option>
-                    </select>
-                    <button
-                      type="button"
-                      onClick={() => setAlertas(alertas.filter((_, j) => j !== i))}
-                      aria-label="Remover lembrete"
-                    >
-                      <X className="h-3.5 w-3.5 text-ink-400 hover:text-red-500" />
-                    </button>
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setAlertas(alertas.filter((x) => x.minutosAntes !== a.minutosAntes))}
+                    aria-label="Remover lembrete"
+                  >
+                    <X className="h-3.5 w-3.5 text-ink-400 hover:text-red-500" />
+                  </button>
                 </li>
               ))}
             </ul>
           )}
 
-          {alertas.some((a) => a.canal === 'EMAIL') && (
-            <p className="mt-2 flex items-start gap-2 text-[11px] text-amber-700 dark:text-amber-400">
-              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              O envio por e-mail depende do serviço de e-mail estar configurado no servidor. O
-              lembrete no sistema funciona sempre.
-            </p>
-          )}
+          <p className="mt-2 text-[11px] text-ink-400">
+            O lembrete aparece no sino do sistema quando chegar a hora.
+          </p>
         </section>
 
         {editando && (

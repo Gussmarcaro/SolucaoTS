@@ -115,11 +115,6 @@ enum Recorrencia {
   ANUAL
 }
 
-enum CanalAlerta {
-  SISTEMA // aparece no sino, calculado na consulta
-  EMAIL // exige adapter de e-mail real e um processo que dispare
-}
-
 // 1=CPF, 2=CNPJ, 3=RNE (estrangeiro)
 enum TipoDocumento {
   CPF
@@ -1521,25 +1516,23 @@ model CompromissoGrupo {
   @@index([grupoId])
 }
 
-/// Lembrete de um compromisso.
+/// Lembrete de um compromisso — **dentro do sistema**, no sino.
 ///
 /// Guarda a **antecedência**, não o instante de disparo: se a reunião mudar de
 /// hora, o lembrete acompanha sozinho. Instante gravado viraria alerta de um
 /// horário que já não existe.
+///
+/// Não há canal de e-mail. Modelar um que nada dispara seria pior que não ter:
+/// a estrutura sugere que funciona, e o usuário confia num aviso que nunca vem.
+/// Se o e-mail entrar depois, a coluna volta — junto com o processo que a usa.
 model CompromissoAlerta {
-  id            String      @id @default(uuid()) @db.Uuid
-  compromissoId String      @db.Uuid
+  id            String @id @default(uuid()) @db.Uuid
+  compromissoId String @db.Uuid
   minutosAntes  Int
-  canal         CanalAlerta @default(SISTEMA)
-
-  /// Quando o e-mail foi efetivamente enviado. É o que impede envio duplicado:
-  /// o disparo confere isto antes de mandar, e a coluna é a marca do "já foi".
-  enviadoEm DateTime?
 
   compromisso Compromisso @relation(fields: [compromissoId], references: [id], onDelete: Cascade)
 
-  @@unique([compromissoId, minutosAntes, canal])
-  @@index([canal, enviadoEm])
+  @@unique([compromissoId, minutosAntes])
 }
 
 // ============================================================================

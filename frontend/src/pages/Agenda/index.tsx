@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   CalendarClock,
   CalendarDays,
+  CalendarRange,
   CheckCircle2,
   ClipboardList,
   FileWarning,
@@ -24,6 +25,7 @@ import { KpiTile } from '@/components/ui/KpiTile';
 import { AcoesGrade, IconBtn } from '@/components/ui/AcoesGrade';
 import { usePermissoes } from '@/contexts/PermissoesContext';
 import { Calendario } from './Calendario';
+import { GradeHoraria } from './GradeHoraria';
 import { CompromissoForm } from './CompromissoForm';
 import {
   definirStatusCompromisso,
@@ -67,8 +69,10 @@ export function Agenda() {
   const podeEditar = usePermissoes().pode('AGENDA', 'EDICAO');
   const navigate = useNavigate();
 
-  const [vista, setVista] = useState<'calendario' | 'lista'>('calendario');
+  const [vista, setVista] = useState<'dia' | 'semana' | 'mes' | 'lista'>('mes');
   const [mes, setMes] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+  /** Dia de referência das vistas de dia e semana. */
+  const [dia, setDia] = useState(() => new Date());
   const [soPendentes, setSoPendentes] = useState(false);
   const [compromissos, setCompromissos] = useState<Compromisso[] | null>(null);
   const [resumo, setResumo] = useState<ResumoAgenda | null>(null);
@@ -85,13 +89,25 @@ export function Agenda() {
   // que impede a tela de puxar anos de agenda ao abrir. Na lista vale o mesmo
   // mês exibido no calendário, para as duas vistas contarem a mesma história.
   const janela = useMemo(() => {
+    // Cada vista pede exatamente o que mostra — é o que mantém a consulta
+    // barata: a vista de dia não tem por que carregar o mês.
+    if (vista === 'dia' || vista === 'semana') {
+      const de = new Date(dia);
+      if (vista === 'semana') de.setDate(de.getDate() - de.getDay());
+      de.setHours(0, 0, 0, 0);
+      const ate = new Date(de);
+      ate.setDate(ate.getDate() + (vista === 'semana' ? 6 : 0));
+      ate.setHours(23, 59, 59, 999);
+      return { de: de.toISOString(), ate: ate.toISOString() };
+    }
+    // Mês e lista: o mês exibido, com as bordas das semanas que a grade mostra.
     const de = new Date(mes.getFullYear(), mes.getMonth(), 1);
     de.setDate(de.getDate() - 7);
     const ate = new Date(mes.getFullYear(), mes.getMonth() + 1, 0);
     ate.setDate(ate.getDate() + 7);
     ate.setHours(23, 59, 59, 999);
     return { de: de.toISOString(), ate: ate.toISOString() };
-  }, [mes]);
+  }, [vista, mes, dia]);
 
   useEffect(() => {
     let vivo = true;
@@ -178,7 +194,9 @@ export function Agenda() {
             <div className="flex rounded-lg border border-ink-200 p-0.5 dark:border-ink-800">
               {(
                 [
-                  ['calendario', CalendarDays, 'Calendário'],
+                  ['dia', CalendarRange, 'Dia'],
+                  ['semana', CalendarRange, 'Semana'],
+                  ['mes', CalendarDays, 'Mês'],
                   ['lista', List, 'Lista'],
                 ] as const
               ).map(([id, Icone, rotulo]) => (
@@ -236,13 +254,22 @@ export function Agenda() {
         </div>
       )}
 
-      {vista === 'calendario' ? (
+      {vista === 'dia' || vista === 'semana' ? (
+        <GradeHoraria
+          dias={vista === 'semana' ? 7 : 1}
+          inicio={dia}
+          onInicio={setDia}
+          compromissos={lista}
+          onAbrir={(c) => setModal({ tipo: 'editar', c })}
+          onHorario={(quando) => podeEditar && setModal({ tipo: 'novo', dia: quando })}
+        />
+      ) : vista === 'mes' ? (
         <Calendario
           mes={mes}
           onMes={setMes}
           compromissos={lista}
           onAbrir={(c) => setModal({ tipo: 'editar', c })}
-          onDia={(dia) => podeEditar && setModal({ tipo: 'novo', dia })}
+          onDia={(d) => podeEditar && setModal({ tipo: 'novo', dia: d })}
         />
       ) : (
         <div className="overflow-hidden rounded-2xl border border-ink-200/70 bg-white shadow-card dark:border-ink-800/70 dark:bg-ink-900">

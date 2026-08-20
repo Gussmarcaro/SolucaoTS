@@ -9,12 +9,11 @@ export type TipoCompromisso =
 export type StatusCompromisso = 'AGENDADO' | 'REALIZADO' | 'CANCELADO';
 export type VisibilidadeCompromisso = 'PARTICULAR' | 'RESTRITO' | 'ORGAO';
 export type Recorrencia = 'NAO_REPETE' | 'DIARIA' | 'SEMANAL' | 'MENSAL' | 'ANUAL';
-export type CanalAlerta = 'SISTEMA' | 'EMAIL';
 
 export interface AlertaCompromisso {
   id?: string;
+  /** Antecedência em minutos. O aviso aparece no sino. */
   minutosAntes: number;
-  canal: CanalAlerta;
 }
 
 export interface Compromisso {
@@ -68,7 +67,7 @@ export interface CompromissoPayload {
   registro: string | null;
   participantes: string[];
   grupos: string[];
-  alertas: { minutosAntes: number; canal: CanalAlerta }[];
+  alertas: { minutosAntes: number }[];
 }
 
 export interface ResumoAgenda {

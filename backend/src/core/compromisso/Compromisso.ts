@@ -17,7 +17,6 @@ export type TipoCompromisso =
 
 export type StatusCompromisso = 'AGENDADO' | 'REALIZADO' | 'CANCELADO';
 export type Recorrencia = 'NAO_REPETE' | 'DIARIA' | 'SEMANAL' | 'MENSAL' | 'ANUAL';
-export type CanalAlerta = 'SISTEMA' | 'EMAIL';
 
 export const TIPOS: TipoCompromisso[] = [
   'REUNIAO_MONITORAMENTO',
@@ -30,12 +29,11 @@ export const TIPOS: TipoCompromisso[] = [
 
 export const STATUS: StatusCompromisso[] = ['AGENDADO', 'REALIZADO', 'CANCELADO'];
 export const RECORRENCIAS: Recorrencia[] = ['NAO_REPETE', 'DIARIA', 'SEMANAL', 'MENSAL', 'ANUAL'];
-export const CANAIS: CanalAlerta[] = ['SISTEMA', 'EMAIL'];
 
 export interface AlertaCompromisso {
   id: string;
+  /** Antecedência em minutos. O aviso aparece no sino, calculado na consulta. */
   minutosAntes: number;
-  canal: CanalAlerta;
 }
 
 export interface Compromisso {

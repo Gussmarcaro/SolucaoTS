@@ -301,14 +301,29 @@ Três níveis, em ordem de precedência (`core/compromisso/visibilidade.ts`):
 - **"Sem registro" não é atraso**: compromisso passado que continua `AGENDADO` significa que ninguém fechou o que houve.
 - **Do compromisso nascem providências** (`Tarefa.compromissoId`). Compromisso que gerou tarefas **não pode ser excluído** — o caminho é **Cancelado**.
 - Cor é **token da paleta**, não hex: a tela decide como pintar e o tema escuro continua legível.
-- Lembrete guarda a **antecedência**, não o instante: se a reunião mudar de hora, ele acompanha.
+- Lembrete guarda a **antecedência**, não o instante: se a reunião mudar de hora, ele acompanha. **Não há canal de e-mail** — modelar um que nada dispara seria pior que não ter: a estrutura sugere que funciona e o usuário confia num aviso que nunca vem.
 - Os vínculos são substituídos por inteiro na edição — calcular o diff de participantes daria uma trilha mais fina, mas trocaria uma operação previsível por três.
+
+### O lembrete no sino
+
+O aviso aparece no **sino**, no padrão dos demais alertas: **calculado na consulta, nunca gravado**. Notificação armazenada nasce desatualizada — a reunião muda de hora e o aviso continua marcando a antiga.
+
+- `GET /alertas` passou a **ter dono**: o sino carrega a agenda, e agenda tem visibilidade. Sem o espectador, o lembrete de um compromisso particular apareceria para todo mundo — o sino viraria a porta dos fundos.
+- Medido em **minutos**, não em dias: a reunião é daqui a pouco. Por isso `dias` vai nulo e o texto diz "em 30 min" / "agora".
+- Recorrência expandida também aqui, mas **só a próxima ocorrência**: avisar de todas as repetições futuras encheria o sino com a mesma reunião dezenas de vezes.
+- O id é `compromisso:<id>:<minutosAntes>` — duas antecedências são dois avisos distintos.
+
+### Vistas
+
+**Dia**, **semana**, **mês** e **lista**. Dia e semana são a mesma `GradeHoraria` com 1 ou 7 colunas: separá-las duplicaria o posicionamento por horário, que é a única parte difícil — e onde um erro aparece como reunião no lugar errado do dia. Compromisso de **dia inteiro** fica numa faixa acima da grade, não ocupando 24 horas de altura.
+
+**Cada vista pede exatamente a janela que mostra** — a de dia não carrega o mês.
 
 ### O que ainda falta
 
-- **Envio de e-mail não funciona**: `IEmailService` é o `ConsoleEmailService`, um stub. E **não há agendador** no sistema — lembrete "30 min antes" por e-mail exige um processo que acorde. O canal `EMAIL` está modelado (com `enviadoEm` para impedir duplicidade), mas nada dispara.
-- Vistas **dia** e **semana**, arrastar/redimensionar, e notificação ao convidado na criação/alteração.
-- Recurso `AGENDA`. Coberto por `npm run verificar:agenda` (38 checagens, sem banco).
+- Arrastar e redimensionar compromisso na grade (§15).
+- Notificar o convidado na criação/alteração (§8).
+- Recurso `AGENDA`. Coberto por `npm run verificar:agenda` (38 checagens) e pelos lembretes em `verificar:alertas`.
 
 ## Fiscalização | Monitoramento (Workflow)
 

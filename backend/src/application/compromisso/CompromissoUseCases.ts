@@ -126,7 +126,7 @@ export class CompromissoUseCases {
       registro: novo === 'REALIZADO' ? atual.registro : null,
       participantes: atual.participantes.map((p) => p.id),
       grupos: atual.grupos.map((g) => g.id),
-      alertas: atual.alertas.map((a) => ({ minutosAntes: a.minutosAntes, canal: a.canal })),
+      alertas: atual.alertas.map((a) => ({ minutosAntes: a.minutosAntes })),
     });
   }
 
