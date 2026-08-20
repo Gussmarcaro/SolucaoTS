@@ -230,7 +230,7 @@ Duas camadas de checagem automatizada:
 
   É a única camada que prova a ligação inteira — claim `cli` → `AsyncLocalStorage` → as duas extensions na ordem certa → o SQL com o recorte. Qualquer elo pode se soltar num refactor sem nada quebrar visivelmente: o sistema continua funcionando, e vazando.
 
-No `frontend/`, **`npm test`** (vitest) cobre a lógica pura que erra em silêncio: dígitos verificadores de CPF/CNPJ, a ida-e-volta da máscara de moeda (é ela que transforma o que o usuário digitou no valor da prestação), `dataBr` sem deslocamento de fuso e a aritmética do arrasto da agenda (`deslocar`, `podeArrastar`).
+No `frontend/`, **`npm test`** (vitest) cobre a lógica pura que erra em silêncio: dígitos verificadores de CPF/CNPJ, a ida-e-volta da máscara de moeda (é ela que transforma o que o usuário digitou no valor da prestação), `dataBr` sem deslocamento de fuso e as regras da agenda espelhadas do backend (`deslocar`, `podeArrastar`, `podeExcluir`).
 
 **A regra de prazo das tarefas está escrita duas vezes** — `core/tarefa/Tarefa.ts` no backend e `types/tarefa.ts` no front. Podem divergir sem nada quebrar: a grade diria "em dia" e o servidor consideraria atrasada. `src/types/tarefa.test.ts` fixa os mesmos limiares dos dois lados (inclusive o `≤ 7 dias` inclusivo) e é onde a divergência aparece.
 
@@ -287,7 +287,8 @@ Três níveis, em ordem de precedência (`core/compromisso/visibilidade.ts`):
 - **A regra é aplicada na consulta**, em `PrismaCompromissoRepository.filtroDeVisibilidade` — não na tela. Manipular filtro, URL ou id não revela nada, porque o SQL já sai recortado. O `podeVer` puro do core existe para provar a mesma regra sem banco; se os dois divergirem, `verificar:agenda` acusa.
 - **"Não é seu" e "não existe" devolvem a mesma resposta.** Um 403 distinguível de um 404 confirmaria que aquele id existe.
 - **O vínculo de grupo é com o grupo, não com a lista de membros do momento** — quem entrar depois passa a ver, sem nada ser reprocessado.
-- **Ver ≠ alterar.** Ser convidado dá direito de ver; alterar é do criador, do responsável, ou de quem tem faixa **Total** em `AGENDA` — e mesmo esse não alcança um particular. Reusa o RBAC existente em vez de criar uma escala paralela de ações.
+- **Ver ≠ alterar ≠ excluir.** Ser convidado dá direito de ver; alterar é do criador, do responsável, ou de quem tem faixa **Total** em `AGENDA`. **Excluir é mais estrito** (`podeExcluir`): alterar é operar o compromisso, excluir é apagá-lo, e o registro é de quem o criou. O **criador apaga o que é seu com qualquer faixa** — exigir Total para desmarcar a própria reunião transformaria um cadastro pessoal em pedido ao administrador. O **responsável designado não exclui**: o caminho dele é **Cancelado**, que tira da agenda sem descartar o histórico. Nenhum dos dois alcança um particular alheio. Reusa o RBAC existente em vez de criar uma escala paralela de ações.
+- **O gate da rota cede à propriedade.** `DELETE /compromissos` entra pela faixa de **Edição** (`exigirPermissao('AGENDA', { DELETE: 'UPDATE' })`), porque "é seu?" é pergunta que a matriz não enxerga da rota — quem responde é o caso de uso, olhando o `criadoPor`. Alcançar o compromisso dos outros continua exigindo Total. É a única rota do sistema com ação por método; o `exigirPermissao` ganhou essa forma para isso.
 
 ### Recorrência e desempenho
 
@@ -300,7 +301,8 @@ Três níveis, em ordem de precedência (`core/compromisso/visibilidade.ts`):
 - **O registro só existe depois de REALIZADO.** Guardar a ata de um encontro que o sistema considera não realizado deixaria o histórico afirmando o que foi tratado num evento que não houve. Voltar para agendado **apaga** o registro.
 - **`RESTRITO` exige alguém.** Restrito sem participante nem grupo é um particular com o rótulo errado — e o rótulo é lido pela regra de segurança.
 - **"Sem registro" não é atraso**: compromisso passado que continua `AGENDADO` significa que ninguém fechou o que houve.
-- **Do compromisso nascem providências** (`Tarefa.compromissoId`). Compromisso que gerou tarefas **não pode ser excluído** — o caminho é **Cancelado**.
+- **Do compromisso nascem providências** (`Tarefa.compromissoId`). Compromisso que gerou tarefas **não pode ser excluído** — o caminho é **Cancelado**. São duas perguntas distintas na exclusão, nesta ordem: *de quem é* (`podeExcluir`) e *sobrou rastro* (as tarefas).
+- **Excluir é alcançável das quatro vistas.** Na lista, pelo botão da grade; nas de dia, semana e mês, pelo botão no rodapé do formulário — sem ele, quem trabalha no calendário trocaria de vista só para desmarcar algo que criou. Fica à esquerda, longe de "Salvar": excluir não é o caminho comum, e vizinho do confirmar vira clique errado.
 - Cor é **token da paleta**, não hex: a tela decide como pintar e o tema escuro continua legível.
 - Lembrete guarda a **antecedência**, não o instante: se a reunião mudar de hora, ele acompanha. **Não há canal de e-mail** — modelar um que nada dispara seria pior que não ter: a estrutura sugere que funciona e o usuário confia num aviso que nunca vem.
 - Os vínculos são substituídos por inteiro na edição — calcular o diff de participantes daria uma trilha mais fina, mas trocaria uma operação previsível por três.

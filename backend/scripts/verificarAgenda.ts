@@ -10,6 +10,7 @@
  */
 import {
   podeAlterar,
+  podeExcluir,
   podeVer,
   VISIBILIDADES,
   type CompromissoVisivel,
@@ -119,6 +120,64 @@ console.log('\nAgenda de Compromissos\n');
     'a reunião é de quem a marcou',
   );
   conferir('quem administra a agenda altera o compartilhado', podeAlterar(c, ESTRANHO, true));
+  conferir(
+    'nem quem administra altera um particular',
+    !podeAlterar(compromisso({ visibilidade: 'PARTICULAR' }), ESTRANHO, true),
+  );
+}
+
+// --- quem pode excluir ------------------------------------------------------
+//
+// Mais estrito que alterar: alterar é operar o compromisso, excluir é apagá-lo.
+// O que se ganha aqui é o criador não precisar de faixa Total para desmarcar a
+// própria reunião — o que transformaria um cadastro pessoal em pedido ao
+// administrador. O que **não** se pode perder é o particular dos outros.
+{
+  const compartilhado = compromisso({
+    visibilidade: 'RESTRITO',
+    participantesIds: ['u-convidado'],
+  });
+
+  conferir(
+    'o criador exclui o que criou, sem faixa Total',
+    podeExcluir(compartilhado, CRIADOR, false),
+  );
+  conferir(
+    'o criador exclui o próprio particular',
+    podeExcluir(compromisso({ visibilidade: 'PARTICULAR' }), CRIADOR, false),
+  );
+
+  conferir(
+    'ser convidado não dá direito de excluir',
+    !podeExcluir(compartilhado, CONVIDADO, false),
+  );
+  conferir('estranho sem faixa Total não exclui', !podeExcluir(compartilhado, ESTRANHO, false));
+  conferir(
+    'quem administra a agenda exclui o compartilhado',
+    podeExcluir(compartilhado, ESTRANHO, true),
+  );
+  conferir(
+    'nem quem administra exclui o particular de outra pessoa',
+    !podeExcluir(compromisso({ visibilidade: 'PARTICULAR' }), ESTRANHO, true),
+    'perfil administrativo não alcança a agenda pessoal de um colega',
+  );
+
+  // Excluir é mais estrito que alterar, e é aqui que a diferença aparece: o
+  // responsável designado edita e cancela, mas não apaga o que outra pessoa
+  // marcou. Cancelar preserva o histórico; excluir o descarta.
+  const comResponsavel = { ...compartilhado, responsavelId: 'u-resp' };
+  const RESPONSAVEL: Espectador = { usuarioId: 'u-resp', grupoId: null };
+  conferir('o responsável altera', podeAlterar(comResponsavel, RESPONSAVEL));
+  conferir(
+    'o responsável não exclui — o caminho dele é cancelar',
+    !podeExcluir(comResponsavel, RESPONSAVEL, false),
+  );
+
+  // Sem criador registrado (linha anterior à trilha), ninguém vira dono por
+  // omissão: cai na regra geral, que exige administrar a agenda.
+  const semDono = compromisso({ criadoPor: null });
+  conferir('compromisso sem criador não tem dono implícito', !podeExcluir(semDono, ESTRANHO, false));
+  conferir('compromisso sem criador ainda cede a quem administra', podeExcluir(semDono, ESTRANHO, true));
 }
 
 // --- validação --------------------------------------------------------------

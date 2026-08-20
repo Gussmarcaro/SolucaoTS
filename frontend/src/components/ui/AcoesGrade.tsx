@@ -46,13 +46,22 @@ interface IconBtnProps {
    * visualizar e de abrir o dossiê, que já estão cobertos por ver a grade.
    */
   exige?: Extract<NivelPermissao, 'EDICAO' | 'TOTAL'>;
+  /**
+   * Mostra o botão **mesmo sem** a faixa exigida.
+   *
+   * Para a regra fina de propriedade, que a matriz não enxerga: ela concede por
+   * recurso, e há ações que dependem do registro concreto — o criador excluir o
+   * próprio compromisso, por exemplo. Continua sendo conveniência de interface;
+   * quem barra é o servidor, que confere o dono do registro.
+   */
+  mesmoSem?: boolean;
 }
 
-export function IconBtn({ children, title, onClick, danger, exige }: IconBtnProps) {
+export function IconBtn({ children, title, onClick, danger, exige, mesmoSem }: IconBtnProps) {
   const recurso = useContext(RecursoContext);
   const { pode } = usePermissoes();
 
-  if (exige && recurso && !pode(recurso, exige)) return null;
+  if (exige && recurso && !mesmoSem && !pode(recurso, exige)) return null;
 
   return (
     <button

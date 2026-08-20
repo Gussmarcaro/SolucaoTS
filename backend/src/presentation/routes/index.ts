@@ -59,7 +59,11 @@ routes.use('/servidores-cedidos', exigirPermissao('CADASTRO_SERVIDORES_CEDIDOS')
 routes.use('/ajustes', exigirPermissao('CADASTRO_AJUSTES'), ajusteRoutes);
 routes.use('/prestacoes', exigirPermissao('PRESTACAO_CONTAS'), prestacaoRoutes);
 routes.use('/tarefas', exigirPermissao('FISCALIZACAO'), tarefaRoutes);
-routes.use('/compromissos', exigirPermissao('AGENDA'), compromissoRoutes);
+// Excluir compromisso entra pela faixa de **Edição**, não Total: quem decide é
+// a propriedade do registro, e isso a matriz não enxerga da rota. O caso de uso
+// confere o `criadoPor` — o criador apaga o que é seu com qualquer faixa, e
+// alcançar o compromisso dos outros continua exigindo Total (`administraAgenda`).
+routes.use('/compromissos', exigirPermissao('AGENDA', { DELETE: 'UPDATE' }), compromissoRoutes);
 routes.use('/grupos', exigirPermissao('CONFIG_GRUPOS'), grupoRoutes);
 routes.use('/orgaos', exigirPermissao('CONFIG_ORGAOS'), clienteRoutes);
 routes.use('/auditoria', exigirPermissao('CONFIG_AUDITORIA'), auditoriaRoutes);

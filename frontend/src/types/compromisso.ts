@@ -183,6 +183,27 @@ export function podeArrastar(c: Pick<Compromisso, 'status' | 'recorrencia'>): bo
   return c.status === 'AGENDADO' && c.recorrencia === 'NAO_REPETE';
 }
 
+/**
+ * Quem pode **excluir** — espelha `podeExcluir` do backend, que é quem decide.
+ *
+ * Mais estrito que alterar: alterar é operar o compromisso, excluir é apagá-lo,
+ * e o registro é de quem o criou. O criador apaga o que é seu com **qualquer**
+ * faixa de permissão — exigir acesso Total para desmarcar a própria reunião
+ * transformaria um cadastro pessoal em pedido ao administrador.
+ *
+ * Alcançar o compromisso dos outros continua exigindo faixa Total, e nem essa
+ * alcança um **particular** alheio.
+ */
+export function podeExcluir(
+  c: Pick<Compromisso, 'criadoPor' | 'visibilidade'>,
+  usuarioId: string | undefined,
+  administraAgenda = false,
+): boolean {
+  if (c.criadoPor && c.criadoPor === usuarioId) return true;
+  if (c.visibilidade === 'PARTICULAR') return false;
+  return administraAgenda;
+}
+
 /** Passo do arrasto, em minutos: 15 é o menor intervalo que se agenda. */
 export const PASSO_ARRASTO = 15;
 

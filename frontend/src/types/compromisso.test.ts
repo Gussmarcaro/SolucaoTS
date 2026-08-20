@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { deslocar, podeArrastar, DURACAO_MINIMA, type Compromisso } from './compromisso';
+import {
+  deslocar,
+  podeArrastar,
+  podeExcluir,
+  DURACAO_MINIMA,
+  type Compromisso,
+} from './compromisso';
 
 /**
  * Aritmética do arrasto na agenda — o erro aqui é silencioso.
@@ -76,6 +82,51 @@ describe('deslocar', () => {
     const r = deslocar(c, {});
     expect(r.inicioEm.toISOString()).toBe(c.inicioEm);
     expect(r.fimEm.toISOString()).toBe(c.fimEm);
+  });
+});
+
+/**
+ * `podeExcluir` decide se o botão de excluir aparece — e a mesma regra existe
+ * em `core/compromisso/visibilidade.ts`, no backend, que é quem de fato barra.
+ *
+ * Errar aqui não quebra tela nenhuma nos dois sentidos, e os dois são ruins:
+ * para menos, o dono não consegue apagar o que criou e conclui que o sistema
+ * travou; para mais, a tela oferece um botão que devolve 403.
+ */
+describe('podeExcluir', () => {
+  const EU = 'u-1';
+  const c = (over: Partial<Pick<Compromisso, 'criadoPor' | 'visibilidade'>> = {}) => ({
+    criadoPor: 'u-outro',
+    visibilidade: 'ORGAO' as const,
+    ...over,
+  });
+
+  it('o criador exclui o que criou, sem faixa Total', () => {
+    expect(podeExcluir(c({ criadoPor: EU }), EU, false)).toBe(true);
+  });
+
+  it('o criador exclui o próprio particular', () => {
+    expect(podeExcluir(c({ criadoPor: EU, visibilidade: 'PARTICULAR' }), EU, false)).toBe(true);
+  });
+
+  it('quem não criou precisa de faixa Total', () => {
+    expect(podeExcluir(c(), EU, false)).toBe(false);
+    expect(podeExcluir(c(), EU, true)).toBe(true);
+  });
+
+  it('nem a faixa Total alcança o particular de outra pessoa', () => {
+    expect(podeExcluir(c({ visibilidade: 'PARTICULAR' }), EU, true)).toBe(false);
+  });
+
+  it('sem criador registrado ninguém vira dono por omissão', () => {
+    expect(podeExcluir(c({ criadoPor: null }), EU, false)).toBe(false);
+    expect(podeExcluir(c({ criadoPor: null }), EU, true)).toBe(true);
+  });
+
+  it('usuário desconhecido não casa com criador nulo', () => {
+    // `undefined === null` é falso, mas a comparação passa por `c.criadoPor &&`
+    // justamente para o par (nulo, indefinido) não virar "sou o dono".
+    expect(podeExcluir(c({ criadoPor: null }), undefined, false)).toBe(false);
   });
 });
 

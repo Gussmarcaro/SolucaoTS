@@ -23,6 +23,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { KpiTile } from '@/components/ui/KpiTile';
 import { AcoesGrade, IconBtn } from '@/components/ui/AcoesGrade';
+import { useAuth } from '@/contexts/AuthContext';
 import { usePermissoes } from '@/contexts/PermissoesContext';
 import { Calendario } from './Calendario';
 import { GradeHoraria } from './GradeHoraria';
@@ -44,6 +45,7 @@ import {
   TIPO_LABEL,
   horaBr,
   pendenteDeRegistro,
+  podeExcluir,
   type Compromisso,
   type ResumoAgenda,
 } from '@/types/compromisso';
@@ -67,8 +69,21 @@ type Modal_ =
  * e aí a Fiscalização, que já sabe cobrar prazo, cobra o que a visita apontou.
  */
 export function Agenda() {
-  const podeEditar = usePermissoes().pode('AGENDA', 'EDICAO');
+  const { pode } = usePermissoes();
+  const podeEditar = pode('AGENDA', 'EDICAO');
+  /** Faixa Total em AGENDA = administra a agenda do órgão, como no backend. */
+  const administraAgenda = pode('AGENDA', 'TOTAL');
+  const { usuario } = useAuth();
   const navigate = useNavigate();
+
+  /**
+   * Excluir é do dono, não da faixa.
+   *
+   * A matriz concede por recurso; a propriedade é do registro. Quem criou o
+   * compromisso apaga o que é seu com qualquer faixa — o servidor confere o
+   * `criadoPor` e responde 403 se a tela mostrar o botão a quem não devia.
+   */
+  const podeExcluirEste = (c: Compromisso) => podeExcluir(c, usuario?.id, administraAgenda);
 
   const [vista, setVista] = useState<'dia' | 'semana' | 'mes' | 'lista'>('mes');
   const [mes, setMes] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
@@ -387,7 +402,17 @@ export function Agenda() {
                       <IconBtn exige="EDICAO" title="Editar" onClick={() => setModal({ tipo: 'editar', c })}>
                         <Pencil className="h-4 w-4" />
                       </IconBtn>
-                      <IconBtn exige="TOTAL" title="Excluir" danger onClick={() => setModal({ tipo: 'excluir', c })}>
+                      <IconBtn
+                        exige="TOTAL"
+                        mesmoSem={podeExcluirEste(c)}
+                        title={
+                          c.criadoPor === usuario?.id
+                            ? 'Excluir — você criou este compromisso'
+                            : 'Excluir'
+                        }
+                        danger
+                        onClick={() => setModal({ tipo: 'excluir', c })}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </IconBtn>
                     </AcoesGrade>
@@ -416,6 +441,13 @@ export function Agenda() {
             diaInicial={modal.tipo === 'novo' ? modal.dia : null}
             onSuccess={aoSalvar}
             onCancel={fechar}
+            // O formulário é o único caminho de exclusão nas vistas de dia,
+            // semana e mês, que não têm grade de ações.
+            onExcluir={
+              modal.tipo === 'editar' && podeExcluirEste(modal.c)
+                ? () => setModal({ tipo: 'excluir', c: modal.c })
+                : undefined
+            }
           />
         )}
       </Modal>

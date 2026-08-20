@@ -31,6 +31,17 @@ const normalizar = (v: string) =>
     .toLowerCase();
 
 /**
+ * Ação exigida, quando a rota não quer o padrão do método.
+ *
+ * Ou uma ação fixa para toda a família, ou um ajuste por método — este último
+ * para quando **parte** da família decide no registro concreto o que a matriz
+ * não consegue decidir na rota. Hoje é o caso da agenda: excluir o compromisso
+ * que você mesmo criou não deveria exigir acesso Total, e "é seu?" é pergunta
+ * que só o caso de uso responde, olhando o `criadoPor`.
+ */
+export type AcaoExigida = AcaoPermissao | Partial<Record<string, AcaoPermissao>>;
+
+/**
  * Exige permissão sobre um recurso.
  *
  * Aplicado por conjunto de rotas; a ação sai do método HTTP, salvo quando a
@@ -38,7 +49,7 @@ const normalizar = (v: string) =>
  * um recurso esquecido fica trancado, não aberto, que é o único padrão seguro
  * quando a lista pode ficar para trás.
  */
-export function exigirPermissao(recursoId: string, acao?: AcaoPermissao): RequestHandler {
+export function exigirPermissao(recursoId: string, acao?: AcaoExigida): RequestHandler {
   const recurso = RECURSOS_POR_ID.get(recursoId);
   if (!recurso) throw new Error(`Recurso desconhecido em exigirPermissao: ${recursoId}`);
 
@@ -59,7 +70,9 @@ export function exigirPermissao(recursoId: string, acao?: AcaoPermissao): Reques
       if (recurso.restrito && !GRUPOS_ADMIN.includes(normalizar(grupo)))
         return next(new AppError('Acesso restrito à administração.', 403, 'ACESSO_NEGADO'));
 
-      const exigida = acao ?? ACAO_POR_METODO[req.method] ?? 'UPDATE';
+      const padrao = ACAO_POR_METODO[req.method] ?? 'UPDATE';
+      const exigida =
+        typeof acao === 'string' ? acao : (acao?.[req.method] ?? padrao);
       const concedidas = await permissoesDoGrupo(grupo);
 
       if (!concedidas.get(recursoId)?.has(exigida))

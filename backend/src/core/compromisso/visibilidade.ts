@@ -87,3 +87,33 @@ export function podeAlterar(
   if (c.visibilidade === 'PARTICULAR') return false;
   return administraAgenda;
 }
+
+/**
+ * Quem pode **excluir** o compromisso.
+ *
+ * Mais estrito que alterar, e de propósito: alterar é operar o compromisso;
+ * excluir é apagá-lo, e o registro é de quem o criou.
+ *
+ * - **O criador sempre pode**, com qualquer faixa de permissão. A agenda que
+ *   ele mesmo montou é dele — precisar de acesso Total para desmarcar a própria
+ *   reunião transformaria um cadastro pessoal em pedido ao administrador.
+ * - **O responsável designado, não.** Ele pode editar e, sobretudo, **cancelar**
+ *   — que é o caminho previsto para tirar da agenda algo que outra pessoa
+ *   marcou, sem apagar o que aconteceu.
+ * - **Quem administra a agenda** (faixa Total) alcança o compartilhado, e
+ *   continua sem alcançar um **particular**: perfil administrativo autoriza
+ *   operar o sistema, não apagar a agenda pessoal de um colega.
+ *
+ * O caso de uso ainda recusa excluir compromisso que gerou providências: as
+ * tarefas ficariam sem origem. Esta função responde "de quem é", não "sobrou
+ * rastro".
+ */
+export function podeExcluir(
+  c: CompromissoVisivel,
+  quem: Espectador,
+  administraAgenda = false,
+): boolean {
+  if (c.criadoPor && c.criadoPor === quem.usuarioId) return true;
+  if (c.visibilidade === 'PARTICULAR') return false;
+  return administraAgenda;
+}

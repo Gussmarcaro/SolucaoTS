@@ -1,6 +1,11 @@
 import type { Compromisso, ResumoAgenda, StatusCompromisso } from '@/core/compromisso/Compromisso';
 import { STATUS, podeArrastar } from '@/core/compromisso/Compromisso';
-import { podeAlterar, type Espectador } from '@/core/compromisso/visibilidade';
+import {
+  podeAlterar,
+  podeExcluir,
+  podeVer,
+  type Espectador,
+} from '@/core/compromisso/visibilidade';
 import { AppError, BusinessError, NotFoundError } from '@/shared/errors';
 import type { ICompromissoRepository } from './ICompromissoRepository';
 import type {
@@ -71,7 +76,6 @@ export class CompromissoUseCases {
     if (!alvo) throw new NotFoundError('Compromisso não encontrado.');
 
     // Quem nem enxerga não pode nem saber que existe: mesma resposta do buscar.
-    const { podeVer } = await import('@/core/compromisso/visibilidade');
     if (!podeVer(alvo, quem)) throw new NotFoundError('Compromisso não encontrado.');
 
     if (!podeAlterar(alvo, quem, administra))
@@ -217,14 +221,34 @@ export class CompromissoUseCases {
   }
 
   /**
-   * Excluir só o que não deixou rastro.
+   * Excluir só o que é seu, e só o que não deixou rastro.
    *
-   * Compromisso que gerou providências é a origem delas: apagá-lo deixaria as
-   * tarefas apontando para o nada. Para tirar da agenda sem perder o histórico,
-   * o caminho é **Cancelado**.
+   * Duas perguntas diferentes, nesta ordem:
+   *
+   * 1. **De quem é** (`podeExcluir`): o criador sempre pode, com qualquer faixa
+   *    — a agenda que ele montou é dele, e exigir acesso Total para desmarcar a
+   *    própria reunião transformaria um cadastro pessoal em pedido ao
+   *    administrador. Quem administra a agenda alcança o compartilhado, nunca
+   *    um particular. O responsável designado edita e **cancela**, não apaga.
+   * 2. **Sobrou rastro**: compromisso que gerou providências é a origem delas;
+   *    apagá-lo deixaria as tarefas apontando para o nada. Para tirar da agenda
+   *    sem perder o histórico, o caminho é **Cancelado**.
    */
   async excluir(id: string, quem: Espectador, administra: boolean): Promise<void> {
-    await this.exigirPermissaoDeEscrita(id, quem, administra);
+    const alvo = await this.repo.buscarParaAutorizacao(id);
+    if (!alvo) throw new NotFoundError('Compromisso não encontrado.');
+
+    // Quem nem enxerga não pode nem saber que existe — mesma resposta do buscar.
+    if (!podeVer(alvo, quem)) throw new NotFoundError('Compromisso não encontrado.');
+
+    if (!podeExcluir(alvo, quem, administra))
+      throw new AppError(
+        'Só quem criou o compromisso pode excluí-lo. ' +
+          'Para tirá-lo da agenda, use a situação Cancelado.',
+        403,
+        'SEM_PERMISSAO',
+      );
+
     const tarefas = await this.repo.contarTarefas(id);
     if (tarefas > 0)
       throw new BusinessError(

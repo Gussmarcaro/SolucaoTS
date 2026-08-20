@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AlertCircle, Bell, Loader2, Lock, Repeat, Users, X } from 'lucide-react';
+import { AlertCircle, Bell, Loader2, Lock, Repeat, Trash2, Users, X } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Combobox, type OpcaoCombo } from '@/components/ui/Combobox';
@@ -33,6 +33,14 @@ interface Props {
   diaInicial?: Date | null;
   onSuccess: () => void;
   onCancel: () => void;
+  /**
+   * Excluir, quando quem abriu o formulário pode.
+   *
+   * Ausente = sem o botão. É o único caminho de exclusão nas vistas de dia,
+   * semana e mês, que não têm grade de ações — sem ele, quem trabalha no
+   * calendário precisaria trocar para a lista só para desmarcar algo que criou.
+   */
+  onExcluir?: () => void;
 }
 
 interface Escolhido {
@@ -89,7 +97,13 @@ function estadoInicial(c?: Compromisso | null, dia?: Date | null): Campos {
   };
 }
 
-export function CompromissoForm({ compromisso, diaInicial, onSuccess, onCancel }: Props) {
+export function CompromissoForm({
+  compromisso,
+  diaInicial,
+  onSuccess,
+  onCancel,
+  onExcluir,
+}: Props) {
   const editando = !!compromisso;
   const [form, setForm] = useState<Campos>(() => estadoInicial(compromisso, diaInicial));
   const [participantes, setParticipantes] = useState<Escolhido[]>(compromisso?.participantes ?? []);
@@ -512,6 +526,20 @@ export function CompromissoForm({ compromisso, diaInicial, onSuccess, onCancel }
         )}
 
         <div className="flex items-center justify-end gap-2 pt-2">
+          {/* Longe dos botões de confirmar, à esquerda: excluir não é o
+              caminho comum, e vizinho de "Salvar" vira clique errado. */}
+          {editando && onExcluir && (
+            <Button
+              type="button"
+              variant="danger"
+              onClick={onExcluir}
+              disabled={salvando}
+              className="mr-auto"
+            >
+              <Trash2 className="h-4 w-4" />
+              Excluir
+            </Button>
+          )}
           <Button type="button" variant="secondary" onClick={onCancel} disabled={salvando}>
             Cancelar
           </Button>
