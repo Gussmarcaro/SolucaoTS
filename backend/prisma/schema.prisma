@@ -1444,6 +1444,14 @@ enum AcaoAuditoria {
 
 model RegistroAuditoria {
   id                String        @id @default(uuid()) @db.Uuid
+  // Órgão dono do evento — sem isto a trilha era a única listagem do sistema
+  // que atravessava o recorte por tenant: um Administrador da Prefeitura A
+  // enxergava quem alterou o quê na Prefeitura B, com `registroDescricao`
+  // (razão social, nome) e o diff inteiro junto.
+  //
+  // Sem FK, como o resto desta tabela: ela é append-only e precisa continuar
+  // legível mesmo que o órgão seja removido.
+  clienteId         String?       @db.Uuid
   ocorridoEm        DateTime      @default(now())
   // Autor desnormalizado: o log precisa continuar legível se o usuário for
   // excluído depois. Sem FK, pelo mesmo motivo.
@@ -1460,6 +1468,10 @@ model RegistroAuditoria {
   alteracoes        Json?
   rota              String? // ex.: "PUT /api/fornecedores/:id"
 
+  // A listagem da tela é sempre "deste órgão, mais recente primeiro" — o
+  // recorte por tenant entrou em toda consulta e o índice acompanha. Fica na
+  // frente do `[ocorridoEm]` puro, que ainda serve aos scripts sem órgão.
+  @@index([clienteId, ocorridoEm])
   @@index([entidade, registroId])
   @@index([ocorridoEm])
   @@index([usuarioId])

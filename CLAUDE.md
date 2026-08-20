@@ -162,6 +162,7 @@ A trilha é gravada por uma **extension do Prisma Client** (`extensaoAuditoria.t
 - Operações em lote (a reimportação de CSV apaga e recria tudo) viram **uma** linha com a quantidade, não centenas.
 - **Nunca logar** `senhaHash`, `resetTokenHash`, `resetTokenExpiresAt`; `buscaTexto` e `atualizadoEm` também ficam de fora, por serem derivados que mudam a cada gravação e só poluiriam o diff.
 - Fora da trilha: tabelas de domínio (`Cbo`, `ClassificacaoEconomica`, `ComponenteDespesa`) e a própria `RegistroAuditoria` — que é **append-only** e se auditar-se-ia em laço infinito.
+- **A trilha é recortada por órgão** (`RegistroAuditoria.clienteId`). Sem essa coluna ela seria a única listagem do sistema a atravessar o isolamento: não tem pai de onde herdar o órgão, e um Administrador enxergaria quem alterou o quê nos outros órgãos, com `registroDescricao` (razão social, nome) e o diff inteiro junto. O campo é preenchido **explicitamente** em `registrar()`, porque essa gravação usa o client sem extensions (para não se auditar em laço) e o carimbo automático não roda ali.
 - Falha ao gravar a trilha **não derruba** a operação de negócio; vai para o log do servidor.
 
 A trilha guarda também uma **descrição legível** do registro (`registroDescricao`) — razão social, nome ou número, capturada na hora do evento, porque depois de uma exclusão não há mais onde lê-la. Sem ela o log diria "alteraram um Fornecedor" sem dizer qual.
@@ -283,7 +284,7 @@ Grade + formulário no padrão dos cadastros, com quatro recortes (Em aberto / A
 
 Cada órgão só enxerga os próprios dados. O filtro vive numa **extension do Prisma** (`extensaoTenant.ts`), como a auditoria, e pelo mesmo motivo: vale para todo caminho que consulte, inclusive código futuro. Repositório novo sem a cláusula funcionaria perfeitamente para quem o escreveu — e para os outros órgãos também.
 
-- **Só as raízes são filtradas.** `MODELS_COM_CLIENTE` sai do schema (13 models com `clienteId`) mais o `Cliente`, recortado pelo próprio `id`. Os outros 44 alcançam o órgão pelo pai — bloco da prestação → prestação → ajuste —, então filtrar a raiz fecha o caminho. Denormalizar `clienteId` nas 44 tabelas responderia com uma coluna o que a relação já responde.
+- **Só as raízes são filtradas.** `MODELS_COM_CLIENTE` sai do schema (14 models com `clienteId`, incluindo a trilha de auditoria) mais o `Cliente`, recortado pelo próprio `id`. Os outros 44 alcançam o órgão pelo pai — bloco da prestação → prestação → ajuste —, então filtrar a raiz fecha o caminho. Denormalizar `clienteId` nas 44 tabelas responderia com uma coluna o que a relação já responde.
 - **Limite conhecido:** buscar um filho direto por id, com id de outro órgão, passa. São UUID v4, que não se adivinha, mas isso não é isolamento — filho que ganhar rota própria de consulta por id precisa conferir o dono pela raiz.
 - Operação de chave única (`findUnique`, `update`, `delete`, `upsert`) recebe o filtro **ao lado** da chave (o Prisma exige uma no topo); as demais recebem por **`AND`**, para um filtro do chamador com a mesma chave não sobrescrever o do tenant.
 - **Contexto sem órgão = sem filtro.** É o caso de seeds, scripts e startup — que precisam enxergar tudo — e, transitoriamente, de tokens antigos e usuários ainda sem órgão. O token leva o órgão no claim `cli`, lido no login; trocar um usuário de órgão só vale no próximo login.

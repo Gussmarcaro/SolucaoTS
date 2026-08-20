@@ -120,6 +120,9 @@ async function registrar(params: {
   try {
     await cliente?.registroAuditoria.create({
       data: {
+        // Explícito porque esta gravação usa o client **sem** extensions (para
+        // não se auditar em laço): o carimbo automático de órgão não roda aqui.
+        clienteId: ctx?.clienteId ?? null,
         usuarioId: ctx?.usuarioId ?? null,
         usuarioNome: ctx?.usuarioNome ?? '(sistema)',
         entidade: params.entidade,

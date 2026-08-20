@@ -62,6 +62,16 @@ console.log('\nIsolamento multi-tenant\n');
   }
   conferir('Cliente entra pelo caminho próprio', ehRaizDeTenant('Cliente'));
 
+  // A trilha era a única listagem do sistema que atravessava o recorte: não
+  // tem pai de onde herdar o órgão, e sem coluna própria um Administrador
+  // enxergava quem alterou o quê nos outros órgãos — com `registroDescricao`
+  // (razão social, nome) e o diff completo junto.
+  conferir(
+    'RegistroAuditoria é raiz de tenant',
+    ehRaizDeTenant('RegistroAuditoria'),
+    'a trilha carrega descrição e diff dos registros',
+  );
+
   // Filho não é raiz: alcança o órgão pelo pai. Marcá-lo como raiz obrigaria a
   // uma coluna que a relação já dispensa — e a mantê-la sincronizada.
   for (const m of ['Pagamento', 'DocumentoFiscal', 'PrestacaoContas', 'TermoAditivo', 'Meta']) {

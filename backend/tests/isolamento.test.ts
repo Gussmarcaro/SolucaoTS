@@ -188,6 +188,39 @@ describe.skipIf(!TEM_BANCO)('isolamento entre órgãos', () => {
     expect(emails).not.toContain(orgaoFake(1).admin.email);
   });
 
+  it('a trilha de auditoria de B não mostra o que A alterou', async () => {
+    // A altera o próprio fornecedor — o que gera uma linha de ALTERACAO.
+    const alterado = await request(app)
+      .put(`/api/fornecedores/${fornecedorDeA}`)
+      .set('authorization', `Bearer ${tokenA}`)
+      .send({
+        nome: 'FORNECEDOR EXCLUSIVO DO A (RENOMEADO)',
+        documento: '11222333000181',
+        documentoTipo: 'CNPJ',
+        cep: '01001000',
+        logradouro: 'Praca da Se',
+        bairro: 'Se',
+        cidade: 'Sao Paulo',
+        uf: 'SP',
+        email: 'contato@fornecedor-a.test',
+      });
+    expect(alterado.status, JSON.stringify(alterado.body)).toBe(200);
+
+    const deB = await request(app).get('/api/auditoria').set('authorization', `Bearer ${tokenB}`);
+    // Pode vir 403 (o grupo de B não é Administrador) — o que também isola. O
+    // que não pode é vir 200 com a linha do outro órgão dentro.
+    if (deB.status === 200) {
+      expect(JSON.stringify(deB.body)).not.toContain('EXCLUSIVO DO A');
+    }
+
+    // E a de A precisa continuar mostrando o que é dela: um filtro que esconde
+    // tudo "isola" sem servir para nada.
+    const deA = await request(app).get('/api/auditoria').set('authorization', `Bearer ${tokenA}`);
+    if (deA.status === 200) {
+      expect(JSON.stringify(deA.body)).toContain('EXCLUSIVO DO A');
+    }
+  });
+
   it('sem token, nada responde', async () => {
     const r = await request(app).get('/api/fornecedores');
     expect(r.status).toBe(401);
