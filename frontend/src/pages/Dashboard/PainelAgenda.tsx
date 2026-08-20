@@ -86,7 +86,10 @@ export function PainelAgenda() {
   if (falhou || vazio) return null;
 
   return (
-    <Card className="mt-6">
+    // `mb-6`, e não `mt-6`: a grade de cadastros que vem depois não tem margem
+    // no topo — quem abre o espaço é sempre o painel de cima, como faz o
+    // PainelExecucao. O de Fiscalização é o único com `mt-6`, por ser o último.
+    <Card className="mb-6">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <CalendarDays className="h-4 w-4 text-brand-500" />
