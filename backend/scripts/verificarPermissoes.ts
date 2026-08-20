@@ -86,5 +86,71 @@ ok(
   RECURSO_INDISPENSAVEL,
 );
 
+// ---------------------------------------------------------------------------
+// O outro lado: o menu do frontend.
+//
+// As checagens acima cuidam do servidor, que é quem de fato barra. Esta cuida
+// de uma falha diferente e mais silenciosa: uma tela existir no menu e **não
+// aparecer na matriz de permissões**. Ninguém percebe — o administrador
+// configura tudo o que vê, conclui que cobriu o sistema, e aquela tela fica
+// aberta a todos os grupos.
+console.log('\nCobertura do menu\n');
+
+const nav = readFileSync(
+  join(AQUI, '..', '..', 'frontend', 'src', 'lib', 'navigation.ts'),
+  'utf8',
+);
+
+/**
+ * Itens de menu que podem ficar sem recurso, com o motivo.
+ *
+ * As telas de Execução são **placeholders sem backend**. Declarar recurso para
+ * elas agora criaria o problema que a checagem acima reprova: permissão que a
+ * matriz oferece e não protege nada. Os recursos entram junto com as rotas,
+ * quando o módulo existir — e aí o gate do servidor passa a exigi-los.
+ */
+const MENU_SEM_RECURSO: Record<string, string> = {
+  '/': 'Dashboard — todo usuário autenticado entra; cada painel dentro dela confere a própria permissão',
+  '/execucao/financeiro/contas-bancarias': 'placeholder, sem backend',
+  '/execucao/financeiro/receitas': 'placeholder, sem backend',
+  '/execucao/financeiro/despesas': 'placeholder, sem backend',
+  '/execucao/financeiro/pagamentos': 'placeholder, sem backend',
+  '/execucao/financeiro/rateio': 'placeholder, sem backend',
+  '/execucao/financeiro/conciliacao': 'placeholder, sem backend',
+  '/execucao/tecnico': 'placeholder, sem backend',
+};
+
+const itensDoMenu = [...nav.matchAll(/{ label: '([^']+)',[^}]*?to: '([^']+)'([^}]*)}/g)].map(
+  (m) => ({
+    label: m[1],
+    to: m[2],
+    recurso: /recurso: '([A-Z_]+)'/.exec(m[3])?.[1] ?? null,
+  }),
+);
+
+ok(itensDoMenu.length > 10, 'menu do frontend foi lido', `${itensDoMenu.length} itens com rota`);
+
+const semRecursoNoMenu = itensDoMenu.filter((i) => !i.recurso && !(i.to in MENU_SEM_RECURSO));
+ok(
+  semRecursoNoMenu.length === 0,
+  'toda tela do menu declara um recurso',
+  semRecursoNoMenu.length
+    ? `sem recurso: ${semRecursoNoMenu.map((i) => `${i.label} (${i.to})`).join(', ')} — declare o recurso ou justifique em MENU_SEM_RECURSO`
+    : `${itensDoMenu.length - Object.keys(MENU_SEM_RECURSO).length} telas cobertas`,
+);
+
+// Recurso citado no menu que não existe no catálogo esconderia o item para
+// todo mundo: `filtrarPorPermissao` não acharia a concessão e removeria a tela.
+const citadosNoMenu = itensDoMenu.map((i) => i.recurso).filter(Boolean) as string[];
+const fantasmas = citadosNoMenu.filter((id) => !RECURSOS_POR_ID.has(id));
+ok(fantasmas.length === 0, 'recursos citados no menu existem no catálogo', fantasmas.join(', '));
+
+// Recurso do catálogo que não aparece no menu: o administrador configura uma
+// permissão para uma tela que ninguém alcança pelo menu. Nem sempre é erro —
+// Empresas está suspenso de propósito —, então aqui é aviso, não falha.
+const foraDoMenu = RECURSOS.map((r) => r.id).filter((id) => !citadosNoMenu.includes(id));
+if (foraDoMenu.length)
+  console.log(`  --   ${foraDoMenu.length} recurso(s) fora do menu: ${foraDoMenu.join(', ')}`);
+
 console.log(falhas ? `\n${falhas} falha(s).\n` : '\nTudo ok.\n');
 process.exit(falhas ? 1 : 0);
