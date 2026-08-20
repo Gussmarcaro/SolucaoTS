@@ -69,6 +69,7 @@ export function filtrarPorPermissao(
 
 export const navigation: NavNode[] = [
   { label: 'Dashboard', icon: LayoutDashboard, to: '/' },
+  { label: 'Agenda de Compromissos', icon: CalendarDays, to: '/agenda', recurso: 'AGENDA' },
   {
     label: 'Cadastro',
     icon: FolderPlus,
@@ -103,7 +104,6 @@ export const navigation: NavNode[] = [
   },
   { label: 'Prestação de Contas', icon: ClipboardCheck, to: '/prestacao-contas', recurso: 'PRESTACAO_CONTAS' },
   { label: 'Relatórios', icon: BarChart3, to: '/relatorios', recurso: 'RELATORIOS' },
-  { label: 'Agenda de Compromissos', icon: CalendarDays, to: '/agenda', recurso: 'AGENDA' },
   { label: 'Fiscalização | Monitoramento', icon: ShieldCheck, to: '/fiscalizacao', recurso: 'FISCALIZACAO' },
   { label: 'Transparência', icon: Eye, to: '/transparencia', recurso: 'TRANSPARENCIA' },
   {

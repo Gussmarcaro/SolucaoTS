@@ -6,6 +6,7 @@
 ## Menu principal
 
 - **Dashboard** — rota `/`
+- **Agenda de Compromissos** — rota `/agenda`
 - **Cadastro → Entidades / Beneficiárias** — rota `/cadastro/entidades`
 - **Cadastro → Ajustes Celebrados** — rota `/cadastro/ajustes`
 - **Cadastro → Fornecedores / Prestadores** — rota `/cadastro/fornecedores`
@@ -22,7 +23,6 @@
 - **Execução → Técnico** — rota `/execucao/tecnico`
 - **Prestação de Contas** — rota `/prestacao-contas`
 - **Relatórios** — rota `/relatorios`
-- **Agenda de Compromissos** — rota `/agenda`
 - **Fiscalização | Monitoramento** — rota `/fiscalizacao`
 - **Transparência** — rota `/transparencia`
 - **Configurações → Órgãos Concessores** — rota `/orgaos`
