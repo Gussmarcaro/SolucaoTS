@@ -191,12 +191,6 @@ export function Dashboard() {
 
       {pode('RELATORIOS', 'CONSULTA') && <PainelExecucao />}
 
-      {/* A agenda vem antes das contagens pelo mesmo motivo que a execução:
-          compromisso tem hora marcada, e "quantos fornecedores tenho" não muda
-          o que se faz hoje. O sino avisa em minutos — quando ele fala, já é
-          quase em cima. */}
-      {pode('AGENDA', 'CONSULTA') && <PainelAgenda />}
-
       {/* KPIs — contagens reais dos cadastros */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {cards.map((c) => {
@@ -224,6 +218,11 @@ export function Dashboard() {
           );
         })}
       </div>
+
+      {/* Entre as contagens e os prazos: compromisso tem hora marcada, e o que
+          vem depois é o prazo anual da prestação — ler o dia antes do ano é a
+          ordem natural. */}
+      {pode('AGENDA', 'CONSULTA') && <PainelAgenda />}
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Próximos prazos — Prestação de Contas (30/06) */}
