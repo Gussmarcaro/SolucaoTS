@@ -68,6 +68,28 @@ export async function definirStatusCompromisso(
   return data;
 }
 
+/**
+ * Remarcar arrastando — muda **só** o horário.
+ *
+ * Endpoint próprio, e não um PUT: a grade não tem por que devolver título,
+ * pauta e lista de convidados para mover uma reunião meia hora, e reenviar
+ * parcialmente apagaria em silêncio o que ficasse de fora.
+ *
+ * Em compromisso de dia inteiro o `fimEm` vai nulo — o servidor recalcula o
+ * fecho do dia, para os dois lados não terem versões diferentes dessa conta.
+ */
+export async function moverCompromisso(
+  id: string,
+  inicioEm: string,
+  fimEm: string | null,
+): Promise<Compromisso> {
+  const { data } = await http.patch<Compromisso>(`/compromissos/${id}/horario`, {
+    inicioEm,
+    fimEm,
+  });
+  return data;
+}
+
 export async function excluirCompromisso(id: string): Promise<void> {
   await http.delete(`/compromissos/${id}`);
 }

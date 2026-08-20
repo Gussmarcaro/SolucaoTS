@@ -93,6 +93,26 @@ export function pendenteDeRegistro(
   return c.status === 'AGENDADO' && new Date(c.inicioEm).getTime() < agora.getTime();
 }
 
+/**
+ * O que pode ser remarcado arrastando na grade.
+ *
+ * Escrita como função pura porque a tela precisa da mesma resposta **antes** do
+ * gesto — um bloco que aceita o arrasto e depois recusa a gravação é pior que um
+ * bloco que não se move. O servidor continua sendo quem decide (`mover`); isto
+ * evita oferecer o que ele vai negar.
+ *
+ * - **Série recorrente** não: a grade mostra repetições expandidas, que não
+ *   existem como linha. Arrastar uma delas moveria a série inteira.
+ * - **Realizado** não: já aconteceu, e o registro descreve aquele horário.
+ * - **Cancelado** não: não vai ocorrer; remarcá-lo seria agendar outro.
+ */
+export function podeArrastar(c: {
+  status: StatusCompromisso;
+  recorrencia: Recorrencia;
+}): boolean {
+  return c.status === 'AGENDADO' && c.recorrencia === 'NAO_REPETE';
+}
+
 /** Teto de repetições por consulta — ver `expandirRecorrencia`. */
 export const MAX_OCORRENCIAS = 400;
 

@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissoes } from '@/contexts/PermissoesContext';
+import { PainelAgenda } from './PainelAgenda';
 import { PainelExecucao } from './PainelExecucao';
 import { PainelFiscalizacao } from './PainelFiscalizacao';
 import { listarEntidades } from '@/services/entidades.service';
@@ -189,6 +190,12 @@ export function Dashboard() {
       />
 
       {pode('RELATORIOS', 'CONSULTA') && <PainelExecucao />}
+
+      {/* A agenda vem antes das contagens pelo mesmo motivo que a execução:
+          compromisso tem hora marcada, e "quantos fornecedores tenho" não muda
+          o que se faz hoje. O sino avisa em minutos — quando ele fala, já é
+          quase em cima. */}
+      {pode('AGENDA', 'CONSULTA') && <PainelAgenda />}
 
       {/* KPIs — contagens reais dos cadastros */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">

@@ -31,6 +31,7 @@ import {
   definirStatusCompromisso,
   excluirCompromisso,
   listarCompromissos,
+  moverCompromisso,
   resumoAgenda,
 } from '@/services/compromissos.service';
 import { extrairMensagemErro } from '@/services/http';
@@ -144,6 +145,37 @@ export function Agenda() {
       recarregar();
     } catch (e) {
       setErro(extrairMensagemErro(e, 'Não foi possível alterar a situação.'));
+    }
+  }
+
+  /**
+   * Remarcar arrastando — grava o novo horário.
+   *
+   * A lista é atualizada **antes** da resposta: o bloco já está sob o dedo do
+   * usuário no lugar novo, e devolvê-lo ao antigo por meio segundo até a API
+   * responder pareceria falha. Se a gravação for recusada, o `recarregar()` do
+   * `catch` traz a verdade do servidor de volta, junto com o motivo.
+   */
+  async function mover(c: Compromisso, inicioEm: Date, fimEm: Date | null) {
+    setErro(null);
+    const antes = compromissos;
+    setCompromissos((atual) =>
+      (atual ?? []).map((x) =>
+        x.id === c.id
+          ? {
+              ...x,
+              inicioEm: inicioEm.toISOString(),
+              fimEm: (fimEm ?? new Date(x.fimEm)).toISOString(),
+            }
+          : x,
+      ),
+    );
+    try {
+      await moverCompromisso(c.id, inicioEm.toISOString(), fimEm?.toISOString() ?? null);
+      recarregar();
+    } catch (e) {
+      setCompromissos(antes);
+      setErro(extrairMensagemErro(e, 'Não foi possível remarcar o compromisso.'));
     }
   }
 
@@ -262,6 +294,7 @@ export function Agenda() {
           compromissos={lista}
           onAbrir={(c) => setModal({ tipo: 'editar', c })}
           onHorario={(quando) => podeEditar && setModal({ tipo: 'novo', dia: quando })}
+          onMover={podeEditar ? mover : undefined}
         />
       ) : vista === 'mes' ? (
         <Calendario
@@ -270,6 +303,7 @@ export function Agenda() {
           compromissos={lista}
           onAbrir={(c) => setModal({ tipo: 'editar', c })}
           onDia={(d) => podeEditar && setModal({ tipo: 'novo', dia: d })}
+          onMover={podeEditar ? mover : undefined}
         />
       ) : (
         <div className="overflow-hidden rounded-2xl border border-ink-200/70 bg-white shadow-card dark:border-ink-800/70 dark:bg-ink-900">

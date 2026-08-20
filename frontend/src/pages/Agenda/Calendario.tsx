@@ -1,8 +1,15 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
-import { TIPO_LABEL, classeDaCor, horaBr, type Compromisso } from '@/types/compromisso';
+import {
+  TIPO_LABEL,
+  classeDaCor,
+  deslocar,
+  horaBr,
+  podeArrastar,
+  type Compromisso,
+} from '@/types/compromisso';
 
 const DIAS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
 
@@ -13,6 +20,11 @@ interface Props {
   onAbrir: (c: Compromisso) => void;
   /** Clique numa célula vazia — agendar naquele dia. */
   onDia: (dia: Date) => void;
+  /**
+   * Remarcar arrastando de um dia para outro. Ausente = grade só de leitura
+   * (sem permissão de edição), e aí nada se move.
+   */
+  onMover?: (c: Compromisso, inicioEm: Date, fimEm: Date | null) => void;
 }
 
 /** Chave local 'YYYY-MM-DD' — sem passar por UTC, que desloca o dia. */
@@ -25,9 +37,40 @@ const chaveDia = (d: Date) =>
  * A grade sempre mostra 6 semanas, mesmo que o mês caiba em 5: com o número de
  * linhas variando, a tela pula de altura ao trocar de mês e o olho perde a
  * referência de onde estava.
+ *
+ * ## Arrastar para outro dia
+ *
+ * Aqui o alvo é uma **célula**, não um instante — e para isso o arrasto nativo
+ * do HTML basta e sai de graça: teclado, toque e cursor já vêm resolvidos pelo
+ * navegador. A hora do compromisso é preservada; o mês não mostra horário
+ * suficiente para remarcá-lo, e mudar a hora sem que ninguém peça seria pior
+ * que não mover. Para mexer no horário existem as vistas de dia e semana.
  */
-export function Calendario({ mes, onMes, compromissos, onAbrir, onDia }: Props) {
+export function Calendario({ mes, onMes, compromissos, onAbrir, onDia, onMover }: Props) {
   const hoje = chaveDia(new Date());
+  /** Célula sob o cursor durante o arrasto — o realce que diz onde vai cair. */
+  const [alvo, setAlvo] = useState<string | null>(null);
+  const [arrastado, setArrastado] = useState<Compromisso | null>(null);
+
+  const arrastavel = (c: Compromisso) => !!onMover && podeArrastar(c) && !c.ocorrencia;
+
+  /** Dias inteiros entre duas datas, ignorando a hora. */
+  function diasEntre(de: Date, ate: Date): number {
+    const a = new Date(de.getFullYear(), de.getMonth(), de.getDate());
+    const b = new Date(ate.getFullYear(), ate.getMonth(), ate.getDate());
+    return Math.round((b.getTime() - a.getTime()) / 86_400_000);
+  }
+
+  function soltarEm(dia: Date) {
+    const c = arrastado;
+    setArrastado(null);
+    setAlvo(null);
+    if (!c) return;
+    const dias = diasEntre(new Date(c.inicioEm), dia);
+    if (dias === 0) return;
+    const { inicioEm, fimEm } = deslocar(c, { dias });
+    onMover?.(c, inicioEm, c.diaInteiro ? null : fimEm);
+  }
 
   const semanas = useMemo(() => {
     const primeiro = new Date(mes.getFullYear(), mes.getMonth(), 1);
@@ -97,12 +140,25 @@ export function Calendario({ mes, onMes, compromissos, onAbrir, onDia }: Props) 
             <div
               key={k}
               onClick={() => onDia(d)}
+              onDragOver={(e) => {
+                if (!arrastado) return;
+                // Sem o preventDefault o navegador recusa a soltura — é assim
+                // que se declara uma célula como alvo válido.
+                e.preventDefault();
+                setAlvo(k);
+              }}
+              onDragLeave={() => setAlvo((a) => (a === k ? null : a))}
+              onDrop={(e) => {
+                e.preventDefault();
+                soltarEm(d);
+              }}
               className={cn(
                 'min-h-[92px] cursor-pointer border-b border-r border-ink-100 p-1.5 transition-colors',
                 'hover:bg-ink-50/70 dark:border-ink-800 dark:hover:bg-ink-800/40',
                 // Dia de fora do mês fica apagado em vez de sumir: a semana
                 // continua legível e o mês não parece começar torto.
                 !doMes && 'bg-ink-50/40 dark:bg-ink-950/30',
+                alvo === k && 'bg-brand-50 ring-2 ring-inset ring-brand-400 dark:bg-brand-500/10',
               )}
             >
               <span
@@ -123,7 +179,21 @@ export function Calendario({ mes, onMes, compromissos, onAbrir, onDia }: Props) 
                   <button
                     key={c.id}
                     type="button"
-                    title={`${horaBr(c.inicioEm)} · ${TIPO_LABEL[c.tipo]} — ${c.titulo}`}
+                    draggable={arrastavel(c)}
+                    onDragStart={(e) => {
+                      setArrastado(c);
+                      e.dataTransfer.effectAllowed = 'move';
+                      // Alguns navegadores cancelam o arrasto sem carga útil.
+                      e.dataTransfer.setData('text/plain', c.id);
+                    }}
+                    onDragEnd={() => {
+                      setArrastado(null);
+                      setAlvo(null);
+                    }}
+                    title={
+                      `${horaBr(c.inicioEm)} · ${TIPO_LABEL[c.tipo]} — ${c.titulo}` +
+                      (arrastavel(c) ? '\nArraste para outro dia; a hora é preservada.' : '')
+                    }
                     onClick={(e) => {
                       e.stopPropagation();
                       onAbrir(c);
@@ -131,7 +201,9 @@ export function Calendario({ mes, onMes, compromissos, onAbrir, onDia }: Props) 
                     className={cn(
                       'flex w-full items-center gap-1 rounded px-1 py-0.5 text-left text-[10.5px]',
                       'hover:bg-ink-100 dark:hover:bg-ink-800',
+                      arrastavel(c) && 'cursor-grab active:cursor-grabbing',
                       c.status === 'CANCELADO' && 'line-through opacity-50',
+                      arrastado?.id === c.id && 'opacity-40',
                     )}
                   >
                     <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', classeDaCor(c))} />
@@ -147,6 +219,13 @@ export function Calendario({ mes, onMes, compromissos, onAbrir, onDia }: Props) 
           );
         })}
       </div>
+
+      {onMover && (
+        <p className="border-t border-ink-100 px-4 py-2 text-[11px] text-ink-400 dark:border-ink-800">
+          Arraste um compromisso para outro dia — a hora é preservada. Para mudar o horário, use as
+          vistas de dia ou semana. Séries que se repetem, realizados e cancelados não se movem.
+        </p>
+      )}
     </div>
   );
 }

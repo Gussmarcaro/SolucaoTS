@@ -230,7 +230,7 @@ Duas camadas de checagem automatizada:
 
   É a única camada que prova a ligação inteira — claim `cli` → `AsyncLocalStorage` → as duas extensions na ordem certa → o SQL com o recorte. Qualquer elo pode se soltar num refactor sem nada quebrar visivelmente: o sistema continua funcionando, e vazando.
 
-No `frontend/`, **`npm test`** (vitest) cobre a lógica pura que erra em silêncio: dígitos verificadores de CPF/CNPJ, a ida-e-volta da máscara de moeda (é ela que transforma o que o usuário digitou no valor da prestação) e `dataBr` sem deslocamento de fuso.
+No `frontend/`, **`npm test`** (vitest) cobre a lógica pura que erra em silêncio: dígitos verificadores de CPF/CNPJ, a ida-e-volta da máscara de moeda (é ela que transforma o que o usuário digitou no valor da prestação), `dataBr` sem deslocamento de fuso e a aritmética do arrasto da agenda (`deslocar`, `podeArrastar`).
 
 **A regra de prazo das tarefas está escrita duas vezes** — `core/tarefa/Tarefa.ts` no backend e `types/tarefa.ts` no front. Podem divergir sem nada quebrar: a grade diria "em dia" e o servidor consideraria atrasada. `src/types/tarefa.test.ts` fixa os mesmos limiares dos dois lados (inclusive o `≤ 7 dias` inclusivo) e é onde a divergência aparece.
 
@@ -262,6 +262,7 @@ Cinco fontes, todas em dados que já existem: prestação `REJEITADO`; `Document
 A tela de entrada mostra, além das contagens dos cadastros:
 
 - **Faixa de execução das parcerias** no topo — valor global, repassado, pago e **em poder da OSC**. Fica acima das contagens de propósito: "quantos fornecedores tenho" é a informação menos acionável da tela e ocupava o lugar mais nobre. Reusa `GET /relatorios/execucao`; somar por conta própria faria o Dashboard mostrar um número e o relatório outro.
+- **Cartão da Agenda**, acima das contagens — os próximos 7 dias e o que ficou sem registro. Compromisso é a única coisa do sistema com **hora marcada**: prazo se cumpre até o fim do dia, reunião começa às 14h30. Fica antes das contagens pelo mesmo motivo da faixa de execução. Reusa `GET /compromissos` com a mesma janela e a **mesma visibilidade** da tela da Agenda — consulta própria seria a chance de o Dashboard mostrar o particular que a Agenda esconde.
 - **Cartão de Fiscalização** no rodapé — os quatro números do resumo e as **5 tarefas mais atrasadas**. Mostra atrasadas, não abertas: aberta é trabalho normal, atrasada é exceção que já passou despercebida.
 
 Cada painel **só aparece com permissão** no recurso correspondente (`RELATORIOS`, `FISCALIZACAO`) e **some sozinho** se a consulta falhar ou se não houver dado — um cartão vazio na tela de entrada ensina a ignorá-la.
@@ -319,9 +320,20 @@ O aviso aparece no **sino**, no padrão dos demais alertas: **calculado na consu
 
 **Cada vista pede exatamente a janela que mostra** — a de dia não carrega o mês.
 
+### Arrastar para remarcar
+
+Endpoint próprio, `PATCH /compromissos/:id/horario`, que muda **só** o horário. Não é um PUT: a grade não tem por que devolver título, pauta e lista de convidados para mover uma reunião meia hora, e reenviar parcialmente apagaria em silêncio o que ficasse de fora.
+
+- **Três coisas não se movem** (`podeArrastar`, no core e espelhado em `types/compromisso.ts`): **série recorrente** — a grade mostra repetições expandidas, que não existem como linha, e arrastar uma delas moveria a série inteira; **realizado** — já aconteceu, e o registro descreve aquele horário; **cancelado** — não vai ocorrer. A regra existe nos dois lados porque a tela precisa da resposta *antes* do gesto: um bloco que se deixa arrastar e depois recusa a gravação é pior que um bloco que não se move.
+- **Recusar, não avisar.** Arrasto é gesto que se dispara sem querer; perder a hora de uma reunião por um clique torto é caro.
+- **A grade usa eventos de ponteiro; o mês, o *drag and drop* do HTML.** Não é inconsistência: no mês o alvo é uma célula, e o nativo resolve teclado e toque de graça; na grade o alvo é um **instante** — é preciso converter pixel em minuto, prender ao passo de 15 e desenhar a prévia enquanto o dedo ainda está na tela.
+- **A prévia é o ponto.** O bloco acompanha o ponteiro e mostra onde vai cair antes de soltar; remarcar às cegas seria pior que abrir o formulário. `Esc` desiste.
+- **No mês só muda o dia, e a hora é preservada** — aquela vista não mostra horário suficiente para remarcá-lo, e mexer na hora sem que ninguém peça seria pior que não mover.
+- Gravação **otimista**: o bloco já está sob o dedo do usuário no lugar novo, e devolvê-lo ao antigo até a API responder pareceria falha. Recusa restaura a lista e mostra o motivo.
+- A aritmética (`deslocar`) fica em `types/compromisso.ts` e é coberta por `npm test` no frontend: mover preserva a duração, redimensionar mexe só no fim e não encolhe abaixo de 15 min. É erro que não quebra tela nenhuma — só grava a reunião numa hora que ninguém escolheu.
+
 ### O que ainda falta
 
-- Arrastar e redimensionar compromisso na grade (§15).
 - Notificar o convidado na criação/alteração (§8).
 - Recurso `AGENDA`. Coberto por `npm run verificar:agenda` (38 checagens) e pelos lembretes em `verificar:alertas`.
 

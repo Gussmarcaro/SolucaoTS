@@ -167,6 +167,52 @@ export function pendenteDeRegistro(
   return c.status === 'AGENDADO' && new Date(c.inicioEm).getTime() < agora.getTime();
 }
 
+/**
+ * O que pode ser remarcado arrastando — espelha `podeArrastar` do backend,
+ * que é quem de fato recusa.
+ *
+ * A tela precisa da resposta **antes** do gesto: um bloco que se deixa arrastar
+ * e depois recusa a gravação é pior que um bloco que não se move.
+ *
+ * - **Série recorrente** não: a grade mostra repetições expandidas, que não
+ *   existem como linha — mover uma delas mudaria a série inteira.
+ * - **Realizado** não: já aconteceu, e o registro descreve aquele horário.
+ * - **Cancelado** não: não vai ocorrer; remarcá-lo seria agendar outro.
+ */
+export function podeArrastar(c: Pick<Compromisso, 'status' | 'recorrencia'>): boolean {
+  return c.status === 'AGENDADO' && c.recorrencia === 'NAO_REPETE';
+}
+
+/** Passo do arrasto, em minutos: 15 é o menor intervalo que se agenda. */
+export const PASSO_ARRASTO = 15;
+
+/** Duração mínima ao redimensionar — abaixo disso o bloco some da grade. */
+export const DURACAO_MINIMA = 15;
+
+/**
+ * Aplica um deslocamento de dias e minutos, devolvendo o novo par de instantes.
+ *
+ * Mover preserva a duração; redimensionar mexe só no fim. Fica aqui, e não na
+ * grade, porque é a única aritmética do arrasto que dá para errar em silêncio —
+ * e porque a vista de mês precisa exatamente da mesma conta.
+ */
+export function deslocar(
+  c: Pick<Compromisso, 'inicioEm' | 'fimEm'>,
+  { dias = 0, minutos = 0, so = 'ambos' as 'ambos' | 'fim' },
+): { inicioEm: Date; fimEm: Date } {
+  const inicio = new Date(c.inicioEm);
+  const fim = new Date(c.fimEm);
+  if (so === 'fim') {
+    fim.setMinutes(fim.getMinutes() + minutos);
+    const minimo = new Date(inicio.getTime() + DURACAO_MINIMA * 60_000);
+    return { inicioEm: inicio, fimEm: fim < minimo ? minimo : fim };
+  }
+  const duracao = fim.getTime() - inicio.getTime();
+  inicio.setDate(inicio.getDate() + dias);
+  inicio.setMinutes(inicio.getMinutes() + minutos);
+  return { inicioEm: inicio, fimEm: new Date(inicio.getTime() + duracao) };
+}
+
 /** 'YYYY-MM-DDTHH:mm' — o formato do input datetime-local. */
 export function paraInputDateTime(iso: string): string {
   const d = new Date(iso);

@@ -1,9 +1,14 @@
 import type { Compromisso, ResumoAgenda, StatusCompromisso } from '@/core/compromisso/Compromisso';
-import { STATUS } from '@/core/compromisso/Compromisso';
+import { STATUS, podeArrastar } from '@/core/compromisso/Compromisso';
 import { podeAlterar, type Espectador } from '@/core/compromisso/visibilidade';
 import { AppError, BusinessError, NotFoundError } from '@/shared/errors';
 import type { ICompromissoRepository } from './ICompromissoRepository';
-import type { AtualizarCompromissoDTO, CriarCompromissoDTO, FiltrosCompromisso } from './dtos';
+import type {
+  AtualizarCompromissoDTO,
+  CriarCompromissoDTO,
+  DadosCompromisso,
+  FiltrosCompromisso,
+} from './dtos';
 import { normalizarEValidarCompromisso } from './validarCompromisso';
 
 /** Teto de linhas por consulta — a agenda pede uma janela, não o histórico. */
@@ -91,6 +96,38 @@ export class CompromissoUseCases {
   }
 
   /**
+   * O compromisso de volta ao formato de gravação.
+   *
+   * As alterações pontuais — mudar a situação, arrastar o horário — precisam
+   * reescrever o registro inteiro, porque `atualizar` substitui os vínculos por
+   * inteiro. Reconstruir isso em cada uma delas seria três lugares para
+   * esquecer um campo novo do compromisso.
+   */
+  private paraGravacao(atual: Compromisso): DadosCompromisso {
+    return {
+      tipo: atual.tipo,
+      titulo: atual.titulo,
+      pauta: atual.pauta,
+      inicioEm: new Date(atual.inicioEm),
+      fimEm: new Date(atual.fimEm),
+      diaInteiro: atual.diaInteiro,
+      local: atual.local,
+      cor: atual.cor,
+      visibilidade: atual.visibilidade,
+      recorrencia: atual.recorrencia,
+      recorrenciaIntervalo: atual.recorrenciaIntervalo,
+      recorrenciaAte: atual.recorrenciaAte ? new Date(atual.recorrenciaAte) : null,
+      ajusteId: atual.ajusteId,
+      responsavelId: atual.responsavelId,
+      status: atual.status,
+      registro: atual.registro,
+      participantes: atual.participantes.map((p) => p.id),
+      grupos: atual.grupos.map((g) => g.id),
+      alertas: atual.alertas.map((a) => ({ minutosAntes: a.minutosAntes })),
+    };
+  }
+
+  /**
    * Muda só a situação — o clique de "realizado" ou "cancelado" na agenda.
    *
    * Voltar de REALIZADO para AGENDADO **apaga o registro**: uma ata de reunião
@@ -108,26 +145,75 @@ export class CompromissoUseCases {
     const atual = await this.buscar(id, quem);
 
     return this.repo.atualizar(id, {
-      tipo: atual.tipo,
-      titulo: atual.titulo,
-      pauta: atual.pauta,
-      inicioEm: new Date(atual.inicioEm),
-      fimEm: new Date(atual.fimEm),
-      diaInteiro: atual.diaInteiro,
-      local: atual.local,
-      cor: atual.cor,
-      visibilidade: atual.visibilidade,
-      recorrencia: atual.recorrencia,
-      recorrenciaIntervalo: atual.recorrenciaIntervalo,
-      recorrenciaAte: atual.recorrenciaAte ? new Date(atual.recorrenciaAte) : null,
-      ajusteId: atual.ajusteId,
-      responsavelId: atual.responsavelId,
+      ...this.paraGravacao(atual),
       status: novo,
       registro: novo === 'REALIZADO' ? atual.registro : null,
-      participantes: atual.participantes.map((p) => p.id),
-      grupos: atual.grupos.map((g) => g.id),
-      alertas: atual.alertas.map((a) => ({ minutosAntes: a.minutosAntes })),
     });
+  }
+
+  /**
+   * Remarcar arrastando na grade — muda **só** o horário.
+   *
+   * Existe separado do `atualizar` porque o gesto é outro: arrastar não é
+   * preencher um formulário. A tela não tem por que devolver título, pauta e
+   * lista de convidados para mover uma reunião meia hora, e um PUT parcial
+   * apagaria em silêncio o que não fosse reenviado.
+   *
+   * Três recusas, e cada uma evita um estrago diferente:
+   *
+   * - **Série recorrente, não.** A grade mostra as repetições expandidas, que
+   *   não existem como linha: arrastar uma delas moveria a série inteira, e as
+   *   outras ocorrências saltariam junto sem que ninguém tenha pedido. Quem
+   *   quiser mover a série usa o formulário, onde isso está escrito.
+   * - **Realizado, não.** Já aconteceu, e o registro descreve o que foi tratado
+   *   naquele encontro. Mudar a hora depois reescreveria o histórico.
+   * - **Cancelado, não.** O compromisso não vai ocorrer; remarcá-lo é agendar
+   *   outro, não mover este.
+   *
+   * Um arrasto é um gesto que se dispara sem querer — daí recusar em vez de
+   * avisar. Perder a hora de uma reunião por um clique torto é caro.
+   */
+  async mover(
+    id: string,
+    input: { inicioEm?: unknown; fimEm?: unknown },
+    quem: Espectador,
+    administra: boolean,
+  ): Promise<Compromisso> {
+    await this.exigirPermissaoDeEscrita(id, quem, administra);
+    const atual = await this.buscar(id, quem);
+
+    // A decisão é a mesma que a tela usa para deixar (ou não) o bloco se mover;
+    // aqui só se escolhe a mensagem que explica a recusa.
+    if (!podeArrastar(atual)) {
+      if (atual.recorrencia !== 'NAO_REPETE')
+        throw new BusinessError(
+          'Este compromisso se repete e não pode ser remarcado arrastando — ' +
+            'mover uma ocorrência mudaria a série inteira. Abra o compromisso para alterar a série.',
+        );
+      throw new BusinessError(
+        atual.status === 'REALIZADO'
+          ? 'Compromisso já realizado não é remarcado: o registro descreve o que foi tratado naquele horário.'
+          : 'Compromisso cancelado não é remarcado. Agende um novo.',
+      );
+    }
+
+    const inicioEm = new Date(String(input.inicioEm ?? ''));
+    if (Number.isNaN(inicioEm.getTime())) throw new BusinessError('Novo início inválido.');
+
+    // Dia inteiro não tem hora para arrastar: só muda de dia, e o fim é sempre
+    // o fecho daquele dia — quem recalcula isso é o validador, um lugar só.
+    const fimEm = atual.diaInteiro ? null : new Date(String(input.fimEm ?? ''));
+    if (fimEm && Number.isNaN(fimEm.getTime())) throw new BusinessError('Novo término inválido.');
+
+    const base = this.paraGravacao(atual);
+    const dados = normalizarEValidarCompromisso({
+      ...base,
+      inicioEm: inicioEm.toISOString(),
+      fimEm: fimEm ? fimEm.toISOString() : null,
+      recorrenciaAte: null,
+    });
+
+    return this.repo.atualizar(id, dados);
   }
 
   /**

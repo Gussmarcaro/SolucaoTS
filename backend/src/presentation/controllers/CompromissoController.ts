@@ -112,6 +112,18 @@ export class CompromissoController {
     }
   }
 
+  /** Remarcar arrastando na grade — muda só o horário. */
+  async mover(req: Request, res: Response, next: NextFunction) {
+    try {
+      const quem = await casos.espectador(exigirUsuario(req));
+      return res.json(
+        await casos.mover(req.params.id, req.body ?? {}, quem, await administraAgenda(req)),
+      );
+    } catch (e) {
+      return next(e);
+    }
+  }
+
   async excluir(req: Request, res: Response, next: NextFunction) {
     try {
       const quem = await casos.espectador(exigirUsuario(req));

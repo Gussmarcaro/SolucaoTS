@@ -15,7 +15,11 @@ import {
   type CompromissoVisivel,
   type Espectador,
 } from '../src/core/compromisso/visibilidade';
-import { expandirRecorrencia, MAX_OCORRENCIAS } from '../src/core/compromisso/Compromisso';
+import {
+  expandirRecorrencia,
+  podeArrastar,
+  MAX_OCORRENCIAS,
+} from '../src/core/compromisso/Compromisso';
 import { normalizarEValidarCompromisso } from '../src/application/compromisso/validarCompromisso';
 
 const falhas: string[] = [];
@@ -242,6 +246,33 @@ console.log('\nAgenda de Compromissos\n');
     semFim.length <= MAX_OCORRENCIAS,
     `${semFim.length} ≤ ${MAX_OCORRENCIAS}`,
   );
+}
+
+// --- remarcar arrastando ----------------------------------------------------
+//
+// A regra existe nos dois lados: a tela decide se o bloco se move, o servidor
+// decide se grava. Se divergirem, o usuário arrasta e leva um erro — e é a tela
+// que fica com cara de quebrada.
+{
+  const arrastavel = (over: Partial<Parameters<typeof podeArrastar>[0]> = {}) =>
+    podeArrastar({ status: 'AGENDADO', recorrencia: 'NAO_REPETE', ...over });
+
+  conferir('agendado e sem repetição pode ser arrastado', arrastavel());
+
+  conferir(
+    'série recorrente não é arrastável',
+    !arrastavel({ recorrencia: 'SEMANAL' }),
+    'mover uma ocorrência expandida moveria a série inteira',
+  );
+  for (const r of ['DIARIA', 'MENSAL', 'ANUAL'] as const)
+    conferir(`recorrência ${r} não é arrastável`, !arrastavel({ recorrencia: r }));
+
+  conferir(
+    'realizado não é arrastável',
+    !arrastavel({ status: 'REALIZADO' }),
+    'o registro descreve o que foi tratado naquele horário',
+  );
+  conferir('cancelado não é arrastável', !arrastavel({ status: 'CANCELADO' }));
 }
 
 console.log(falhas.length ? `\n${falhas.length} falha(s).\n` : '\nTudo ok.\n');
