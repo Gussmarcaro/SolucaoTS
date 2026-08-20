@@ -9,6 +9,8 @@ export interface Tarefa {
   status: StatusTarefa;
   prazoLegal: string; // 'YYYY-MM-DD'
   ajusteId: string | null;
+  /** Compromisso que originou a providência (visita, reunião). */
+  compromissoId: string | null;
   ajusteCodigo: string | null;
   entidadeNome: string | null;
   responsavelId: string | null;
@@ -28,6 +30,7 @@ export interface TarefaPayload {
   status: StatusTarefa;
   prazoLegal: string;
   ajusteId: string | null;
+  compromissoId?: string | null;
   responsavelId: string | null;
   origemAlerta?: string | null;
 }

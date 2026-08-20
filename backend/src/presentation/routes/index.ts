@@ -10,6 +10,7 @@ import { servidorCedidoRoutes } from './servidorCedido.routes';
 import { ajusteRoutes } from './ajuste.routes';
 import { prestacaoRoutes } from './prestacao.routes';
 import { tarefaRoutes } from './tarefa.routes';
+import { compromissoRoutes } from './compromisso.routes';
 import { grupoRoutes } from './grupo.routes';
 import { clienteRoutes } from './cliente.routes';
 import { dominioRoutes } from './dominio.routes';
@@ -58,6 +59,7 @@ routes.use('/servidores-cedidos', exigirPermissao('CADASTRO_SERVIDORES_CEDIDOS')
 routes.use('/ajustes', exigirPermissao('CADASTRO_AJUSTES'), ajusteRoutes);
 routes.use('/prestacoes', exigirPermissao('PRESTACAO_CONTAS'), prestacaoRoutes);
 routes.use('/tarefas', exigirPermissao('FISCALIZACAO'), tarefaRoutes);
+routes.use('/compromissos', exigirPermissao('AGENDA'), compromissoRoutes);
 routes.use('/grupos', exigirPermissao('CONFIG_GRUPOS'), grupoRoutes);
 routes.use('/orgaos', exigirPermissao('CONFIG_ORGAOS'), clienteRoutes);
 routes.use('/auditoria', exigirPermissao('CONFIG_AUDITORIA'), auditoriaRoutes);

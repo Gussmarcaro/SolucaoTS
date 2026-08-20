@@ -47,7 +47,7 @@ Definido em `backend/prisma/schema.prisma`. Dois módulos Audesp em sequência +
 1. **Cadastro de Ajuste** — `Ajuste` é a entidade **central** (não `Convenio`), com `tipoAjuste` entre 5 valores (Contrato de Gestão, Convênio, Termo de Colaboração, Termo de Fomento, Termo de Parceria). Agrega `TermoAditivo`, `Certidao`, `EntidadeBeneficiaria`, `Programa`/`Meta`, `PlanoAplicacaoItem`, `CronogramaDesembolsoItem`, `BemCedidoCadastro`, `EmpenhoCadastro`.
 2. **Prestação de Contas** — `PrestacaoContas` (filha de `Ajuste`) é a raiz de ~15 blocos filhos (empregados, bens, contratos, documentos fiscais, pagamentos, disponibilidades, receitas, servidores cedidos, descontos, devoluções, glosas, empenhos, repasses, relatório de atividades). **Este módulo não tem tela no TCESP: é transmitido só via API REST** montando um documento JSON.
 3. **Segurança** — `Cliente` (órgão) → `Usuario`; RBAC via `GrupoUsuario` / `Permissao` (`modulo` + `acao`).
-4. **Workflow** — `Tarefa` (`prazoLegal`, `prioridade`, `status`), ligada opcionalmente a um `Ajuste` e ao alerta do sino que a originou (`origemAlerta`). `Projeto` existe no schema e ainda não é usado — ver "Fiscalização | Monitoramento".
+4. **Workflow** — `Compromisso` (agenda: evento com data/hora e registro do que foi tratado) e `Tarefa` (`prazoLegal`, `prioridade`, `status`), ligada opcionalmente a um `Ajuste` e ao alerta do sino que a originou (`origemAlerta`). `Projeto` existe no schema e ainda não é usado — ver "Fiscalização | Monitoramento".
 
 Convenções do schema: PKs `uuid`, dinheiro `Decimal(15,2)`, datas `@db.Date`. As **regras de unicidade dos manuais viraram `@@unique` compostos** (ex.: documento fiscal único por `numero+credor`, empenho por `numero+dataEmissao`, empregado por `cpf+dataAdmissao`) — preserve-as ao evoluir o schema.
 
@@ -264,6 +264,18 @@ A tela de entrada mostra, além das contagens dos cadastros:
 - **Cartão de Fiscalização** no rodapé — os quatro números do resumo e as **5 tarefas mais atrasadas**. Mostra atrasadas, não abertas: aberta é trabalho normal, atrasada é exceção que já passou despercebida.
 
 Cada painel **só aparece com permissão** no recurso correspondente (`RELATORIOS`, `FISCALIZACAO`) e **some sozinho** se a consulta falhar ou se não houver dado — um cartão vazio na tela de entrada ensina a ignorá-la.
+
+## Agenda de Compromissos
+
+`/agenda` — reuniões de monitoramento, visitas in loco, Comissão de Monitoramento e Avaliação (Lei 13.019, arts. 58-59), audiências e compromissos no TCESP. Calendário mensal + lista.
+
+- **Compromisso *acontece*; tarefa *vence*.** É a distinção que justifica a tabela separada em vez de mais um recorte da Fiscalização: uma reunião não fica "atrasada há 3 dias" — ela ocorreu, foi cancelada, ou ainda vem. E o que sobra dela é o **registro** do que foi tratado, não um check de conclusão.
+- **O registro só existe depois de REALIZADO** (`validarCompromisso`). Guardar a ata de um encontro que o próprio sistema considera não realizado deixaria o histórico afirmando o que foi discutido num evento que não houve. Voltar de realizado para agendado **apaga** o registro, pela mesma razão.
+- **"Sem registro" não é atraso.** Compromisso passado que continua `AGENDADO` significa que ninguém fechou o que houve — e reunião sem registro não deixou rastro nenhum. É o KPI que a agenda cobra.
+- **Do compromisso nascem providências.** `Tarefa.compromissoId` liga as duas pontas: o botão *Gerar providência* leva à Fiscalização com o formulário preenchido (como o sino já faz), e aí quem cobra prazo é o módulo que sabe cobrar. Compromisso que gerou tarefas **não pode ser excluído** — as tarefas ficariam sem origem; o caminho é **Cancelado**.
+- **Participantes em texto livre, um por linha.** A reunião junta gente do órgão (`Usuario`) e da OSC (que não tem cadastro de pessoas): modelar os dois lados criaria um N:N heterogêneo para resolver o que uma lista resolve.
+- Remarcar é **editar a data** — não há campo de remarcação, porque a trilha de auditoria já guarda o diff e responde "quando mudou".
+- Recurso `AGENDA`. Excluir exige faixa **Total**. Coberto por `npm run verificar:workflow`.
 
 ## Fiscalização | Monitoramento (Workflow)
 

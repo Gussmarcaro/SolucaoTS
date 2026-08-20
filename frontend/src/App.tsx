@@ -26,6 +26,7 @@ import { Colaboradores } from '@/pages/Colaboradores';
 import { Contratos } from '@/pages/Contratos';
 import { BensCedidos } from '@/pages/BensCedidos';
 import { ServidoresCedidos } from '@/pages/ServidoresCedidos';
+import { Agenda } from '@/pages/Agenda';
 import { Fiscalizacao } from '@/pages/Fiscalizacao';
 import { Relatorios } from '@/pages/Relatorios';
 import { Transparencia } from '@/pages/Transparencia';
@@ -167,6 +168,14 @@ export default function App() {
             element={
               <RequerPermissao recurso="RELATORIOS">
                 <Relatorios />
+              </RequerPermissao>
+            }
+          />
+          <Route
+            path="/agenda"
+            element={
+              <RequerPermissao recurso="AGENDA">
+                <Agenda />
               </RequerPermissao>
             }
           />

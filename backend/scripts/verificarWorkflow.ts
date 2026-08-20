@@ -15,6 +15,8 @@ import type { ITarefaRepository } from '../src/application/tarefa/ITarefaReposit
 import type { DadosTarefa, ListarTarefasParams, Paginado } from '../src/application/tarefa/dtos';
 import { normalizarEValidarTarefa } from '../src/application/tarefa/validarTarefa';
 import { situacaoPrazo, type ResumoTarefas, type Tarefa } from '../src/core/tarefa/Tarefa';
+import { normalizarEValidarCompromisso } from '../src/application/compromisso/validarCompromisso';
+import { pendenteDeRegistro } from '../src/core/compromisso/Compromisso';
 import { ALERTAS_SILENCIAVEIS } from '../src/core/tarefa/Tarefa';
 
 const falhas: string[] = [];
@@ -47,6 +49,7 @@ class RepoFake implements ITarefaRepository {
       status: d.status,
       prazoLegal: d.prazoLegal.toISOString().slice(0, 10),
       ajusteId: d.ajusteId,
+      compromissoId: d.compromissoId,
       ajusteCodigo: null,
       entidadeNome: null,
       responsavelId: d.responsavelId,
@@ -271,6 +274,68 @@ await recusa('id de ajuste que não é uuid é recusado', () =>
   conferir('prestação rejeitada NÃO é silenciável', !ALERTAS_SILENCIAVEIS.has('PRESTACAO_REJEITADA'));
   conferir('prestação do exercício NÃO é silenciável', !ALERTAS_SILENCIAVEIS.has('PRESTACAO_CONTAS'));
   conferir('a lista tem exatamente 3 tipos', ALERTAS_SILENCIAVEIS.size === 3);
+}
+
+// --- agenda de compromissos -------------------------------------------------
+// Compromisso **acontece**; tarefa **vence**. As regras abaixo são o que separa
+// as duas coisas no código — se elas se misturarem, a agenda vira uma segunda
+// lista de pendências e o registro do que foi tratado perde o sentido.
+{
+  const base = { tipo: 'VISITA_IN_LOCO', titulo: 'Visita à sede', inicioEm: '2026-09-12T14:00' };
+
+  await recusa('compromisso com título curto é recusado', () =>
+    normalizarEValidarCompromisso({ ...base, titulo: 'ab' }),
+  );
+  await recusa('compromisso sem data e hora é recusado', () =>
+    normalizarEValidarCompromisso({ ...base, inicioEm: '' }),
+  );
+  await recusa('tipo fora da lista é recusado', () =>
+    normalizarEValidarCompromisso({ ...base, tipo: 'CHURRASCO' }),
+  );
+  await recusa('duração absurda é recusada', () =>
+    normalizarEValidarCompromisso({ ...base, duracaoMinutos: 5000 }),
+  );
+
+  {
+    const d = normalizarEValidarCompromisso(base);
+    conferir('compromisso nasce AGENDADO', d.status === 'AGENDADO');
+    conferir('guarda a hora, não só o dia', d.inicioEm.getHours() === 14);
+  }
+
+  // A regra que dá sentido ao módulo: a ata pertence ao que aconteceu.
+  await recusa('registro em compromisso não realizado é recusado', () =>
+    normalizarEValidarCompromisso({ ...base, registro: 'Discutimos o plano.' }),
+  );
+  {
+    const d = normalizarEValidarCompromisso({
+      ...base,
+      status: 'REALIZADO',
+      registro: 'Discutimos o plano.',
+    });
+    conferir('realizado aceita o registro', d.registro === 'Discutimos o plano.');
+  }
+
+  // "Sem registro" não é atraso — é reunião que não deixou rastro nenhum.
+  const passado = '2020-01-01T10:00:00.000Z';
+  const futuro = '2099-01-01T10:00:00.000Z';
+  conferir(
+    'agendado que já passou fica pendente de registro',
+    pendenteDeRegistro({ status: 'AGENDADO', inicioEm: passado }),
+    'ninguém fechou o que aconteceu',
+  );
+  conferir(
+    'agendado no futuro não é pendência',
+    !pendenteDeRegistro({ status: 'AGENDADO', inicioEm: futuro }),
+  );
+  conferir(
+    'realizado no passado não é pendência',
+    !pendenteDeRegistro({ status: 'REALIZADO', inicioEm: passado }),
+  );
+  conferir(
+    'cancelado no passado não é pendência',
+    !pendenteDeRegistro({ status: 'CANCELADO', inicioEm: passado }),
+    'não aconteceu — não há o que registrar',
+  );
 }
 
 console.log(falhas.length ? `\n${falhas.length} falha(s).\n` : '\nTudo ok.\n');

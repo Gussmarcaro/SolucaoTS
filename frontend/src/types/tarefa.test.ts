@@ -24,6 +24,7 @@ function tarefa(prazoLegal: string, status: Tarefa['status'] = 'PENDENTE'): Tare
     status,
     prazoLegal,
     ajusteId: null,
+    compromissoId: null,
     ajusteCodigo: null,
     entidadeNome: null,
     responsavelId: null,

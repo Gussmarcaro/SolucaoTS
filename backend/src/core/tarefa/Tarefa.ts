@@ -22,6 +22,8 @@ export interface Tarefa {
   status: StatusTarefa;
   prazoLegal: string; // 'YYYY-MM-DD'
   ajusteId: string | null;
+  /** Compromisso que originou a providência; nulo quando nasceu avulsa. */
+  compromissoId: string | null;
   /** Denormalizados para a grade não precisar de uma consulta por linha. */
   ajusteCodigo: string | null;
   entidadeNome: string | null;

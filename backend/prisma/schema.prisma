@@ -81,6 +81,25 @@ enum StatusTarefa {
   CANCELADA
 }
 
+// Compromissos que aparecem no acompanhamento de parcerias. Os quatro
+// primeiros vêm da Lei 13.019/2014 (arts. 58-59: monitoramento e avaliação).
+enum TipoCompromisso {
+  REUNIAO_MONITORAMENTO
+  VISITA_IN_LOCO
+  COMISSAO_AVALIACAO
+  AUDIENCIA_PUBLICA
+  TCESP // sessão, audiência ou prazo com hora marcada no Tribunal
+  OUTRO
+}
+
+// Um compromisso **acontece** — não vence. Por isso não tem "atrasado":
+// ou foi realizado, ou foi cancelado, ou ainda está por vir.
+enum StatusCompromisso {
+  AGENDADO
+  REALIZADO
+  CANCELADO
+}
+
 // 1=CPF, 2=CNPJ, 3=RNE (estrangeiro)
 enum TipoDocumento {
   CPF
@@ -141,6 +160,7 @@ model Cliente {
   ajustes               Ajuste[]
   projetos              Projeto[]
   tarefas               Tarefa[]
+  compromissos          Compromisso[]
   empresas              Empresa[]
   fornecedores          Fornecedor[]
   colaboradores         Colaborador[]
@@ -186,6 +206,7 @@ model Usuario {
   grupoUsuario GrupoUsuario?     @relation(fields: [grupoUsuarioId], references: [id])
   grupos       UsuarioGrupo[]
   tarefas      Tarefa[]
+  compromissos Compromisso[]
   prestacoes   PrestacaoContas[] @relation("PrestacaoResponsavel")
 
   @@index([clienteId])
@@ -719,6 +740,7 @@ model Ajuste {
   prestacoesContas PrestacaoContas[]
   projetos         Projeto[]
   tarefas          Tarefa[]
+  compromissos     Compromisso[]
 
   @@unique([clienteId, codigoAjuste])
   @@index([entidadeBeneficiariaId])
@@ -1339,6 +1361,9 @@ model Tarefa {
   clienteId     String?          @db.Uuid // opcional até o backfill
   projetoId     String?          @db.Uuid // agrupamento opcional (ver Projeto)
   ajusteId      String?          @db.Uuid // ajuste acompanhado; nulo em tarefa avulsa
+  // Compromisso que originou a providência: da visita in loco saem as
+  // pendências, e é este campo que liga a ata ao que foi feito depois.
+  compromissoId String?          @db.Uuid
   responsavelId String?          @db.Uuid
   titulo        String
   descricao     String?
@@ -1356,18 +1381,74 @@ model Tarefa {
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
-  cliente     Cliente? @relation(fields: [clienteId], references: [id])
-  projeto     Projeto? @relation(fields: [projetoId], references: [id])
-  ajuste      Ajuste?  @relation(fields: [ajusteId], references: [id])
-  responsavel Usuario? @relation(fields: [responsavelId], references: [id])
+  cliente     Cliente?     @relation(fields: [clienteId], references: [id])
+  projeto     Projeto?     @relation(fields: [projetoId], references: [id])
+  ajuste      Ajuste?      @relation(fields: [ajusteId], references: [id])
+  compromisso Compromisso? @relation(fields: [compromissoId], references: [id])
+  responsavel Usuario?     @relation(fields: [responsavelId], references: [id])
 
   @@index([responsavelId])
   @@index([clienteId])
   @@index([projetoId])
   @@index([ajusteId])
+  @@index([compromissoId])
   @@index([prazoLegal])
   @@index([status])
   @@index([origemAlerta])
+}
+
+/// Compromisso da agenda — um **evento**, não uma providência.
+///
+/// A distinção com `Tarefa` é o que justifica a tabela separada: tarefa tem
+/// **data-limite** e pode atrasar; compromisso tem **momento** e acontece ou
+/// não. Uma reunião de monitoramento não fica "atrasada há 3 dias" — ela
+/// ocorreu, foi cancelada, ou ainda vai acontecer. E o que sobra dela é o
+/// **registro** do que foi tratado, não um check de conclusão.
+///
+/// A ligação entre as duas é o que faz a agenda valer: da visita in loco saem
+/// providências, que viram `Tarefa` com `compromissoId` — e aí a Fiscalização,
+/// que já sabe cobrar prazo, cobra o que a visita apontou.
+model Compromisso {
+  id        String  @id @default(uuid()) @db.Uuid
+  clienteId String? @db.Uuid // raiz de tenant; opcional até o backfill
+  ajusteId  String? @db.Uuid // parceria tratada; nulo em compromisso avulso
+
+  tipo   TipoCompromisso
+  titulo String
+  pauta  String?
+
+  // Momento, com hora — é o que separa isto de um prazo. `duracaoMinutos` é
+  // opcional: muita coisa se marca sem hora de término definida.
+  inicioEm       DateTime
+  duracaoMinutos Int?
+  local          String?
+
+  /// Participantes em texto livre, um por linha.
+  ///
+  /// Não é tabela de vínculo de propósito: a reunião junta gente do órgão
+  /// (`Usuario`) e da OSC (que não tem cadastro de pessoas), e modelar os dois
+  /// lados criaria um N:N heterogêneo para resolver o que uma lista resolve.
+  participantes String?
+
+  status        StatusCompromisso @default(AGENDADO)
+  /// O que foi tratado. Só faz sentido depois de REALIZADO — é a ata.
+  registro      String?
+  responsavelId String?           @db.Uuid
+
+  criadoPor    String?  @db.Uuid
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  cliente     Cliente? @relation(fields: [clienteId], references: [id])
+  ajuste      Ajuste?  @relation(fields: [ajusteId], references: [id])
+  responsavel Usuario? @relation(fields: [responsavelId], references: [id])
+  tarefas     Tarefa[]
+
+  // A consulta da agenda é sempre "deste órgão, nesta janela de datas".
+  @@index([clienteId, inicioEm])
+  @@index([ajusteId])
+  @@index([responsavelId])
+  @@index([status])
 }
 
 // ============================================================================

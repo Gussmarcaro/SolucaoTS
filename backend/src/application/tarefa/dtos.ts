@@ -6,6 +6,8 @@ export interface CriarTarefaDTO {
   prioridade?: string | null;
   prazoLegal: string;
   ajusteId?: string | null;
+  /** Compromisso que originou a providência (visita, reunião). */
+  compromissoId?: string | null;
   responsavelId?: string | null;
   status?: string | null;
   /**
@@ -25,6 +27,7 @@ export interface DadosTarefa {
   status: StatusTarefa;
   prazoLegal: Date;
   ajusteId: string | null;
+  compromissoId: string | null;
   responsavelId: string | null;
   origemAlerta: string | null;
   /** Preenchido quando o status entra em CONCLUIDA; limpo quando sai. */

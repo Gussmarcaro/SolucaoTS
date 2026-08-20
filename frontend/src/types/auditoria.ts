@@ -116,6 +116,7 @@ export const ENTIDADE_LABEL: Record<string, string> = {
   RelatorioAtividadeMeta: 'Relatório de atividades',
   Projeto: 'Projeto',
   Tarefa: 'Tarefa',
+  Compromisso: 'Compromisso da agenda',
   Titular: 'Consulta de titular (LGPD)',
 };
 

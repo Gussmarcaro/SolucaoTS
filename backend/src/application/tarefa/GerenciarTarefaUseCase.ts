@@ -35,6 +35,7 @@ export class GerenciarTarefaUseCase {
       status: novo,
       prazoLegal: new Date(`${atual.prazoLegal}T00:00:00.000Z`),
       ajusteId: atual.ajusteId,
+      compromissoId: atual.compromissoId,
       responsavelId: atual.responsavelId,
       origemAlerta: atual.origemAlerta,
       concluidaEm,

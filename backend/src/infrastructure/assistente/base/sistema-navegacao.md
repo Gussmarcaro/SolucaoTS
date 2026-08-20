@@ -1,6 +1,6 @@
 # Mapa de navegação do sistema Solução TS
 
-> Extraído automaticamente do menu do sistema (`navigation.ts`) em 2026-08-13.
+> Extraído automaticamente do menu do sistema (`navigation.ts`) em 2026-08-20.
 > Estes são os caminhos que existem de fato. Nenhum outro caminho deve ser afirmado.
 
 ## Menu principal
@@ -22,6 +22,7 @@
 - **Execução → Técnico** — rota `/execucao/tecnico`
 - **Prestação de Contas** — rota `/prestacao-contas`
 - **Relatórios** — rota `/relatorios`
+- **Agenda de Compromissos** — rota `/agenda`
 - **Fiscalização | Monitoramento** — rota `/fiscalizacao`
 - **Transparência** — rota `/transparencia`
 - **Configurações → Órgãos Concessores** — rota `/orgaos`

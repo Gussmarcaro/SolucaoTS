@@ -60,6 +60,7 @@ export function normalizarEValidarTarefa(
     status,
     prazoLegal,
     ajusteId: opcionalUuid(input.ajusteId, 'Ajuste'),
+    compromissoId: opcionalUuid(input.compromissoId, 'Compromisso'),
     responsavelId: opcionalUuid(input.responsavelId, 'Responsável'),
     origemAlerta: input.origemAlerta?.trim() || null,
     concluidaEm,
