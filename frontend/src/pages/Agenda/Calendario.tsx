@@ -104,7 +104,7 @@ export function Calendario({ mes, onMes, compromissos, onAbrir, onDia, onMover }
   return (
     <div className="overflow-hidden rounded-2xl border border-ink-200/70 bg-white shadow-card dark:border-ink-800/70 dark:bg-ink-900">
       <div className="flex items-center justify-between gap-3 border-b border-ink-100 px-4 py-3 dark:border-ink-800">
-        <p className="text-sm font-semibold capitalize text-ink-800 dark:text-ink-100">
+        <p className="text-sm font-semibold text-ink-800 dark:text-ink-100">
           {mes.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
         </p>
         <div className="flex items-center gap-1">

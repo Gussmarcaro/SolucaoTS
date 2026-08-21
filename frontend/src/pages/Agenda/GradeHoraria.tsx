@@ -274,7 +274,7 @@ export function GradeHoraria({
       )}
     >
       <div className="flex items-center justify-between gap-3 border-b border-ink-100 px-4 py-3 dark:border-ink-800">
-        <p className="text-sm font-semibold capitalize text-ink-800 dark:text-ink-100">{titulo}</p>
+        <p className="text-sm font-semibold text-ink-800 dark:text-ink-100">{titulo}</p>
         <div className="flex items-center gap-1">
           <Button variant="secondary" size="sm" onClick={() => mover(-1)} aria-label="Anterior">
             <ChevronLeft className="h-4 w-4" />
