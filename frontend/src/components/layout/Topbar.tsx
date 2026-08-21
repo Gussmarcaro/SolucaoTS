@@ -103,6 +103,10 @@ export function Topbar({ onOpenSidebar, collapsed = false }: TopbarProps) {
        * sobre o branco daqui sobraria só o ícone. `logo-deitada` é a mesma arte
        * com a palette de fundo claro/escuro (ver `public/LOGOS.md`).
        *
+       * `h-11` aqui é **maior** que o `h-12` de antes: a arte foi aparada na
+       * caixa útil, então a altura pedida virou a altura que se vê, sem folga
+       * transparente por dentro.
+       *
        * Duas imagens em vez de uma porque `display:none` tira a que não vale da
        * árvore de acessibilidade — o leitor de tela anuncia a marca uma vez só.
        */}
@@ -111,12 +115,12 @@ export function Topbar({ onOpenSidebar, collapsed = false }: TopbarProps) {
           <img
             src="/logo-deitada.png"
             alt="Solução TS"
-            className="h-12 w-auto object-contain dark:hidden"
+            className="h-11 w-auto object-contain dark:hidden"
           />
           <img
             src="/logo-deitada-dark.png"
             alt="Solução TS"
-            className="hidden h-12 w-auto object-contain dark:block"
+            className="hidden h-11 w-auto object-contain dark:block"
           />
         </div>
       )}
