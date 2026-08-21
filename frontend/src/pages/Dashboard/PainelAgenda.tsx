@@ -86,10 +86,10 @@ export function PainelAgenda() {
   if (falhou || vazio) return null;
 
   return (
-    // `mt-6`: a grade de cadastros logo acima não tem margem embaixo, e o bloco
-    // de prazos logo abaixo já traz a sua própria no topo. Painel que fica
-    // *antes* das contagens precisa do contrário (`mb-6`, como o PainelExecucao).
-    <Card className="mt-6">
+    // `mb-6`: a grade de cadastros que vem logo abaixo não tem margem no topo,
+    // então quem abre o espaço é este painel — mesma regra do PainelExecucao,
+    // que fica acima. Só o de Fiscalização usa `mt-6`, por ser o último da tela.
+    <Card className="mb-6">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <CalendarDays className="h-4 w-4 text-brand-500" />
