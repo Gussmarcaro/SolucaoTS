@@ -97,27 +97,31 @@ export function Topbar({ onOpenSidebar, collapsed = false }: TopbarProps) {
        * Só no desktop (`lg`): abaixo disso o menu é uma gaveta sobreposta, que
        * leva a logo junto e não deixa trilho nenhum na tela.
        *
-       * **Não é o mesmo arquivo do menu.** `logo-menu` tem o texto branco, feito
-       * para o azul da barra lateral; sobre o branco da barra superior sobra só
-       * o ícone. Aqui vale o par geral — `logo.png` tem o texto escuro, para
-       * fundo claro, e `logo-dark.png` o texto claro, para fundo escuro. A regra
-       * do projeto: o sufixo `-dark` diz o **fundo** a que a arte serve, não o
-       * tom dela.
+       * É a **mesma arte do menu** — a deitada, ícone ao lado do texto — e por
+       * isso ela vem com o fundo do menu junto: o texto de `logo-menu` é branco,
+       * desenhado para o azul da barra lateral, e solto sobre o branco da barra
+       * superior sobraria só o ícone. A placa não é enfeite, é o que sustenta a
+       * arte.
+       *
+       * O fundo espelha o do menu (gradiente azul no claro, ink-900 no escuro),
+       * então no tema escuro ele praticamente some contra a barra — que é o
+       * certo, porque ali a arte já tem o fundo escuro de que precisa. Uma
+       * regra só, sem caso especial por tema.
        *
        * Duas imagens em vez de uma porque `display:none` tira a que não vale da
        * árvore de acessibilidade — o leitor de tela anuncia a marca uma vez só.
        */}
       {collapsed && (
-        <div className="hidden animate-fade-in items-center lg:flex">
+        <div className="hidden animate-fade-in items-center rounded-xl bg-gradient-to-b from-brand-500 to-brand-700 px-3 py-1.5 dark:bg-none dark:bg-ink-900 lg:flex">
           <img
-            src="/logo.png"
+            src="/logo-menu.png"
             alt="Solução TS"
-            className="h-12 w-auto object-contain dark:hidden"
+            className="h-9 w-auto object-contain dark:hidden"
           />
           <img
-            src="/logo-dark.png"
+            src="/logo-menu-dark.png"
             alt="Solução TS"
-            className="hidden h-12 w-auto object-contain dark:block"
+            className="hidden h-9 w-auto object-contain dark:block"
           />
         </div>
       )}
