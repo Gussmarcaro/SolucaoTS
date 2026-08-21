@@ -128,15 +128,15 @@ export const ANTECEDENCIAS: { minutos: number; label: string }[] = [
  * Cor é token, não hex: a tela decide como pintar e o tema escuro continua
  * legível — o que um `#ffcc00` escolhido a dedo não garante.
  */
-export const CORES: { id: string; label: string; classe: string }[] = [
-  { id: 'brand', label: 'Azul', classe: 'bg-brand-500' },
-  { id: 'emerald', label: 'Verde', classe: 'bg-emerald-500' },
-  { id: 'violet', label: 'Roxo', classe: 'bg-violet-500' },
-  { id: 'amber', label: 'Âmbar', classe: 'bg-amber-500' },
-  { id: 'red', label: 'Vermelho', classe: 'bg-red-500' },
-  { id: 'sky', label: 'Ciano', classe: 'bg-sky-500' },
-  { id: 'rose', label: 'Rosa', classe: 'bg-rose-500' },
-  { id: 'ink', label: 'Cinza', classe: 'bg-ink-400' },
+export const CORES: { id: string; label: string; classe: string; fundo: string }[] = [
+  { id: 'brand', label: 'Azul', classe: 'bg-brand-500', fundo: 'bg-brand-500/10 hover:bg-brand-500/20 dark:bg-brand-500/20 dark:hover:bg-brand-500/30' },
+  { id: 'emerald', label: 'Verde', classe: 'bg-emerald-500', fundo: 'bg-emerald-500/10 hover:bg-emerald-500/20 dark:bg-emerald-500/20 dark:hover:bg-emerald-500/30' },
+  { id: 'violet', label: 'Roxo', classe: 'bg-violet-500', fundo: 'bg-violet-500/10 hover:bg-violet-500/20 dark:bg-violet-500/20 dark:hover:bg-violet-500/30' },
+  { id: 'amber', label: 'Âmbar', classe: 'bg-amber-500', fundo: 'bg-amber-500/10 hover:bg-amber-500/20 dark:bg-amber-500/20 dark:hover:bg-amber-500/30' },
+  { id: 'red', label: 'Vermelho', classe: 'bg-red-500', fundo: 'bg-red-500/10 hover:bg-red-500/20 dark:bg-red-500/20 dark:hover:bg-red-500/30' },
+  { id: 'sky', label: 'Ciano', classe: 'bg-sky-500', fundo: 'bg-sky-500/10 hover:bg-sky-500/20 dark:bg-sky-500/20 dark:hover:bg-sky-500/30' },
+  { id: 'rose', label: 'Rosa', classe: 'bg-rose-500', fundo: 'bg-rose-500/10 hover:bg-rose-500/20 dark:bg-rose-500/20 dark:hover:bg-rose-500/30' },
+  { id: 'ink', label: 'Cinza', classe: 'bg-ink-400', fundo: 'bg-ink-400/10 hover:bg-ink-400/20 dark:bg-ink-400/20 dark:hover:bg-ink-400/30' },
 ];
 
 /** Cor por tipo, usada quando o usuário não escolheu nenhuma. */
@@ -149,9 +149,30 @@ const COR_PADRAO_DO_TIPO: Record<TipoCompromisso, string> = {
   OUTRO: 'ink',
 };
 
-export function classeDaCor(c: Pick<Compromisso, 'cor' | 'tipo'>): string {
+function corDe(c: Pick<Compromisso, 'cor' | 'tipo'>) {
   const id = c.cor ?? COR_PADRAO_DO_TIPO[c.tipo];
-  return CORES.find((x) => x.id === id)?.classe ?? 'bg-ink-400';
+  return CORES.find((x) => x.id === id);
+}
+
+/** Cor cheia — a bolinha e os blocos da grade horária. */
+export function classeDaCor(c: Pick<Compromisso, 'cor' | 'tipo'>): string {
+  return corDe(c)?.classe ?? 'bg-ink-400';
+}
+
+/**
+ * A mesma cor, em marca d'água — o fundo da linha do compromisso.
+ *
+ * A bolinha identifica; a lavagem faz o olho **agrupar** sem precisar comparar
+ * pontos de 6px. Numa célula de calendário com quatro linhas, é a diferença
+ * entre ler quatro vezes e ver de relance que três são a mesma coisa.
+ *
+ * Fica a 10% no claro e a 20% no escuro: sobre fundo escuro a mesma opacidade
+ * quase some. E é lavagem, não cor cheia — cor cheia exigiria texto branco e
+ * transformaria a célula do mês num mosaico, que é justamente o que a grade
+ * horária já faz porque lá o bloco *é* o compromisso.
+ */
+export function classeDeFundo(c: Pick<Compromisso, 'cor' | 'tipo'>): string {
+  return corDe(c)?.fundo ?? 'bg-ink-400/10 hover:bg-ink-400/20 dark:bg-ink-400/20 dark:hover:bg-ink-400/30';
 }
 
 /**

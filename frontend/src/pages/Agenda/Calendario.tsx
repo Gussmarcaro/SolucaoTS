@@ -5,6 +5,7 @@ import { cn } from '@/lib/cn';
 import {
   TIPO_LABEL,
   classeDaCor,
+  classeDeFundo,
   deslocar,
   horaBr,
   podeArrastar,
@@ -200,9 +201,16 @@ export function Calendario({ mes, onMes, compromissos, onAbrir, onDia, onMover }
                     }}
                     className={cn(
                       'flex w-full items-center gap-1 rounded px-1 py-0.5 text-left text-[10.5px]',
-                      'hover:bg-ink-100 dark:hover:bg-ink-800',
+                      'transition-colors',
+                      // A cor escolhida em marca d'água: a bolinha identifica,
+                      // a lavagem faz o olho agrupar sem comparar pontos de 6px.
+                      //
+                      // Cancelado fica de fora: manter a cor daria à linha
+                      // riscada o mesmo peso visual das que ainda valem.
+                      c.status === 'CANCELADO'
+                        ? 'line-through opacity-50 hover:bg-ink-100 dark:hover:bg-ink-800'
+                        : classeDeFundo(c),
                       arrastavel(c) && 'cursor-grab active:cursor-grabbing',
-                      c.status === 'CANCELADO' && 'line-through opacity-50',
                       arrastado?.id === c.id && 'opacity-40',
                     )}
                   >

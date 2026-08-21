@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  classeDaCor,
+  classeDeFundo,
+  CORES,
   deslocar,
   podeArrastar,
   podeExcluir,
@@ -143,5 +146,59 @@ describe('podeArrastar', () => {
   it('realizado e cancelado não podem', () => {
     expect(podeArrastar({ status: 'REALIZADO', recorrencia: 'NAO_REPETE' })).toBe(false);
     expect(podeArrastar({ status: 'CANCELADO', recorrencia: 'NAO_REPETE' })).toBe(false);
+  });
+});
+
+/**
+ * A marca d'água da linha do compromisso.
+ *
+ * O risco aqui não é lógico, é de build: o Tailwind gera CSS varrendo o código
+ * em busca de nomes de classe **escritos por extenso**. Uma classe montada em
+ * tempo de execução (`'bg-' + cor + '-500/10'`) passa no typecheck, passa no
+ * teste e simplesmente não pinta nada em produção. Estes casos travam a forma
+ * literal — se alguém "simplificar" a paleta para concatenação, quebra aqui.
+ */
+describe('classeDeFundo', () => {
+  const compromisso = (over: Partial<Pick<Compromisso, 'cor' | 'tipo'>> = {}) => ({
+    cor: null,
+    tipo: 'OUTRO' as const,
+    ...over,
+  });
+
+  it('toda cor da paleta declara as quatro variantes, por extenso', () => {
+    for (const { id, classe, fundo } of CORES) {
+      const base = classe.replace(/^bg-/, '');
+      expect(fundo.split(' '), `cor ${id}`).toEqual([
+        `bg-${base}/10`,
+        `hover:bg-${base}/20`,
+        `dark:bg-${base}/20`,
+        `dark:hover:bg-${base}/30`,
+      ]);
+    }
+  });
+
+  it('usa a cor escolhida pelo usuário', () => {
+    expect(classeDeFundo(compromisso({ cor: 'rose' }))).toContain('bg-rose-500/10');
+  });
+
+  it('sem cor escolhida, cai na cor do tipo', () => {
+    expect(classeDeFundo(compromisso({ tipo: 'VISITA_IN_LOCO' }))).toContain('bg-emerald-500/10');
+    expect(classeDaCor(compromisso({ tipo: 'VISITA_IN_LOCO' }))).toBe('bg-emerald-500');
+  });
+
+  it("a bolinha e a marca d'água são sempre a mesma cor", () => {
+    // Se divergirem, a linha fica de uma cor e o ponto de outra — e o usuário
+    // deixa de conseguir agrupar de relance, que é o motivo da marca d'água.
+    for (const tipo of ['REUNIAO_MONITORAMENTO', 'TCESP', 'OUTRO'] as const) {
+      const c = compromisso({ tipo });
+      expect(classeDeFundo(c)).toContain(classeDaCor(c) + '/10');
+    }
+  });
+
+  it('cor desconhecida não deixa a linha sem fundo', () => {
+    // Cor gravada antes de a paleta mudar não pode virar `undefined` numa
+    // lista de classes — o React imprimiria "undefined" no atributo.
+    const fora = classeDeFundo(compromisso({ cor: 'fucsia-neon' }));
+    expect(fora).toContain('bg-ink-400/10');
   });
 });

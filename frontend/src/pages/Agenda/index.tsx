@@ -42,6 +42,7 @@ import {
   STATUS_LABEL,
   STATUS_TONE,
   classeDaCor,
+  classeDeFundo,
   TIPO_LABEL,
   horaBr,
   pendenteDeRegistro,
@@ -331,7 +332,18 @@ export function Agenda() {
           ) : (
             <ul className="divide-y divide-ink-100 dark:divide-ink-800">
               {lista.map((c) => (
-                <li key={c.id} className="flex flex-wrap items-start gap-3 px-4 py-3 transition-colors hover:bg-ink-50/70 dark:hover:bg-ink-800/40">
+                <li
+                  key={c.id}
+                  className={cn(
+                    'flex flex-wrap items-start gap-3 px-4 py-3 transition-colors',
+                    // Mesma marca d'água da vista de mês — as duas contam a
+                    // mesma história, e cor que muda de significado entre telas
+                    // é pior que cor nenhuma.
+                    c.status === 'CANCELADO'
+                      ? 'hover:bg-ink-50/70 dark:hover:bg-ink-800/40'
+                      : classeDeFundo(c),
+                  )}
+                >
                   <span className={cn('mt-1.5 h-2 w-2 shrink-0 rounded-full', classeDaCor(c))} />
 
                   <div className="min-w-0 flex-1">
