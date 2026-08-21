@@ -28,15 +28,18 @@ export function SobreModal({ open, onClose }: Props) {
     <Modal open={open} onClose={onClose} title="Sobre o sistema" size="md">
       <div className="space-y-4">
         <div className="flex justify-center py-2">
+          {/* `logo-menu` não serve aqui: o texto dele é branco, feito para o
+              azul da barra lateral, e o fundo do modal é branco no tema claro —
+              só o ícone aparecia. O par geral é que troca por fundo. */}
           <img
-            src="/logo-menu.png"
+            src="/logo.png"
             alt="Solução TS"
-            className="h-20 w-auto max-w-full object-contain dark:hidden"
+            className="h-16 w-auto max-w-full object-contain dark:hidden"
           />
           <img
-            src="/logo-menu-dark.png"
+            src="/logo-dark.png"
             alt="Solução TS"
-            className="hidden h-20 w-auto max-w-full object-contain dark:block"
+            className="hidden h-16 w-auto max-w-full object-contain dark:block"
           />
         </div>
 

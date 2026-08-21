@@ -97,21 +97,27 @@ export function Topbar({ onOpenSidebar, collapsed = false }: TopbarProps) {
        * Só no desktop (`lg`): abaixo disso o menu é uma gaveta sobreposta, que
        * leva a logo junto e não deixa trilho nenhum na tela.
        *
-       * Um par de imagens em vez de uma: a logo do tema claro é escura e a do
-       * escuro é clara, e `display:none` tira a que não vale da árvore de
-       * acessibilidade — o leitor de tela anuncia a marca uma vez só.
+       * **Não é o mesmo arquivo do menu.** `logo-menu` tem o texto branco, feito
+       * para o azul da barra lateral; sobre o branco da barra superior sobra só
+       * o ícone. Aqui vale o par geral — `logo.png` tem o texto escuro, para
+       * fundo claro, e `logo-dark.png` o texto claro, para fundo escuro. A regra
+       * do projeto: o sufixo `-dark` diz o **fundo** a que a arte serve, não o
+       * tom dela.
+       *
+       * Duas imagens em vez de uma porque `display:none` tira a que não vale da
+       * árvore de acessibilidade — o leitor de tela anuncia a marca uma vez só.
        */}
       {collapsed && (
         <div className="hidden animate-fade-in items-center lg:flex">
           <img
-            src="/logo-menu.png"
+            src="/logo.png"
             alt="Solução TS"
-            className="h-10 w-auto object-contain dark:hidden"
+            className="h-12 w-auto object-contain dark:hidden"
           />
           <img
-            src="/logo-menu-dark.png"
+            src="/logo-dark.png"
             alt="Solução TS"
-            className="hidden h-10 w-auto object-contain dark:block"
+            className="hidden h-12 w-auto object-contain dark:block"
           />
         </div>
       )}
