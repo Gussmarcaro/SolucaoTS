@@ -45,7 +45,7 @@ export function AppLayout() {
           collapsed ? 'lg:pl-[76px]' : 'lg:pl-[264px]',
         )}
       >
-        <Topbar onOpenSidebar={() => setSidebarOpen(true)} />
+        <Topbar onOpenSidebar={() => setSidebarOpen(true)} collapsed={collapsed} />
         <main className="w-full px-4 py-6 sm:px-6 lg:px-8">
           <div className="animate-fade-in">
             <Outlet />

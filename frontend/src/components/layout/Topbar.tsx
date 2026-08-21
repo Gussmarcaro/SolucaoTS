@@ -12,6 +12,11 @@ import { SobreModal } from './SobreModal';
 
 interface TopbarProps {
   onOpenSidebar: () => void;
+  /**
+   * Menu recolhido. Quando está, a logo sai do menu e vem para cá — no trilho
+   * de 76px não cabe, e a marca sumir de vez deixa a tela sem identidade.
+   */
+  collapsed?: boolean;
 }
 
 function iniciais(nome?: string): string {
@@ -20,7 +25,7 @@ function iniciais(nome?: string): string {
   return ((partes[0]?.[0] ?? '') + (partes[partes.length - 1]?.[0] ?? '')).toUpperCase();
 }
 
-export function Topbar({ onOpenSidebar }: TopbarProps) {
+export function Topbar({ onOpenSidebar, collapsed = false }: TopbarProps) {
   const { usuario, sair } = useAuth();
   const [sobreAberto, setSobreAberto] = useState(false);
   const [buscaAberta, setBuscaAberta] = useState(false);
@@ -83,6 +88,33 @@ export function Topbar({ onOpenSidebar }: TopbarProps) {
       >
         <Menu className="h-5 w-5" />
       </button>
+
+      {/*
+       * A logo, só com o menu recolhido — quando ele está aberto ela já aparece
+       * no cabeçalho dele, e mostrar as duas seria a mesma marca duas vezes na
+       * mesma linha do olho.
+       *
+       * Só no desktop (`lg`): abaixo disso o menu é uma gaveta sobreposta, que
+       * leva a logo junto e não deixa trilho nenhum na tela.
+       *
+       * Um par de imagens em vez de uma: a logo do tema claro é escura e a do
+       * escuro é clara, e `display:none` tira a que não vale da árvore de
+       * acessibilidade — o leitor de tela anuncia a marca uma vez só.
+       */}
+      {collapsed && (
+        <div className="hidden animate-fade-in items-center lg:flex">
+          <img
+            src="/logo-menu.png"
+            alt="Solução TS"
+            className="h-10 w-auto object-contain dark:hidden"
+          />
+          <img
+            src="/logo-menu-dark.png"
+            alt="Solução TS"
+            className="hidden h-10 w-auto object-contain dark:block"
+          />
+        </div>
+      )}
 
       {/* Busca — nasce fechada e abre pelo botão da lupa. `ml-auto` empurra a
           busca e tudo que vem depois dela (ações e perfil) para a direita. */}
