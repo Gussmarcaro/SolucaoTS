@@ -63,6 +63,7 @@ export const RECURSOS: Recurso[] = [
   { id: 'CADASTRO_COLABORADORES', rotulo: 'Colaboradores', secao: 'Cadastro' },
   { id: 'CADASTRO_BENS_CEDIDOS', rotulo: 'Bens Cedidos', secao: 'Cadastro' },
   { id: 'CADASTRO_SERVIDORES_CEDIDOS', rotulo: 'Servidores Cedidos', secao: 'Cadastro' },
+  { id: 'CADASTRO_RATEIO', rotulo: 'Rateio Administrativo', secao: 'Cadastro' },
   { id: 'CADASTRO_EMPRESAS', rotulo: 'Empresas (suspenso)', secao: 'Cadastro' },
   { id: 'PRESTACAO_CONTAS', rotulo: 'Prestação de Contas', secao: 'Prestação', temAprovacao: true },
   { id: 'FISCALIZACAO', rotulo: 'Fiscalização | Monitoramento', secao: 'Prestação' },

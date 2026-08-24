@@ -35,7 +35,8 @@
     "suporte:conceder": "tsx prisma/seeds/suporte.ts",
     "suporte:revogar": "tsx prisma/seeds/suporte.ts",
     "suporte:listar": "tsx prisma/seeds/suporte.ts",
-    "bootstrap": "tsx prisma/seeds/bootstrap.ts"
+    "bootstrap": "tsx prisma/seeds/bootstrap.ts",
+    "verificar:rateio": "tsx scripts/verificarRateio.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.116.0",

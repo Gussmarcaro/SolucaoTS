@@ -143,6 +143,17 @@ enum MeioPagamento {
 //
 // O TCESP recebe só o VALOR (valor_encargos, obrigatório e numérico); qual
 // tributo foi retido não tem campo no schema. Serve à conferência do órgão.
+// Método de distribuição de um rateio.
+//
+// Acrescentar um método aqui e uma entrada em core/rateio/Rateio.ts basta: o
+// participante guarda uma BASE numérica só, e o cálculo (base ÷ soma × 100) não
+// conhece receita nem colaborador. Não há migração por método novo.
+enum MetodoRateio {
+  RECEITA
+  COLABORADORES
+  OUTROS
+}
+
 enum TipoRetencao {
   IRRF
   ISSQN
@@ -207,6 +218,7 @@ model Cliente {
   compromissos          Compromisso[]
   empresas              Empresa[]
   fornecedores          Fornecedor[]
+  rateios               Rateio[]
   colaboradores         Colaborador[]
   contratosFirmados     ContratoFirmado[]
   bensCedidos           BemCedido[]
@@ -776,6 +788,7 @@ model Ajuste {
 
   cliente              Cliente?             @relation(fields: [clienteId], references: [id])
   entidadeBeneficiaria EntidadeBeneficiaria @relation(fields: [entidadeBeneficiariaId], references: [id])
+  rateios              RateioParticipante[]
 
   termosAditivos   TermoAditivo[]
   programas        Programa[]
@@ -1694,4 +1707,58 @@ model RegistroAuditoria {
   @@index([entidade, registroId])
   @@index([ocorridoEm])
   @@index([usuarioId])
+}
+
+/// Rateio — método de distribuição de despesa entre ajustes, com vigência.
+///
+/// Um órgão pode ter vários ao mesmo tempo (um pela receita para despesa
+/// administrativa, outro por colaboradores para folha): o método se escolhe
+/// pela natureza da despesa. Rateio antigo não é substituído nem apagado quando
+/// um novo entra — o histórico é o que permite reproduzir uma prestação passada.
+model Rateio {
+  id             String       @id @default(uuid()) @db.Uuid
+  clienteId      String?      @db.Uuid // órgão dono do registro — opcional até o backfill
+  titulo         String
+  vigenciaInicio DateTime     @db.Date
+  vigenciaFim    DateTime     @db.Date
+  metodo         MetodoRateio
+
+  // Só para o método "Outros", cujo critério ainda não foi definido.
+  descricaoMetodo String?
+  observacoes     String?
+
+  buscaTexto   String   @default("") // texto normalizado para busca global
+  ativo        Boolean  @default(true) // soft delete
+  criadoPor    String?  @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  cliente       Cliente?             @relation(fields: [clienteId], references: [id])
+  participantes RateioParticipante[]
+
+  @@index([clienteId])
+  @@index([clienteId, vigenciaInicio, vigenciaFim])
+  @@index([ativo])
+}
+
+/// Ajuste participante de um rateio, com a base que define sua fatia.
+///
+/// `base` é uma coluna só de propósito: no método pela receita são reais, no
+/// método por colaboradores é quantidade, e num método futuro pode ser área ou
+/// horas. Duas colunas específicas obrigariam a uma migração por método novo.
+///
+/// O percentual NÃO é gravado — é recalculado das bases a cada leitura, e por
+/// isso a soma fecha 100% por construção, sem depender de arredondamento gravado.
+model RateioParticipante {
+  id       String  @id @default(uuid()) @db.Uuid
+  rateioId String  @db.Uuid
+  ajusteId String  @db.Uuid
+  base     Decimal @default(0) @db.Decimal(15, 2)
+
+  rateio Rateio @relation(fields: [rateioId], references: [id], onDelete: Cascade)
+  ajuste Ajuste @relation(fields: [ajusteId], references: [id])
+
+  // O mesmo ajuste não entra duas vezes no mesmo rateio.
+  @@unique([rateioId, ajusteId])
+  @@index([ajusteId])
 }

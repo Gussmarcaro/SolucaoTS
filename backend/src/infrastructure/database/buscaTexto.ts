@@ -176,3 +176,8 @@ export function buscaEmpresa(e: {
       .join(' '),
   );
 }
+
+/** Texto de busca de um rateio: título e, quando há, o critério descrito. */
+export function buscaRateio(r: { titulo: string; descricaoMetodo?: string | null }): string {
+  return normalizarTexto([r.titulo, r.descricaoMetodo].filter(Boolean).join(' '));
+}

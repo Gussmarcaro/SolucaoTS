@@ -82,6 +82,8 @@ export const ENTIDADE_LABEL: Record<string, string> = {
   Programa: 'Programa',
   Meta: 'Meta',
   PlanoAplicacaoItem: 'Plano de aplicação',
+  Rateio: 'Rateio administrativo',
+  RateioParticipante: 'Ajuste no rateio',
   CronogramaDesembolsoItem: 'Cronograma de desembolso',
   BemCedidoCadastro: 'Bem cedido (ajuste)',
   EmpenhoCadastro: 'Empenho (ajuste)',

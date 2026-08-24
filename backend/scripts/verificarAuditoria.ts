@@ -90,6 +90,10 @@ const FORA_DA_REGRA = new Set([
   'CompromissoParticipante',
   'CompromissoGrupo',
   'CompromissoAlerta',
+  // Linha do quadro de rateio: é parte do rateio, não cadastro com vida própria.
+  // A edição substitui o quadro inteiro e a trilha registra a operação em lote;
+  // `criadoPor` por linha não teria onde ser consultado.
+  'RateioParticipante',
 ]);
 
 const emLista = new Set<string>();

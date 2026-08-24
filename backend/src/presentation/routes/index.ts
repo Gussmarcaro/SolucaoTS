@@ -11,6 +11,7 @@ import { ajusteRoutes } from './ajuste.routes';
 import { prestacaoRoutes } from './prestacao.routes';
 import { tarefaRoutes } from './tarefa.routes';
 import { compromissoRoutes } from './compromisso.routes';
+import { rateioRoutes } from './rateio.routes';
 import { grupoRoutes } from './grupo.routes';
 import { clienteRoutes } from './cliente.routes';
 import { dominioRoutes } from './dominio.routes';
@@ -64,6 +65,7 @@ routes.use('/tarefas', exigirPermissao('FISCALIZACAO'), tarefaRoutes);
 // confere o `criadoPor` — o criador apaga o que é seu com qualquer faixa, e
 // alcançar o compromisso dos outros continua exigindo Total (`administraAgenda`).
 routes.use('/compromissos', exigirPermissao('AGENDA', { DELETE: 'UPDATE' }), compromissoRoutes);
+routes.use('/rateios', exigirPermissao('CADASTRO_RATEIO'), rateioRoutes);
 routes.use('/grupos', exigirPermissao('CONFIG_GRUPOS'), grupoRoutes);
 routes.use('/orgaos', exigirPermissao('CONFIG_ORGAOS'), clienteRoutes);
 routes.use('/auditoria', exigirPermissao('CONFIG_AUDITORIA'), auditoriaRoutes);
