@@ -7,6 +7,7 @@ import { Modal } from '@/components/ui/Modal';
 import { GradeSimples } from '@/components/ui/GradeSimples';
 import type { ColunaDef } from '@/hooks/useResizableColumns';
 import { enterComoTab } from '@/lib/enterComoTab';
+import { cn } from '@/lib/cn';
 import { SelectDominio } from '@/components/ui/SelectDominio';
 import { BANCO, FONTE_RECURSO } from '@/lib/dominiosFaseV';
 import { Badge } from '@/components/ui/Badge';
@@ -130,7 +131,7 @@ export function PagamentosTab({ prestacaoId }: { prestacaoId: string }) {
         size="lg"
       >
         {modal.tipo === 'form' && (
-          <PgForm prestacaoId={prestacaoId} pg={modal.pg} docs={docs} onSuccess={recarregar} onCancel={() => setModal({ tipo: 'fechado' })} />
+          <PgForm prestacaoId={prestacaoId} pg={modal.pg} docs={docs} pagamentos={lista} onSuccess={recarregar} onCancel={() => setModal({ tipo: 'fechado' })} />
         )}
       </Modal>
 
@@ -152,12 +153,15 @@ function PgForm({
   prestacaoId,
   pg,
   docs,
+  pagamentos,
   onSuccess,
   onCancel,
 }: {
   prestacaoId: string;
   pg: Pagamento | null;
   docs: DocumentoFiscal[];
+  /** Os já lançados — é deles que sai quanto do documento ainda falta pagar. */
+  pagamentos: Pagamento[];
   onSuccess: () => void;
   onCancel: () => void;
 }) {
@@ -206,6 +210,46 @@ function PgForm({
     }
   }
 
+  /**
+   * O documento escolhido, e o que já foi pago dele.
+   *
+   * Trazer os números da nota em vez de deixar redigitar é o ponto: o valor do
+   * pagamento é o **líquido** (bruto menos a retenção), e é justamente aí que
+   * se erra — paga-se o bruto, ou desconta-se duas vezes.
+   */
+  const docSelecionado = vinculo === FOLHA ? null : docs.find((d) => d.id === vinculo) ?? null;
+
+  const resumo = (() => {
+    if (!docSelecionado) return null;
+    const bruto = docSelecionado.valorBruto;
+    const retido = docSelecionado.valorEncargos ?? 0;
+    const liquido = bruto - retido;
+    // O próprio pagamento em edição não conta como "já pago" — senão editar
+    // uma linha faria o saldo aparecer descontado dela mesma.
+    const jaPago = pagamentos
+      .filter((x) => x.documentoFiscalId === docSelecionado.id && x.id !== pg?.id)
+      .reduce((soma, x) => soma + x.valor, 0);
+    return { bruto, retido, liquido, jaPago, resta: liquido - jaPago };
+  })();
+
+  /**
+   * Preenche o valor ao escolher o documento — sempre editável.
+   *
+   * Sugere o que **falta** pagar, não o líquido cheio: num segundo pagamento
+   * parcial, o líquido cheio seria a sugestão errada. Não mexe no valor quando
+   * se abre um pagamento já gravado, senão editar a data reescreveria o valor.
+   */
+  function escolherVinculo(novo: string) {
+    setVinculo(novo);
+    const d = novo === FOLHA ? null : docs.find((x) => x.id === novo);
+    if (!d) return;
+    const pago = pagamentos
+      .filter((x) => x.documentoFiscalId === d.id && x.id !== pg?.id)
+      .reduce((soma, x) => soma + x.valor, 0);
+    const resta = d.valorBruto - (d.valorEncargos ?? 0) - pago;
+    setValor(resta > 0 ? numeroParaMascaraMoeda(resta) : '');
+  }
+
   const opcoesVinculo = [
     { value: FOLHA, label: 'Folha de pagamento (nº 9999)' },
     ...docs.map((d) => ({ value: d.id, label: `Doc. nº ${d.numero}${d.credorNome ? ` — ${d.credorNome}` : ''}` })),
@@ -219,7 +263,10 @@ function PgForm({
           <span>{erro}</span>
         </div>
       )}
-      <Select label="Vínculo *" name="vinculo" value={vinculo} onChange={(e) => setVinculo(e.target.value)} options={opcoesVinculo} />
+      <Select label="Vínculo *" name="vinculo" value={vinculo} onChange={(e) => escolherVinculo(e.target.value)} options={opcoesVinculo} />
+
+      {/* Os números da nota, para conferir sem sair da tela. */}
+      {resumo && <ResumoDocumento doc={docSelecionado!} {...resumo} />}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input label="Data do Pagamento *" name="dataPagamento" type="date" value={dataPagamento} onChange={(e) => setDataPagamento(e.target.value)} />
         <Input label="Valor (R$) *" name="valor" value={valor} onChange={(e) => setValor(mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
@@ -250,5 +297,74 @@ function IconBtn({ children, title, onClick, danger }: { children: React.ReactNo
     <button type="button" title={title} onClick={onClick} className={`focus-ring rounded-lg p-1.5 transition-colors ${danger ? 'text-ink-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10' : 'text-ink-400 hover:bg-ink-100 hover:text-ink-700 dark:hover:bg-ink-800 dark:hover:text-ink-200'}`}>
       {children}
     </button>
+  );
+}
+
+/**
+ * Os números da nota, ao lado do pagamento que se está lançando.
+ *
+ * Só leitura: quem edita valor de nota é o bloco de Documentos Fiscais. Aqui
+ * eles existem para conferir — e para o **líquido** ficar explícito, que é o
+ * número que se paga e o que mais se erra.
+ */
+function ResumoDocumento({
+  doc,
+  bruto,
+  retido,
+  liquido,
+  jaPago,
+  resta,
+}: {
+  doc: DocumentoFiscal;
+  bruto: number;
+  retido: number;
+  liquido: number;
+  jaPago: number;
+  resta: number;
+}) {
+  const linha = (rotulo: string, valor: string, destaque?: 'forte' | 'alerta') => (
+    <div className="min-w-0 flex-1 px-3 py-2">
+      <p className="truncate text-[11px] uppercase tracking-wide text-ink-400">{rotulo}</p>
+      <p
+        className={cn(
+          'mt-0.5 truncate text-sm tabular-nums',
+          destaque === 'forte'
+            ? 'font-semibold text-ink-800 dark:text-ink-100'
+            : destaque === 'alerta'
+              ? 'font-semibold text-amber-600 dark:text-amber-400'
+              : 'text-ink-600 dark:text-ink-300',
+        )}
+      >
+        {valor}
+      </p>
+    </div>
+  );
+
+  return (
+    <div className="rounded-xl border border-ink-200 bg-ink-50/60 dark:border-ink-700 dark:bg-ink-800/30">
+      <div className="flex flex-wrap divide-x divide-ink-100 dark:divide-ink-800">
+        {linha('Valor bruto', formatarMoeda(bruto))}
+        {linha(
+          doc.retencaoTipo ? `Retenção (${doc.retencaoTipo})` : 'Retenções',
+          retido > 0 ? formatarMoeda(retido) : '—',
+        )}
+        {linha('Valor líquido', formatarMoeda(liquido), 'forte')}
+        {jaPago > 0 && linha('Já pago', formatarMoeda(jaPago))}
+        {jaPago > 0 && linha('Falta pagar', formatarMoeda(resta), resta > 0 ? 'alerta' : undefined)}
+      </div>
+
+      {/* Avisos que só aparecem quando há o que avisar — um alerta permanente
+          vira paisagem e deixa de ser lido. */}
+      {resta < 0 && (
+        <p className="border-t border-ink-100 px-3 py-1.5 text-xs text-red-600 dark:border-ink-800 dark:text-red-400">
+          Os pagamentos já lançados somam mais que o líquido desta nota.
+        </p>
+      )}
+      {retido > 0 && (
+        <p className="border-t border-ink-100 px-3 py-1.5 text-xs text-ink-400 dark:border-ink-800">
+          A retenção não é paga ao credor: ela fica pendente e sai depois na guia de recolhimento.
+        </p>
+      )}
+    </div>
   );
 }
