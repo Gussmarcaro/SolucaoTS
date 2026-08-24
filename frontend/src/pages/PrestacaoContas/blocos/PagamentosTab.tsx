@@ -157,7 +157,7 @@ export function PagamentosTab({
         open={modal.tipo === 'form'}
         onClose={() => setModal({ tipo: 'fechado' })}
         title={modal.tipo === 'form' && modal.pg ? 'Editar Pagamento' : 'Novo Pagamento'}
-        size="lg"
+        size="xl"
       >
         {modal.tipo === 'form' && (
           <PgForm prestacaoId={prestacaoId} pg={modal.pg} docs={docs} pagamentos={lista} ajuste={ajuste} onSuccess={recarregar} onCancel={() => setModal({ tipo: 'fechado' })} />
@@ -357,10 +357,16 @@ function PgForm({
       {/* Sem contas no ajuste, segue-se digitando — restringir sem ter o que
           oferecer trancaria o lançamento por causa de um cadastro incompleto. */}
       {meio === 'BANCO' && contasDoAjuste.length === 0 && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <SelectDominio label="Banco *" name="banco" value={apenasDigitos(banco)} onChange={setBanco} options={BANCO} />
-          <Input label="Agência *" name="agencia" value={apenasDigitos(agencia)} onChange={(e) => setAgencia(e.target.value)} inputMode="numeric" />
-          <Input label="Conta Corrente *" name="conta" value={conta} onChange={(e) => setConta(e.target.value)} />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-12">
+          <div className="sm:col-span-6">
+            <SelectDominio label="Banco *" name="banco" value={apenasDigitos(banco)} onChange={setBanco} options={BANCO} />
+          </div>
+          <div className="sm:col-span-3">
+            <Input label="Agência *" name="agencia" value={apenasDigitos(agencia)} onChange={(e) => setAgencia(e.target.value)} inputMode="numeric" />
+          </div>
+          <div className="sm:col-span-3">
+            <Input label="Conta Corrente *" name="conta" value={conta} onChange={(e) => setConta(e.target.value)} />
+          </div>
         </div>
       )}
       <Input label="Nº da Transação (opcional)" name="transacao" value={transacao} onChange={(e) => setTransacao(e.target.value)} />
