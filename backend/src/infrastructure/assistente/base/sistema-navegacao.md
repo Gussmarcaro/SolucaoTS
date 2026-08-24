@@ -1,6 +1,6 @@
 # Mapa de navegação do sistema Solução TS
 
-> Extraído automaticamente do menu do sistema (`navigation.ts`) em 2026-08-20.
+> Extraído automaticamente do menu do sistema (`navigation.ts`) em 2026-08-24.
 > Estes são os caminhos que existem de fato. Nenhum outro caminho deve ser afirmado.
 
 ## Menu principal
@@ -14,11 +14,11 @@
 - **Cadastro → Colaboradores** — rota `/cadastro/colaboradores`
 - **Cadastro → Bens Cedidos** — rota `/cadastro/bens-cedidos`
 - **Cadastro → Servidores Cedidos** — rota `/cadastro/servidores-cedidos`
+- **Cadastro → Financeiro → Rateio Administrativo – Custos Indiretos** — rota `/cadastro/financeiro/rateio`
 - **Execução → Financeiro → Contas Bancárias** — rota `/execucao/financeiro/contas-bancarias`
 - **Execução → Financeiro → Receitas** — rota `/execucao/financeiro/receitas`
 - **Execução → Financeiro → Despesas** — rota `/execucao/financeiro/despesas`
 - **Execução → Financeiro → Pagamentos** — rota `/execucao/financeiro/pagamentos`
-- **Execução → Financeiro → Rateio Administrativo – Custos Indiretos** — rota `/execucao/financeiro/rateio`
 - **Execução → Financeiro → Conciliação Bancária** — rota `/execucao/financeiro/conciliacao`
 - **Execução → Técnico** — rota `/execucao/tecnico`
 - **Prestação de Contas** — rota `/prestacao-contas`

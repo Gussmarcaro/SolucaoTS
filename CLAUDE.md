@@ -206,6 +206,7 @@ No `backend/`:
 - `npm run verificar:auditoria` — conferir as regras da trilha de auditoria (sem banco).
 - `npm run verificar:workflow` — conferir as regras das tarefas de acompanhamento (sem banco).
 - `npm run verificar:agenda` — conferir visibilidade, recorrência e validação da agenda (sem banco).
+- `npm run verificar:rateio` — conferir a aritmética dos percentuais e as regras do Cadastro do Rateio (sem banco).
 - `npm run verificar:tenant` — conferir o isolamento multi-tenant (sem banco).
 - `npm run tenant:backfill` — atribuir um órgão aos registros anteriores ao multi-tenant (roda **uma vez**).
 - `npm run suporte:conceder -- <email>` / `suporte:revogar` / `suporte:listar` — marca da equipe do fornecedor.
@@ -338,6 +339,19 @@ Endpoint próprio, `PATCH /compromissos/:id/horario`, que muda **só** o horári
 
 - Notificar o convidado na criação/alteração (§8).
 - Recurso `AGENDA`. Coberto por `npm run verificar:agenda` (38 checagens) e pelos lembretes em `verificar:alertas`.
+
+## Cadastro do Rateio
+
+`Cadastro → Financeiro → Rateio Administrativo – Custos Indiretos` — métodos de rateio para distribuir despesa entre ajustes, por período. É a **primeira tela de verdade fora dos placeholders** do módulo Financeiro.
+
+- **O participante guarda uma base numérica só** (`RateioParticipante.base`), e o método diz o que ela significa: reais de receita, número de colaboradores, e amanhã área ou horas. O cálculo é sempre `base ÷ soma × 100` e não conhece nenhum dos dois. **Método novo custa uma entrada em `METODOS` e um valor no enum** — nenhuma migração, nenhum cálculo novo, nenhuma tela nova (o quadro é um componente só, e rótulo/formato/total vêm da definição do método).
+- **O percentual não é gravado.** É recalculado das bases a cada leitura. Percentual gravado é foto de um cálculo: diverge da base assim que alguém edita, e ninguém percebe.
+- **Método do maior resto, e não arredondamento.** Três ajustes iguais dão 33,333…%; arredondar cada parcela por conta própria soma 99,99% e o quadro não fecha — justamente a conferência que a tela existe para dispensar. Distribui-se o piso e a sobra vai de centésimo em centésimo a quem tem o maior resto: as parcelas exibidas somam **100,00% por construção**, e nenhuma se afasta mais de 0,01 da exata (que continua em `percentual`). Foi o `verificar:rateio` que reprovou a primeira versão.
+- **Vigências podem se sobrepor, de propósito.** Um rateio pela receita e outro por colaboradores valem ao mesmo tempo — o método se escolhe pela natureza da despesa, não pela entidade. `vigentesEm` responde quais valem numa data, e nada é substituído automaticamente: o histórico é o que permite reproduzir uma prestação passada.
+- **"Outros" não guarda participantes.** O critério ainda não foi definido; quadro que a tela não mostra viraria dado órfão. Em compensação, exige a descrição do critério, para o rateio ficar documentado.
+- Validação **nos dois lados**: a tela avisa antes de enviar, o servidor recusa o que chegue por qualquer outro caminho. `npm run verificar:rateio` (33 checagens, sem banco) e o espelho da conta em `npm test` no frontend.
+- Recurso `CADASTRO_RATEIO`. Excluir exige faixa **Total**; para tirar de uso sem perder histórico, o caminho é **inativar**.
+- **Falta ligar ao documento fiscal** (§12 da especificação): cada documento usará **um** método, o que uma FK única garante por construção.
 
 ## Fiscalização | Monitoramento (Workflow)
 

@@ -81,6 +81,17 @@ export const navigation: NavNode[] = [
       { label: 'Colaboradores', to: '/cadastro/colaboradores', recurso: 'CADASTRO_COLABORADORES' },
       { label: 'Bens Cedidos', to: '/cadastro/bens-cedidos', recurso: 'CADASTRO_BENS_CEDIDOS' },
       { label: 'Servidores Cedidos', to: '/cadastro/servidores-cedidos', recurso: 'CADASTRO_SERVIDORES_CEDIDOS' },
+      {
+        label: 'Financeiro',
+        icon: Wallet,
+        children: [
+          {
+            label: 'Rateio Administrativo – Custos Indiretos',
+            to: '/cadastro/financeiro/rateio',
+            recurso: 'CADASTRO_RATEIO',
+          },
+        ],
+      },
     ],
   },
   {
@@ -95,7 +106,6 @@ export const navigation: NavNode[] = [
           { label: 'Receitas', to: '/execucao/financeiro/receitas' },
           { label: 'Despesas', to: '/execucao/financeiro/despesas' },
           { label: 'Pagamentos', to: '/execucao/financeiro/pagamentos' },
-          { label: 'Rateio Administrativo – Custos Indiretos', to: '/execucao/financeiro/rateio' },
           { label: 'Conciliação Bancária', to: '/execucao/financeiro/conciliacao' },
         ],
       },

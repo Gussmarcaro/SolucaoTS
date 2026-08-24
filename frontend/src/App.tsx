@@ -24,6 +24,7 @@ import { Privacidade } from '@/pages/Privacidade';
 import { Fornecedores } from '@/pages/Fornecedores';
 import { Colaboradores } from '@/pages/Colaboradores';
 import { Contratos } from '@/pages/Contratos';
+import { Rateios } from '@/pages/Rateios';
 import { BensCedidos } from '@/pages/BensCedidos';
 import { ServidoresCedidos } from '@/pages/ServidoresCedidos';
 import { Agenda } from '@/pages/Agenda';
@@ -105,6 +106,14 @@ export default function App() {
             }
           />
           <Route
+            path="/cadastro/financeiro/rateio"
+            element={
+              <RequerPermissao recurso="CADASTRO_RATEIO">
+                <Rateios />
+              </RequerPermissao>
+            }
+          />
+          <Route
             path="/cadastro/colaboradores"
             element={
               <RequerPermissao recurso="CADASTRO_COLABORADORES">
@@ -134,7 +143,6 @@ export default function App() {
           <Route path="/execucao/financeiro/receitas" element={<Placeholder title="Receitas" />} />
           <Route path="/execucao/financeiro/despesas" element={<Placeholder title="Despesas" />} />
           <Route path="/execucao/financeiro/pagamentos" element={<Placeholder title="Pagamentos" />} />
-          <Route path="/execucao/financeiro/rateio" element={<Placeholder title="Rateio Administrativo – Custos Indiretos" />} />
           <Route path="/execucao/financeiro/conciliacao" element={<Placeholder title="Conciliação Bancária" />} />
           <Route path="/execucao/tecnico" element={<Placeholder title="Técnico" />} />
 
