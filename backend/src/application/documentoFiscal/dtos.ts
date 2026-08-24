@@ -1,4 +1,8 @@
-import type { TipoDocumento, TipoDocumentoFiscal } from '@/core/documentoFiscal/DocumentoFiscal';
+import type {
+  TipoDocumento,
+  TipoDocumentoFiscal,
+  TipoRetencao,
+} from '@/core/documentoFiscal/DocumentoFiscal';
 
 export interface DocumentoFiscalDTO {
   numero: string;
@@ -11,6 +15,7 @@ export interface DocumentoFiscalDTO {
   estadoEmissor?: number | string | null;
   valorBruto: number | string;
   valorEncargos?: number | string | null;
+  retencaoTipo?: string | null;
   tipoDocumento?: string | null;
   categoriaDespesaTipo: number | string;
   propostaCategoria?: string | null;
@@ -31,6 +36,7 @@ export interface DadosDocumentoFiscal {
   estadoEmissor: number | null;
   valorBruto: number;
   valorEncargos: number;
+  retencaoTipo: TipoRetencao | null;
   tipoDocumento: TipoDocumentoFiscal | null;
   categoriaDespesaTipo: number;
   propostaCategoria: string | null;

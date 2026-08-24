@@ -1,6 +1,8 @@
 import {
   TIPOS_DOCUMENTO_FISCAL,
+  TIPOS_RETENCAO,
   type TipoDocumentoFiscal,
+  type TipoRetencao,
 } from '@/core/documentoFiscal/DocumentoFiscal';
 import type { DocumentoFiscal } from '@/core/documentoFiscal/DocumentoFiscal';
 import type { IDocumentoFiscalRepository } from './IDocumentoFiscalRepository';
@@ -49,6 +51,12 @@ function validar(input: DocumentoFiscalDTO): DadosDocumentoFiscal {
   if (valorEncargos >= valorBruto)
     throw new BusinessError('Os encargos devem ser menores que o valor bruto.');
 
+  // Retenção: opcional e conferida contra a lista. Não é exigida junto do
+  // valor porque os documentos anteriores a este campo têm valor e nenhum tipo.
+  const retencao = input.retencaoTipo?.trim() || null;
+  if (retencao !== null && !TIPOS_RETENCAO.includes(retencao as TipoRetencao))
+    throw new BusinessError('Tipo de retenção inválido.');
+
   // Espécie do documento: opcional, e conferida contra a lista fechada.
   // Opcional porque não é dado que o TCESP cobre e os documentos gravados antes
   // deste campo não têm nenhuma — exigi-la obrigaria a reeditar todos eles.
@@ -76,6 +84,7 @@ function validar(input: DocumentoFiscalDTO): DadosDocumentoFiscal {
     estadoEmissor: num(input.estadoEmissor),
     valorBruto,
     valorEncargos,
+    retencaoTipo: retencao as TipoRetencao | null,
     tipoDocumento: tipoDoc as TipoDocumentoFiscal | null,
     categoriaDespesaTipo,
     // Rubrica da proposta: texto livre vindo do plano do ajuste. Não se valida

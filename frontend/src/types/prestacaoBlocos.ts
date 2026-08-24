@@ -24,6 +24,23 @@ export const TIPO_DOCUMENTO_FISCAL_LABEL: Record<TipoDocumentoFiscal, string> = 
   FATURA: 'Fatura',
 };
 
+/**
+ * Retenção do documento fiscal — **controle interno, não transmitida**.
+ *
+ * O TCESP recebe só o valor (`valor_encargos`, obrigatório e numérico); qual
+ * tributo foi retido não tem campo no schema.
+ */
+export type TipoRetencao = 'IRRF' | 'ISSQN' | 'PIS' | 'COFINS' | 'IR' | 'CSSL';
+
+export const TIPO_RETENCAO_LABEL: Record<TipoRetencao, string> = {
+  IRRF: 'IRRF',
+  ISSQN: 'ISSQN',
+  PIS: 'PIS',
+  COFINS: 'COFINS',
+  IR: 'IR',
+  CSSL: 'CSSL',
+};
+
 export interface DocumentoFiscal {
   id: string;
   prestacaoId: string;
@@ -37,6 +54,8 @@ export interface DocumentoFiscal {
   estadoEmissor: number | null;
   valorBruto: number;
   valorEncargos: number;
+  /** Qual retenção o valor acima representa — controle interno. */
+  retencaoTipo: TipoRetencao | null;
   /** Controle interno — ver `TipoDocumentoFiscal`. */
   tipoDocumento: TipoDocumentoFiscal | null;
   categoriaDespesaTipo: number;
@@ -61,6 +80,7 @@ export interface DocumentoFiscalPayload {
   estadoEmissor?: number | null;
   valorBruto: number;
   valorEncargos?: number | null;
+  retencaoTipo?: TipoRetencao | null;
   tipoDocumento?: TipoDocumentoFiscal | null;
   categoriaDespesaTipo: number;
   propostaCategoria?: string | null;

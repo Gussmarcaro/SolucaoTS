@@ -139,6 +139,19 @@ enum MeioPagamento {
 // additionalProperties: false. Sem código oficial a que se ancorar, a lista é
 // a do órgão e vale como enum: fechada, conferida pelo banco, e sem número
 // inventado que pudesse ser confundido com tabela do TCESP.
+// Retenção do documento fiscal — CONTROLE INTERNO, não transmitida.
+//
+// O TCESP recebe só o VALOR (valor_encargos, obrigatório e numérico); qual
+// tributo foi retido não tem campo no schema. Serve à conferência do órgão.
+enum TipoRetencao {
+  IRRF
+  ISSQN
+  PIS
+  COFINS
+  IR
+  CSSL
+}
+
 enum TipoDocumentoFiscal {
   NOTA_FISCAL
   NOTA_FISCAL_ELETRONICA
@@ -1178,7 +1191,10 @@ model DocumentoFiscal {
   dataEmissao          DateTime             @db.Date
   estadoEmissor        Int?
   valorBruto           Decimal              @db.Decimal(15, 2)
-  valorEncargos        Decimal              @default(0) @db.Decimal(15, 2) // >=0 e < valorBruto
+  valorEncargos        Decimal              @default(0) @db.Decimal(15, 2) // >=0 e < valorBruto — é o valor_encargos do envio
+  // Qual retenção o valor acima representa. Opcional: os documentos gravados
+  // antes deste campo têm valor e nenhum tipo.
+  retencaoTipo         TipoRetencao?
   // Opcional: os documentos gravados antes deste campo não têm espécie, e
   // exigi-la agora obrigaria a reeditar todos eles para salvar qualquer outra
   // alteração. Não é dado que o TCESP cobre.

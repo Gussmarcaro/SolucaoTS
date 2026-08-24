@@ -27,7 +27,12 @@ import {
   listarDocumentosFiscais,
 } from '@/services/prestacaoBlocos.service';
 import type { DocumentoFiscal, DocumentoFiscalPayload } from '@/types/prestacaoBlocos';
-import { TIPO_DOCUMENTO_FISCAL_LABEL, type TipoDocumentoFiscal } from '@/types/prestacaoBlocos';
+import {
+  TIPO_DOCUMENTO_FISCAL_LABEL,
+  TIPO_RETENCAO_LABEL,
+  type TipoDocumentoFiscal,
+  type TipoRetencao,
+} from '@/types/prestacaoBlocos';
 import { listarFornecedores } from '@/services/fornecedores.service';
 import { listarPlano } from '@/services/ajusteCsv.service';
 import type { Fornecedor } from '@/types/fornecedor';
@@ -198,6 +203,7 @@ function DocForm({
   const [categoria, setCategoria] = useState(doc ? String(doc.categoriaDespesaTipo) : '');
   const [bruto, setBruto] = useState(doc ? numeroParaMascaraMoeda(doc.valorBruto) : '');
   const [encargos, setEncargos] = useState(doc ? numeroParaMascaraMoeda(doc.valorEncargos) : '');
+  const [retencao, setRetencao] = useState<TipoRetencao | ''>(doc?.retencaoTipo ?? '');
   const [contratoNumero, setContratoNumero] = useState(doc?.contratoNumero ?? '');
   const [estadoEmissor, setEstadoEmissor] = useState(doc?.estadoEmissor != null ? String(doc.estadoEmissor) : '');
   const [rateio, setRateio] = useState(doc?.rateioProveniente ?? false);
@@ -329,6 +335,7 @@ function DocForm({
       estadoEmissor: estadoEmissor ? Number(apenasDigitos(estadoEmissor)) : null,
       valorBruto: vBruto,
       valorEncargos: vEnc,
+      retencaoTipo: retencao || null,
       tipoDocumento: tipoDoc || null,
       categoriaDespesaTipo: Number(apenasDigitos(categoria)),
       propostaCategoria: proposta ? proposta.split('|')[0] : null,
@@ -385,8 +392,34 @@ function DocForm({
           <Input label="Descrição *" name="descricao" value={descricao} onChange={(e) => setDescricao(e.target.value)} />
         </div>
 
-        <Input label="Valor Bruto (R$) *" name="bruto" value={bruto} onChange={(e) => setBruto(mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
-        <Input label="Encargos (R$)" name="encargos" value={encargos} onChange={(e) => setEncargos(mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" hint="Deve ser menor que o bruto." />
+        {/*
+          O valor continua, e é obrigatório: `valor_encargos` é campo exigido pelo
+          schema do TCESP, numérico. O combo diz apenas QUAL retenção ele
+          representa — isso o Tribunal não recebe, é conferência do órgão.
+        */}
+        <div className="sm:col-span-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-12">
+            <div className="sm:col-span-4">
+              <Input label="Valor Bruto (R$) *" name="bruto" value={bruto} onChange={(e) => setBruto(mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
+            </div>
+            <div className="sm:col-span-4">
+              <Select
+                label="Retenções"
+                name="retencaoTipo"
+                value={retencao}
+                onChange={(e) => setRetencao(e.target.value as TipoRetencao | '')}
+                placeholder="Selecione..."
+                options={(Object.keys(TIPO_RETENCAO_LABEL) as TipoRetencao[]).map((t) => ({
+                  value: t,
+                  label: TIPO_RETENCAO_LABEL[t],
+                }))}
+              />
+            </div>
+            <div className="sm:col-span-4">
+              <Input label="Retenções (R$)" name="encargos" value={encargos} onChange={(e) => setEncargos(mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" hint="Deve ser menor que o bruto." />
+            </div>
+          </div>
+        </div>
 
         {/*
           As três classificações numa linha só, e é útil que fiquem juntas: são
