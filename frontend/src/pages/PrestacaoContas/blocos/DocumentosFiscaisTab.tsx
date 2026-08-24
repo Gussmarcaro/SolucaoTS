@@ -3,6 +3,7 @@ import { AlertCircle, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
+import { Combobox, type OpcaoCombo } from '@/components/ui/Combobox';
 import { SelectDominio } from '@/components/ui/SelectDominio';
 import { CATEGORIA_DESPESA, ESTADO_EMISSOR } from '@/lib/dominiosFaseV';
 import { Modal } from '@/components/ui/Modal';
@@ -17,7 +18,6 @@ import {
   moedaParaNumero,
   numeroParaMascaraMoeda,
 } from '@/lib/masks';
-import { capitalizarNome } from '@/lib/nomeProprio';
 import { enterComoTab } from '@/lib/enterComoTab';
 import { extrairCodigoErro, extrairMensagemErro } from '@/services/http';
 import {
@@ -26,8 +26,10 @@ import {
   excluirDocumentoFiscal,
   listarDocumentosFiscais,
 } from '@/services/prestacaoBlocos.service';
-import type { DocumentoFiscal, DocumentoFiscalPayload, TipoDocumento } from '@/types/prestacaoBlocos';
+import type { DocumentoFiscal, DocumentoFiscalPayload } from '@/types/prestacaoBlocos';
 import { TIPO_DOCUMENTO_FISCAL_LABEL, type TipoDocumentoFiscal } from '@/types/prestacaoBlocos';
+import { listarFornecedores } from '@/services/fornecedores.service';
+import type { Fornecedor } from '@/types/fornecedor';
 import { ConfirmarExclusao } from '@/pages/Ajustes/tabs/TermosAditivosTab';
 
 type ModalState =
@@ -168,9 +170,16 @@ function DocForm({
   onCancel: () => void;
 }) {
   const [numero, setNumero] = useState(doc?.numero ?? '');
-  const [tipo, setTipo] = useState<TipoDocumento>(doc?.credorTipoDoc ?? 'CNPJ');
-  const [credorDoc, setCredorDoc] = useState(doc?.credorNumeroDoc ?? '');
-  const [credorNome, setCredorNome] = useState(doc?.credorNome ?? '');
+  /**
+   * Credor escolhido no cadastro de Fornecedores / Prestadores.
+   *
+   * O documento continua **gravando** tipo, número e nome do credor: é isso que
+   * o TCESP recebe, e precisa ser a fotografia do credor na data da nota. Ligar
+   * por chave estrangeira e derivar na montagem reescreveria o histórico se o
+   * fornecedor mudasse de razão social depois de a prestação ser enviada.
+   */
+  const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
+  const [credorId, setCredorId] = useState('');
   const [descricao, setDescricao] = useState(doc?.descricao ?? '');
   const [dataEmissao, setDataEmissao] = useState(doc?.dataEmissao ?? '');
   const [tipoDoc, setTipoDoc] = useState<TipoDocumentoFiscal | ''>(doc?.tipoDocumento ?? '');
@@ -184,12 +193,56 @@ function DocForm({
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
+  // Só os ativos entram na lista de escolha. Um credor já gravado que não esteja
+  // entre eles não some: vira a opção PRESERVADO, logo abaixo.
+  useEffect(() => {
+    let vivo = true;
+    listarFornecedores({ filtros: { ativo: true }, page: 1, pageSize: 500, orderBy: 'nome', orderDir: 'asc' })
+      .then((r) => vivo && setFornecedores(r.data))
+      .catch(() => undefined);
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
+  /**
+   * O credor já gravado neste documento, quando não está entre os ativos.
+   *
+   * Sem isto, editar um documento antigo — ou de um fornecedor inativado depois —
+   * abriria com o campo vazio, e salvar apagaria o credor. Vale também para o
+   * credor cadastrado antes de existir esta tela.
+   */
+  const PRESERVADO = '__gravado__';
+  const credorGravadoForaDaLista =
+    !!doc && !fornecedores.some((f) => f.documento === doc.credorNumeroDoc);
+
+  // Assim que a lista chega, pré-seleciona o credor do documento em edição.
+  useEffect(() => {
+    if (!doc) return;
+    const achado = fornecedores.find((f) => f.documento === doc.credorNumeroDoc);
+    setCredorId(achado ? achado.id : PRESERVADO);
+  }, [doc, fornecedores]);
+
+  const opcoesCredor: OpcaoCombo[] = [
+    ...(credorGravadoForaDaLista && doc
+      ? [{
+          value: PRESERVADO,
+          label: doc.credorNome || doc.credorNumeroDoc,
+          sub: `${doc.credorTipoDoc} ${doc.credorTipoDoc === 'RNE' ? doc.credorNumeroDoc : mascaraCpfCnpj(doc.credorNumeroDoc)} · gravado neste documento, fora da lista de ativos`,
+        }]
+      : []),
+    ...fornecedores.map((f) => ({
+      value: f.id,
+      label: f.nome,
+      sub: `${f.documentoTipo} ${mascaraCpfCnpj(f.documento)}`,
+    })),
+  ];
+
   async function submeter(e: React.FormEvent) {
     e.preventDefault();
     setErro(null);
     if (!numero.trim()) return setErro('Informe o número do documento.');
-    if (tipo === 'RNE' ? !credorDoc.trim() : apenasDigitos(credorDoc).length < 11) return setErro('Documento do credor inválido.');
-    if (tipo === 'RNE' && !credorNome.trim()) return setErro('Para RNE, informe o nome do credor.');
+    if (!credorId) return setErro('Selecione o credor (Fornecedor / Prestador).');
     if (!descricao.trim()) return setErro('Informe a descrição.');
     if (!dataEmissao) return setErro('Informe a data de emissão.');
     const vBruto = moedaParaNumero(bruto);
@@ -198,11 +251,18 @@ function DocForm({
     if (vEnc >= vBruto) return setErro('Encargos devem ser menores que o valor bruto.');
     if (!categoria.trim()) return setErro('Informe a categoria de despesa.');
 
+    // O credor é copiado do cadastro para o documento — fotografia, não vínculo.
+    // Quando é o credor já gravado (fora da lista de ativos), reenvia-se o que
+    // estava lá: editar outro campo não pode alterar o credor da nota.
+    const escolhido = fornecedores.find((f) => f.id === credorId);
+    if (!escolhido && credorId !== PRESERVADO)
+      return setErro('Selecione o credor (Fornecedor / Prestador).');
+
     const payload: DocumentoFiscalPayload = {
       numero: numero.trim(),
-      credorTipoDoc: tipo,
-      credorNumeroDoc: tipo === 'RNE' ? credorDoc.trim() : apenasDigitos(credorDoc),
-      credorNome: credorNome.trim() || null,
+      credorTipoDoc: escolhido ? escolhido.documentoTipo : doc!.credorTipoDoc,
+      credorNumeroDoc: escolhido ? escolhido.documento : doc!.credorNumeroDoc,
+      credorNome: escolhido ? escolhido.nome : doc!.credorNome,
       contratoNumero: contratoNumero.trim() || null,
       descricao: descricao.trim(),
       dataEmissao,
@@ -242,16 +302,20 @@ function DocForm({
         <Input label="Número *" name="numero" value={numero} onChange={(e) => setNumero(e.target.value)} />
         <Input label="Data de Emissão *" name="dataEmissao" type="date" value={dataEmissao} onChange={(e) => setDataEmissao(e.target.value)} />
 
-        <Select label="Tipo do Credor *" name="tipo" value={tipo} onChange={(e) => setTipo(e.target.value as TipoDocumento)} options={[{ value: 'CNPJ', label: 'CNPJ' }, { value: 'CPF', label: 'CPF' }, { value: 'RNE', label: 'RNE (estrangeiro)' }]} />
-        <Input
-          label={tipo === 'RNE' ? 'RNE do Credor *' : `${tipo} do Credor *`}
-          name="credorDoc"
-          value={tipo === 'RNE' ? credorDoc : mascaraCpfCnpj(credorDoc)}
-          onChange={(e) => setCredorDoc(e.target.value)}
-          inputMode={tipo === 'RNE' ? 'text' : 'numeric'}
-        />
-
-        <Input label={`Nome do Credor${tipo === 'RNE' ? ' *' : ''}`} name="credorNome" value={credorNome} onChange={(e) => setCredorNome(capitalizarNome(e.target.value))} />
+        {/* Um campo no lugar de três: tipo, número e nome vêm do cadastro.
+            Redigitar o credor a cada nota fazia o mesmo CNPJ aparecer com o nome
+            escrito de formas diferentes ao longo do exercício. */}
+        <div className="sm:col-span-2">
+          <Combobox
+            label="Credor (Fornecedor / Prestador) *"
+            name="credorId"
+            value={credorId}
+            onChange={setCredorId}
+            options={opcoesCredor}
+            placeholder="Digite para localizar por nome ou documento..."
+            hint="Vem de Cadastro → Fornecedores / Prestadores (CPF e CNPJ)."
+          />
+        </div>
         {/* O nº do contrato identifica o credor, não a despesa: fica junto do
             bloco do credor, e não lá embaixo entre categoria e UF. */}
         <Input label="Nº do Contrato (opcional)" name="contratoNumero" value={contratoNumero} onChange={(e) => setContratoNumero(e.target.value)} />
