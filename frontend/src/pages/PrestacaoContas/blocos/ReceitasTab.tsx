@@ -8,7 +8,7 @@ import { GradeSimples } from '@/components/ui/GradeSimples';
 import type { ColunaDef } from '@/hooks/useResizableColumns';
 import { enterComoTab } from '@/lib/enterComoTab';
 import { SelectDominio } from '@/components/ui/SelectDominio';
-import { FONTE_RECURSO } from '@/lib/dominiosFaseV';
+import { BANCO, FONTE_RECURSO } from '@/lib/dominiosFaseV';
 import { apenasDigitos, dataBr, formatarMoeda, mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
 import { extrairMensagemErro } from '@/services/http';
 import { receitasApi } from '@/services/prestacaoBlocos2.service';
@@ -126,6 +126,10 @@ function ReceitaForm({ prestacaoId, item, onSuccess, onCancel }: { prestacaoId: 
   const [dataPrevista, setDataPrevista] = useState(item?.dataPrevista ?? '');
   const [fonte, setFonte] = useState(item?.fonteRecursoTipo != null ? String(item.fonteRecursoTipo) : '');
   const [descricao, setDescricao] = useState(item?.descricao ?? '');
+  const [banco, setBanco] = useState(item?.banco != null ? String(item.banco) : '');
+  const [agencia, setAgencia] = useState(item?.agencia != null ? String(item.agencia) : '');
+  const [conta, setConta] = useState(item?.contaCorrente ?? '');
+  const [transacao, setTransacao] = useState(item?.numeroTransacao ?? '');
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
@@ -141,6 +145,10 @@ function ReceitaForm({ prestacaoId, item, onSuccess, onCancel }: { prestacaoId: 
       dataRepasse: dataRepasse || null,
       fonteRecursoTipo: fonte ? Number(apenasDigitos(fonte)) : null,
       valor: negativo ? -mag : mag,
+      banco: banco ? Number(apenasDigitos(banco)) : null,
+      agencia: agencia ? Number(apenasDigitos(agencia)) : null,
+      contaCorrente: conta.trim() || null,
+      numeroTransacao: transacao.trim() || null,
     };
     setSalvando(true);
     try {
@@ -173,6 +181,30 @@ function ReceitaForm({ prestacaoId, item, onSuccess, onCancel }: { prestacaoId: 
           </label>
         )}
       </div>
+
+      {/*
+        Identificação bancária — controle do órgão, e **não** vai ao TCESP.
+
+        Em Pagamentos esses campos são obrigatórios porque o schema oficial os
+        exige; aqui o bloco `receitas` é um objeto de totais e não tem onde
+        recebê-los. Por isso são todos opcionais, e o rótulo do grupo diz que
+        não são transmitidos: um campo que parece obrigação do Tribunal e não é
+        faz o usuário caçar dado que ninguém vai ler.
+      */}
+      <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700">
+        <legend className="px-1 text-[13px] font-normal text-ink-600 dark:text-ink-300">
+          Identificação bancária{' '}
+          <span className="text-ink-400">— controle interno, não enviada ao TCESP</span>
+        </legend>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <SelectDominio label="Banco" name="banco" value={apenasDigitos(banco)} onChange={setBanco} options={BANCO} />
+          <Input label="Agência" name="agencia" value={apenasDigitos(agencia)} onChange={(e) => setAgencia(e.target.value)} inputMode="numeric" />
+          <Input label="Conta Corrente" name="conta" value={conta} onChange={(e) => setConta(e.target.value)} />
+        </div>
+        <div className="mt-4">
+          <Input label="Nº da Transação (opcional)" name="transacao" value={transacao} onChange={(e) => setTransacao(e.target.value)} />
+        </div>
+      </fieldset>
       <div className="flex items-center justify-end gap-2 pt-1">
         <Button type="button" variant="secondary" onClick={onCancel} disabled={salvando}>Cancelar</Button>
         <Button type="submit" disabled={salvando}>{salvando && <Loader2 className="h-4 w-4 animate-spin" />}{salvando ? 'Salvando...' : 'Salvar'}</Button>

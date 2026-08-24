@@ -27,6 +27,18 @@ export interface Receita {
   dataRepasse: string | null;
   fonteRecursoTipo: number | null;
   valor: number;
+  /**
+   * Identificação bancária da receita — **controle interno**.
+   *
+   * Não é transmitida: o bloco `receitas` do schema v1.14 é um objeto de totais
+   * com `additionalProperties: false`, e não tem onde recebê-la. Quem leva os
+   * dados bancários ao TCESP é o bloco **Repasses**, onde eles são obrigatórios.
+   * Aqui servem à conciliação do órgão.
+   */
+  banco: number | null;
+  agencia: number | null;
+  contaCorrente: string | null;
+  numeroTransacao: string | null;
 }
 
 export interface ReceitaPayload {
@@ -36,6 +48,11 @@ export interface ReceitaPayload {
   dataRepasse?: string | null;
   fonteRecursoTipo?: number | null;
   valor: number;
+  /** Controle interno — ver `Receita`. */
+  banco?: number | null;
+  agencia?: number | null;
+  contaCorrente?: string | null;
+  numeroTransacao?: string | null;
 }
 
 export interface Disponibilidade {

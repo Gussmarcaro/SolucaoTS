@@ -5,7 +5,31 @@ import type { DadosReceita, ReceitaDTO } from './dtos';
 import { BusinessError, NotFoundError } from '@/shared/errors';
 import { parseDataISO } from '@/shared/datas';
 
-const TIPOS = ['REPASSE_RECEBIDO', 'APLIC_FINANCEIRA', 'OUTRA', 'RECURSO_PROPRIO'];
+/**
+ * Tipos aceitos.
+ *
+ * As três esferas de aplicação financeira são o que o montador espera (o schema
+ * separa municipais, estaduais e federais). `APLIC_FINANCEIRA`, sem esfera,
+ * continua na lista só por causa dos registros gravados antes dessa separação —
+ * o montador os soma em "municipais" e avisa para reclassificar. Sem ele aqui,
+ * editar uma receita antiga passaria a ser impossível.
+ */
+const TIPOS = [
+  'REPASSE_RECEBIDO',
+  'APLIC_FINANC_MUNICIPAL',
+  'APLIC_FINANC_ESTADUAL',
+  'APLIC_FINANC_FEDERAL',
+  'APLIC_FINANCEIRA',
+  'OUTRA',
+  'RECURSO_PROPRIO',
+];
+
+/** Número opcional; string vazia e nulo viram `null`. */
+function num(v: unknown): number | null {
+  if (v === undefined || v === null || v === '') return null;
+  const n = typeof v === 'string' ? Number(v) : (v as number);
+  return Number.isFinite(n) ? n : null;
+}
 
 function dataOpcional(v: string | null | undefined, campo: string): Date | null {
   if (!v) return null;
@@ -30,6 +54,16 @@ function validar(input: ReceitaDTO): DadosReceita {
   if (fonte !== null && (!Number.isFinite(fonte) || fonte <= 0))
     throw new BusinessError('Fonte de recurso inválida.');
 
+  // Identificação bancária: **controle interno**, todos opcionais.
+  //
+  // Diferente de Pagamento, aqui nada é obrigatório — estes campos não vão ao
+  // TCESP (o bloco "receitas" não os tem), então exigi-los seria barrar um
+  // lançamento válido por causa de um dado que o Tribunal nunca vai ver.
+  const banco = num(input.banco);
+  if (banco !== null && banco <= 0) throw new BusinessError('Banco inválido.');
+  const agencia = num(input.agencia);
+  if (agencia !== null && agencia <= 0) throw new BusinessError('Agência inválida.');
+
   return {
     tipo,
     descricao: input.descricao?.trim() || null,
@@ -37,6 +71,10 @@ function validar(input: ReceitaDTO): DadosReceita {
     dataRepasse: dataOpcional(input.dataRepasse, 'Data do repasse'),
     fonteRecursoTipo: fonte,
     valor,
+    banco,
+    agencia,
+    contaCorrente: input.contaCorrente?.trim() || null,
+    numeroTransacao: input.numeroTransacao?.trim() || null,
   };
 }
 

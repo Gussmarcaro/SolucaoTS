@@ -1222,6 +1222,16 @@ model Receita {
   fonteRecursoTipo Int?
   valor            Decimal   @db.Decimal(15, 2)
 
+  // Identificação bancária — CONTROLE INTERNO, não transmitida.
+  // O bloco "receitas" do schema v1.14 é um objeto de totais com
+  // additionalProperties: false em todos os níveis: não há onde declarar banco.
+  // Quem leva os dados bancários ao TCESP é o bloco "repasses", que os exige.
+  // Estes campos existem para conciliação do órgão e o montador não os emite.
+  banco           Int?
+  agencia         Int?
+  contaCorrente   String?
+  numeroTransacao String? @db.VarChar(40)
+
   criadoPor String?         @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id])
 

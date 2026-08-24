@@ -14,6 +14,10 @@ const selecao = {
   dataRepasse: true,
   fonteRecursoTipo: true,
   valor: true,
+  banco: true,
+  agencia: true,
+  contaCorrente: true,
+  numeroTransacao: true,
 } satisfies Prisma.ReceitaSelect;
 
 type Row = Prisma.ReceitaGetPayload<{ select: typeof selecao }>;
@@ -28,6 +32,10 @@ function toDomain(row: Row): Receita {
     dataRepasse: row.dataRepasse ? paraDataISO(row.dataRepasse) : null,
     fonteRecursoTipo: row.fonteRecursoTipo,
     valor: Number(row.valor),
+    banco: row.banco,
+    agencia: row.agencia,
+    contaCorrente: row.contaCorrente,
+    numeroTransacao: row.numeroTransacao,
   };
 }
 
