@@ -200,6 +200,12 @@ model Cliente {
   codigoMunicipio Int // código do município no TCESP (1-9999)
   codigoEntidade  Int // código da entidade no TCESP (1-99999)
   tipoOrgao       TipoOrgao
+  // Se este orgao empenha o repasse. Governa a aba de Empenhos da prestacao.
+  //
+  // Padrao TRUE de proposito: o bloco "empenhos" e OBRIGATORIO nos 5 tipos de
+  // ajuste. Nascer desligado esconderia de todos um bloco exigido, e o
+  // documento sairia com a lista vazia sem ninguem notar.
+  empenhaRepasse  Boolean       @default(true)
   periodicidade   Periodicidade
   cnpj            String        @unique @db.VarChar(14)
   buscaTexto      String        @default("") // texto normalizado (sem acento/caixa) para busca global

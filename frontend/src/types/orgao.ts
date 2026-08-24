@@ -32,6 +32,8 @@ export interface Orgao {
   codigoMunicipio: number;
   codigoEntidade: number;
   tipoOrgao: TipoOrgao;
+  /** Se o órgão empenha o repasse — governa a aba de Empenhos da prestação. */
+  empenhaRepasse: boolean;
   periodicidade: Periodicidade;
   cnpj: string;
   ativo: boolean;
@@ -44,6 +46,8 @@ export interface OrgaoPayload {
   codigoMunicipio: number | string;
   codigoEntidade: number | string;
   tipoOrgao: TipoOrgao;
+  /** Se o órgão empenha o repasse — governa a aba de Empenhos da prestação. */
+  empenhaRepasse: boolean;
   periodicidade: Periodicidade;
   cnpj: string;
 }

@@ -32,6 +32,8 @@ export interface Prestacao {
   id: string;
   ajusteId: string;
   ajusteCodigo: string;
+  /** Se o órgão empenha o repasse — governa a aba de Empenhos. */
+  orgaoEmpenha: boolean;
   ajusteTipo: TipoAjuste;
   entidadeNome: string;
   tipoDocumento: string;
@@ -108,11 +110,24 @@ export const BLOCOS: BlocoDef[] = [
   { chave: 'relatorioMonitoramento', nome: 'Relatório de Monitoramento e Avaliação', somente: ['TERMO_COLABORACAO', 'TERMO_FOMENTO'] },
 ];
 
-/** Filtra os blocos aplicáveis a um tipo de ajuste. */
-export function blocosAplicaveis(tipo: TipoAjuste): BlocoDef[] {
+/**
+ * Filtra os blocos aplicáveis.
+ *
+ * Além do tipo de ajuste, o **Empenho** depende do órgão: só aparece para quem
+ * empenha o repasse. Atenção ao que isso significa no envio — `empenhos` é
+ * bloco obrigatório nos 5 tipos, e esconder a aba faz o documento sair com a
+ * lista vazia. Por isso a marca do órgão nasce ligada: desligá-la é uma decisão
+ * de quem administra, não um esquecimento.
+ */
+export function blocosAplicaveis(
+  tipo: TipoAjuste,
+  opcoes: { orgaoEmpenha?: boolean } = {},
+): BlocoDef[] {
+  const empenha = opcoes.orgaoEmpenha !== false;
   return BLOCOS.filter((b) => {
     if (b.somente && !b.somente.includes(tipo)) return false;
     if (b.exceto && b.exceto.includes(tipo)) return false;
+    if (b.chave === 'empenhos' && !empenha) return false;
     return true;
   });
 }

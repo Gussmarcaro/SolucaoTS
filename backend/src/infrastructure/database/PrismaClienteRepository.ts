@@ -13,6 +13,7 @@ const selecao = {
   codigoMunicipio: true,
   codigoEntidade: true,
   tipoOrgao: true,
+  empenhaRepasse: true,
   periodicidade: true,
   cnpj: true,
   ativo: true,

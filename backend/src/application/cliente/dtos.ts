@@ -5,6 +5,7 @@ export interface CriarClienteDTO {
   codigoMunicipio: number | string;
   codigoEntidade: number | string;
   tipoOrgao: string;
+  empenhaRepasse?: boolean;
   periodicidade: string;
   cnpj: string;
 }
@@ -17,6 +18,7 @@ export interface DadosCliente {
   codigoMunicipio: number;
   codigoEntidade: number;
   tipoOrgao: TipoOrgao;
+  empenhaRepasse: boolean;
   periodicidade: Periodicidade;
   cnpj: string;
 }

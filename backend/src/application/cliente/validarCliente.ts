@@ -40,6 +40,9 @@ export function normalizarEValidarCliente(input: CriarClienteDTO): DadosCliente 
     codigoMunicipio,
     codigoEntidade,
     tipoOrgao: tipoOrgao as TipoOrgao,
+    // Ausente = true. O bloco de empenhos e obrigatorio no envio, entao a
+    // omissao nao pode desligar a aba de quem simplesmente nao mexeu no campo.
+    empenhaRepasse: input.empenhaRepasse !== false,
     periodicidade: periodicidade as Periodicidade,
     cnpj,
   };

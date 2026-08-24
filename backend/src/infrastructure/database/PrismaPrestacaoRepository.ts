@@ -20,6 +20,9 @@ const selecao = {
     select: {
       codigoAjuste: true,
       tipoAjuste: true,
+      // Governa a aba de Empenhos. Vem junto da prestação para a tela não
+      // precisar de uma segunda consulta só para montar o menu de blocos.
+      cliente: { select: { empenhaRepasse: true } },
       entidadeBeneficiaria: { select: { razaoSocial: true } },
     },
   },
@@ -32,6 +35,7 @@ function toDomain(row: Row): Prestacao {
     id: row.id,
     ajusteId: row.ajusteId,
     ajusteCodigo: row.ajuste?.codigoAjuste ?? '',
+    orgaoEmpenha: row.ajuste?.cliente?.empenhaRepasse ?? true,
     ajusteTipo: row.ajuste?.tipoAjuste ?? '',
     entidadeNome: row.ajuste?.entidadeBeneficiaria?.razaoSocial ?? '',
     tipoDocumento: row.tipoDocumento,

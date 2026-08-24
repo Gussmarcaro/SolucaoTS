@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
+import { SlideButton } from '@/components/ui/SlideButton';
 import { Button } from '@/components/ui/Button';
 import { FormularioNovo } from '@/components/ui/LabelCampo';
 import { apenasDigitos, mascaraCpfCnpj } from '@/lib/masks';
@@ -30,6 +31,7 @@ const opcoesDe = <T extends string>(m: Record<T, string>) =>
 type Campos = {
   nome: string;
   tipoOrgao: string;
+  empenhaRepasse: boolean;
   periodicidade: string;
   codigoMunicipio: string;
   codigoEntidade: string;
@@ -41,6 +43,7 @@ export function OrgaoForm({ orgao, onSuccess, onCancel }: Props) {
   const [form, setForm] = useState<Campos>({
     nome: orgao?.nome ?? '',
     tipoOrgao: orgao?.tipoOrgao ?? '',
+    empenhaRepasse: orgao?.empenhaRepasse ?? true,
     periodicidade: orgao?.periodicidade ?? '',
     codigoMunicipio: orgao ? String(orgao.codigoMunicipio) : '',
     codigoEntidade: orgao ? String(orgao.codigoEntidade) : '',
@@ -78,6 +81,7 @@ export function OrgaoForm({ orgao, onSuccess, onCancel }: Props) {
     const payload: OrgaoPayload = {
       nome: form.nome.trim(),
       tipoOrgao: form.tipoOrgao as TipoOrgao,
+      empenhaRepasse: form.empenhaRepasse,
       periodicidade: form.periodicidade as Periodicidade,
       codigoMunicipio: Number(form.codigoMunicipio),
       codigoEntidade: Number(form.codigoEntidade),
@@ -117,6 +121,25 @@ export function OrgaoForm({ orgao, onSuccess, onCancel }: Props) {
 
           <Select label="Tipo de Órgão *" name="tipoOrgao" value={form.tipoOrgao} onChange={(e) => set('tipoOrgao', e.target.value)} error={erros.tipoOrgao} options={opcoesDe(TIPO_ORGAO_LABEL)} placeholder="Selecione..." />
           <Select label="Periodicidade (Declaração Negativa) *" name="periodicidade" value={form.periodicidade} onChange={(e) => set('periodicidade', e.target.value)} error={erros.periodicidade} options={opcoesDe(PERIODICIDADE_LABEL)} placeholder="Selecione..." />
+
+          {/* Governa a aba de Empenhos da prestação. Nasce ligada porque o
+              bloco é obrigatório no envio: desligá-la faz o documento sair com
+              a lista vazia, e isso tem de ser uma decisão, não um esquecimento. */}
+          <div className="sm:col-span-2">
+            <SlideButton
+              label="Este órgão empenha o repasse"
+              anotacao="(habilita a aba Empenhos na prestação de contas)"
+              name="empenhaRepasse"
+              checked={form.empenhaRepasse}
+              onChange={(v) => setForm((f) => ({ ...f, empenhaRepasse: v }))}
+            />
+            {!form.empenhaRepasse && (
+              <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                Com a marca desligada, a prestação é transmitida sem empenhos. Confirme que este
+                órgão realmente não empenha o repasse — o bloco é exigido pelo TCESP.
+              </p>
+            )}
+          </div>
 
           <Input label="Código Município *" name="codigoMunicipio" value={form.codigoMunicipio} onChange={(e) => set('codigoMunicipio', apenasDigitos(e.target.value).slice(0, 4))} error={erros.codigoMunicipio} placeholder="1–9999" inputMode="numeric" />
           <Input label="Código Entidade *" name="codigoEntidade" value={form.codigoEntidade} onChange={(e) => set('codigoEntidade', apenasDigitos(e.target.value).slice(0, 5))} error={erros.codigoEntidade} placeholder="1–99999" inputMode="numeric" />

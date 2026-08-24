@@ -149,7 +149,9 @@ export function PrestacaoDetalhe() {
   }
 
   const emElaboracao = prestacao.status === 'EM_ELABORACAO';
-  const blocos = blocosAplicaveis(prestacao.ajusteTipo);
+  const blocos = blocosAplicaveis(prestacao.ajusteTipo, {
+    orgaoEmpenha: prestacao.orgaoEmpenha,
+  });
 
   async function confirmarExclusao() {
     setExcluindo(true);
