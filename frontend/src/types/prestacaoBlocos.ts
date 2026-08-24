@@ -40,6 +40,12 @@ export interface DocumentoFiscal {
   /** Controle interno — ver `TipoDocumentoFiscal`. */
   tipoDocumento: TipoDocumentoFiscal | null;
   categoriaDespesaTipo: number;
+  /**
+   * Rubrica do Plano de Aplicação do ajuste — **controle interno**.
+   * Texto, não vínculo: reimportar o plano recria os itens.
+   */
+  propostaCategoria: string | null;
+  propostaSubcategoria: string | null;
   rateioProveniente: boolean;
   rateioPercentual: number | null;
 }
@@ -57,6 +63,8 @@ export interface DocumentoFiscalPayload {
   valorEncargos?: number | null;
   tipoDocumento?: TipoDocumentoFiscal | null;
   categoriaDespesaTipo: number;
+  propostaCategoria?: string | null;
+  propostaSubcategoria?: string | null;
   rateioProveniente?: boolean;
   rateioPercentual?: number | null;
 }

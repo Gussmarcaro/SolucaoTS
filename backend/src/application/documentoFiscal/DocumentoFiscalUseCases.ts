@@ -78,6 +78,11 @@ function validar(input: DocumentoFiscalDTO): DadosDocumentoFiscal {
     valorEncargos,
     tipoDocumento: tipoDoc as TipoDocumentoFiscal | null,
     categoriaDespesaTipo,
+    // Rubrica da proposta: texto livre vindo do plano do ajuste. Não se valida
+    // contra o plano aqui — ele é reimportável, e barrar uma rubrica que existia
+    // no momento do lançamento tornaria o documento antigo ineditável.
+    propostaCategoria: input.propostaCategoria?.trim() || null,
+    propostaSubcategoria: input.propostaSubcategoria?.trim() || null,
     rateioProveniente,
     rateioPercentual,
   };

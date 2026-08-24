@@ -29,6 +29,7 @@ import {
 import type { DocumentoFiscal, DocumentoFiscalPayload } from '@/types/prestacaoBlocos';
 import { TIPO_DOCUMENTO_FISCAL_LABEL, type TipoDocumentoFiscal } from '@/types/prestacaoBlocos';
 import { listarFornecedores } from '@/services/fornecedores.service';
+import { listarPlano } from '@/services/ajusteCsv.service';
 import type { Fornecedor } from '@/types/fornecedor';
 import { ConfirmarExclusao } from '@/pages/Ajustes/tabs/TermosAditivosTab';
 
@@ -47,7 +48,7 @@ const COLUNAS: ColunaDef[] = [
   { key: 'encargos', label: 'Encargos', width: 150, align: 'right', sortKey: 'valorEncargos' },
 ];
 
-export function DocumentosFiscaisTab({ prestacaoId }: { prestacaoId: string }) {
+export function DocumentosFiscaisTab({ prestacaoId, ajusteId }: { prestacaoId: string; ajusteId: string }) {
   const [lista, setLista] = useState<DocumentoFiscal[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -140,7 +141,7 @@ export function DocumentosFiscaisTab({ prestacaoId }: { prestacaoId: string }) {
         size="2xl"
       >
         {modal.tipo === 'form' && (
-          <DocForm prestacaoId={prestacaoId} doc={modal.doc} onSuccess={recarregar} onCancel={() => setModal({ tipo: 'fechado' })} />
+          <DocForm prestacaoId={prestacaoId} ajusteId={ajusteId} doc={modal.doc} onSuccess={recarregar} onCancel={() => setModal({ tipo: 'fechado' })} />
         )}
       </Modal>
 
@@ -160,11 +161,13 @@ export function DocumentosFiscaisTab({ prestacaoId }: { prestacaoId: string }) {
 
 function DocForm({
   prestacaoId,
+  ajusteId,
   doc,
   onSuccess,
   onCancel,
 }: {
   prestacaoId: string;
+  ajusteId: string;
   doc: DocumentoFiscal | null;
   onSuccess: () => void;
   onCancel: () => void;
@@ -180,6 +183,15 @@ function DocForm({
    */
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
   const [credorId, setCredorId] = useState('');
+  /**
+   * Rubricas do Plano de Aplicação do ajuste — as mesmas lançadas na aba
+   * PLANO DE APLICAÇÃO do cadastro do Ajuste.
+   *
+   * O plano é mensal: a mesma rubrica aparece uma vez por mês. Aqui interessa a
+   * rubrica, não o mês, então as repetições são reduzidas a pares distintos.
+   */
+  const [rubricas, setRubricas] = useState<{ categoria: string; subcategoria: string }[]>([]);
+  const [proposta, setProposta] = useState('');
   const [descricao, setDescricao] = useState(doc?.descricao ?? '');
   const [dataEmissao, setDataEmissao] = useState(doc?.dataEmissao ?? '');
   const [tipoDoc, setTipoDoc] = useState<TipoDocumentoFiscal | ''>(doc?.tipoDocumento ?? '');
@@ -204,6 +216,49 @@ function DocForm({
       vivo = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!ajusteId) return;
+    let vivo = true;
+    listarPlano(ajusteId)
+      .then((itens) => {
+        if (!vivo) return;
+        const vistas = new Map<string, { categoria: string; subcategoria: string }>();
+        for (const i of itens) vistas.set(`${i.categoria}|${i.subcategoria}`, { categoria: i.categoria, subcategoria: i.subcategoria });
+        setRubricas([...vistas.values()].sort((a, b) => `${a.categoria}${a.subcategoria}`.localeCompare(`${b.categoria}${b.subcategoria}`)));
+      })
+      .catch(() => undefined);
+    return () => {
+      vivo = false;
+    };
+  }, [ajusteId]);
+
+  /** Chave da rubrica no combo — o par é o que a identifica. */
+  const chaveRubrica = (categoria: string, subcategoria: string) => `${categoria}|${subcategoria}`;
+
+  useEffect(() => {
+    if (!doc?.propostaCategoria) return;
+    setProposta(chaveRubrica(doc.propostaCategoria, doc.propostaSubcategoria ?? ''));
+  }, [doc]);
+
+  // Rubrica gravada que não está mais no plano (reimportado, ou alterado depois
+  // do lançamento) continua selecionável — senão salvar outra alteração a perderia.
+  const opcoesProposta: OpcaoCombo[] = (() => {
+    const daLista = rubricas.map((r) => ({
+      value: chaveRubrica(r.categoria, r.subcategoria),
+      label: r.subcategoria,
+      sub: r.categoria,
+    }));
+    const gravada = doc?.propostaCategoria
+      ? chaveRubrica(doc.propostaCategoria, doc.propostaSubcategoria ?? '')
+      : '';
+    if (gravada && !daLista.some((o) => o.value === gravada))
+      return [
+        { value: gravada, label: doc!.propostaSubcategoria ?? '(sem subcategoria)', sub: `${doc!.propostaCategoria} · gravada neste documento, fora do plano atual` },
+        ...daLista,
+      ];
+    return daLista;
+  })();
 
   /**
    * O credor já gravado neste documento, quando não está entre os ativos.
@@ -276,6 +331,8 @@ function DocForm({
       valorEncargos: vEnc,
       tipoDocumento: tipoDoc || null,
       categoriaDespesaTipo: Number(apenasDigitos(categoria)),
+      propostaCategoria: proposta ? proposta.split('|')[0] : null,
+      propostaSubcategoria: proposta ? proposta.split('|').slice(1).join('|') || null : null,
       rateioProveniente: rateio,
       rateioPercentual: pct,
     };
@@ -331,23 +388,49 @@ function DocForm({
         <Input label="Valor Bruto (R$) *" name="bruto" value={bruto} onChange={(e) => setBruto(mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
         <Input label="Encargos (R$)" name="encargos" value={encargos} onChange={(e) => setEncargos(mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" hint="Deve ser menor que o bruto." />
 
-        {/* Espécie do documento — controle do órgão, não vai ao TCESP: o bloco
-            "documentos_fiscais" do schema não tem onde recebê-la. Opcional, por
-            isso, e porque os documentos gravados antes deste campo não têm
-            nenhuma. */}
-        <Select
-          label="Tipo do Documento Fiscal"
-          name="tipoDocumento"
-          value={tipoDoc}
-          onChange={(e) => setTipoDoc(e.target.value as TipoDocumentoFiscal | '')}
-          placeholder="Selecione..."
-          options={(Object.keys(TIPO_DOCUMENTO_FISCAL_LABEL) as TipoDocumentoFiscal[]).map((t) => ({
-            value: t,
-            label: TIPO_DOCUMENTO_FISCAL_LABEL[t],
-          }))}
-        />
+        {/*
+          As três classificações numa linha só, e é útil que fiquem juntas: são
+          três respostas para "que despesa é esta", em três vocabulários.
 
-        <SelectDominio label="Categoria de Despesa AUDESP *" name="categoria" value={apenasDigitos(categoria)} onChange={setCategoria} options={CATEGORIA_DESPESA} />
+          - Tipo do Documento Fiscal: espécie do papel. Lista nossa.
+          - Categoria AUDESP: os 88 códigos oficiais. É o que o TCESP recebe.
+          - Categoria PROPOSTA: a rubrica do Plano de Aplicação do ajuste.
+
+          A AUDESP fica com a maior fatia porque os rótulos dela são frases
+          inteiras ("GASTOS ADMINISTRATIVOS - MATERIAL DE EXPEDIENTE/…").
+        */}
+        <div className="sm:col-span-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-12">
+            <div className="sm:col-span-3">
+              <Select
+                label="Tipo do Documento Fiscal"
+                name="tipoDocumento"
+                value={tipoDoc}
+                onChange={(e) => setTipoDoc(e.target.value as TipoDocumentoFiscal | '')}
+                placeholder="Selecione..."
+                options={(Object.keys(TIPO_DOCUMENTO_FISCAL_LABEL) as TipoDocumentoFiscal[]).map((t) => ({
+                  value: t,
+                  label: TIPO_DOCUMENTO_FISCAL_LABEL[t],
+                }))}
+              />
+            </div>
+            <div className="sm:col-span-5">
+              <SelectDominio label="Categoria de Despesa AUDESP *" name="categoria" value={apenasDigitos(categoria)} onChange={setCategoria} options={CATEGORIA_DESPESA} />
+            </div>
+            <div className="sm:col-span-4">
+              <Combobox
+                label="Categoria da Despesa PROPOSTA"
+                name="proposta"
+                value={proposta}
+                onChange={setProposta}
+                options={opcoesProposta}
+                placeholder={rubricas.length ? 'Digite para localizar...' : 'Plano de Aplicação sem itens'}
+                disabled={!rubricas.length && !proposta}
+                hint="Rubricas do Plano de Aplicação deste ajuste."
+              />
+            </div>
+          </div>
+        </div>
         {/*
           Última linha, numa faixa só em vez de duas colunas.
 

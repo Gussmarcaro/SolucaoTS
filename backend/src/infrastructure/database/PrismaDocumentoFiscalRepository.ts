@@ -20,6 +20,8 @@ const selecao = {
   valorEncargos: true,
   tipoDocumento: true,
   categoriaDespesaTipo: true,
+  propostaCategoria: true,
+  propostaSubcategoria: true,
   rateioProveniente: true,
   rateioPercentual: true,
 } satisfies Prisma.DocumentoFiscalSelect;
@@ -42,6 +44,8 @@ function toDomain(row: Row): DocumentoFiscal {
     valorEncargos: Number(row.valorEncargos),
     tipoDocumento: row.tipoDocumento,
     categoriaDespesaTipo: row.categoriaDespesaTipo,
+    propostaCategoria: row.propostaCategoria,
+    propostaSubcategoria: row.propostaSubcategoria,
     rateioProveniente: row.rateioProveniente,
     rateioPercentual: row.rateioPercentual == null ? null : Number(row.rateioPercentual),
   };

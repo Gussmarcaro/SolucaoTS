@@ -41,6 +41,12 @@ export interface DocumentoFiscal {
   /** Espécie do documento — controle interno; ver `TipoDocumentoFiscal`. */
   tipoDocumento: TipoDocumentoFiscal | null;
   categoriaDespesaTipo: number;
+  /**
+   * Rubrica do Plano de Aplicação do ajuste — **controle interno**.
+   * Texto, não vínculo: reimportar o plano recria os itens (ver o schema).
+   */
+  propostaCategoria: string | null;
+  propostaSubcategoria: string | null;
   rateioProveniente: boolean;
   rateioPercentual: number | null;
 }

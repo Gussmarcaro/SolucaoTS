@@ -336,7 +336,7 @@ export function PrestacaoDetalhe() {
           ) : blocoAtivo === 'glosas' ? (
             <GlosasTab prestacaoId={prestacao.id} />
           ) : blocoAtivo === 'documentosFiscais' ? (
-            <DocumentosFiscaisTab prestacaoId={prestacao.id} />
+            <DocumentosFiscaisTab prestacaoId={prestacao.id} ajusteId={prestacao.ajusteId} />
           ) : blocoAtivo === 'pagamentos' ? (
             <PagamentosTab prestacaoId={prestacao.id} />
           ) : blocoAtivo === 'receitas' ? (

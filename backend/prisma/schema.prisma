@@ -1184,6 +1184,14 @@ model DocumentoFiscal {
   // alteração. Não é dado que o TCESP cobre.
   tipoDocumento        TipoDocumentoFiscal?
   categoriaDespesaTipo Int
+  // Rubrica do Plano de Aplicação do ajuste — CONTROLE INTERNO, não transmitida.
+  //
+  // Guardada como TEXTO, e não como chave para PlanoAplicacaoItem, porque a
+  // reimportação do CSV apaga e recria todos os itens do plano: uma FK ficaria
+  // pendurada na primeira reimportação. O par categoria+subcategoria é o que
+  // identifica a rubrica, e sobrevive à troca das linhas.
+  propostaCategoria    String?
+  propostaSubcategoria String?
   rateioProveniente    Boolean              @default(false)
   rateioPercentual     Decimal?             @db.Decimal(5, 2)
 

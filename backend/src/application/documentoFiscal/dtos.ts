@@ -13,6 +13,8 @@ export interface DocumentoFiscalDTO {
   valorEncargos?: number | string | null;
   tipoDocumento?: string | null;
   categoriaDespesaTipo: number | string;
+  propostaCategoria?: string | null;
+  propostaSubcategoria?: string | null;
   rateioProveniente?: boolean;
   rateioPercentual?: number | string | null;
 }
@@ -31,6 +33,8 @@ export interface DadosDocumentoFiscal {
   valorEncargos: number;
   tipoDocumento: TipoDocumentoFiscal | null;
   categoriaDespesaTipo: number;
+  propostaCategoria: string | null;
+  propostaSubcategoria: string | null;
   rateioProveniente: boolean;
   rateioPercentual: number | null;
 }
