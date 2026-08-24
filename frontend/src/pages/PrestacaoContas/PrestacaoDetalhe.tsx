@@ -67,7 +67,6 @@ const IMPLEMENTADOS = new Set([
   'devolucoes',
   'glosas',
   'empenhos',
-  'repasses',
   'servidoresCedidos',
   'atividades',
   'dadosGerais',
@@ -340,7 +339,19 @@ export function PrestacaoDetalhe() {
           ) : blocoAtivo === 'pagamentos' ? (
             <PagamentosTab prestacaoId={prestacao.id} ajusteId={prestacao.ajusteId} />
           ) : blocoAtivo === 'receitas' ? (
-            <ReceitasTab prestacaoId={prestacao.id} />
+            <div className="space-y-8">
+              <section>
+                <h3 className="mb-3 text-sm font-semibold text-ink-800 dark:text-ink-100">Receitas</h3>
+                <ReceitasTab prestacaoId={prestacao.id} />
+              </section>
+              <section>
+                <h3 className="mb-1 text-sm font-semibold text-ink-800 dark:text-ink-100">Repasses recebidos</h3>
+                <p className="mb-3 text-xs text-ink-400">
+                  O que o órgão transferiu ao ajuste, com a identificação bancária que o TCESP exige.
+                </p>
+                <RepassesTab prestacaoId={prestacao.id} ajusteId={prestacao.ajusteId} />
+              </section>
+            </div>
           ) : blocoAtivo === 'disponibilidades' ? (
             <DisponibilidadesTab prestacaoId={prestacao.id} />
           ) : blocoAtivo === 'descontos' ? (
@@ -349,8 +360,6 @@ export function PrestacaoDetalhe() {
             <DevolucoesTab prestacaoId={prestacao.id} />
           ) : blocoAtivo === 'empenhos' ? (
             <EmpenhosPrestacaoTab prestacaoId={prestacao.id} />
-          ) : blocoAtivo === 'repasses' ? (
-            <RepassesTab prestacaoId={prestacao.id} />
           ) : blocoAtivo === 'bens' ? (
             <BensTab prestacaoId={prestacao.id} />
           ) : blocoAtivo === 'servidoresCedidos' ? (

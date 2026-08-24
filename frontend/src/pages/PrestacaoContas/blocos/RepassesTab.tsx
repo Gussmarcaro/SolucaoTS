@@ -10,6 +10,8 @@ import { enterComoTab } from '@/lib/enterComoTab';
 import { Badge } from '@/components/ui/Badge';
 import { SelectDominio } from '@/components/ui/SelectDominio';
 import { BANCO, TIPO_DOCUMENTO_BANCARIO, TIPO_DOCUMENTO_BANCARIO_OUTROS } from '@/lib/dominiosFaseV';
+import { buscarAjuste } from '@/services/ajustes.service';
+import type { Ajuste, ContaBancariaAjuste } from '@/types/ajuste';
 import { apenasDigitos, dataBr, formatarMoeda, mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
 import { extrairMensagemErro } from '@/services/http';
 import { empenhosApi, repassesApi } from '@/services/prestacaoBlocos2.service';
@@ -29,7 +31,32 @@ const COLUNAS: ColunaDef[] = [
   { key: 'repassado', label: 'Repassado', width: 170, align: 'right', sortKey: 'valorRepasse' },
 ];
 
-export function RepassesTab({ prestacaoId }: { prestacaoId: string }) {
+export function RepassesTab({
+  prestacaoId,
+  ajusteId,
+}: {
+  prestacaoId: string;
+  ajusteId: string;
+}) {
+  /**
+   * O ajuste, pelas contas bancárias.
+   *
+   * Aqui banco, agência e conta são OBRIGATÓRIOS no envio — errar um dígito
+   * passa pelo schema e só aparece na análise. Escolher entre as contas do
+   * ajuste tira a digitação do caminho.
+   */
+  const [ajuste, setAjuste] = useState<Ajuste | null>(null);
+
+  useEffect(() => {
+    let vivo = true;
+    buscarAjuste(ajusteId)
+      .then((a) => vivo && setAjuste(a))
+      .catch(() => undefined);
+    return () => {
+      vivo = false;
+    };
+  }, [ajusteId]);
+
   const [lista, setLista] = useState<Repasse[]>([]);
   const [empenhos, setEmpenhos] = useState<EmpenhoPrestacao[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -103,7 +130,7 @@ export function RepassesTab({ prestacaoId }: { prestacaoId: string }) {
       />
 
       <Modal open={modal.tipo === 'form'} onClose={() => setModal({ tipo: 'fechado' })} title={modal.tipo === 'form' && modal.item ? 'Editar Repasse' : 'Novo Repasse'} size="lg">
-        {modal.tipo === 'form' && <RepasseForm prestacaoId={prestacaoId} item={modal.item} empenhos={empenhos} onSuccess={recarregar} onCancel={() => setModal({ tipo: 'fechado' })} />}
+        {modal.tipo === 'form' && <RepasseForm prestacaoId={prestacaoId} item={modal.item} empenhos={empenhos} ajuste={ajuste} onSuccess={recarregar} onCancel={() => setModal({ tipo: 'fechado' })} />}
       </Modal>
       <ConfirmarExclusao
         aberto={modal.tipo === 'excluir'}
@@ -115,7 +142,13 @@ export function RepassesTab({ prestacaoId }: { prestacaoId: string }) {
   );
 }
 
-function RepasseForm({ prestacaoId, item, empenhos, onSuccess, onCancel }: { prestacaoId: string; item: Repasse | null; empenhos: EmpenhoPrestacao[]; onSuccess: () => void; onCancel: () => void }) {
+function RepasseForm({ prestacaoId, item, empenhos, ajuste, onSuccess, onCancel }: { prestacaoId: string; item: Repasse | null; empenhos: EmpenhoPrestacao[]; ajuste: Ajuste | null; onSuccess: () => void; onCancel: () => void }) {
+  const contasDoAjuste = ajuste?.contasBancarias ?? [];
+  const chaveConta = (c: { id?: string; banco: number; agencia: number; conta: string }) =>
+    c.id ?? `${c.banco}-${c.agencia}-${c.conta}`;
+  const rotuloBanco = (codigo: number) =>
+    BANCO.find((b) => b.value === String(codigo))?.label ?? String(codigo);
+
   const [empenhoId, setEmpenhoId] = useState(item ? (item.empenhoId ?? SEM) : (empenhos[0]?.id ?? SEM));
   const [dataPrevista, setDataPrevista] = useState(item?.dataPrevista ?? '');
   const [dataRepasse, setDataRepasse] = useState(item?.dataRepasse ?? '');
@@ -125,6 +158,24 @@ function RepasseForm({ prestacaoId, item, empenhos, onSuccess, onCancel }: { pre
   const [banco, setBanco] = useState(item?.banco != null ? String(item.banco) : '');
   const [agencia, setAgencia] = useState(item?.agencia != null ? String(item.agencia) : '');
   const [conta, setConta] = useState(item?.conta ?? '');
+
+  /** Preenche banco, agência e conta de uma vez, pela conta escolhida. */
+  function escolherConta(valor: string) {
+    const c = contasDoAjuste.find((x) => chaveConta(x) === valor);
+    if (!c) return;
+    setBanco(String(c.banco));
+    setAgencia(String(c.agencia));
+    setConta(c.conta);
+  }
+
+  /** Qual das contas do ajuste corresponde ao que está gravado. */
+  const contaAtual: ContaBancariaAjuste | null =
+    contasDoAjuste.find(
+      (c) =>
+        String(c.banco) === apenasDigitos(banco) &&
+        String(c.agencia) === apenasDigitos(agencia) &&
+        c.conta === conta,
+    ) ?? null;
   const [numeroDoc, setNumeroDoc] = useState(item?.numeroDocumento ?? '');
   const [tipoDoc, setTipoDoc] = useState(item?.tipoDocumentoBancario != null ? String(item.tipoDocumentoBancario) : '');
   const [descricaoOutros, setDescricaoOutros] = useState(item?.descricaoOutros ?? '');
@@ -199,9 +250,29 @@ function RepasseForm({ prestacaoId, item, empenhos, onSuccess, onCancel }: { pre
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
         <Input label="Nº Documento *" name="numeroDoc" value={numeroDoc} onChange={(e) => setNumeroDoc(e.target.value)} />
-        <SelectDominio label="Banco *" name="banco" value={apenasDigitos(banco)} onChange={setBanco} options={BANCO} />
-        <Input label="Agência *" name="agencia" value={apenasDigitos(agencia)} onChange={(e) => setAgencia(e.target.value)} inputMode="numeric" />
-        <Input label="Conta *" name="conta" value={conta} onChange={(e) => setConta(e.target.value)} />
+        {/* Com contas no ajuste, escolhe-se; sem elas, digita-se. Restringir
+            sem ter o que oferecer trancaria o lançamento. */}
+        {contasDoAjuste.length > 0 ? (
+          <div className="sm:col-span-3">
+            <Select
+              label="Conta do ajuste *"
+              name="contaAjuste"
+              value={contaAtual ? chaveConta(contaAtual) : ''}
+              onChange={(e) => escolherConta(e.target.value)}
+              placeholder="Selecione a conta..."
+              options={contasDoAjuste.map((c) => ({
+                value: chaveConta(c),
+                label: c.apelido || `${rotuloBanco(c.banco)} · Ag. ${c.agencia} · C/C ${c.conta}`,
+              }))}
+            />
+          </div>
+        ) : (
+          <>
+            <SelectDominio label="Banco *" name="banco" value={apenasDigitos(banco)} onChange={setBanco} options={BANCO} />
+            <Input label="Agência *" name="agencia" value={apenasDigitos(agencia)} onChange={(e) => setAgencia(e.target.value)} inputMode="numeric" />
+            <Input label="Conta *" name="conta" value={conta} onChange={(e) => setConta(e.target.value)} />
+          </>
+        )}
       </div>
       <div className="flex items-center justify-end gap-2 pt-1">
         <Button type="button" variant="secondary" onClick={onCancel} disabled={salvando}>Cancelar</Button>

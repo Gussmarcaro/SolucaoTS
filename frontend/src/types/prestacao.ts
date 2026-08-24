@@ -80,13 +80,15 @@ export const BLOCOS: BlocoDef[] = [
   { chave: 'documentosFiscais', nome: 'Documentos Fiscais' },
   { chave: 'pagamentos', nome: 'Pagamentos' },
   { chave: 'disponibilidades', nome: 'Disponibilidades' },
-  { chave: 'receitas', nome: 'Receitas' },
+  // Receitas e Repasses num item só: para quem preenche, é o mesmo assunto —
+  // o dinheiro que entrou. No documentoJSON continuam sendo DOIS blocos
+  // distintos e obrigatórios, com campos próprios; a união é de tela.
+  { chave: 'receitas', nome: 'Receitas e Repasses' },
   { chave: 'servidoresCedidos', nome: 'Servidores Cedidos', exceto: ['TERMO_COLABORACAO', 'TERMO_FOMENTO'] },
   { chave: 'descontos', nome: 'Descontos' },
   { chave: 'devolucoes', nome: 'Devoluções' },
   { chave: 'glosas', nome: 'Glosas' },
   { chave: 'empenhos', nome: 'Empenhos' },
-  { chave: 'repasses', nome: 'Repasses' },
   { chave: 'ajustesSaldo', nome: 'Ajustes de Saldo' },
   { chave: 'atividades', nome: 'Relatório de Atividades (Metas)' },
   { chave: 'dadosGerais', nome: 'Dados Gerais da Beneficiária' },
