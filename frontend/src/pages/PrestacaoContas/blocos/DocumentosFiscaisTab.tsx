@@ -251,9 +251,10 @@ function DocForm({
           inputMode={tipo === 'RNE' ? 'text' : 'numeric'}
         />
 
-        <div className="sm:col-span-2">
-          <Input label={`Nome do Credor${tipo === 'RNE' ? ' *' : ''}`} name="credorNome" value={credorNome} onChange={(e) => setCredorNome(capitalizarNome(e.target.value))} />
-        </div>
+        <Input label={`Nome do Credor${tipo === 'RNE' ? ' *' : ''}`} name="credorNome" value={credorNome} onChange={(e) => setCredorNome(capitalizarNome(e.target.value))} />
+        {/* O nº do contrato identifica o credor, não a despesa: fica junto do
+            bloco do credor, e não lá embaixo entre categoria e UF. */}
+        <Input label="Nº do Contrato (opcional)" name="contratoNumero" value={contratoNumero} onChange={(e) => setContratoNumero(e.target.value)} />
         <div className="sm:col-span-2">
           <Input label="Descrição *" name="descricao" value={descricao} onChange={(e) => setDescricao(e.target.value)} />
         </div>
@@ -278,8 +279,6 @@ function DocForm({
         />
 
         <SelectDominio label="Categoria de Despesa *" name="categoria" value={apenasDigitos(categoria)} onChange={setCategoria} options={CATEGORIA_DESPESA} />
-        <Input label="Nº do Contrato (opcional)" name="contratoNumero" value={contratoNumero} onChange={(e) => setContratoNumero(e.target.value)} />
-
         <SelectDominio label="UF do Emissor (opcional)" name="estadoEmissor" value={apenasDigitos(estadoEmissor)} onChange={setEstadoEmissor} options={ESTADO_EMISSOR} />
         <div className="flex flex-col justify-end gap-2">
           <label className="flex items-center gap-2 text-sm text-ink-700 dark:text-ink-200">
