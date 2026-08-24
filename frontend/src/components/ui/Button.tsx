@@ -30,7 +30,15 @@ const sizes: Record<Size, string> = {
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', ...props }, ref) => {
     return (
+      // `type` antes do espalhamento: o padrão é "button", e quem submete diz
+      // `type="submit"` — que sobrescreve, porque `{...props}` vem depois.
+      //
+      // O padrão do HTML para botão sem type é **submit**, e isso morde dentro
+      // de formulário: "Adicionar", "Remover" e qualquer ação auxiliar salvavam
+      // o formulário em vez de fazer o que dizem. Aqui o padrão seguro é não
+      // submeter — enviar é a exceção, e exceção se declara.
       <button
+        type="button"
         ref={ref}
         className={cn(
           'focus-ring inline-flex items-center justify-center rounded-xl font-medium transition-all duration-200 disabled:pointer-events-none disabled:opacity-50',

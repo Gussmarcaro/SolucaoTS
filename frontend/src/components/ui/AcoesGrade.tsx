@@ -65,6 +65,9 @@ export function IconBtn({ children, title, onClick, danger, exige, mesmoSem }: I
 
   return (
     <button
+      // Sem isto o botão vira "submit" dentro de um formulário — e remover uma
+      // linha salvaria a tela inteira.
+      type="button"
       onClick={onClick}
       title={title}
       className={cn(

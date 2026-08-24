@@ -63,6 +63,7 @@ export function Modal({ open, onClose, title, subtitle, children, footer, size =
               )}
             </div>
             <button
+              type="button"
               onClick={onClose}
               className="focus-ring rounded-lg p-1.5 text-ink-400 hover:bg-ink-100 hover:text-ink-700 dark:hover:bg-ink-800 dark:hover:text-ink-200"
               aria-label="Fechar"
