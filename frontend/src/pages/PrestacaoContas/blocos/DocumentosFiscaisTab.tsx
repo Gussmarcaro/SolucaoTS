@@ -250,6 +250,11 @@ function DocForm({
     if (vBruto <= 0) return setErro('Valor bruto inválido.');
     if (vEnc >= vBruto) return setErro('Encargos devem ser menores que o valor bruto.');
     if (!categoria.trim()) return setErro('Informe a categoria de despesa.');
+    // O servidor já recusa percentual fora de 0–100, mas avisar aqui poupa a
+    // ida e volta — e o campo só existe quando a caixa está marcada.
+    const pct = rateio ? Number(rateioPct.replace(',', '.')) : null;
+    if (rateio && (pct === null || !Number.isFinite(pct) || pct <= 0 || pct > 100))
+      return setErro('Informe o percentual do rateio (de 0 a 100).');
 
     // O credor é copiado do cadastro para o documento — fotografia, não vínculo.
     // Quando é o credor já gravado (fora da lista de ativos), reenvia-se o que
@@ -272,7 +277,7 @@ function DocForm({
       tipoDocumento: tipoDoc || null,
       categoriaDespesaTipo: Number(apenasDigitos(categoria)),
       rateioProveniente: rateio,
-      rateioPercentual: rateio && rateioPct ? Number(rateioPct.replace(',', '.')) : null,
+      rateioPercentual: pct,
     };
 
     setSalvando(true);
@@ -343,15 +348,39 @@ function DocForm({
         />
 
         <SelectDominio label="Categoria de Despesa *" name="categoria" value={apenasDigitos(categoria)} onChange={setCategoria} options={CATEGORIA_DESPESA} />
-        <SelectDominio label="UF do Emissor (opcional)" name="estadoEmissor" value={apenasDigitos(estadoEmissor)} onChange={setEstadoEmissor} options={ESTADO_EMISSOR} />
-        <div className="flex flex-col justify-end gap-2">
-          <label className="flex items-center gap-2 text-sm text-ink-700 dark:text-ink-200">
-            <input type="checkbox" checked={rateio} onChange={(e) => setRateio(e.target.checked)} className="h-4 w-4 rounded border-ink-300 text-brand-500 focus:ring-brand-400 dark:border-ink-600 dark:bg-ink-800" />
-            Proveniente de rateio
-          </label>
-          {rateio && (
-            <Input label="Percentual do rateio (%)" name="rateioPct" value={rateioPct} onChange={(e) => setRateioPct(e.target.value.replace(/[^\d,]/g, ''))} placeholder="ex.: 50" inputMode="numeric" />
-          )}
+        {/*
+          Última linha, numa faixa só em vez de duas colunas.
+
+          A UF é uma sigla: ocupar metade do formulário fazia um campo de duas
+          letras parecer tão importante quanto a descrição. E o rateio crescia em
+          altura ao ser marcado, desalinhando a linha inteira — agora o percentual
+          entra **ao lado**, e a linha só fica mais larga.
+
+          `items-end` encosta tudo na mesma base; a caixa de seleção ganha `h-10`
+          para nascer na altura de um campo, e não colada no rodapé da linha.
+        */}
+        <div className="sm:col-span-2">
+          <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
+            <div className="w-full sm:w-56">
+              <SelectDominio label="UF do Emissor (opcional)" name="estadoEmissor" value={apenasDigitos(estadoEmissor)} onChange={setEstadoEmissor} options={ESTADO_EMISSOR} />
+            </div>
+
+            <label className="flex h-10 shrink-0 cursor-pointer items-center gap-2 text-sm text-ink-700 dark:text-ink-200">
+              <input
+                type="checkbox"
+                checked={rateio}
+                onChange={(e) => setRateio(e.target.checked)}
+                className="h-4 w-4 rounded border-ink-300 text-brand-500 focus:ring-brand-400 dark:border-ink-600 dark:bg-ink-800"
+              />
+              Proveniente de rateio
+            </label>
+
+            {rateio && (
+              <div className="w-32">
+                <Input label="Percentual (%)" name="rateioPct" value={rateioPct} onChange={(e) => setRateioPct(e.target.value.replace(/[^\d,]/g, ''))} placeholder="ex.: 50" inputMode="numeric" />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
