@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AlertCircle, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
+import { AlertCircle, Download, FileUp, Loader2, Paperclip, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
@@ -22,9 +22,12 @@ import { enterComoTab } from '@/lib/enterComoTab';
 import { extrairCodigoErro, extrairMensagemErro } from '@/services/http';
 import {
   atualizarDocumentoFiscal,
+  baixarArquivoDocumentoFiscal,
   criarDocumentoFiscal,
+  enviarArquivoDocumentoFiscal,
   excluirDocumentoFiscal,
   listarDocumentosFiscais,
+  removerArquivoDocumentoFiscal,
 } from '@/services/prestacaoBlocos.service';
 import type { DocumentoFiscal, DocumentoFiscalPayload } from '@/types/prestacaoBlocos';
 import {
@@ -51,6 +54,7 @@ const COLUNAS: ColunaDef[] = [
   { key: 'emissao', label: 'Emissão', width: 130, sortKey: 'dataEmissao' },
   { key: 'bruto', label: 'Bruto', width: 150, align: 'right', sortKey: 'valorBruto' },
   { key: 'encargos', label: 'Encargos', width: 150, align: 'right', sortKey: 'valorEncargos' },
+  { key: 'nota', label: 'Nota', width: 90, align: 'center' },
 ];
 
 export function DocumentosFiscaisTab({ prestacaoId, ajusteId }: { prestacaoId: string; ajusteId: string }) {
@@ -133,6 +137,25 @@ export function DocumentosFiscaisTab({ prestacaoId, ajusteId }: { prestacaoId: s
               return <span className="block truncate tabular-nums text-ink-700 dark:text-ink-200">{formatarMoeda(d.valorBruto)}</span>;
             case 'encargos':
               return <span className="block truncate tabular-nums text-ink-500 dark:text-ink-400">{formatarMoeda(d.valorEncargos)}</span>;
+            case 'nota':
+              // Sem anexo, um traço: ícone apagado convidaria ao clique que não
+              // faz nada. Com anexo, abre a digitalização numa aba.
+              return d.arquivoNome ? (
+                <div className="flex items-center justify-center">
+                  <IconBtn
+                    title={`Abrir ${d.arquivoNome}`}
+                    onClick={() =>
+                      baixarArquivoDocumentoFiscal(prestacaoId, d.id).catch((e) =>
+                        setErro(extrairMensagemErro(e, 'Não foi possível abrir o arquivo.')),
+                      )
+                    }
+                  >
+                    <Download className="h-4 w-4" />
+                  </IconBtn>
+                </div>
+              ) : (
+                <span className="text-ink-300 dark:text-ink-600">—</span>
+              );
             default:
               return null;
           }
@@ -500,6 +523,8 @@ function DocForm({
         </div>
       </div>
 
+      <AnexoDocumento prestacaoId={prestacaoId} doc={doc} />
+
       <div className="flex items-center justify-end gap-2 pt-1">
         <Button type="button" variant="secondary" onClick={onCancel} disabled={salvando}>Cancelar</Button>
         <Button type="submit" disabled={salvando}>
@@ -516,5 +541,131 @@ function IconBtn({ children, title, onClick, danger }: { children: React.ReactNo
     <button type="button" title={title} onClick={onClick} className={`focus-ring rounded-lg p-1.5 transition-colors ${danger ? 'text-ink-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10' : 'text-ink-400 hover:bg-ink-100 hover:text-ink-700 dark:hover:bg-ink-800 dark:hover:text-ink-200'}`}>
       {children}
     </button>
+  );
+}
+
+/**
+ * Digitalização da nota — é por aqui que a Comissão de Fiscalização chega ao
+ * documento em si, e não só aos números dele.
+ *
+ * Só permite anexar na edição: o arquivo é guardado no registro, então ele
+ * precisa existir antes. Num documento novo a mensagem diz isso, em vez de
+ * oferecer um campo que falharia ao ser usado.
+ */
+function AnexoDocumento({ prestacaoId, doc }: { prestacaoId: string; doc: DocumentoFiscal | null }) {
+  const [atual, setAtual] = useState(doc);
+  const [ocupado, setOcupado] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  if (!doc || !atual) {
+    return (
+      <fieldset className="rounded-xl border border-dashed border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700">
+        <legend className="px-1 text-[13px] font-normal text-ink-600 dark:text-ink-300">
+          Documento digitalizado
+        </legend>
+        <p className="text-xs text-ink-400">
+          Cadastre o documento fiscal primeiro; o arquivo pode ser anexado ao editá-lo.
+        </p>
+      </fieldset>
+    );
+  }
+
+  const alvo = atual;
+
+  async function executar(acao: () => Promise<DocumentoFiscal>, msg: string) {
+    setOcupado(true);
+    setErro(null);
+    try {
+      setAtual(await acao());
+    } catch (e) {
+      setErro(extrairMensagemErro(e, msg));
+    } finally {
+      setOcupado(false);
+    }
+  }
+
+  const tamanhoBr = (bytes: number) =>
+    bytes < 1024 * 1024
+      ? `${Math.max(1, Math.round(bytes / 1024))} KB`
+      : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+
+  return (
+    <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700">
+      <legend className="px-1 text-[13px] font-normal text-ink-600 dark:text-ink-300">
+        Documento digitalizado{' '}
+        <span className="text-ink-400">— disponível para a Comissão de Fiscalização</span>
+      </legend>
+
+      {alvo.arquivoNome ? (
+        <div className="flex flex-wrap items-center gap-3">
+          <Paperclip className="h-4 w-4 shrink-0 text-ink-400" />
+          <span
+            className="min-w-0 flex-1 truncate text-sm text-ink-700 dark:text-ink-200"
+            title={alvo.arquivoNome}
+          >
+            {alvo.arquivoNome}
+            {alvo.arquivoTamanho ? (
+              <span className="ml-2 text-xs text-ink-400">{tamanhoBr(alvo.arquivoTamanho)}</span>
+            ) : null}
+          </span>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            disabled={ocupado}
+            onClick={() =>
+              baixarArquivoDocumentoFiscal(prestacaoId, alvo.id).catch((e) =>
+                setErro(extrairMensagemErro(e, 'Não foi possível abrir o arquivo.')),
+              )
+            }
+          >
+            <Download className="h-4 w-4" />
+            Abrir
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            size="sm"
+            disabled={ocupado}
+            onClick={() =>
+              executar(
+                () => removerArquivoDocumentoFiscal(prestacaoId, alvo.id),
+                'Não foi possível remover o arquivo.',
+              )
+            }
+          >
+            <Trash2 className="h-4 w-4" />
+            Remover
+          </Button>
+        </div>
+      ) : (
+        <label className="flex cursor-pointer flex-wrap items-center gap-3">
+          <span className="focus-ring inline-flex h-9 items-center gap-2 rounded-xl border border-ink-200 px-3 text-sm font-medium text-ink-700 transition-colors hover:bg-ink-100 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-800">
+            {ocupado ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
+            Anexar PDF
+          </span>
+          <span className="text-xs text-ink-400">Somente PDF, até 5 MB.</span>
+          <input
+            type="file"
+            accept="application/pdf"
+            className="hidden"
+            disabled={ocupado}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              // Limpa o campo para que escolher o MESMO arquivo de novo, depois
+              // de um erro, volte a disparar o evento.
+              e.target.value = '';
+              if (file)
+                executar(
+                  () => enviarArquivoDocumentoFiscal(prestacaoId, alvo.id, file),
+                  'Não foi possível enviar o arquivo.',
+                );
+            }}
+          />
+        </label>
+      )}
+
+      {erro && <p className="mt-2 text-sm font-medium text-red-500">{erro}</p>}
+    </fieldset>
   );
 }

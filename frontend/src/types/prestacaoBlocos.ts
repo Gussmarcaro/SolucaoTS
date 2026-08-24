@@ -65,6 +65,13 @@ export interface DocumentoFiscal {
    */
   propostaCategoria: string | null;
   propostaSubcategoria: string | null;
+  /**
+   * Digitalização da nota, quando anexada. O conteúdo não vem no JSON — só o
+   * que a tela precisa para oferecer o download.
+   */
+  arquivoNome: string | null;
+  arquivoTamanho: number | null;
+  arquivoEnviadoEm: string | null;
   rateioProveniente: boolean;
   rateioPercentual: number | null;
 }

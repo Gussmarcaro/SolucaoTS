@@ -4,6 +4,7 @@ import {
   type TipoDocumentoFiscal,
   type TipoRetencao,
 } from '@/core/documentoFiscal/DocumentoFiscal';
+import type { ArquivoPdf } from '@/core/entidade/complementos';
 import type { DocumentoFiscal } from '@/core/documentoFiscal/DocumentoFiscal';
 import type { IDocumentoFiscalRepository } from './IDocumentoFiscalRepository';
 import type { IPrestacaoRepository } from '@/application/prestacao/IPrestacaoRepository';
@@ -146,5 +147,40 @@ export class DocumentoFiscalUseCases {
   async excluir(prestacaoId: string, id: string): Promise<void> {
     await this.garantirDocNaPrestacao(prestacaoId, id);
     await this.repo.excluir(id);
+  }
+
+  /**
+   * Anexa a digitalização da nota.
+   *
+   * Enviar de novo **substitui** o anterior: um documento fiscal tem uma nota,
+   * e guardar versões antigas sem tela que as mostre seria peso morto no banco.
+   */
+  async anexarArquivo(
+    prestacaoId: string,
+    id: string,
+    arquivo: ArquivoPdf,
+  ): Promise<DocumentoFiscal> {
+    await this.garantirDocNaPrestacao(prestacaoId, id);
+    if (!arquivo.tamanho) throw new BusinessError('O arquivo enviado está vazio.');
+    return this.repo.salvarArquivo(id, arquivo);
+  }
+
+  async removerArquivo(prestacaoId: string, id: string): Promise<DocumentoFiscal> {
+    await this.garantirDocNaPrestacao(prestacaoId, id);
+    return this.repo.salvarArquivo(id, null);
+  }
+
+  /**
+   * Conteúdo do anexo, para download.
+   *
+   * Passa pelo `garantirDocNaPrestacao` como todo o resto: sem isso, um id de
+   * documento de outro órgão baixaria a nota dele — o recorte por tenant chega
+   * aqui pela prestação, não pelo id do arquivo.
+   */
+  async obterArquivo(prestacaoId: string, id: string): Promise<ArquivoPdf> {
+    await this.garantirDocNaPrestacao(prestacaoId, id);
+    const arquivo = await this.repo.obterArquivo(id);
+    if (!arquivo) throw new NotFoundError('Este documento fiscal não tem arquivo anexado.');
+    return arquivo;
   }
 }

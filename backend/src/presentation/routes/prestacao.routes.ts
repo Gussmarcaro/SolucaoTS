@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { uploadPdf } from '@/infrastructure/upload/upload';
 import { PrestacaoController } from '@/presentation/controllers/PrestacaoController';
 import { DocumentoFiscalController } from '@/presentation/controllers/DocumentoFiscalController';
 import { PagamentoController } from '@/presentation/controllers/PagamentoController';
@@ -65,6 +66,10 @@ prestacaoRoutes.get('/:prestacaoId/documentos-fiscais', (req, res, next) => docs
 prestacaoRoutes.post('/:prestacaoId/documentos-fiscais', (req, res, next) => docs.criar(req, res, next));
 prestacaoRoutes.put('/:prestacaoId/documentos-fiscais/:id', (req, res, next) => docs.atualizar(req, res, next));
 prestacaoRoutes.delete('/:prestacaoId/documentos-fiscais/:id', (req, res, next) => docs.excluir(req, res, next));
+// Digitalização da nota — é o acesso da Comissão de Fiscalização ao documento.
+prestacaoRoutes.post('/:prestacaoId/documentos-fiscais/:id/arquivo', uploadPdf, (req, res, next) => docs.enviarArquivo(req, res, next));
+prestacaoRoutes.get('/:prestacaoId/documentos-fiscais/:id/arquivo', (req, res, next) => docs.baixarArquivo(req, res, next));
+prestacaoRoutes.delete('/:prestacaoId/documentos-fiscais/:id/arquivo', (req, res, next) => docs.removerArquivo(req, res, next));
 
 // --- Pagamentos (bloco) ---
 prestacaoRoutes.get('/:prestacaoId/pagamentos', (req, res, next) => pagamentos.listar(req, res, next));

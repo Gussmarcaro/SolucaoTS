@@ -1221,8 +1221,20 @@ model DocumentoFiscal {
   // identifica a rubrica, e sobrevive à troca das linhas.
   propostaCategoria    String?
   propostaSubcategoria String?
-  rateioProveniente    Boolean              @default(false)
-  rateioPercentual     Decimal?             @db.Decimal(5, 2)
+
+  // Digitalização da própria nota, para conferência da Comissão de
+  // Fiscalização. Bytes no banco, como os demais anexos: o disco do Render é
+  // efêmero, e um arquivo que some depois do deploy é pior que não guardá-lo.
+  //
+  // `arquivo` fica FORA do select padrão e da auditoria — carregá-lo na
+  // listagem traria megabytes por linha, e o diff da trilha gravaria o PDF
+  // inteiro a cada alteração.
+  arquivo           Bytes?
+  arquivoNome       String?
+  arquivoTamanho    Int?
+  arquivoEnviadoEm  DateTime?
+  rateioProveniente Boolean   @default(false)
+  rateioPercentual  Decimal?  @db.Decimal(5, 2)
 
   criadoPor  String?         @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   prestacao  PrestacaoContas @relation(fields: [prestacaoId], references: [id])

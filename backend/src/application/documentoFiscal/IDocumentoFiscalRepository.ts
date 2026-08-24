@@ -1,3 +1,4 @@
+import type { ArquivoPdf } from '@/core/entidade/complementos';
 import type { DocumentoFiscal, TipoDocumento } from '@/core/documentoFiscal/DocumentoFiscal';
 import type { DadosDocumentoFiscal } from './dtos';
 
@@ -14,4 +15,8 @@ export interface IDocumentoFiscalRepository {
   criar(prestacaoId: string, dados: DadosDocumentoFiscal): Promise<DocumentoFiscal>;
   atualizar(id: string, dados: DadosDocumentoFiscal): Promise<DocumentoFiscal>;
   excluir(id: string): Promise<void>;
+  /** Grava a digitalização da nota. `null` remove o anexo. */
+  salvarArquivo(id: string, arquivo: ArquivoPdf | null): Promise<DocumentoFiscal>;
+  /** Conteúdo do anexo — só quando alguém baixa, nunca na listagem. */
+  obterArquivo(id: string): Promise<ArquivoPdf | null>;
 }
