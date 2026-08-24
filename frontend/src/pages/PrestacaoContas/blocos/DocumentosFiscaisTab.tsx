@@ -347,7 +347,7 @@ function DocForm({
           }))}
         />
 
-        <SelectDominio label="Categoria de Despesa *" name="categoria" value={apenasDigitos(categoria)} onChange={setCategoria} options={CATEGORIA_DESPESA} />
+        <SelectDominio label="Categoria de Despesa AUDESP *" name="categoria" value={apenasDigitos(categoria)} onChange={setCategoria} options={CATEGORIA_DESPESA} />
         {/*
           Última linha, numa faixa só em vez de duas colunas.
 
