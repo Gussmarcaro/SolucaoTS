@@ -790,6 +790,8 @@ model Ajuste {
   entidadeBeneficiaria EntidadeBeneficiaria @relation(fields: [entidadeBeneficiariaId], references: [id])
   rateios              RateioParticipante[]
 
+  fontesRecurso    AjusteFonteRecurso[]
+  contasBancarias  AjusteContaBancaria[]
   termosAditivos   TermoAditivo[]
   programas        Programa[]
   planoAplicacao   PlanoAplicacaoItem[]
@@ -1772,5 +1774,41 @@ model RateioParticipante {
 
   // O mesmo ajuste não entra duas vezes no mesmo rateio.
   @@unique([rateioId, ajusteId])
+  @@index([ajusteId])
+}
+
+/// Fontes de recurso previstas no ajuste — a lista que o pagamento pode usar.
+///
+/// Restringe a escolha no lançamento: das 16 fontes da tabela do TCESP, só
+/// aparecem as que o ajuste realmente prevê. Fonte errada num pagamento não é
+/// recusada pelo schema (o código existe na tabela), então o erro só apareceria
+/// na análise do Tribunal — depois de transmitido.
+model AjusteFonteRecurso {
+  id               String @id @default(uuid()) @db.Uuid
+  ajusteId         String @db.Uuid
+  fonteRecursoTipo Int
+
+  ajuste Ajuste @relation(fields: [ajusteId], references: [id], onDelete: Cascade)
+
+  @@unique([ajusteId, fonteRecursoTipo])
+  @@index([ajusteId])
+}
+
+/// Contas bancárias do ajuste — as que o pagamento pode usar.
+///
+/// Mesma ideia das fontes: em vez de digitar banco, agência e conta a cada
+/// pagamento (e errar um dígito), escolhe-se entre as contas do ajuste.
+model AjusteContaBancaria {
+  id        String  @id @default(uuid()) @db.Uuid
+  ajusteId  String  @db.Uuid
+  banco     Int
+  agencia   Int
+  conta     String
+  contaTipo Int?
+  apelido   String? // como a tela mostra, quando o órgão nomeia a conta
+
+  ajuste Ajuste @relation(fields: [ajusteId], references: [id], onDelete: Cascade)
+
+  @@unique([ajusteId, banco, agencia, conta])
   @@index([ajusteId])
 }

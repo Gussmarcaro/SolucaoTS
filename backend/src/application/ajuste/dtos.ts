@@ -19,6 +19,17 @@ export interface CriarAjusteDTO {
   previsaoEstadual?: number | string | null;
   previsaoMunicipal?: number | string | null;
 
+  /** Fontes de recurso previstas — códigos da tabela do TCESP. */
+  fontesRecurso?: (number | string)[];
+  /** Contas bancárias do ajuste, que os pagamentos poderão usar. */
+  contasBancarias?: {
+    banco?: number | string | null;
+    agencia?: number | string | null;
+    conta?: string | null;
+    contaTipo?: number | string | null;
+    apelido?: string | null;
+  }[];
+
   responsavelNome?: string | null;
   responsavelCpf?: string | null;
   responsavelDataNascimento?: string | null;
@@ -62,6 +73,15 @@ export interface DadosAjuste {
   previsaoFederal: number | null;
   previsaoEstadual: number | null;
   previsaoMunicipal: number | null;
+
+  fontesRecurso: number[];
+  contasBancarias: {
+    banco: number;
+    agencia: number;
+    conta: string;
+    contaTipo: number | null;
+    apelido: string | null;
+  }[];
 
   responsavelNome: string | null;
   responsavelCpf: string | null;

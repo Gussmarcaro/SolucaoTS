@@ -36,7 +36,9 @@ import {
   type Periodicidade,
   type StatusAjuste,
   type TipoAjuste,
+  type ContaBancariaAjuste,
 } from '@/types/ajuste';
+import { FontesEContas } from './FontesEContas';
 
 interface Props {
   ajuste?: Ajuste | null;
@@ -137,6 +139,15 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
   const [form, setForm] = useState<Campos>(() => estadoInicial(ajuste));
   const [erros, setErros] = useState<Partial<Record<keyof Campos, string>>>({});
   const [alerta, setAlerta] = useState<string | null>(null);
+  /**
+   * Fontes e contas do ajuste — é a lista que o pagamento poderá escolher.
+   *
+   * Sem elas, o lançamento aceita qualquer uma das 16 fontes da tabela e
+   * qualquer conta digitada: fonte errada não é recusada no envio (o código
+   * existe), e o erro só apareceria na análise do Tribunal.
+   */
+  const [fontes, setFontes] = useState<number[]>(ajuste?.fontesRecurso ?? []);
+  const [contas, setContas] = useState<ContaBancariaAjuste[]>(ajuste?.contasBancarias ?? []);
   const [salvando, setSalvando] = useState(false);
   const [entidades, setEntidades] = useState<{ value: string; label: string }[]>([]);
   const [carregandoEntidades, setCarregandoEntidades] = useState(true);
@@ -277,7 +288,20 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
     setAlerta(null);
     if (!validar()) return;
 
+    if (fontes.length === 0) {
+      setAlerta('Informe ao menos uma fonte de recurso do ajuste.');
+      return;
+    }
+
     const payload: AjustePayload = {
+      fontesRecurso: fontes,
+      contasBancarias: contas.map(({ banco, agencia, conta, contaTipo, apelido }) => ({
+        banco,
+        agencia,
+        conta,
+        contaTipo,
+        apelido,
+      })),
       clienteId: form.clienteId || null,
       entidadeBeneficiariaId: form.entidadeBeneficiariaId,
       tipoAjuste: form.tipoAjuste as TipoAjuste,
@@ -447,6 +471,18 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
               <Input label="Estadual (R$)" name="previsaoEstadual" value={form.previsaoEstadual} onChange={(e) => set('previsaoEstadual', mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
               <Input label="Municipal (R$)" name="previsaoMunicipal" value={form.previsaoMunicipal} onChange={(e) => set('previsaoMunicipal', mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
             </div>
+          </fieldset>
+
+          <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700 sm:col-span-2">
+            <legend className="px-1 text-[13px] font-normal text-ink-600 dark:text-ink-300">
+              Fontes de Recursos e Contas <span className="text-red-500">*</span>
+            </legend>
+            <FontesEContas
+              fontes={fontes}
+              onFontes={setFontes}
+              contas={contas}
+              onContas={setContas}
+            />
           </fieldset>
 
           {/* Responsável pelo Ajuste */}

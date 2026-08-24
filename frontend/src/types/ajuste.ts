@@ -26,6 +26,16 @@ export const STATUS_AJUSTE_LABEL: Record<StatusAjuste, string> = {
   ENVIADO: 'Enviado',
 };
 
+/** Conta bancária declarada no ajuste. */
+export interface ContaBancariaAjuste {
+  id?: string;
+  banco: number;
+  agencia: number;
+  conta: string;
+  contaTipo: number | null;
+  apelido: string | null;
+}
+
 export interface Ajuste {
   id: string;
   clienteId: string | null;
@@ -47,6 +57,14 @@ export interface Ajuste {
   previsaoFederal: number | null;
   previsaoEstadual: number | null;
   previsaoMunicipal: number | null;
+  /**
+   * Fontes de recurso previstas — são as que o lançamento de pagamento pode
+   * escolher. Sem esta lista, o pagamento aceitaria qualquer uma das 16 da
+   * tabela, e a errada só apareceria na análise do Tribunal.
+   */
+  fontesRecurso: number[];
+  /** Contas bancárias do ajuste, oferecidas no pagamento. */
+  contasBancarias: ContaBancariaAjuste[];
 
   responsavelNome: string | null;
   responsavelCpf: string | null;
@@ -94,6 +112,8 @@ export interface AjustePayload {
   previsaoFederal?: number | null;
   previsaoEstadual?: number | null;
   previsaoMunicipal?: number | null;
+  fontesRecurso: number[];
+  contasBancarias: Omit<ContaBancariaAjuste, 'id'>[];
 
   responsavelNome?: string | null;
   responsavelCpf?: string | null;

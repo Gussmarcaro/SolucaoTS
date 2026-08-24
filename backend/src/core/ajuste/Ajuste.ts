@@ -9,6 +9,16 @@ export type Periodicidade = 'ANUAL' | 'QUADRIMESTRAL';
 export type StatusAjuste = 'EM_ELABORACAO' | 'ENVIADO';
 
 /** Entidade de domínio — Ajuste (Convênio, Termo, Contrato de Gestão…). */
+/** Conta bancária declarada no ajuste. */
+export interface ContaBancariaAjuste {
+  id: string;
+  banco: number;
+  agencia: number;
+  conta: string;
+  contaTipo: number | null;
+  apelido: string | null;
+}
+
 export interface Ajuste {
   id: string;
   clienteId: string | null;
@@ -32,6 +42,14 @@ export interface Ajuste {
   previsaoFederal: number | null;
   previsaoEstadual: number | null;
   previsaoMunicipal: number | null;
+
+  /**
+   * Fontes de recurso previstas — códigos da tabela do TCESP.
+   * São elas que o lançamento de pagamento pode escolher.
+   */
+  fontesRecurso: number[];
+  /** Contas bancárias do ajuste, oferecidas no pagamento. */
+  contasBancarias: ContaBancariaAjuste[];
 
   // Responsável pelo ajuste e sua vigência
   responsavelNome: string | null;

@@ -51,6 +51,11 @@ const selecao = {
   publicacaoData: true,
   criadoEm: true,
   atualizadoEm: true,
+  fontesRecurso: { select: { fonteRecursoTipo: true }, orderBy: { fonteRecursoTipo: 'asc' } },
+  contasBancarias: {
+    select: { id: true, banco: true, agencia: true, conta: true, contaTipo: true, apelido: true },
+    orderBy: [{ banco: 'asc' }, { agencia: 'asc' }, { conta: 'asc' }],
+  },
   entidadeBeneficiaria: { select: { razaoSocial: true } },
   cliente: { select: { nome: true } },
 } satisfies Prisma.AjusteSelect;
@@ -70,6 +75,15 @@ function toDomain(row: Row): Ajuste {
     numero: row.numero,
     objeto: row.objeto,
     valorGlobal: Number(row.valorGlobal),
+    fontesRecurso: row.fontesRecurso.map((f) => f.fonteRecursoTipo),
+    contasBancarias: row.contasBancarias.map((c) => ({
+      id: c.id,
+      banco: c.banco,
+      agencia: c.agencia,
+      conta: c.conta,
+      contaTipo: c.contaTipo,
+      apelido: c.apelido,
+    })),
     dataAssinatura: paraDataISO(row.dataAssinatura),
     vigenciaInicial: row.vigenciaInicial ? paraDataISO(row.vigenciaInicial) : null,
     vigenciaFinal: row.vigenciaFinal ? paraDataISO(row.vigenciaFinal) : null,
@@ -113,6 +127,14 @@ function toDomain(row: Row): Ajuste {
 }
 
 /** Campos escalares persistidos (sem o join de leitura). */
+/** Filhos gravados à parte — ver `criar` e `atualizar`. */
+function filhos(dados: DadosAjuste) {
+  return {
+    fontesRecurso: { create: dados.fontesRecurso.map((fonteRecursoTipo) => ({ fonteRecursoTipo })) },
+    contasBancarias: { create: dados.contasBancarias },
+  };
+}
+
 function toData(dados: DadosAjuste) {
   return {
     clienteId: dados.clienteId,
@@ -180,12 +202,26 @@ export class PrismaAjusteRepository implements IAjusteRepository {
   }
 
   async criar(dados: DadosAjuste): Promise<Ajuste> {
-    const row = await prisma.ajuste.create({ data: toData(dados), select: selecao });
+    const row = await prisma.ajuste.create({
+      data: { ...toData(dados), ...filhos(dados) },
+      select: selecao,
+    });
     return toDomain(row);
   }
 
   async atualizar(id: string, dados: DadosAjuste): Promise<Ajuste> {
-    const row = await prisma.ajuste.update({ where: { id }, data: toData(dados), select: selecao });
+    // Fontes e contas são substituídas por inteiro, como nos demais blocos com
+    // filhos: calcular o diff daria uma trilha mais fina e trocaria uma operação
+    // previsível por três.
+    const [, , row] = await prisma.$transaction([
+      prisma.ajusteFonteRecurso.deleteMany({ where: { ajusteId: id } }),
+      prisma.ajusteContaBancaria.deleteMany({ where: { ajusteId: id } }),
+      prisma.ajuste.update({
+        where: { id },
+        data: { ...toData(dados), ...filhos(dados) },
+        select: selecao,
+      }),
+    ]);
     return toDomain(row);
   }
 

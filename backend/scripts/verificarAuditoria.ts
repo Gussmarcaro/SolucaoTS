@@ -94,6 +94,10 @@ const FORA_DA_REGRA = new Set([
   // A edição substitui o quadro inteiro e a trilha registra a operação em lote;
   // `criadoPor` por linha não teria onde ser consultado.
   'RateioParticipante',
+  // Fontes e contas do ajuste: são atributos dele, substituídos em lote na
+  // edição. Não há grade própria onde `criadoPor` por linha seria consultado.
+  'AjusteFonteRecurso',
+  'AjusteContaBancaria',
 ]);
 
 const emLista = new Set<string>();

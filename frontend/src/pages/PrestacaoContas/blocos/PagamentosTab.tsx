@@ -21,7 +21,13 @@ import {
   listarPagamentos,
 } from '@/services/prestacaoBlocos.service';
 import type { DocumentoFiscal, MeioPagamento, Pagamento, PagamentoPayload } from '@/types/prestacaoBlocos';
+import { buscarAjuste } from '@/services/ajustes.service';
+import type { Ajuste } from '@/types/ajuste';
 import { ConfirmarExclusao } from '@/pages/Ajustes/tabs/TermosAditivosTab';
+
+/** Nome do banco pela tabela de domínio; o código sozinho não diz nada. */
+const rotuloBanco = (codigo: number) =>
+  BANCO.find((b) => b.value === String(codigo))?.label ?? String(codigo);
 
 const FOLHA = 'folha';
 
@@ -39,7 +45,30 @@ const COLUNAS: ColunaDef[] = [
   { key: 'valor', label: 'Valor', width: 170, align: 'right', sortKey: 'valor' },
 ];
 
-export function PagamentosTab({ prestacaoId }: { prestacaoId: string }) {
+export function PagamentosTab({
+  prestacaoId,
+  ajusteId,
+}: {
+  prestacaoId: string;
+  ajusteId: string;
+}) {
+  /**
+   * O ajuste da prestação — dele saem as fontes de recurso e as contas que o
+   * pagamento pode usar. Restringir aqui é o ponto: fonte errada não é recusada
+   * no envio (o código existe na tabela), e o erro só apareceria na análise.
+   */
+  const [ajuste, setAjuste] = useState<Ajuste | null>(null);
+
+  useEffect(() => {
+    let vivo = true;
+    buscarAjuste(ajusteId)
+      .then((a) => vivo && setAjuste(a))
+      .catch(() => undefined);
+    return () => {
+      vivo = false;
+    };
+  }, [ajusteId]);
+
   const [lista, setLista] = useState<Pagamento[]>([]);
   const [docs, setDocs] = useState<DocumentoFiscal[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -131,7 +160,7 @@ export function PagamentosTab({ prestacaoId }: { prestacaoId: string }) {
         size="lg"
       >
         {modal.tipo === 'form' && (
-          <PgForm prestacaoId={prestacaoId} pg={modal.pg} docs={docs} pagamentos={lista} onSuccess={recarregar} onCancel={() => setModal({ tipo: 'fechado' })} />
+          <PgForm prestacaoId={prestacaoId} pg={modal.pg} docs={docs} pagamentos={lista} ajuste={ajuste} onSuccess={recarregar} onCancel={() => setModal({ tipo: 'fechado' })} />
         )}
       </Modal>
 
@@ -154,6 +183,7 @@ function PgForm({
   pg,
   docs,
   pagamentos,
+  ajuste,
   onSuccess,
   onCancel,
 }: {
@@ -162,6 +192,8 @@ function PgForm({
   docs: DocumentoFiscal[];
   /** Os já lançados — é deles que sai quanto do documento ainda falta pagar. */
   pagamentos: Pagamento[];
+  /** O ajuste da prestação: limita as fontes e as contas oferecidas. */
+  ajuste: Ajuste | null;
   onSuccess: () => void;
   onCancel: () => void;
 }) {
@@ -250,6 +282,39 @@ function PgForm({
     setValor(resta > 0 ? numeroParaMascaraMoeda(resta) : '');
   }
 
+  /**
+   * Fontes oferecidas: as do ajuste.
+   *
+   * Enquanto o ajuste não carregou — ou se ele ainda não declarou nenhuma —,
+   * vale a tabela inteira. Uma lista vazia impediria o lançamento por causa de
+   * um cadastro incompleto noutra tela, o que é pior que a escolha larga.
+   */
+  const fontesDoAjuste = ajuste?.fontesRecurso ?? [];
+  const opcoesFonte = fontesDoAjuste.length
+    ? FONTE_RECURSO.filter((o) => fontesDoAjuste.includes(Number(o.value)))
+    : FONTE_RECURSO;
+
+  /** Contas do ajuste. Sem nenhuma cadastrada, continua-se digitando. */
+  const contasDoAjuste = ajuste?.contasBancarias ?? [];
+  const opcoesConta = contasDoAjuste.map((c) => ({
+    value: c.id ?? `${c.banco}-${c.agencia}-${c.conta}`,
+    label: c.apelido || `${rotuloBanco(c.banco)} · Ag. ${c.agencia} · C/C ${c.conta}`,
+  }));
+
+  /** Preenche banco, agência e conta de uma vez, a partir da escolhida. */
+  function escolherConta(valor: string) {
+    const c = contasDoAjuste.find((x) => (x.id ?? `${x.banco}-${x.agencia}-${x.conta}`) === valor);
+    if (!c) return;
+    setBanco(String(c.banco));
+    setAgencia(String(c.agencia));
+    setConta(c.conta);
+  }
+
+  const contaAtual =
+    contasDoAjuste.find(
+      (c) => String(c.banco) === apenasDigitos(banco) && String(c.agencia) === apenasDigitos(agencia) && c.conta === conta,
+    ) ?? null;
+
   const opcoesVinculo = [
     { value: FOLHA, label: 'Folha de pagamento (nº 9999)' },
     ...docs.map((d) => ({ value: d.id, label: `Doc. nº ${d.numero}${d.credorNome ? ` — ${d.credorNome}` : ''}` })),
@@ -270,10 +335,28 @@ function PgForm({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input label="Data do Pagamento *" name="dataPagamento" type="date" value={dataPagamento} onChange={(e) => setDataPagamento(e.target.value)} />
         <Input label="Valor (R$) *" name="valor" value={valor} onChange={(e) => setValor(mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
-        <SelectDominio label="Fonte de Recurso *" name="fonte" value={apenasDigitos(fonte)} onChange={setFonte} options={FONTE_RECURSO} />
+        <SelectDominio label="Fonte de Recurso *" name="fonte" value={apenasDigitos(fonte)} onChange={setFonte} options={opcoesFonte} />
         <Select label="Meio de Pagamento *" name="meio" value={meio} onChange={(e) => setMeio(e.target.value as MeioPagamento)} options={[{ value: 'BANCO', label: 'Banco' }, { value: 'FUNDO_FIXO', label: 'Fundo fixo' }]} />
       </div>
-      {meio === 'BANCO' && (
+      {meio === 'BANCO' && contasDoAjuste.length > 0 && (
+        <Select
+          label="Conta do ajuste *"
+          name="contaAjuste"
+          value={contaAtual ? (contaAtual.id ?? `${contaAtual.banco}-${contaAtual.agencia}-${contaAtual.conta}`) : ''}
+          onChange={(e) => escolherConta(e.target.value)}
+          placeholder="Selecione a conta..."
+          options={opcoesConta}
+        />
+      )}
+      {meio === 'BANCO' && contasDoAjuste.length > 0 && (
+        <p className="-mt-2 text-xs text-ink-400">
+          As contas cadastradas no ajuste. Banco, agência e conta vêm dela.
+        </p>
+      )}
+
+      {/* Sem contas no ajuste, segue-se digitando — restringir sem ter o que
+          oferecer trancaria o lançamento por causa de um cadastro incompleto. */}
+      {meio === 'BANCO' && contasDoAjuste.length === 0 && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <SelectDominio label="Banco *" name="banco" value={apenasDigitos(banco)} onChange={setBanco} options={BANCO} />
           <Input label="Agência *" name="agencia" value={apenasDigitos(agencia)} onChange={(e) => setAgencia(e.target.value)} inputMode="numeric" />

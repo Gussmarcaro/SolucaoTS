@@ -1,4 +1,5 @@
 import { BusinessError } from '@/shared/errors';
+import { FONTE_RECURSO_CODIGOS } from '@/core/dominio/tabelasFaseV';
 import { parseDataISO } from '@/shared/datas';
 import { apenasDigitos, isCPFValido } from '@/shared/validators/documento';
 import type { CriarAjusteDTO, DadosAjuste } from './dtos';
@@ -76,6 +77,54 @@ export function normalizarEValidarAjuste(input: CriarAjusteDTO): DadosAjuste {
     if (!Number.isFinite(n) || n < 0) throw new BusinessError(`Previsão ${esfera} inválida.`);
     return n;
   };
+  /*
+   * Fontes de recurso — **obrigatórias**, e é aí que está o ganho.
+   *
+   * A tabela do TCESP tem 16 fontes, e o pagamento aceita qualquer uma delas:
+   * fonte errada não é recusada pelo schema, porque o código existe. O erro só
+   * apareceria na análise do Tribunal, depois de transmitido. Declarando as
+   * fontes no ajuste, o lançamento passa a escolher entre as que fazem sentido.
+   */
+  const fontesRecurso = [
+    ...new Set(
+      (Array.isArray(input.fontesRecurso) ? input.fontesRecurso : []).map((f) => Number(f)),
+    ),
+  ];
+  // Conferido contra a tabela oficial, não só contra "é número": código fora
+  // dela seria rejeitado no envio, e o erro apareceria só na transmissão.
+  const fora = fontesRecurso.filter((f) => !FONTE_RECURSO_CODIGOS.has(f));
+  if (fora.length) throw new BusinessError(`Fonte de recurso inexistente: ${fora.join(', ')}.`);
+  if (fontesRecurso.length === 0)
+    throw new BusinessError('Informe ao menos uma fonte de recurso do ajuste.');
+
+  // Contas bancárias: opcionais. Restringir o pagamento só faz sentido quando
+  // há contas cadastradas — exigi-las trancaria o ajuste de quem ainda não as
+  // tem, e o pagamento continua aceitando digitação nesse caso.
+  const contasBancarias = (Array.isArray(input.contasBancarias) ? input.contasBancarias : []).map(
+    (c) => {
+      const banco = Number(c.banco);
+      const agencia = Number(c.agencia);
+      const conta = String(c.conta ?? '').trim();
+      if (!Number.isInteger(banco) || banco <= 0)
+        throw new BusinessError('Conta bancária: informe o banco.');
+      if (!Number.isInteger(agencia) || agencia <= 0)
+        throw new BusinessError('Conta bancária: informe a agência.');
+      if (!conta) throw new BusinessError('Conta bancária: informe o número da conta.');
+      const tipo = c.contaTipo === undefined || c.contaTipo === null || c.contaTipo === '' ? null : Number(c.contaTipo);
+      if (tipo !== null && (!Number.isInteger(tipo) || tipo <= 0))
+        throw new BusinessError('Conta bancária: tipo inválido.');
+      return { banco, agencia, conta, contaTipo: tipo, apelido: c.apelido?.trim() || null };
+    },
+  );
+
+  const repetida = contasBancarias.find(
+    (c, i) =>
+      contasBancarias.findIndex(
+        (o) => o.banco === c.banco && o.agencia === c.agencia && o.conta === c.conta,
+      ) !== i,
+  );
+  if (repetida) throw new BusinessError('Há conta bancária repetida no ajuste.');
+
   const previsaoFederal = previsao(input.previsaoFederal, 'federal');
   const previsaoEstadual = previsao(input.previsaoEstadual, 'estadual');
   const previsaoMunicipal = previsao(input.previsaoMunicipal, 'municipal');
@@ -168,6 +217,9 @@ export function normalizarEValidarAjuste(input: CriarAjusteDTO): DadosAjuste {
     previsaoFederal,
     previsaoEstadual,
     previsaoMunicipal,
+
+    fontesRecurso,
+    contasBancarias,
 
     responsavelNome: input.responsavelNome?.trim() || null,
     responsavelCpf,
