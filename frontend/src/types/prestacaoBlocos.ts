@@ -1,5 +1,29 @@
 export type TipoDocumento = 'CPF' | 'CNPJ' | 'RNE';
 
+/**
+ * Espécie do documento fiscal — **controle interno, não transmitida**.
+ *
+ * O bloco `documentos_fiscais` do schema v1.14 não tem campo de espécie e usa
+ * `additionalProperties: false`: não há onde declará-la no envio. A lista é do
+ * órgão, para organizar o arquivo e a conferência.
+ */
+export type TipoDocumentoFiscal =
+  | 'NOTA_FISCAL'
+  | 'NOTA_FISCAL_ELETRONICA'
+  | 'NOTA_PRESTACAO_SERVICOS'
+  | 'NOTA_PRESTACAO_SERVICOS_ELETRONICA'
+  | 'RECIBO'
+  | 'FATURA';
+
+export const TIPO_DOCUMENTO_FISCAL_LABEL: Record<TipoDocumentoFiscal, string> = {
+  NOTA_FISCAL: 'Nota Fiscal',
+  NOTA_FISCAL_ELETRONICA: 'Nota Fiscal Eletrônica',
+  NOTA_PRESTACAO_SERVICOS: 'Nota Prestação de Serviços',
+  NOTA_PRESTACAO_SERVICOS_ELETRONICA: 'Nota Prestação de Serviços Eletrônica',
+  RECIBO: 'Recibos',
+  FATURA: 'Fatura',
+};
+
 export interface DocumentoFiscal {
   id: string;
   prestacaoId: string;
@@ -13,6 +37,8 @@ export interface DocumentoFiscal {
   estadoEmissor: number | null;
   valorBruto: number;
   valorEncargos: number;
+  /** Controle interno — ver `TipoDocumentoFiscal`. */
+  tipoDocumento: TipoDocumentoFiscal | null;
   categoriaDespesaTipo: number;
   rateioProveniente: boolean;
   rateioPercentual: number | null;
@@ -29,6 +55,7 @@ export interface DocumentoFiscalPayload {
   estadoEmissor?: number | null;
   valorBruto: number;
   valorEncargos?: number | null;
+  tipoDocumento?: TipoDocumentoFiscal | null;
   categoriaDespesaTipo: number;
   rateioProveniente?: boolean;
   rateioPercentual?: number | null;

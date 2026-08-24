@@ -1,4 +1,4 @@
-import type { TipoDocumento } from '@/core/documentoFiscal/DocumentoFiscal';
+import type { TipoDocumento, TipoDocumentoFiscal } from '@/core/documentoFiscal/DocumentoFiscal';
 
 export interface DocumentoFiscalDTO {
   numero: string;
@@ -11,6 +11,7 @@ export interface DocumentoFiscalDTO {
   estadoEmissor?: number | string | null;
   valorBruto: number | string;
   valorEncargos?: number | string | null;
+  tipoDocumento?: string | null;
   categoriaDespesaTipo: number | string;
   rateioProveniente?: boolean;
   rateioPercentual?: number | string | null;
@@ -28,6 +29,7 @@ export interface DadosDocumentoFiscal {
   estadoEmissor: number | null;
   valorBruto: number;
   valorEncargos: number;
+  tipoDocumento: TipoDocumentoFiscal | null;
   categoriaDespesaTipo: number;
   rateioProveniente: boolean;
   rateioPercentual: number | null;

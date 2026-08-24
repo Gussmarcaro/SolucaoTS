@@ -1,3 +1,7 @@
+import {
+  TIPOS_DOCUMENTO_FISCAL,
+  type TipoDocumentoFiscal,
+} from '@/core/documentoFiscal/DocumentoFiscal';
 import type { DocumentoFiscal } from '@/core/documentoFiscal/DocumentoFiscal';
 import type { IDocumentoFiscalRepository } from './IDocumentoFiscalRepository';
 import type { IPrestacaoRepository } from '@/application/prestacao/IPrestacaoRepository';
@@ -45,6 +49,13 @@ function validar(input: DocumentoFiscalDTO): DadosDocumentoFiscal {
   if (valorEncargos >= valorBruto)
     throw new BusinessError('Os encargos devem ser menores que o valor bruto.');
 
+  // Espécie do documento: opcional, e conferida contra a lista fechada.
+  // Opcional porque não é dado que o TCESP cobre e os documentos gravados antes
+  // deste campo não têm nenhuma — exigi-la obrigaria a reeditar todos eles.
+  const tipoDoc = input.tipoDocumento?.trim() || null;
+  if (tipoDoc !== null && !TIPOS_DOCUMENTO_FISCAL.includes(tipoDoc as TipoDocumentoFiscal))
+    throw new BusinessError('Tipo do documento fiscal inválido.');
+
   const categoriaDespesaTipo = num(input.categoriaDespesaTipo);
   if (categoriaDespesaTipo == null || categoriaDespesaTipo <= 0)
     throw new BusinessError('Informe a categoria de despesa.');
@@ -65,6 +76,7 @@ function validar(input: DocumentoFiscalDTO): DadosDocumentoFiscal {
     estadoEmissor: num(input.estadoEmissor),
     valorBruto,
     valorEncargos,
+    tipoDocumento: tipoDoc as TipoDocumentoFiscal | null,
     categoriaDespesaTipo,
     rateioProveniente,
     rateioPercentual,

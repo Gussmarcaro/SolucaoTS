@@ -27,6 +27,7 @@ import {
   listarDocumentosFiscais,
 } from '@/services/prestacaoBlocos.service';
 import type { DocumentoFiscal, DocumentoFiscalPayload, TipoDocumento } from '@/types/prestacaoBlocos';
+import { TIPO_DOCUMENTO_FISCAL_LABEL, type TipoDocumentoFiscal } from '@/types/prestacaoBlocos';
 import { ConfirmarExclusao } from '@/pages/Ajustes/tabs/TermosAditivosTab';
 
 type ModalState =
@@ -172,6 +173,7 @@ function DocForm({
   const [credorNome, setCredorNome] = useState(doc?.credorNome ?? '');
   const [descricao, setDescricao] = useState(doc?.descricao ?? '');
   const [dataEmissao, setDataEmissao] = useState(doc?.dataEmissao ?? '');
+  const [tipoDoc, setTipoDoc] = useState<TipoDocumentoFiscal | ''>(doc?.tipoDocumento ?? '');
   const [categoria, setCategoria] = useState(doc ? String(doc.categoriaDespesaTipo) : '');
   const [bruto, setBruto] = useState(doc ? numeroParaMascaraMoeda(doc.valorBruto) : '');
   const [encargos, setEncargos] = useState(doc ? numeroParaMascaraMoeda(doc.valorEncargos) : '');
@@ -207,6 +209,7 @@ function DocForm({
       estadoEmissor: estadoEmissor ? Number(apenasDigitos(estadoEmissor)) : null,
       valorBruto: vBruto,
       valorEncargos: vEnc,
+      tipoDocumento: tipoDoc || null,
       categoriaDespesaTipo: Number(apenasDigitos(categoria)),
       rateioProveniente: rateio,
       rateioPercentual: rateio && rateioPct ? Number(rateioPct.replace(',', '.')) : null,
@@ -257,6 +260,22 @@ function DocForm({
 
         <Input label="Valor Bruto (R$) *" name="bruto" value={bruto} onChange={(e) => setBruto(mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
         <Input label="Encargos (R$)" name="encargos" value={encargos} onChange={(e) => setEncargos(mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" hint="Deve ser menor que o bruto." />
+
+        {/* Espécie do documento — controle do órgão, não vai ao TCESP: o bloco
+            "documentos_fiscais" do schema não tem onde recebê-la. Opcional, por
+            isso, e porque os documentos gravados antes deste campo não têm
+            nenhuma. */}
+        <Select
+          label="Tipo do Documento Fiscal"
+          name="tipoDocumento"
+          value={tipoDoc}
+          onChange={(e) => setTipoDoc(e.target.value as TipoDocumentoFiscal | '')}
+          placeholder="Selecione..."
+          options={(Object.keys(TIPO_DOCUMENTO_FISCAL_LABEL) as TipoDocumentoFiscal[]).map((t) => ({
+            value: t,
+            label: TIPO_DOCUMENTO_FISCAL_LABEL[t],
+          }))}
+        />
 
         <SelectDominio label="Categoria de Despesa *" name="categoria" value={apenasDigitos(categoria)} onChange={setCategoria} options={CATEGORIA_DESPESA} />
         <Input label="Nº do Contrato (opcional)" name="contratoNumero" value={contratoNumero} onChange={(e) => setContratoNumero(e.target.value)} />

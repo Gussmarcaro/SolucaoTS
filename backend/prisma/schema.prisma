@@ -132,6 +132,22 @@ enum MeioPagamento {
   FUNDO_FIXO // 2
 }
 
+// Espécie do documento fiscal — CONTROLE INTERNO, não transmitida.
+//
+// O bloco "documentos_fiscais" do schema v1.14 tem 11 campos e nenhum de
+// espécie (só categoria_despesas_tipo e rateio_proveniente_tipo), com
+// additionalProperties: false. Sem código oficial a que se ancorar, a lista é
+// a do órgão e vale como enum: fechada, conferida pelo banco, e sem número
+// inventado que pudesse ser confundido com tabela do TCESP.
+enum TipoDocumentoFiscal {
+  NOTA_FISCAL
+  NOTA_FISCAL_ELETRONICA
+  NOTA_PRESTACAO_SERVICOS
+  NOTA_PRESTACAO_SERVICOS_ELETRONICA
+  RECIBO
+  FATURA
+}
+
 enum ResultadoAnaliseGlosa {
   APROVADO // 1
   APROVADO_PARCIALMENTE // 2  -> exige valor_glosa
@@ -1151,21 +1167,25 @@ model Contrato {
 }
 
 model DocumentoFiscal {
-  id                   String        @id @default(uuid()) @db.Uuid
-  prestacaoId          String        @db.Uuid
+  id                   String               @id @default(uuid()) @db.Uuid
+  prestacaoId          String               @db.Uuid
   numero               String
   credorTipoDoc        TipoDocumento
   credorNumeroDoc      String
   credorNome           String?
   contratoNumero       String?
   descricao            String
-  dataEmissao          DateTime      @db.Date
+  dataEmissao          DateTime             @db.Date
   estadoEmissor        Int?
-  valorBruto           Decimal       @db.Decimal(15, 2)
-  valorEncargos        Decimal       @default(0) @db.Decimal(15, 2) // >=0 e < valorBruto
+  valorBruto           Decimal              @db.Decimal(15, 2)
+  valorEncargos        Decimal              @default(0) @db.Decimal(15, 2) // >=0 e < valorBruto
+  // Opcional: os documentos gravados antes deste campo não têm espécie, e
+  // exigi-la agora obrigaria a reeditar todos eles para salvar qualquer outra
+  // alteração. Não é dado que o TCESP cobre.
+  tipoDocumento        TipoDocumentoFiscal?
   categoriaDespesaTipo Int
-  rateioProveniente    Boolean       @default(false)
-  rateioPercentual     Decimal?      @db.Decimal(5, 2)
+  rateioProveniente    Boolean              @default(false)
+  rateioPercentual     Decimal?             @db.Decimal(5, 2)
 
   criadoPor  String?         @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   prestacao  PrestacaoContas @relation(fields: [prestacaoId], references: [id])
