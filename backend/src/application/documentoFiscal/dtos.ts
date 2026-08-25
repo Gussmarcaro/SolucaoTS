@@ -22,6 +22,7 @@ export interface DocumentoFiscalDTO {
   propostaCategoria?: string | null;
   propostaSubcategoria?: string | null;
   rateioProveniente?: boolean;
+  rateioId?: string | null;
   rateioPercentual?: number | string | null;
 }
 
@@ -44,5 +45,6 @@ export interface DadosDocumentoFiscal {
   propostaCategoria: string | null;
   propostaSubcategoria: string | null;
   rateioProveniente: boolean;
+  rateioId: string | null;
   rateioPercentual: number | null;
 }

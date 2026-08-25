@@ -31,6 +31,7 @@ const selecao = {
   arquivoTamanho: true,
   arquivoEnviadoEm: true,
   rateioProveniente: true,
+  rateioId: true,
   rateioPercentual: true,
 } satisfies Prisma.DocumentoFiscalSelect;
 
@@ -60,6 +61,7 @@ function toDomain(row: Row): DocumentoFiscal {
     arquivoTamanho: row.arquivoTamanho,
     arquivoEnviadoEm: row.arquivoEnviadoEm ? row.arquivoEnviadoEm.toISOString() : null,
     rateioProveniente: row.rateioProveniente,
+    rateioId: row.rateioId,
     rateioPercentual: row.rateioPercentual == null ? null : Number(row.rateioPercentual),
   };
 }

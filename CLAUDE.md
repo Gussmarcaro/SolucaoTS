@@ -351,7 +351,9 @@ Endpoint próprio, `PATCH /compromissos/:id/horario`, que muda **só** o horári
 - **"Outros" não guarda participantes.** O critério ainda não foi definido; quadro que a tela não mostra viraria dado órfão. Em compensação, exige a descrição do critério, para o rateio ficar documentado.
 - Validação **nos dois lados**: a tela avisa antes de enviar, o servidor recusa o que chegue por qualquer outro caminho. `npm run verificar:rateio` (33 checagens, sem banco) e o espelho da conta em `npm test` no frontend.
 - Recurso `CADASTRO_RATEIO`. Excluir exige faixa **Total**; para tirar de uso sem perder histórico, o caminho é **inativar**.
-- **Falta ligar ao documento fiscal** (§12 da especificação): cada documento usará **um** método, o que uma FK única garante por construção.
+- **Ligado ao documento fiscal** (§12): marcar "Proveniente de rateio" passa a escolher **um** método — a chave estrangeira garante que seja um só. Só aparecem os **vigentes na data de emissão**, que é onde o Período Adotado serve.
+- **O percentual não é digitado nem enviado pela tela.** O servidor o recalcula do quadro, para o ajuste daquela prestação, e grava o resultado. Aceitar o número do cliente permitiria gravar 30% num ajuste que o rateio diz ser 10%, e nada acusaria. O valor gravado é **fotografia**: editar o rateio depois não mexe em nota já lançada — a prestação é registro histórico.
+- **Ajuste fora do quadro é recusado**, não gravado com 0%: rateio que não inclui o ajuste não se aplica àquela despesa, e 0% subestimaria o gasto em silêncio.
 
 ## Fiscalização | Monitoramento (Workflow)
 

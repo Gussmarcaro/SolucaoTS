@@ -11,7 +11,9 @@ import type { IPrestacaoRepository } from '@/application/prestacao/IPrestacaoRep
 import type { DadosDocumentoFiscal, DocumentoFiscalDTO } from './dtos';
 import { BusinessError, ConflictError, NotFoundError } from '@/shared/errors';
 import { apenasDigitos, isDocumentoValido } from '@/shared/validators/documento';
-import { parseDataISO } from '@/shared/datas';
+import { parseDataISO, paraDataISO } from '@/shared/datas';
+import type { IRateioRepository } from '@/application/rateio/IRateioRepository';
+import { calcularRateio } from '@/core/rateio/Rateio';
 
 function num(v: unknown): number | null {
   if (v === undefined || v === null || v === '') return null;
@@ -71,7 +73,12 @@ function validar(input: DocumentoFiscalDTO): DadosDocumentoFiscal {
 
   const rateioProveniente = !!input.rateioProveniente;
   const rateioPercentual = rateioProveniente ? num(input.rateioPercentual) : null;
-  if (rateioProveniente && (rateioPercentual == null || rateioPercentual <= 0 || rateioPercentual > 100))
+  const rateioEscolhido = rateioProveniente && !!input.rateioId?.trim();
+  // Com um rateio escolhido, o percentual não vem da tela — `aplicarRateio` o
+  // calcula do quadro. Exigi-lo aqui obrigaria o cliente a mandar um número que
+  // o servidor vai descartar, e um número que ele mande errado passaria a
+  // parecer aceito.
+  if (rateioProveniente && !rateioEscolhido && (rateioPercentual == null || rateioPercentual <= 0 || rateioPercentual > 100))
     throw new BusinessError('Percentual de rateio inválido (0–100).');
 
   return {
@@ -95,6 +102,7 @@ function validar(input: DocumentoFiscalDTO): DadosDocumentoFiscal {
     propostaCategoria: input.propostaCategoria?.trim() || null,
     propostaSubcategoria: input.propostaSubcategoria?.trim() || null,
     rateioProveniente,
+    rateioId: rateioProveniente ? input.rateioId?.trim() || null : null,
     rateioPercentual,
   };
 }
@@ -103,7 +111,52 @@ export class DocumentoFiscalUseCases {
   constructor(
     private readonly repo: IDocumentoFiscalRepository,
     private readonly prestacoes: IPrestacaoRepository,
+    /** Para calcular o percentual do rateio — ver `aplicarRateio`. */
+    private readonly rateios?: IRateioRepository,
   ) {}
+
+  /**
+   * Substitui o percentual pelo que o rateio escolhido determina.
+   *
+   * O percentual **não vem da tela**: vem do rateio, para o ajuste desta
+   * prestação. Aceitar o número do cliente permitiria gravar 30% num ajuste que
+   * o rateio diz ser 10%, e nada acusaria.
+   *
+   * O valor gravado é uma **fotografia**: editar o rateio depois não mexe em
+   * nota já lançada — a prestação é registro histórico.
+   */
+  private async aplicarRateio(prestacaoId: string, dados: DadosDocumentoFiscal) {
+    if (!dados.rateioProveniente || !dados.rateioId) return;
+    if (!this.rateios) return;
+
+    const rateio = await this.rateios.buscarPorId(dados.rateioId);
+    if (!rateio) throw new BusinessError('Rateio não encontrado.');
+    if (!rateio.ativo) throw new BusinessError('Este rateio está inativo.');
+
+    // Vigência: o rateio precisa valer na data de emissão da nota. É para isto
+    // que o Período Adotado do cadastro existe.
+    const emissao = paraDataISO(dados.dataEmissao);
+    if (emissao < rateio.vigenciaInicio || emissao > rateio.vigenciaFim)
+      throw new BusinessError(
+        `O rateio "${rateio.titulo}" vale de ${rateio.vigenciaInicio} a ${rateio.vigenciaFim}, e a nota é de ${emissao}.`,
+      );
+
+    const prestacao = await this.prestacoes.buscarPorId(prestacaoId);
+    if (!prestacao) throw new NotFoundError('Prestação não encontrada.');
+
+    const participante = rateio.participantes.find((p) => p.ajusteId === prestacao.ajusteId);
+    if (!participante)
+      throw new BusinessError(
+        `O ajuste desta prestação não participa do rateio "${rateio.titulo}". ` +
+          'Inclua-o no quadro do rateio ou escolha outro método.',
+      );
+
+    const { linhas } = calcularRateio(
+      rateio.participantes.map((p) => ({ ajusteId: p.ajusteId, base: p.base })),
+    );
+    dados.rateioPercentual =
+      linhas.find((l) => l.ajusteId === prestacao.ajusteId)?.percentualExibido ?? 0;
+  }
 
   private async garantirPrestacao(prestacaoId: string) {
     if (!(await this.prestacoes.buscarPorId(prestacaoId)))
@@ -134,6 +187,7 @@ export class DocumentoFiscalUseCases {
   async criar(prestacaoId: string, input: DocumentoFiscalDTO): Promise<DocumentoFiscal> {
     await this.garantirPrestacao(prestacaoId);
     const dados = validar(input);
+    await this.aplicarRateio(prestacaoId, dados);
     await this.checarDuplicado(prestacaoId, dados);
     return this.repo.criar(prestacaoId, dados);
   }
@@ -141,6 +195,7 @@ export class DocumentoFiscalUseCases {
   async atualizar(prestacaoId: string, id: string, input: DocumentoFiscalDTO): Promise<DocumentoFiscal> {
     await this.garantirDocNaPrestacao(prestacaoId, id);
     const dados = validar(input);
+    await this.aplicarRateio(prestacaoId, dados);
     await this.checarDuplicado(prestacaoId, dados, id);
     return this.repo.atualizar(id, dados);
   }

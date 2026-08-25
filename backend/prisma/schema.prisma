@@ -1256,12 +1256,20 @@ model DocumentoFiscal {
   arquivoNome       String?
   arquivoTamanho    Int?
   arquivoEnviadoEm  DateTime?
+  // Metodo de rateio aplicado a esta nota. UM so, por construcao: uma chave
+  // estrangeira nao permite dois (o §12 da especificacao sai de graca).
+  //
+  // `rateioPercentual` continua gravado e passa a ser o percentual APLICADO —
+  // fotografia do calculo no momento do lancamento. Editar o rateio meses
+  // depois nao pode mexer numa nota ja transmitida.
+  rateioId          String?   @db.Uuid
   rateioProveniente Boolean   @default(false)
   rateioPercentual  Decimal?  @db.Decimal(5, 2)
 
   criadoPor  String?         @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   prestacao  PrestacaoContas @relation(fields: [prestacaoId], references: [id])
   contrato   Contrato?       @relation(fields: [contratoId], references: [id])
+  rateio     Rateio?         @relation(fields: [rateioId], references: [id])
   pagamentos Pagamento[]
   glosas     Glosa[]
 
@@ -1769,8 +1777,9 @@ model Rateio {
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
-  cliente       Cliente?             @relation(fields: [clienteId], references: [id])
-  participantes RateioParticipante[]
+  cliente           Cliente?             @relation(fields: [clienteId], references: [id])
+  participantes     RateioParticipante[]
+  documentosFiscais DocumentoFiscal[]
 
   @@index([clienteId])
   @@index([clienteId, vigenciaInicio, vigenciaFim])

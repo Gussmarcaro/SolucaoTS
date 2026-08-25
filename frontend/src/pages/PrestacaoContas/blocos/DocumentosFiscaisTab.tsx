@@ -39,6 +39,8 @@ import {
 import { listarFornecedores } from '@/services/fornecedores.service';
 import { listarPlano } from '@/services/ajusteCsv.service';
 import { contratosApi } from '@/services/contratosPrestacao.service';
+import { listarRateios } from '@/services/rateios.service';
+import { calcularRateio, percentualBr, definicaoDoMetodo, type Rateio } from '@/types/rateio';
 import type { ContratoPrestacao } from '@/types/prestacaoBlocos11';
 import type { Fornecedor } from '@/types/fornecedor';
 import { ConfirmarExclusao } from '@/pages/Ajustes/tabs/TermosAditivosTab';
@@ -279,6 +281,46 @@ function DocForm({
   const [estadoEmissor, setEstadoEmissor] = useState(doc?.estadoEmissor != null ? String(doc.estadoEmissor) : '');
   const [rateio, setRateio] = useState(doc?.rateioProveniente ?? false);
   const [rateioPct, setRateioPct] = useState(doc?.rateioPercentual != null ? String(doc.rateioPercentual) : '');
+  /**
+   * Métodos de rateio vigentes na data de emissão da nota.
+   *
+   * É aqui que o Período Adotado do cadastro finalmente serve: um rateio de
+   * 2026 não deve ser oferecido a uma nota de 2025.
+   */
+  const [rateios, setRateios] = useState<Rateio[]>([]);
+  const [rateioId, setRateioId] = useState(doc?.rateioId ?? '');
+
+  useEffect(() => {
+    if (!rateio || !dataEmissao) return;
+    let vivo = true;
+    listarRateios({ filtros: { ativo: true, vigenteEm: dataEmissao }, page: 1, pageSize: 100 })
+      .then((r) => vivo && setRateios(r.data))
+      .catch(() => undefined);
+    return () => {
+      vivo = false;
+    };
+  }, [rateio, dataEmissao]);
+
+  const rateioEscolhido = rateios.find((r) => r.id === rateioId) ?? null;
+
+  /**
+   * O percentual que este ajuste tem no rateio escolhido.
+   *
+   * Só para mostrar: quem grava é o servidor, que recalcula do quadro. Se a
+   * tela mandasse o número, um valor errado passaria a parecer aceito.
+   */
+  const fatiaDoAjuste = (() => {
+    if (!rateioEscolhido) return null;
+    const p = rateioEscolhido.participantes.find((x) => x.ajusteId === ajusteId);
+    if (!p) return { participa: false, percentual: 0 };
+    const { linhas } = calcularRateio(
+      rateioEscolhido.participantes.map((x) => ({ ajusteId: x.ajusteId, base: x.base })),
+    );
+    return {
+      participa: true,
+      percentual: linhas.find((l) => l.ajusteId === ajusteId)?.percentualExibido ?? 0,
+    };
+  })();
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
@@ -413,7 +455,10 @@ function DocForm({
       propostaCategoria: proposta ? proposta.split('|')[0] : null,
       propostaSubcategoria: proposta ? proposta.split('|').slice(1).join('|') || null : null,
       rateioProveniente: rateio,
-      rateioPercentual: pct,
+      rateioId: rateio ? rateioId || null : null,
+      // Com um método escolhido, o percentual vem do servidor — mandar o daqui
+      // seria oferecer um número que ele descarta.
+      rateioPercentual: rateio && rateioId ? null : pct,
     };
 
     setSalvando(true);
@@ -610,7 +655,26 @@ function DocForm({
               Proveniente de rateio
             </label>
 
-            {rateio && (
+            {/* Com métodos cadastrados e vigentes, escolhe-se um e o percentual
+                vem dele — o cadastro do rateio existe para não redigitar isto.
+                Sem métodos vigentes, segue-se digitando, como antes. */}
+            {rateio && rateios.length > 0 && (
+              <div className="w-full sm:w-80">
+                <Select
+                  label="Método de rateio *"
+                  name="rateioId"
+                  value={rateioId}
+                  onChange={(e) => setRateioId(e.target.value)}
+                  placeholder="Selecione o método..."
+                  options={rateios.map((r) => ({
+                    value: r.id,
+                    label: `${r.titulo} — ${definicaoDoMetodo(r.metodo)?.rotulo ?? r.metodo}`,
+                  }))}
+                />
+              </div>
+            )}
+
+            {rateio && rateios.length === 0 && (
               <div className="w-32">
                 <Input label="Percentual (%)" name="rateioPct" value={rateioPct} onChange={(e) => setRateioPct(e.target.value.replace(/[^\d,]/g, ''))} placeholder="ex.: 50" inputMode="numeric" />
               </div>
@@ -618,6 +682,32 @@ function DocForm({
           </div>
         </div>
       </div>
+
+      {/* O resultado do método, antes de salvar. Quem grava é o servidor, que
+          recalcula do quadro — mostrar aqui é para conferir, não para enviar. */}
+      {rateio && rateioEscolhido && fatiaDoAjuste && (
+        fatiaDoAjuste.participa ? (
+          <p className="-mt-2 text-xs text-ink-500 dark:text-ink-400">
+            Este ajuste representa{' '}
+            <strong className="text-ink-800 dark:text-ink-100">
+              {percentualBr(fatiaDoAjuste.percentual)}
+            </strong>{' '}
+            no rateio escolhido — é o percentual que será gravado nesta nota.
+          </p>
+        ) : (
+          <p className="-mt-2 text-xs text-red-600 dark:text-red-400">
+            O ajuste desta prestação não participa deste rateio. Inclua-o no quadro do rateio ou
+            escolha outro método.
+          </p>
+        )
+      )}
+
+      {rateio && rateios.length === 0 && (
+        <p className="-mt-2 text-xs text-amber-600 dark:text-amber-400">
+          Nenhum método de rateio vigente na data de emissão. Cadastre um em Cadastro →
+          Financeiro → Rateio Administrativo para o percentual ser calculado.
+        </p>
+      )}
 
       <AnexoDocumento prestacaoId={prestacaoId} doc={doc} />
 

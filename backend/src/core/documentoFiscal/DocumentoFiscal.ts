@@ -69,5 +69,7 @@ export interface DocumentoFiscal {
   arquivoTamanho: number | null;
   arquivoEnviadoEm: string | null;
   rateioProveniente: boolean;
+  /** Método de rateio aplicado — um só, garantido pela chave estrangeira. */
+  rateioId: string | null;
   rateioPercentual: number | null;
 }
