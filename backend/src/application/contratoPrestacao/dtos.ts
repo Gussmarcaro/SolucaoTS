@@ -16,6 +16,9 @@ export interface ContratoDTO {
   criterioSelecaoOutro?: string | null;
   artigoRegulamentoCompras?: string | null;
   valorMontante: number | string;
+  categoriaDespesaTipo?: number | string | null;
+  propostaCategoria?: string | null;
+  propostaSubcategoria?: string | null;
   valorTipo?: number | string | null;
 }
 
@@ -36,5 +39,8 @@ export interface DadosContrato {
   criterioSelecaoOutro: string | null;
   artigoRegulamentoCompras: string | null;
   valorMontante: number;
+  categoriaDespesaTipo: number | null;
+  propostaCategoria: string | null;
+  propostaSubcategoria: string | null;
   valorTipo: number | null;
 }

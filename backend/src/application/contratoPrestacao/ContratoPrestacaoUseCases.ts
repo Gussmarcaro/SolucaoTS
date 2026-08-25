@@ -88,6 +88,14 @@ function validar(input: ContratoDTO): DadosContrato {
     criterioSelecaoOutro,
     artigoRegulamentoCompras: input.artigoRegulamentoCompras?.trim() || null,
     valorMontante,
+    // Classificação da despesa: opcional. É conveniência para o documento
+    // fiscal herdar, não exigência do TCESP — o bloco de contratos não a tem.
+    categoriaDespesaTipo:
+      input.categoriaDespesaTipo === undefined || input.categoriaDespesaTipo === null || input.categoriaDespesaTipo === ''
+        ? null
+        : Number(input.categoriaDespesaTipo),
+    propostaCategoria: input.propostaCategoria?.trim() || null,
+    propostaSubcategoria: input.propostaSubcategoria?.trim() || null,
     valorTipo,
   };
 }

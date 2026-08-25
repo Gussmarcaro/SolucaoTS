@@ -10,7 +10,10 @@ import {
   NATUREZA_CONTRATACAO,
   NATUREZA_CONTRATACAO_OUTROS,
   VALOR_TIPO,
+  CATEGORIA_DESPESA,
 } from '@/lib/dominiosFaseV';
+import { Combobox } from '@/components/ui/Combobox';
+import { listarPlano } from '@/services/ajusteCsv.service';
 import { Modal } from '@/components/ui/Modal';
 import { GradeSimples } from '@/components/ui/GradeSimples';
 import type { ColunaDef } from '@/hooks/useResizableColumns';
@@ -43,7 +46,13 @@ const TIPO_VIGENCIA = [
   { value: 'INDETERMINADA', label: 'Indeterminada' },
 ];
 
-export function ContratosTab({ prestacaoId }: { prestacaoId: string }) {
+export function ContratosTab({
+  prestacaoId,
+  ajusteId,
+}: {
+  prestacaoId: string;
+  ajusteId: string;
+}) {
   const [lista, setLista] = useState<ContratoPrestacao[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -117,7 +126,7 @@ export function ContratosTab({ prestacaoId }: { prestacaoId: string }) {
       />
 
       <Modal open={modal.tipo === 'form'} onClose={() => setModal({ tipo: 'fechado' })} title={modal.tipo === 'form' && modal.item ? 'Editar Contrato' : 'Novo Contrato'} size="2xl">
-        {modal.tipo === 'form' && <ContratoForm prestacaoId={prestacaoId} item={modal.item} onSuccess={recarregar} onCancel={() => setModal({ tipo: 'fechado' })} />}
+        {modal.tipo === 'form' && <ContratoForm prestacaoId={prestacaoId} ajusteId={ajusteId} item={modal.item} onSuccess={recarregar} onCancel={() => setModal({ tipo: 'fechado' })} />}
       </Modal>
       <ConfirmarExclusao
         aberto={modal.tipo === 'excluir'}
@@ -129,7 +138,27 @@ export function ContratosTab({ prestacaoId }: { prestacaoId: string }) {
   );
 }
 
-function ContratoForm({ prestacaoId, item, onSuccess, onCancel }: { prestacaoId: string; item: ContratoPrestacao | null; onSuccess: () => void; onCancel: () => void }) {
+function ContratoForm({ prestacaoId, ajusteId, item, onSuccess, onCancel }: { prestacaoId: string; ajusteId: string; item: ContratoPrestacao | null; onSuccess: () => void; onCancel: () => void }) {
+  /** Rubricas do Plano de Aplicação do ajuste — as mesmas do cadastro. */
+  const [rubricas, setRubricas] = useState<{ categoria: string; subcategoria: string }[]>([]);
+
+  useEffect(() => {
+    if (!ajusteId) return;
+    let vivo = true;
+    listarPlano(ajusteId)
+      .then((itens) => {
+        if (!vivo) return;
+        const vistas = new Map<string, { categoria: string; subcategoria: string }>();
+        for (const i of itens)
+          vistas.set(`${i.categoria}|${i.subcategoria}`, { categoria: i.categoria, subcategoria: i.subcategoria });
+        setRubricas([...vistas.values()].sort((a, b) => `${a.categoria}${a.subcategoria}`.localeCompare(`${b.categoria}${b.subcategoria}`)));
+      })
+      .catch(() => undefined);
+    return () => {
+      vivo = false;
+    };
+  }, [ajusteId]);
+
   const [numero, setNumero] = useState(item?.numero ?? '');
   const [credorTipoDoc, setCredorTipoDoc] = useState<CredorTipoDoc>(item?.credorTipoDoc ?? 'CNPJ');
   const [credorNumeroDoc, setCredorNumeroDoc] = useState(item ? mascaraCpfCnpj(item.credorNumeroDoc) : '');
@@ -146,6 +175,10 @@ function ContratoForm({ prestacaoId, item, onSuccess, onCancel }: { prestacaoId:
   const [artigo, setArtigo] = useState(item?.artigoRegulamentoCompras ?? '');
   const [valor, setValor] = useState(item ? numeroParaMascaraMoeda(item.valorMontante) : '');
   const [valorTipo, setValorTipo] = useState(item?.valorTipo != null ? String(item.valorTipo) : '');
+  const [categoria, setCategoria] = useState(item?.categoriaDespesaTipo != null ? String(item.categoriaDespesaTipo) : '');
+  const [proposta, setProposta] = useState(
+    item?.propostaCategoria ? `${item.propostaCategoria}|${item.propostaSubcategoria ?? ''}` : '',
+  );
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
@@ -177,6 +210,9 @@ function ContratoForm({ prestacaoId, item, onSuccess, onCancel }: { prestacaoId:
       criterioSelecaoOutro: Number(criterio) === 4 ? criterioOutro.trim() || null : null,
       artigoRegulamentoCompras: artigo.trim() || null,
       valorMontante: moedaParaNumero(valor),
+      categoriaDespesaTipo: categoria ? Number(apenasDigitos(categoria)) : null,
+      propostaCategoria: proposta ? proposta.split('|')[0] : null,
+      propostaSubcategoria: proposta ? proposta.split('|').slice(1).join('|') || null : null,
       valorTipo: valorTipo ? Number(valorTipo) : null,
     };
     setSalvando(true);
@@ -225,6 +261,39 @@ function ContratoForm({ prestacaoId, item, onSuccess, onCancel }: { prestacaoId:
         <Input label="Valor do contrato (R$) *" name="valor" value={valor} onChange={(e) => setValor(mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
         <SelectDominio label="Tipo de valor" name="valorTipo" value={apenasDigitos(valorTipo)} onChange={setValorTipo} options={VALOR_TIPO} />
       </div>
+
+      {/* Classificação da despesa contratada. Preenchida aqui uma vez, o
+          documento fiscal a herda ao apontar para este contrato — em vez de
+          reclassificar nota a nota, com o risco de duas divergirem. */}
+      <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700">
+        <legend className="px-1 text-[13px] font-normal text-ink-600 dark:text-ink-300">
+          Classificação da despesa{' '}
+          <span className="text-ink-400">— herdada pelos documentos fiscais deste contrato</span>
+        </legend>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <SelectDominio
+            label="Categoria de Despesa AUDESP"
+            name="categoria"
+            value={apenasDigitos(categoria)}
+            onChange={setCategoria}
+            options={CATEGORIA_DESPESA}
+          />
+          <Combobox
+            label="Categoria da Despesa PROPOSTA"
+            name="proposta"
+            value={proposta}
+            onChange={setProposta}
+            options={rubricas.map((r) => ({
+              value: `${r.categoria}|${r.subcategoria}`,
+              label: r.subcategoria,
+              sub: r.categoria,
+            }))}
+            placeholder={rubricas.length ? 'Digite para localizar...' : 'Plano de Aplicação sem itens'}
+            disabled={!rubricas.length && !proposta}
+            hint="Rubricas do Plano de Aplicação deste ajuste."
+          />
+        </div>
+      </fieldset>
 
       <div className="flex items-center justify-end gap-2 pt-1">
         <Button type="button" variant="secondary" onClick={onCancel} disabled={salvando}>Cancelar</Button>

@@ -38,6 +38,8 @@ import {
 } from '@/types/prestacaoBlocos';
 import { listarFornecedores } from '@/services/fornecedores.service';
 import { listarPlano } from '@/services/ajusteCsv.service';
+import { contratosApi } from '@/services/contratosPrestacao.service';
+import type { ContratoPrestacao } from '@/types/prestacaoBlocos11';
 import type { Fornecedor } from '@/types/fornecedor';
 import { ConfirmarExclusao } from '@/pages/Ajustes/tabs/TermosAditivosTab';
 
@@ -228,6 +230,52 @@ function DocForm({
   const [encargos, setEncargos] = useState(doc ? numeroParaMascaraMoeda(doc.valorEncargos) : '');
   const [retencao, setRetencao] = useState<TipoRetencao | ''>(doc?.retencaoTipo ?? '');
   const [contratoNumero, setContratoNumero] = useState(doc?.contratoNumero ?? '');
+  /**
+   * Contratos desta prestação. Apontar para um deles é o que faz a nota herdar
+   * as categorias, controlar o saldo e — no envio — sair com
+   * `identificacao_contrato` completo, que exige número, data de assinatura e
+   * credor juntos.
+   */
+  const [contratos, setContratos] = useState<ContratoPrestacao[]>([]);
+  const [contratoId, setContratoId] = useState(doc?.contratoId ?? '');
+  const [docsDaPrestacao, setDocsDaPrestacao] = useState<DocumentoFiscal[]>([]);
+
+  useEffect(() => {
+    let vivo = true;
+    contratosApi.listar(prestacaoId).then((r) => vivo && setContratos(r)).catch(() => undefined);
+    listarDocumentosFiscais(prestacaoId).then((r) => vivo && setDocsDaPrestacao(r)).catch(() => undefined);
+    return () => {
+      vivo = false;
+    };
+  }, [prestacaoId]);
+
+  const contrato = contratos.find((c) => c.id === contratoId) ?? null;
+
+  /**
+   * Saldo do contrato: o montante menos as notas já lançadas nele.
+   *
+   * A própria nota em edição não conta contra si mesma — senão editar a
+   * descrição faria o saldo aparecer descontado dela duas vezes.
+   */
+  const saldo = contrato
+    ? (() => {
+        const usado = docsDaPrestacao
+          .filter((d) => d.contratoId === contrato.id && d.id !== doc?.id)
+          .reduce((s, d) => s + d.valorBruto, 0);
+        return { montante: contrato.valorMontante, usado, resta: contrato.valorMontante - usado };
+      })()
+    : null;
+
+  /** Escolher o contrato herda a classificação e o número. */
+  function escolherContrato(id: string) {
+    setContratoId(id);
+    const c = contratos.find((x) => x.id === id);
+    if (!c) return;
+    setContratoNumero(c.numero);
+    if (c.categoriaDespesaTipo != null) setCategoria(String(c.categoriaDespesaTipo));
+    if (c.propostaCategoria)
+      setProposta(`${c.propostaCategoria}|${c.propostaSubcategoria ?? ''}`);
+  }
   const [estadoEmissor, setEstadoEmissor] = useState(doc?.estadoEmissor != null ? String(doc.estadoEmissor) : '');
   const [rateio, setRateio] = useState(doc?.rateioProveniente ?? false);
   const [rateioPct, setRateioPct] = useState(doc?.rateioPercentual != null ? String(doc.rateioPercentual) : '');
@@ -359,6 +407,7 @@ function DocForm({
       valorBruto: vBruto,
       valorEncargos: vEnc,
       retencaoTipo: retencao || null,
+      contratoId: contratoId || null,
       tipoDocumento: tipoDoc || null,
       categoriaDespesaTipo: Number(apenasDigitos(categoria)),
       propostaCategoria: proposta ? proposta.split('|')[0] : null,
@@ -408,9 +457,56 @@ function DocForm({
             hint="Vem de Cadastro → Fornecedores / Prestadores (CPF e CNPJ)."
           />
         </div>
-        {/* O nº do contrato identifica o credor, não a despesa: fica junto do
-            bloco do credor, e não lá embaixo entre categoria e UF. */}
-        <Input label="Nº do Contrato (opcional)" name="contratoNumero" value={contratoNumero} onChange={(e) => setContratoNumero(e.target.value)} />
+        {/* Contrato desta prestação. Escolhê-lo herda a classificação da
+            despesa, mostra o saldo e faz a nota sair com identificacao_contrato
+            no envio — que exige número, data de assinatura e credor juntos.
+
+            Sem contratos cadastrados, segue-se digitando o número solto, que é
+            o que existia antes. */}
+        {contratos.length > 0 ? (
+          <Combobox
+            label="Contrato (opcional)"
+            name="contratoId"
+            value={contratoId}
+            onChange={escolherContrato}
+            options={contratos.map((c) => ({
+              value: c.id,
+              label: `nº ${c.numero}`,
+              sub: `${c.credorNome || c.credorNumeroDoc} · ${formatarMoeda(c.valorMontante)}`,
+            }))}
+            placeholder="Nenhum — despesa fora de contrato"
+          />
+        ) : (
+          <Input label="Nº do Contrato (opcional)" name="contratoNumero" value={contratoNumero} onChange={(e) => setContratoNumero(e.target.value)} />
+        )}
+        {saldo && (
+          <div className="sm:col-span-2">
+            <div className="flex flex-wrap divide-x divide-ink-100 rounded-xl border border-ink-200 bg-ink-50/60 dark:divide-ink-800 dark:border-ink-700 dark:bg-ink-800/30">
+              {[
+                ['Montante do contrato', formatarMoeda(saldo.montante), ''],
+                ['Já lançado em notas', formatarMoeda(saldo.usado), ''],
+                [
+                  'Saldo do contrato',
+                  formatarMoeda(saldo.resta),
+                  saldo.resta < 0 ? 'text-red-600 dark:text-red-400' : 'text-ink-800 dark:text-ink-100',
+                ],
+              ].map(([rotulo, valor, cor]) => (
+                <div key={rotulo} className="min-w-0 flex-1 px-3 py-2">
+                  <p className="truncate text-[11px] uppercase tracking-wide text-ink-400">{rotulo}</p>
+                  <p className={`mt-0.5 truncate text-sm font-semibold tabular-nums ${cor || 'text-ink-600 dark:text-ink-300'}`}>
+                    {valor}
+                  </p>
+                </div>
+              ))}
+            </div>
+            {saldo.resta < 0 && (
+              <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                As notas deste contrato já somam mais que o montante contratado.
+              </p>
+            )}
+          </div>
+        )}
+
         <div className="sm:col-span-2">
           <Input label="Descrição *" name="descricao" value={descricao} onChange={(e) => setDescricao(e.target.value)} />
         </div>

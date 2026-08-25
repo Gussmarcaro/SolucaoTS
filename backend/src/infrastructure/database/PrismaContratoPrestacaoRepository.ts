@@ -23,6 +23,9 @@ const selecao = {
   criterioSelecaoOutro: true,
   artigoRegulamentoCompras: true,
   valorMontante: true,
+  categoriaDespesaTipo: true,
+  propostaCategoria: true,
+  propostaSubcategoria: true,
   valorTipo: true,
 } satisfies Prisma.ContratoSelect;
 
@@ -47,6 +50,9 @@ function toDomain(row: Row): ContratoPrestacao {
     criterioSelecaoOutro: row.criterioSelecaoOutro,
     artigoRegulamentoCompras: row.artigoRegulamentoCompras,
     valorMontante: Number(row.valorMontante),
+    categoriaDespesaTipo: row.categoriaDespesaTipo,
+    propostaCategoria: row.propostaCategoria,
+    propostaSubcategoria: row.propostaSubcategoria,
     valorTipo: row.valorTipo,
   };
 }

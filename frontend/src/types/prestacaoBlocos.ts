@@ -49,6 +49,8 @@ export interface DocumentoFiscal {
   credorNumeroDoc: string;
   credorNome: string | null;
   contratoNumero: string | null;
+  /** Contrato da prestação a que a nota se refere — herda as categorias. */
+  contratoId: string | null;
   descricao: string;
   dataEmissao: string;
   estadoEmissor: number | null;
@@ -82,6 +84,7 @@ export interface DocumentoFiscalPayload {
   credorNumeroDoc: string;
   credorNome?: string | null;
   contratoNumero?: string | null;
+  contratoId?: string | null;
   descricao: string;
   dataEmissao: string;
   estadoEmissor?: number | null;

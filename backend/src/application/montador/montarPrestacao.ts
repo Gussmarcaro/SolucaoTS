@@ -92,6 +92,18 @@ export function montarPrestacao(d: DadosMontagem, inexistentes?: CodigosInexiste
     limpo({
       numero: f.numero,
       credor: limpo({ documento_tipo: DOC_TIPO[f.credorTipoDoc], documento_numero: f.credorNumeroDoc, nome: f.credorNome }),
+      // Só sai quando a nota aponta para um contrato: o schema exige os três
+      // campos juntos (maxProperties 3), então metade do objeto seria recusada.
+      identificacao_contrato: f.contrato
+        ? {
+            numero: f.contrato.numero,
+            data_assinatura: f.contrato.dataAssinatura,
+            identificacao_credor: {
+              documento_tipo: DOC_TIPO[f.contrato.credorTipoDoc],
+              documento_numero: f.contrato.credorNumeroDoc,
+            },
+          }
+        : null,
       descricao: f.descricao,
       data_emissao: f.dataEmissao,
       estado_emissor: f.estadoEmissor,

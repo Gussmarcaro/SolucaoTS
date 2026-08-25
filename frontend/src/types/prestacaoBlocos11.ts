@@ -19,6 +19,13 @@ export interface ContratoPrestacao {
   criterioSelecaoOutro: string | null;
   artigoRegulamentoCompras: string | null;
   valorMontante: number;
+  /**
+   * Classificação da despesa contratada. O documento fiscal a herda ao apontar
+   * para este contrato — em vez de reclassificar nota a nota.
+   */
+  categoriaDespesaTipo: number | null;
+  propostaCategoria: string | null;
+  propostaSubcategoria: string | null;
   valorTipo: number | null;
 }
 
@@ -80,5 +87,8 @@ export interface ContratoPayload {
   criterioSelecaoOutro?: string | null;
   artigoRegulamentoCompras?: string | null;
   valorMontante: number;
+  categoriaDespesaTipo?: number | null;
+  propostaCategoria?: string | null;
+  propostaSubcategoria?: string | null;
   valorTipo?: number | null;
 }

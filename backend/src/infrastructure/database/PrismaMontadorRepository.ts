@@ -37,7 +37,19 @@ export class PrismaMontadorRepository implements IMontadorRepository {
       await Promise.all([
         prisma.relacaoEmpregado.findMany({ where: { prestacaoId } }),
         prisma.bemPrestacao.findMany({ where: { prestacaoId } }),
-        prisma.documentoFiscal.findMany({ where: { prestacaoId } }),
+        prisma.documentoFiscal.findMany({
+          where: { prestacaoId },
+          include: {
+            contrato: {
+              select: {
+                numero: true,
+                dataAssinatura: true,
+                credorTipoDoc: true,
+                credorNumeroDoc: true,
+              },
+            },
+          },
+        }),
         prisma.pagamento.findMany({ where: { prestacaoId }, include: { documentoFiscal: { select: { numero: true, credorTipoDoc: true, credorNumeroDoc: true } } } }),
         prisma.receita.findMany({ where: { prestacaoId } }),
         prisma.disponibilidade.findMany({ where: { prestacaoId } }),
@@ -109,6 +121,14 @@ export class PrismaMontadorRepository implements IMontadorRepository {
         valorBruto: Number(f.valorBruto),
         valorEncargos: Number(f.valorEncargos),
         categoriaDespesaTipo: f.categoriaDespesaTipo,
+        contrato: f.contrato
+          ? {
+              numero: f.contrato.numero,
+              dataAssinatura: paraDataISO(f.contrato.dataAssinatura),
+              credorTipoDoc: f.contrato.credorTipoDoc,
+              credorNumeroDoc: f.contrato.credorNumeroDoc,
+            }
+          : null,
         rateioProveniente: f.rateioProveniente,
         rateioPercentual: n(f.rateioPercentual),
       })),

@@ -331,7 +331,7 @@ export function PrestacaoDetalhe() {
           {blocoAtivo === 'empregados' ? (
             <EmpregadosTab prestacaoId={prestacao.id} />
           ) : blocoAtivo === 'contratos' ? (
-            <ContratosTab prestacaoId={prestacao.id} />
+            <ContratosTab prestacaoId={prestacao.id} ajusteId={prestacao.ajusteId} />
           ) : blocoAtivo === 'ajustesSaldo' ? (
             <AjustesSaldoTab prestacaoId={prestacao.id} />
           ) : blocoAtivo === 'glosas' ? (

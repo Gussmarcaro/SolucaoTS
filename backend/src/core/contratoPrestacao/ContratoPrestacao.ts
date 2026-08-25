@@ -17,5 +17,9 @@ export interface ContratoPrestacao {
   criterioSelecaoOutro: string | null; // obrigatório se 4 (Outros)
   artigoRegulamentoCompras: string | null; // obrigatório p/ CG e TP
   valorMontante: number;
+  /** Classificação da despesa contratada — herdada pelos documentos fiscais. */
+  categoriaDespesaTipo: number | null;
+  propostaCategoria: string | null;
+  propostaSubcategoria: string | null;
   valorTipo: number | null;
 }

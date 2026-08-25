@@ -41,6 +41,16 @@ export interface DadosMontagem {
     categoriaDespesaTipo: number;
     rateioProveniente: boolean;
     rateioPercentual: number | null;
+    /**
+     * Contrato a que a nota se refere. O schema exige número, data de
+     * assinatura e credor **juntos** — por isso não bastava o número solto.
+     */
+    contrato: {
+      numero: string;
+      dataAssinatura: string;
+      credorTipoDoc: string;
+      credorNumeroDoc: string;
+    } | null;
   }>;
 
   pagamentos: Array<{

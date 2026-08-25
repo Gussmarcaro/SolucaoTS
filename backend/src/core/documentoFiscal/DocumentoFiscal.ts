@@ -43,6 +43,8 @@ export interface DocumentoFiscal {
   credorNumeroDoc: string;
   credorNome: string | null;
   contratoNumero: string | null;
+  /** Contrato da prestação a que a nota se refere — herda as categorias. */
+  contratoId: string | null;
   descricao: string;
   dataEmissao: string; // 'YYYY-MM-DD'
   estadoEmissor: number | null;

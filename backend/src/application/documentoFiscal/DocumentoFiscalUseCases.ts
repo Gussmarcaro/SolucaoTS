@@ -80,6 +80,7 @@ function validar(input: DocumentoFiscalDTO): DadosDocumentoFiscal {
     credorNumeroDoc,
     credorNome,
     contratoNumero: input.contratoNumero?.trim() || null,
+    contratoId: input.contratoId?.trim() || null,
     descricao,
     dataEmissao,
     estadoEmissor: num(input.estadoEmissor),

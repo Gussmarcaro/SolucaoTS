@@ -46,7 +46,7 @@ function dados(tipoAjuste: string): DadosMontagem {
       { categoria: 'IMOVEL_BAIXADO', numeroPatrimonio: null, descricao: 'Depósito', data: '2025-02-06', valor: null },
     ],
     documentosFiscais: [
-      { numero: '0987654321', credorTipoDoc: 'CNPJ', credorNumeroDoc: '00000000000191', credorNome: 'Fornecedor SA', descricao: 'Serviços', dataEmissao: '2025-03-01', estadoEmissor: 26, valorBruto: 1000, valorEncargos: 100, categoriaDespesaTipo: 8, rateioProveniente: true, rateioPercentual: 50 },
+      { numero: '0987654321', credorTipoDoc: 'CNPJ', credorNumeroDoc: '00000000000191', credorNome: 'Fornecedor SA', descricao: 'Serviços', dataEmissao: '2025-03-01', estadoEmissor: 26, valorBruto: 1000, valorEncargos: 100, categoriaDespesaTipo: 8, rateioProveniente: true, rateioPercentual: 50, contrato: { numero: 'CT-2025/01', dataAssinatura: '2025-01-05', credorTipoDoc: 'CNPJ', credorNumeroDoc: '00000000000191' } },
     ],
     pagamentos: [
       { folha: false, docNumero: '0987654321', docCredorTipo: 'CNPJ', docCredorNumero: '00000000000191', dataPagamento: '2025-03-15', valor: 900, fonteRecursoTipo: 1, meioPagamento: 'BANCO', banco: 1, agencia: 1234, contaCorrente: '5678X', numeroTransacao: '001ABC' },

@@ -1193,9 +1193,16 @@ model Contrato {
   artigoRegulamentoCompras String?
   valorMontante            Decimal       @db.Decimal(15, 2)
   valorTipo                Int?
+  // Classificacao da despesa contratada. Preenchida uma vez aqui, o documento
+  // fiscal a herda ao apontar para este contrato — em vez de reclassificar
+  // nota a nota, com o risco de duas notas do mesmo contrato divergirem.
+  categoriaDespesaTipo     Int?
+  propostaCategoria        String?
+  propostaSubcategoria     String?
 
-  criadoPor String?         @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
-  prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id])
+  criadoPor         String?           @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
+  prestacao         PrestacaoContas   @relation(fields: [prestacaoId], references: [id])
+  documentosFiscais DocumentoFiscal[]
 
   @@unique([prestacaoId, numero, dataAssinatura, credorTipoDoc, credorNumeroDoc])
 }
@@ -1208,6 +1215,14 @@ model DocumentoFiscal {
   credorNumeroDoc      String
   credorNome           String?
   contratoNumero       String?
+  // Contrato da prestação a que esta nota se refere.
+  //
+  // É o que permite herdar as categorias e controlar o saldo do contrato. Também
+  // é o que torna possível emitir `identificacao_contrato` no envio: o schema
+  // exige número, data de assinatura e credor juntos, e o número solto do campo
+  // `contratoNumero` nunca deu para montar o objeto — por isso ele nunca foi
+  // transmitido.
+  contratoId           String?              @db.Uuid
   descricao            String
   dataEmissao          DateTime             @db.Date
   estadoEmissor        Int?
@@ -1246,6 +1261,7 @@ model DocumentoFiscal {
 
   criadoPor  String?         @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   prestacao  PrestacaoContas @relation(fields: [prestacaoId], references: [id])
+  contrato   Contrato?       @relation(fields: [contratoId], references: [id])
   pagamentos Pagamento[]
   glosas     Glosa[]
 
