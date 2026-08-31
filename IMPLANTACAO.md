@@ -139,12 +139,15 @@ armadilha.
 
 ```bash
 su - solucao
-git clone SEU_REPOSITORIO /home/solucao/app
+git clone https://github.com/Gussmarcaro/SolucaoTS.git /home/solucao/app
 cd /home/solucao/app
 ```
 
-Se o repositório for privado, use uma **deploy key** (chave SSH só de leitura,
-gerada com `ssh-keygen` e cadastrada no repositório) em vez da sua senha.
+O repositório é público, então o clone não pede credencial. **Se um dia ele
+virar privado**, o caminho é uma *deploy key*: gere uma chave no servidor com
+`ssh-keygen`, cadastre a pública em Settings → Deploy keys do repositório, e
+troque a URL do clone pela forma SSH (`git@github.com:Gussmarcaro/SolucaoTS.git`).
+Chave de leitura só para o servidor é melhor que a sua senha pessoal ali dentro.
 
 ---
 
