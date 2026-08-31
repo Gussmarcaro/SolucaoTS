@@ -3,6 +3,9 @@
 Roteiro para pôr a Solução TS no ar num VPS Ubuntu, do zero. Tudo numa máquina
 só: PostgreSQL, a API Node e o nginx servindo o frontend.
 
+Escrito sobre **Ubuntu 22.04**, que é o que a HostGator entrega. Nele o
+`apt install postgresql` traz a versão 14, folgada para o que o Prisma usa.
+
 **Por que tudo junto:** o frontend fica no mesmo domínio da API, então o
 navegador chama `/api` na própria origem. Sem CORS, sem segundo deploy, sem
 domínio dividido. É a razão de o `VITE_API_URL` poder ficar no padrão `/api`.
@@ -27,7 +30,9 @@ Ao longo do roteiro, troque `app.seudominio.com.br` pelo seu domínio real.
 ## 1. Acesso e primeiras defesas
 
 ```bash
-ssh root@SEU_IP
+# A HostGator entrega o SSH numa porta diferente da padrão — confira a sua
+# no painel, em "Acesso SSH". Costuma ser 22022.
+ssh -p 22022 root@SEU_IP
 ```
 
 Atualize e crie um usuário sem privilégios para a aplicação. **A API não roda
@@ -40,22 +45,35 @@ apt install -y ufw fail2ban git curl
 
 adduser --disabled-password --gecos "" solucao
 usermod -aG sudo solucao
-mkdir -p /home/solucao/.ssh
-cp ~/.ssh/authorized_keys /home/solucao/.ssh/ 2>/dev/null || true
-chown -R solucao:solucao /home/solucao/.ssh
-chmod 700 /home/solucao/.ssh
 ```
+
+Você continua entrando na máquina como root e passando para o `solucao` com
+`su - solucao` quando o roteiro pedir. Ele não precisa de acesso SSH próprio —
+existe para a **aplicação** rodar sem privilégio, não para você usar.
 
 Firewall — só SSH e web ficam abertos. **O PostgreSQL não é exposto**: a API
 fala com ele pelo `localhost`, e banco aberto na internet é um dos alvos mais
 varridos que existem.
 
+> **Confira a porta do SSH antes de ativar o firewall.** O perfil `OpenSSH` do
+> ufw libera a porta **22**. Se o seu SSH estiver noutra porta (a HostGator usa
+> 22022) e você liberar só a 22, o firewall corta a sua própria conexão e você
+> perde o acesso à máquina — sobra recuperar pelo console do painel.
+
 ```bash
-ufw allow OpenSSH
+# Descubra em que porta o SSH está ouvindo, e libere ESSA:
+ss -tlnp | grep sshd
+
+ufw allow 22022/tcp        # troque pela porta que apareceu acima
 ufw allow 80/tcp
 ufw allow 443/tcp
 ufw --force enable
+ufw status                 # confirme que a porta do SSH está na lista
 ```
+
+**Não feche esta sessão SSH ainda.** Abra uma segunda janela e teste se
+consegue entrar. Se der errado, você ainda tem a primeira aberta para desfazer
+com `ufw disable`.
 
 ---
 
