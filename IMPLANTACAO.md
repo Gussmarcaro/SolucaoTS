@@ -88,33 +88,29 @@ apt install -y postgresql postgresql-contrib
 systemctl enable --now postgresql
 ```
 
-Crie o usuário e o banco:
+Crie o usuário **já com a senha**, e depois o banco:
 
 ```bash
-sudo -u postgres createuser solucao
+sudo -u postgres createuser -P solucao
 sudo -u postgres createdb -O solucao solucaots
 ```
 
-Agora a senha. Entre no psql:
+O `-P` pergunta a senha duas vezes, ali mesmo no terminal, sem mostrar o que
+você digita.
+
+**Por que assim, e não com `CREATE USER ... PASSWORD` no psql:** aquele
+comando deixaria a senha em texto puro no histórico do shell e no
+`~/.psql_history`, legível depois por quem tiver acesso à máquina. E, na
+prática, ele exige aspas e contrabarra — caracteres que o console web da
+hospedagem, que lê o teclado como layout americano, dificulta bastante.
+O `-P` não precisa de nenhum símbolo.
+
+Se precisar refazer, apague antes (o banco vazio não perde nada):
 
 ```bash
-sudo -u postgres psql
+sudo -u postgres dropdb solucaots
+sudo -u postgres dropuser solucao
 ```
-
-E, no prompt `postgres=#`, digite:
-
-```
-\password solucao
-```
-
-Ele pede a senha duas vezes (sem mostrar o que você digita) e sai com
-`\q`.
-
-**Por que assim, e não com um `CREATE USER ... PASSWORD` direto:** o comando
-com a senha escrita ficaria no histórico do shell e no `~/.psql_history`, em
-texto puro, para quem tiver acesso à máquina ler depois. O `\password` pergunta,
-não ecoa, e monta o comando já escapado. De quebra, dispensa as aspas — que
-no console web da hospedagem são difíceis de acertar.
 
 Guarde essa senha: ela entra na `DATABASE_URL` do passo 5.
 
