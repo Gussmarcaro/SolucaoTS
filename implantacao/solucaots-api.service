@@ -1,0 +1,40 @@
+# API da Solução TS.
+#
+#   cp implantacao/solucaots-api.service /etc/systemd/system/
+#   systemctl daemon-reload && systemctl enable --now solucaots-api
+[Unit]
+Description=Solucao TS - API
+# A API precisa do banco no ar: sem isto, um reboot a subiria antes do
+# PostgreSQL e ela morreria na primeira consulta.
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=solucao
+Group=solucao
+WorkingDirectory=/home/solucao/app/backend
+EnvironmentFile=/home/solucao/app/backend/.env
+ExecStart=/usr/bin/npm start
+
+# Reinicia sempre, com 5s de espera. Uma queda de madrugada se resolve sozinha
+# em vez de esperar alguém perceber pela manhã.
+Restart=always
+RestartSec=5
+
+# Log vai para o journal — é onde `journalctl -u solucaots-api` busca. O
+# formato da aplicação já é uma linha JSON por requisição.
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=solucaots-api
+
+# Restrições: a API não tem por que escrever fora da própria pasta nem ganhar
+# privilégio. Se um dia for comprometida, o alcance fica limitado.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=/home/solucao/app
+
+[Install]
+WantedBy=multi-user.target
