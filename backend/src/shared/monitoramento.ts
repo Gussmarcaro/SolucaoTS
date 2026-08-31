@@ -80,7 +80,10 @@ export function iniciarMonitoramento(): void {
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
     environment: process.env.NODE_ENV ?? 'development',
-    release: process.env.RENDER_GIT_COMMIT ?? undefined,
+    // Versão publicada, para o painel agrupar erro por release. `RENDER_GIT_COMMIT`
+    // era preenchida pela hospedagem antiga; num servidor próprio ela vem do
+    // deploy, e o nome genérico evita amarrar o código a um fornecedor.
+    release: process.env.APP_RELEASE ?? process.env.RENDER_GIT_COMMIT ?? undefined,
 
     // Amostragem de desempenho desligada: o que se quer aqui é erro, e traço de
     // transação carregaria consulta e parâmetro para fora sem necessidade.
