@@ -164,9 +164,16 @@ Preencha o que está marcado. Duas com atenção:
   quem descobre esse segredo emite tokens válidos para qualquer usuário.
 - **`DATABASE_URL`** — com a senha do passo 2.
 
-Feche o arquivo para os outros usuários da máquina:
+Se a senha do banco tiver caracteres especiais, eles precisam ser codificados
+na URL: `@` vira `%40`, `#` vira `%23`, `/` vira `%2F`. O `@` é o pior deles —
+é o separador entre a senha e o servidor, então um `@` cru faz o driver
+procurar um servidor com nome errado, e o erro não aponta a causa.
+
+Dono e permissão. **O dono importa**: se você editou como root, o arquivo fica
+dele, e o passo 6 roda como `solucao` — que não conseguiria lê-lo.
 
 ```bash
+chown solucao:solucao /home/solucao/app/backend/.env
 chmod 600 /home/solucao/app/backend/.env
 ```
 
