@@ -88,14 +88,33 @@ apt install -y postgresql postgresql-contrib
 systemctl enable --now postgresql
 ```
 
-Crie o banco e o usuário. **Troque a senha** por uma longa e aleatória:
+Crie o usuário e o banco:
 
 ```bash
-sudo -u postgres psql <<'SQL'
-CREATE USER solucao WITH PASSWORD 'TROQUE_POR_UMA_SENHA_LONGA';
-CREATE DATABASE solucaots OWNER solucao;
-SQL
+sudo -u postgres createuser solucao
+sudo -u postgres createdb -O solucao solucaots
 ```
+
+Agora a senha. Entre no psql:
+
+```bash
+sudo -u postgres psql
+```
+
+E, no prompt `postgres=#`, digite:
+
+```
+\password solucao
+```
+
+Ele pede a senha duas vezes (sem mostrar o que você digita) e sai com
+`\q`.
+
+**Por que assim, e não com um `CREATE USER ... PASSWORD` direto:** o comando
+com a senha escrita ficaria no histórico do shell e no `~/.psql_history`, em
+texto puro, para quem tiver acesso à máquina ler depois. O `\password` pergunta,
+não ecoa, e monta o comando já escapado. De quebra, dispensa as aspas — que
+no console web da hospedagem são difíceis de acertar.
 
 Guarde essa senha: ela entra na `DATABASE_URL` do passo 5.
 
