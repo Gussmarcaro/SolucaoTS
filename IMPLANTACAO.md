@@ -64,8 +64,9 @@ varridos que existem.
 > perde o acesso à máquina — sobra recuperar pelo console do painel.
 
 ```bash
-# Descubra em que porta o SSH está ouvindo, e libere ESSA:
-ss -tlnp | grep sshd
+# Descubra em que porta o SSH está ouvindo, e libere ESSA. Procure a linha
+# com "sshd" — o número depois do ":" é a porta.
+ss -tlnp
 
 ufw allow 22022/tcp        # troque pela porta que apareceu acima
 ufw allow 80/tcp
@@ -103,7 +104,10 @@ Guarde essa senha: ela entra na `DATABASE_URL` do passo 5.
 ## 3. Node.js 24
 
 ```bash
-curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
+# Em duas etapas, sem pipe: no console web da hospedagem o teclado é lido
+# como layout americano, e o "|" é difícil de acertar. Pelo SSH, tanto faz.
+curl -fsSL https://deb.nodesource.com/setup_24.x -o /tmp/nodesource.sh
+bash /tmp/nodesource.sh
 apt install -y nodejs
 node -v && npm -v
 ```
@@ -256,7 +260,9 @@ externo é o caminho simples, e vale acrescentar ao script.
 costuma falhar justamente no dia em que é necessário:
 
 ```bash
-gunzip -c /var/backups/solucaots/ARQUIVO.sql.gz | sudo -u postgres psql solucaots_teste
+sudo -u postgres createdb solucaots_teste
+gunzip -k /var/backups/solucaots/ARQUIVO.sql.gz
+sudo -u postgres psql solucaots_teste -f /var/backups/solucaots/ARQUIVO.sql
 ```
 
 ---
