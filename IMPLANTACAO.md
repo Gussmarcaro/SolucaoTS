@@ -43,7 +43,10 @@ esse usuário alcança.
 apt update && apt upgrade -y
 apt install -y ufw fail2ban git curl
 
-adduser --disabled-password --gecos "" solucao
+# Sem aspas de propósito: no console web da hospedagem o teclado é lido como
+# layout americano, e aspa vira outro caractere. Este comando pergunta nome,
+# sala e telefone — aperte Enter em todos e confirme com Enter no fim.
+adduser --disabled-password solucao
 usermod -aG sudo solucao
 ```
 
