@@ -282,12 +282,31 @@ tudo junto. Configure uma cópia para fora — o `rclone` para um armazenamento
 externo é o caminho simples, e vale acrescentar ao script.
 
 **Teste a restauração agora**, com o sistema ainda vazio. Backup nunca testado
-costuma falhar justamente no dia em que é necessário:
+costuma falhar justamente no dia em que é necessário.
+
+Gere um backup na hora, sem esperar as 3h:
+
+```bash
+/usr/local/bin/backup-solucaots.sh
+ls -la /var/backups/solucaots/
+```
+
+E restaure num banco separado. Os comandos pegam o arquivo **mais recente**
+sozinhos — nada de nome para digitar, que é onde se erra:
 
 ```bash
 sudo -u postgres createdb solucaots_teste
-gunzip -k /var/backups/solucaots/ARQUIVO.sql.gz
-sudo -u postgres psql solucaots_teste -f /var/backups/solucaots/ARQUIVO.sql
+ULTIMO=$(ls -t /var/backups/solucaots/*.sql.gz | head -1)
+gunzip -c "$ULTIMO" > /tmp/restore.sql
+sudo -u postgres psql solucaots_teste -f /tmp/restore.sql
+```
+
+Confira que as tabelas chegaram, e limpe:
+
+```bash
+sudo -u postgres psql solucaots_teste -c "\dt"
+sudo -u postgres dropdb solucaots_teste
+rm /tmp/restore.sql
 ```
 
 ---
