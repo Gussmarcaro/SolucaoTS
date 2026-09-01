@@ -247,8 +247,24 @@ nano /etc/nginx/sites-available/solucaots
 
 ln -s /etc/nginx/sites-available/solucaots /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
+
+# O nginx roda como `www-data`, e o Ubuntu cria pastas pessoais com permissão
+# 750 — só o dono e o grupo entram. Sem esta linha ele esbarra já no
+# /home/solucao e devolve **403 Forbidden**, mesmo com o dist/ construído.
+chmod 755 /home/solucao
+
 nginx -t && systemctl reload nginx
 ```
+
+Se aparecer **403 Forbidden** ao abrir o site, é quase sempre isso. O comando
+que mostra onde o caminho trava:
+
+```bash
+namei -l /home/solucao/app/frontend/dist/index.html
+```
+
+Ele lista a permissão de cada pasta até o arquivo — a primeira sem `x` para
+"outros" é a culpada.
 
 Certificado (o domínio já precisa resolver para o IP):
 
