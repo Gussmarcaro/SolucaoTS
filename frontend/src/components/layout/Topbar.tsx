@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Menu, Search, Bell, Info, LogOut, Sparkles } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useAuth } from '@/contexts/AuthContext';
@@ -217,8 +218,20 @@ export function Topbar({ onOpenSidebar, collapsed = false }: TopbarProps) {
 
         <div className="mx-1 hidden h-6 w-px bg-ink-200 dark:bg-ink-800 sm:block" />
 
-        {/* Perfil */}
-        <div className="flex items-center gap-2 rounded-xl py-1 pl-1 pr-1 sm:pr-2">
+        {/*
+         * Perfil — é o atalho para "Meu Perfil".
+         *
+         * O nome na barra é onde se procura o próprio cadastro, e por isso a
+         * tela não precisa de item de menu. Vai como link, não como botão com
+         * `navigate`: abre em outra aba, mostra o destino na barra de status e
+         * responde ao teclado sem nada a mais.
+         */}
+        <Link
+          to="/perfil"
+          title="Meu perfil"
+          aria-label="Meu perfil"
+          className="focus-ring flex items-center gap-2 rounded-xl py-1 pl-1 pr-1 transition-colors hover:bg-ink-100 dark:hover:bg-ink-800 sm:pr-2"
+        >
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-xs font-bold text-white">
             {iniciais(usuario?.nome)}
           </span>
@@ -230,7 +243,7 @@ export function Topbar({ onOpenSidebar, collapsed = false }: TopbarProps) {
               {usuario?.email ?? ''}
             </span>
           </span>
-        </div>
+        </Link>
 
         <button
           onClick={sair}

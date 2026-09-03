@@ -33,6 +33,7 @@ import { Relatorios } from '@/pages/Relatorios';
 import { Transparencia } from '@/pages/Transparencia';
 import { TransparenciaRelatorio } from '@/pages/Transparencia/Relatorio';
 import { ProvisionarOrgao } from '@/pages/Suporte/ProvisionarOrgao';
+import { Perfil } from '@/pages/Perfil';
 import { Placeholder } from '@/pages/Placeholder';
 
 export default function App() {
@@ -47,6 +48,11 @@ export default function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<Dashboard />} />
+
+          {/* Meu Perfil — sem `RequerPermissao`: editar o próprio cadastro não
+              é administrar usuários. Fora do menu de propósito; entra-se por
+              ele pelo nome na barra superior. */}
+          <Route path="/perfil" element={<Perfil />} />
 
           {/* Cadastro */}
           <Route

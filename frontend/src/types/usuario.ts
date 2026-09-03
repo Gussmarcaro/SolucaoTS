@@ -63,3 +63,24 @@ export interface Paginado<T> {
   pageSize: number;
   totalPages: number;
 }
+
+/**
+ * Edição do próprio cadastro. Sem `grupoUsuarioId`: o servidor o preserva do
+ * registro, e enviá-lo daqui só sugeriria um poder que a tela não tem.
+ */
+export interface AtualizarPerfilPayload {
+  nome: string;
+  documento: string;
+  cep: string;
+  logradouro: string;
+  numero?: string | null;
+  complemento?: string | null;
+  bairro: string;
+  cidade: string;
+  uf: string;
+  email: string;
+  celular: string;
+  senhaAtual?: string;
+  novaSenha?: string;
+  confirmarSenha?: string;
+}

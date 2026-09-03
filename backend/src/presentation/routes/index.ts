@@ -26,6 +26,7 @@ import { TransparenciaController } from '@/presentation/controllers/Transparenci
 import { SuporteController } from '@/presentation/controllers/SuporteController';
 import { RelatorioController } from '@/presentation/controllers/RelatorioController';
 import { PermissaoController } from '@/presentation/controllers/PermissaoController';
+import { PerfilController } from '@/presentation/controllers/PerfilController';
 import { autenticar } from '@/presentation/middlewares/autenticar';
 import { exigirGrupo } from '@/presentation/middlewares/exigirGrupo';
 import { exigirPermissao } from '@/presentation/middlewares/exigirPermissao';
@@ -87,6 +88,21 @@ routes.get('/permissoes/:grupoId', exigirPermissao('CONFIG_GRUPOS'), (req, res, 
 routes.put('/permissoes/:grupoId', exigirPermissao('CONFIG_GRUPOS'), (req, res, next) =>
   permissoes.salvar(req, res, next),
 );
+
+/*
+ * Meu Perfil — o usuário lendo e editando o próprio cadastro.
+ *
+ * Sem `exigirPermissao` de propósito, e a exceção se justifica: a matriz
+ * autoriza operar **o cadastro de usuários**, que é outra coisa. Exigir
+ * `CONFIG_USUARIOS` aqui obrigaria a dar a todo mundo o poder de editar todo
+ * mundo só para que cada um pudesse trocar a própria senha.
+ *
+ * O que garante o recorte é o controller: o id sai do token, nunca da entrada,
+ * e o caso de uso preserva grupo, órgão e situação do registro atual.
+ */
+const perfil = new PerfilController();
+routes.get('/perfil', (req, res, next) => perfil.meu(req, res, next));
+routes.put('/perfil', (req, res, next) => perfil.atualizar(req, res, next));
 
 // O que o usuário logado pode fazer — alimenta o menu e os botões da interface.
 routes.get('/permissoes/eu/resumo', (req, res, next) => permissoes.minhas(req, res, next));

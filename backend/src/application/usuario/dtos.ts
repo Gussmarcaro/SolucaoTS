@@ -34,6 +34,31 @@ export interface AtualizarUsuarioDTO {
   confirmarSenha?: string;
 }
 
+/**
+ * Entrada da tela "Meu Perfil" — o usuário editando a si mesmo.
+ *
+ * Note o que **não** está aqui: `grupoUsuarioId`. O grupo decide o que a
+ * pessoa pode fazer no sistema; aceitá-lo neste corpo seria deixar qualquer um
+ * se promover. O caso de uso o copia do registro atual.
+ */
+export interface AtualizarPerfilDTO {
+  nome: string;
+  documento: string;
+  cep: string;
+  logradouro: string;
+  numero?: string | null;
+  complemento?: string | null;
+  bairro: string;
+  cidade: string;
+  uf: string;
+  email: string;
+  celular: string;
+  /** Exigida para trocar a senha ou o e-mail de acesso. */
+  senhaAtual?: string;
+  novaSenha?: string;
+  confirmarSenha?: string;
+}
+
 /** Dados já prontos para persistência (senha convertida em hash). */
 export interface NovoUsuarioDTO {
   nome: string;

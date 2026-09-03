@@ -41,6 +41,7 @@ const LIBERADAS: Record<string, string> = {
   '/assistente/status': 'diz apenas se o assistente existe',
   '/lgpd/acesso-dados': 'cada usuário grava o registro do próprio acesso',
   '/permissoes/eu/resumo': 'o usuário lendo as próprias permissões',
+  '/perfil': 'o usuário lendo e editando o próprio cadastro — o id sai do token, não da entrada',
   '/suporte/orgaos': 'equipe do fornecedor — autorizada pela marca Usuario.suporte, não pela matriz',
   '/suporte/atender': 'equipe do fornecedor — troca o órgão do próprio token',
   '/suporte/provisionar': 'equipe do fornecedor — cria órgão novo, antes de existir matriz',
