@@ -181,6 +181,12 @@ chmod 600 /home/solucao/app/backend/.env
 
 ## 6. Instalar, criar o schema e o primeiro usuário
 
+> **Tudo aqui roda como `solucao`, nunca como root.** Um `npm` executado como
+> root deixa arquivos do root dentro do `node_modules`, e a próxima atualização
+> falha com `EACCES: permission denied, unlink` — o usuário da aplicação não
+> consegue mais apagar o que precisa reinstalar. Se acontecer, o conserto está
+> no fim deste documento.
+
 ```bash
 cd /home/solucao/app/backend
 npm ci
@@ -363,8 +369,38 @@ mexer no banco — é o momento de maior risco.
 | Erro 502 no navegador | A API caiu; veja o log acima |
 | Erro 404 em rota do sistema | Falta o `try_files` do SPA no nginx |
 | Erro de banco | `journalctl -u postgresql -n 50` |
+| `EACCES` no `npm ci` | `node_modules` com arquivo do root — ver abaixo |
 | Erro 500 na tela | A tela mostra um **código** — busque-o no log da API |
 
 Esse último é proposital: cada requisição tem um id, e o 500 devolve esse id ao
 usuário. Ele lê o código na tela, repassa no chamado, e a busca no log é
 imediata.
+
+---
+
+## `EACCES` no `npm ci` — arquivo do root no `node_modules`
+
+```
+npm error code EACCES
+npm error syscall unlink
+npm error path /home/solucao/app/backend/node_modules/.bin/…
+```
+
+Algum `npm` rodou como root e deixou arquivos dele na pasta. O `solucao` não
+consegue apagá-los para reinstalar. Devolva a posse da pasta, **como root**:
+
+```bash
+exit                     # se estiver como solucao
+chown -R solucao:solucao /home/solucao/app
+```
+
+Não apaga nada — só corrige o dono, que é como a pasta deveria estar desde o
+passo 4. Se ainda assim insistir, já como `solucao`:
+
+```bash
+rm -rf node_modules && npm ci
+```
+
+A causa é sempre a mesma: **a aplicação é instalada e executada pelo `solucao`**;
+root só copia o serviço, mexe no nginx e reinicia. Misturar os dois é o que
+produz este erro semanas depois, na atualização — não na instalação.
