@@ -32,8 +32,22 @@ const rotuloDominio = (opcoes: { value: string; label: string }[], codigo: numbe
 export function FontesEContas({ fontes, onFontes, contas, onContas }: Props) {
   const disponiveis = FONTE_RECURSO.filter((o) => !fontes.includes(Number(o.value)));
 
+  /** As fontes que a conta pode declarar — só as acrescentadas acima. */
+  const opcoesFonteDaConta = FONTE_RECURSO.filter((o) => fontes.includes(Number(o.value)));
+
   const alterarConta = (i: number, parcial: Partial<ContaBancariaAjuste>) =>
     onContas(contas.map((c, j) => (j === i ? { ...c, ...parcial } : c)));
+
+  /*
+   * Remover uma fonte de cima deixaria órfã a conta que a declarava — e o
+   * servidor recusaria o ajuste inteiro na hora de salvar, apontando uma conta
+   * que a pessoa nem estava editando. Limpar aqui faz o campo pedir a fonte de
+   * novo, no lugar certo e na hora do gesto.
+   */
+  const removerFonte = (f: number) => {
+    onFontes(fontes.filter((x) => x !== f));
+    onContas(contas.map((c) => (c.fonteRecursoTipo === f ? { ...c, fonteRecursoTipo: null } : c)));
+  };
 
   return (
     <div className="space-y-5">
@@ -72,7 +86,7 @@ export function FontesEContas({ fontes, onFontes, contas, onContas }: Props) {
                 <IconBtn
                   title="Remover fonte"
                   danger
-                  onClick={() => onFontes(fontes.filter((x) => x !== f))}
+                  onClick={() => removerFonte(f)}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </IconBtn>
@@ -89,8 +103,10 @@ export function FontesEContas({ fontes, onFontes, contas, onContas }: Props) {
             <p className="text-sm font-medium text-ink-700 dark:text-ink-200">Contas bancárias</p>
             <p className="text-xs text-ink-400">
               Opcionais. Cadastradas aqui, o pagamento escolhe entre elas em vez de redigitar
-              banco, agência e conta. A <strong>corrente e a aplicação</strong> da mesma conta
-              têm o mesmo número — cadastre as duas, informando o <strong>tipo</strong> de cada.
+              banco, agência e conta. Cada conta declara <strong>a fonte de recurso que entra
+              nela</strong> — é o que faz o pagamento saber de onde saiu o dinheiro. A
+              <strong> corrente e a aplicação</strong> da mesma conta têm o mesmo número:
+              cadastre as duas, informando o <strong>tipo</strong> de cada.
             </p>
           </div>
           <Button
@@ -98,7 +114,10 @@ export function FontesEContas({ fontes, onFontes, contas, onContas }: Props) {
             variant="secondary"
             size="sm"
             onClick={() =>
-              onContas([...contas, { banco: 0, agencia: 0, conta: '', contaTipo: null, apelido: null }])
+              onContas([
+                ...contas,
+                { banco: 0, agencia: 0, conta: '', contaTipo: null, fonteRecursoTipo: null, apelido: null },
+              ])
             }
           >
             <Plus className="h-4 w-4" />
@@ -112,7 +131,7 @@ export function FontesEContas({ fontes, onFontes, contas, onContas }: Props) {
           <div className="space-y-3">
             {contas.map((c, i) => (
               <div key={i} className="grid grid-cols-1 items-end gap-3 sm:grid-cols-12">
-                <div className="sm:col-span-4">
+                <div className="sm:col-span-3">
                   <SelectDominio
                     label={i === 0 ? 'Banco *' : ''}
                     name={`banco-${i}`}
@@ -138,13 +157,27 @@ export function FontesEContas({ fontes, onFontes, contas, onContas }: Props) {
                     onChange={(e) => alterarConta(i, { conta: e.target.value })}
                   />
                 </div>
-                <div className="sm:col-span-3">
+                <div className="sm:col-span-2">
                   <SelectDominio
                     label={i === 0 ? 'Tipo' : ''}
                     name={`contaTipo-${i}`}
                     value={c.contaTipo != null ? String(c.contaTipo) : ''}
                     onChange={(v) => alterarConta(i, { contaTipo: v ? Number(apenasDigitos(v)) : null })}
                     options={CONTA_TIPO}
+                  />
+                </div>
+                {/* A fonte que entra nesta conta. As opções são **as fontes
+                    declaradas acima**, não as 16 da tabela: a conta existe para
+                    receber uma fonte que o ajuste prevê. */}
+                <div className="sm:col-span-2">
+                  <SelectDominio
+                    label={i === 0 ? 'Fonte de Recurso *' : ''}
+                    name={`fonteRecursoTipo-${i}`}
+                    value={c.fonteRecursoTipo != null ? String(c.fonteRecursoTipo) : ''}
+                    onChange={(v) =>
+                      alterarConta(i, { fonteRecursoTipo: v ? Number(apenasDigitos(v)) : null })
+                    }
+                    options={opcoesFonteDaConta}
                   />
                 </div>
                 <div className="flex justify-end sm:col-span-1">

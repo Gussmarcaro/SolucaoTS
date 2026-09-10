@@ -171,6 +171,8 @@ function ReceitaForm({ prestacaoId, item, ajuste, onSuccess, onCancel }: { prest
 
   const rotuloBanco = (codigo: number) =>
     BANCO.find((b) => b.value === String(codigo))?.label ?? String(codigo);
+  const rotuloFonte = (codigo: number) =>
+    FONTE_RECURSO.find((f) => f.value === String(codigo))?.label ?? String(codigo);
 
   /** Qual das contas do ajuste corresponde ao que está preenchido. */
   const contaAtual =
@@ -181,7 +183,16 @@ function ReceitaForm({ prestacaoId, item, ajuste, onSuccess, onCancel }: { prest
         c.conta === conta,
     ) ?? null;
 
-  /** Preenche os três de uma vez — ou limpa, que aqui é opção legítima. */
+  /**
+   * Preenche os três de uma vez, **e a fonte de recurso** — ou limpa, que aqui
+   * é opção legítima.
+   *
+   * A fonte vem da conta pelo mesmo motivo de Pagamentos: o ajuste abre uma
+   * conta específica para cada fonte, então a conta em que a receita entrou já
+   * diz de que fonte ela é. Limpar a conta **não** limpa a fonte: a receita
+   * pode ter fonte sem que se saiba a conta, e apagar o que a pessoa escolheu
+   * antes seria perder informação boa.
+   */
   function escolherConta(valor: string) {
     if (!valor) {
       setBanco('');
@@ -194,7 +205,11 @@ function ReceitaForm({ prestacaoId, item, ajuste, onSuccess, onCancel }: { prest
     setBanco(String(c.banco));
     setAgencia(String(c.agencia));
     setConta(c.conta);
+    if (c.fonteRecursoTipo != null) setFonte(String(c.fonteRecursoTipo));
   }
+
+  /** Com conta escolhida, a fonte é a dela e não se digita. */
+  const fonteVemDaConta = contaAtual?.fonteRecursoTipo != null;
 
   async function submeter(e: React.FormEvent) {
     e.preventDefault();
@@ -233,7 +248,18 @@ function ReceitaForm({ prestacaoId, item, ajuste, onSuccess, onCancel }: { prest
         <Input label="Valor (R$) *" name="valor" value={valor} onChange={(e) => setValor(mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
         <Input label="Data do Repasse" name="dataRepasse" type="date" value={dataRepasse} onChange={(e) => setDataRepasse(e.target.value)} />
         <Input label="Data Prevista" name="dataPrevista" type="date" value={dataPrevista} onChange={(e) => setDataPrevista(e.target.value)} />
-        <SelectDominio label="Fonte de Recurso" name="fonte" value={apenasDigitos(fonte)} onChange={setFonte} options={opcoesFonte} />
+        {fonteVemDaConta ? (
+          <Input
+            label="Fonte de Recurso"
+            anotacao="(Automática)"
+            name="fonte"
+            value={fonte ? rotuloFonte(Number(apenasDigitos(fonte))) : ''}
+            readOnly
+            hint="Vem da conta do ajuste escolhida abaixo."
+          />
+        ) : (
+          <SelectDominio label="Fonte de Recurso" name="fonte" value={apenasDigitos(fonte)} onChange={setFonte} options={opcoesFonte} />
+        )}
         <div className="sm:col-span-2">
           <Input label="Descrição" name="descricao" value={descricao} onChange={(e) => setDescricao(e.target.value)} />
         </div>

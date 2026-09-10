@@ -27,6 +27,7 @@ export interface CriarAjusteDTO {
     agencia?: number | string | null;
     conta?: string | null;
     contaTipo?: number | string | null;
+    fonteRecursoTipo?: number | string | null;
     apelido?: string | null;
   }[];
 
@@ -80,6 +81,7 @@ export interface DadosAjuste {
     agencia: number;
     conta: string;
     contaTipo: number | null;
+    fonteRecursoTipo: number;
     apelido: string | null;
   }[];
 

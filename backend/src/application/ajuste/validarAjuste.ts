@@ -113,7 +113,47 @@ export function normalizarEValidarAjuste(input: CriarAjusteDTO): DadosAjuste {
       const tipo = c.contaTipo === undefined || c.contaTipo === null || c.contaTipo === '' ? null : Number(c.contaTipo);
       if (tipo !== null && (!Number.isInteger(tipo) || tipo <= 0))
         throw new BusinessError('Conta bancária: tipo inválido.');
-      return { banco, agencia, conta, contaTipo: tipo, apelido: c.apelido?.trim() || null };
+
+      /*
+       * A fonte de recurso da conta.
+       *
+       * O recurso é alocado por fonte, e cada fonte tem a sua conta específica.
+       * Sem esta ligação, o ajuste diz quais fontes existem e quais contas
+       * existem, mas não em qual conta entra o dinheiro de cada uma — e o
+       * pagamento pode sair da conta de uma fonte lançado noutra, sem que nada
+       * acuse.
+       *
+       * Exigida em toda conta, inclusive nas cadastradas antes desta regra: o
+       * ajuste antigo pede a fonte na primeira edição. É a decisão de não
+       * conviver com cadastro meio preenchido, que ninguém volta para terminar.
+       */
+      const fonte =
+        c.fonteRecursoTipo === undefined || c.fonteRecursoTipo === null || c.fonteRecursoTipo === ''
+          ? null
+          : Number(c.fonteRecursoTipo);
+      if (fonte === null)
+        throw new BusinessError(
+          `Conta bancária ${conta}: informe a fonte de recurso que entra nela.`,
+        );
+      if (!Number.isInteger(fonte) || fonte <= 0)
+        throw new BusinessError(`Conta bancária ${conta}: fonte de recurso inválida.`);
+      // A fonte da conta tem de estar entre as declaradas no ajuste. Apontar
+      // para uma fonte que o ajuste não prevê é dizer que entra dinheiro de
+      // onde não foi previsto — e acontece sozinho ao remover a fonte da lista
+      // de cima sem olhar as contas embaixo.
+      if (!fontesRecurso.includes(fonte))
+        throw new BusinessError(
+          `Conta bancária ${conta}: a fonte de recurso informada não está entre as fontes do ajuste.`,
+        );
+
+      return {
+        banco,
+        agencia,
+        conta,
+        contaTipo: tipo,
+        fonteRecursoTipo: fonte,
+        apelido: c.apelido?.trim() || null,
+      };
     },
   );
 

@@ -16,6 +16,8 @@ export interface ContaBancariaAjuste {
   agencia: number;
   conta: string;
   contaTipo: number | null;
+  /** Fonte de recurso que entra nesta conta; null nas cadastradas antes da regra. */
+  fonteRecursoTipo: number | null;
   apelido: string | null;
 }
 

@@ -295,11 +295,12 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
 
     const payload: AjustePayload = {
       fontesRecurso: fontes,
-      contasBancarias: contas.map(({ banco, agencia, conta, contaTipo, apelido }) => ({
+      contasBancarias: contas.map(({ banco, agencia, conta, contaTipo, fonteRecursoTipo, apelido }) => ({
         banco,
         agencia,
         conta,
         contaTipo,
+        fonteRecursoTipo,
         apelido,
       })),
       clienteId: form.clienteId || null,

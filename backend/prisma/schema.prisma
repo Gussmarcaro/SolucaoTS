@@ -1830,13 +1830,19 @@ model AjusteFonteRecurso {
 /// Mesma ideia das fontes: em vez de digitar banco, agência e conta a cada
 /// pagamento (e errar um dígito), escolhe-se entre as contas do ajuste.
 model AjusteContaBancaria {
-  id        String  @id @default(uuid()) @db.Uuid
-  ajusteId  String  @db.Uuid
-  banco     Int
-  agencia   Int
-  conta     String
-  contaTipo Int?
-  apelido   String? // como a tela mostra, quando o órgão nomeia a conta
+  id               String  @id @default(uuid()) @db.Uuid
+  ajusteId         String  @db.Uuid
+  banco            Int
+  agencia          Int
+  conta            String
+  contaTipo        Int?
+  // Fonte de recurso que entra nesta conta. **Obrigatória pela regra de
+  // negócio, opcional na coluna**: as contas cadastradas antes desta ligação
+  // não têm valor, e um NOT NULL sem default recusaria a alteração da tabela.
+  // Quem cobra é `validarAjuste` — e por isso o ajuste antigo pede a fonte na
+  // primeira edição, em vez de ficar meio preenchido para sempre.
+  fonteRecursoTipo Int?
+  apelido          String? // como a tela mostra, quando o órgão nomeia a conta
 
   ajuste Ajuste @relation(fields: [ajusteId], references: [id], onDelete: Cascade)
 

@@ -30,6 +30,10 @@ import { ConfirmarExclusao } from '@/pages/Ajustes/tabs/TermosAditivosTab';
 const rotuloBanco = (codigo: number) =>
   BANCO.find((b) => b.value === String(codigo))?.label ?? String(codigo);
 
+/** Idem para a fonte, que aparece como texto quando vem da conta. */
+const rotuloFonte = (codigo: number) =>
+  FONTE_RECURSO.find((f) => f.value === String(codigo))?.label ?? String(codigo);
+
 const FOLHA = 'folha';
 
 type ModalState =
@@ -302,14 +306,34 @@ function PgForm({
     label: rotuloContaAjuste(c, rotuloBanco),
   }));
 
-  /** Preenche banco, agência e conta de uma vez, a partir da escolhida. */
+  /**
+   * Preenche banco, agência, conta **e a fonte de recurso** a partir da conta
+   * escolhida.
+   *
+   * A fonte vem da conta porque é assim que o dinheiro anda: o ajuste aloca o
+   * recurso por fonte e abre uma conta específica para cada uma. Deixar os dois
+   * campos independentes permitia lançar despesa da fonte A saindo da conta da
+   * fonte B — divergência que validação nenhuma pega, porque cada campo, em si,
+   * é válido.
+   */
   function escolherConta(valor: string) {
     const c = contasDoAjuste.find((x) => chaveContaAjuste(x) === valor);
     if (!c) return;
     setBanco(String(c.banco));
     setAgencia(String(c.agencia));
     setConta(c.conta);
+    if (c.fonteRecursoTipo != null) setFonte(String(c.fonteRecursoTipo));
   }
+
+  /**
+   * A fonte é decidida pela conta? Só quando há conta a escolher.
+   *
+   * No fundo fixo não há conta, e no ajuste sem contas cadastradas continua-se
+   * digitando — nos dois casos a fonte volta a ser escolhida à mão, senão o
+   * lançamento ficaria sem como informá-la.
+   */
+  const fonteVemDaConta =
+    meio === 'BANCO' && contasDoAjuste.some((c) => c.fonteRecursoTipo != null);
 
   const contaAtual =
     contasDoAjuste.find(
@@ -336,7 +360,19 @@ function PgForm({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input label="Data do Pagamento *" name="dataPagamento" type="date" value={dataPagamento} onChange={(e) => setDataPagamento(e.target.value)} />
         <Input label="Valor (R$) *" name="valor" value={valor} onChange={(e) => setValor(mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
-        <SelectDominio label="Fonte de Recurso *" name="fonte" value={apenasDigitos(fonte)} onChange={setFonte} options={opcoesFonte} />
+        {fonteVemDaConta ? (
+          <Input
+            label="Fonte de Recurso *"
+            anotacao="(Automática)"
+            name="fonte"
+            value={fonte ? rotuloFonte(Number(apenasDigitos(fonte))) : ''}
+            readOnly
+            placeholder="Escolha a conta do ajuste abaixo"
+            hint="Vem da conta escolhida — é a fonte que entra nela."
+          />
+        ) : (
+          <SelectDominio label="Fonte de Recurso *" name="fonte" value={apenasDigitos(fonte)} onChange={setFonte} options={opcoesFonte} />
+        )}
         <Select label="Meio de Pagamento *" name="meio" value={meio} onChange={(e) => setMeio(e.target.value as MeioPagamento)} options={[{ value: 'BANCO', label: 'Banco' }, { value: 'FUNDO_FIXO', label: 'Fundo fixo' }]} />
       </div>
       {meio === 'BANCO' && contasDoAjuste.length > 0 && (

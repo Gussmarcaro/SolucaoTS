@@ -53,7 +53,7 @@ const selecao = {
   atualizadoEm: true,
   fontesRecurso: { select: { fonteRecursoTipo: true }, orderBy: { fonteRecursoTipo: 'asc' } },
   contasBancarias: {
-    select: { id: true, banco: true, agencia: true, conta: true, contaTipo: true, apelido: true },
+    select: { id: true, banco: true, agencia: true, conta: true, contaTipo: true, fonteRecursoTipo: true, apelido: true },
     orderBy: [{ banco: 'asc' }, { agencia: 'asc' }, { conta: 'asc' }],
   },
   entidadeBeneficiaria: { select: { razaoSocial: true } },
@@ -82,6 +82,7 @@ function toDomain(row: Row): Ajuste {
       agencia: c.agencia,
       conta: c.conta,
       contaTipo: c.contaTipo,
+      fonteRecursoTipo: c.fonteRecursoTipo,
       apelido: c.apelido,
     })),
     dataAssinatura: paraDataISO(row.dataAssinatura),
