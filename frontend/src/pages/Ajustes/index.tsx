@@ -66,7 +66,7 @@ export function Ajustes() {
       </Modal>
 
       {/* Visualização */}
-      <Modal open={modal.tipo === 'ver'} onClose={fechar} title="Dados do Ajuste" size="lg">
+      <Modal open={modal.tipo === 'ver'} onClose={fechar} title="Dados do Ajuste" size="2xl">
         {modal.tipo === 'ver' && <AjusteView ajuste={modal.ajuste} />}
       </Modal>
     </>

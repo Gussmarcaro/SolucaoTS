@@ -90,7 +90,7 @@ export function Entidades() {
       </Modal>
 
       {/* Visualização */}
-      <Modal open={modal.tipo === 'ver'} onClose={fechar} title="Dados da Entidade" size="lg">
+      <Modal open={modal.tipo === 'ver'} onClose={fechar} title="Dados da Entidade" size="2xl">
         {modal.tipo === 'ver' && <EntidadeView entidade={modal.entidade} />}
       </Modal>
 

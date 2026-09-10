@@ -89,7 +89,7 @@ export function Contratos() {
       </Modal>
 
       {/* Visualização */}
-      <Modal open={modal.tipo === 'ver'} onClose={fechar} title="Dados do Contrato" size="lg">
+      <Modal open={modal.tipo === 'ver'} onClose={fechar} title="Dados do Contrato" size="2xl">
         {modal.tipo === 'ver' && <ContratoView contrato={modal.contrato} />}
       </Modal>
 

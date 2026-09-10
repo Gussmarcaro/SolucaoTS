@@ -101,7 +101,7 @@ export function Grupos() {
       </Modal>
 
       {/* Visualização */}
-      <Modal open={modal.tipo === 'ver'} onClose={fechar} title="Dados do Grupo" size="lg">
+      <Modal open={modal.tipo === 'ver'} onClose={fechar} title="Dados do Grupo" size="2xl">
         {modal.tipo === 'ver' && <GrupoView grupo={modal.grupo} />}
       </Modal>
 

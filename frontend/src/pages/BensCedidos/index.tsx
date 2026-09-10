@@ -89,7 +89,7 @@ export function BensCedidos() {
       </Modal>
 
       {/* Visualização */}
-      <Modal open={modal.tipo === 'ver'} onClose={fechar} title="Dados do Bem" size="lg">
+      <Modal open={modal.tipo === 'ver'} onClose={fechar} title="Dados do Bem" size="2xl">
         {modal.tipo === 'ver' && <BemCedidoView bem={modal.bem} />}
       </Modal>
 

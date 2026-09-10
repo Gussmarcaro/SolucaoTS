@@ -29,7 +29,7 @@ export function FornecedorView({ fornecedor }: { fornecedor: Fornecedor }) {
         </div>
       </div>
 
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 lg:grid-cols-4">
         <Campo label={fornecedor.documentoTipo} valor={mascaraCpfCnpj(fornecedor.documento)} />
         <Campo label="Inscrição Estadual" valor={fornecedor.inscricaoEstadual} />
         <Campo label="Telefone Fixo" valor={fornecedor.telefoneFixo ? mascaraTelefoneFixo(fornecedor.telefoneFixo) : null} />

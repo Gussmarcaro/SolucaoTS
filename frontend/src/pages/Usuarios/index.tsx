@@ -91,7 +91,7 @@ export function Usuarios() {
       </Modal>
 
       {/* Visualização */}
-      <Modal open={modal.tipo === 'ver'} onClose={fechar} title="Dados do Usuário" size="lg">
+      <Modal open={modal.tipo === 'ver'} onClose={fechar} title="Dados do Usuário" size="2xl">
         {modal.tipo === 'ver' && <UsuarioView usuario={modal.usuario} />}
       </Modal>
 

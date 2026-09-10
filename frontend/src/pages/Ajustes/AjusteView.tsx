@@ -19,14 +19,38 @@ function Campo({ label, valor }: { label: string; valor?: string | null }) {
   );
 }
 
-/** Bloco com título, espelhando os painéis do formulário. */
+/**
+ * Bloco com título, espelhando os painéis do formulário.
+ *
+ * `break-inside-avoid` porque os painéis são distribuídos em duas colunas
+ * (ver `Paineis`): sem isso, o navegador partiria um deles ao meio, deixando
+ * metade dos campos numa coluna e metade na outra.
+ *
+ * A grade interna fica em **3 colunas**, não nas 4 do bloco de cima: aqui o
+ * painel ocupa meia largura, e a quarta coluna espremeria os rótulos.
+ */
 function Painel({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-ink-200 p-4 dark:border-ink-700">
+    <div className="mb-6 break-inside-avoid rounded-xl border border-ink-200 p-4 dark:border-ink-700">
       <h4 className="mb-3 text-sm font-medium text-ink-700 dark:text-ink-200">{titulo}</h4>
       <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">{children}</dl>
     </div>
   );
+}
+
+/**
+ * Os painéis lado a lado nas telas largas.
+ *
+ * Empilhados, este cadastro passava de mil pixels e obrigava a rolar para ler
+ * o que cabia na tela. `columns` distribui por altura, e não em pares fixos:
+ * o painel do Responsável é muito mais alto que o da Publicação, e uma grade
+ * de duas colunas deixaria um buraco do tamanho da diferença.
+ *
+ * Só a partir de `lg` — abaixo disso não há largura para duas colunas, e a
+ * pilha continua sendo a leitura certa.
+ */
+function Paineis({ children }: { children: React.ReactNode }) {
+  return <div className="lg:columns-2 lg:gap-6">{children}</div>;
 }
 
 const moeda = (v: number | null) => (v === null ? null : formatarMoeda(v));
@@ -69,8 +93,8 @@ export function AjusteView({ ajuste }: { ajuste: Ajuste }) {
         </div>
       </div>
 
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
-        <div className="col-span-2 sm:col-span-3">
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="col-span-2 sm:col-span-3 lg:col-span-4">
           <Campo label="Órgão concessor" valor={ajuste.orgaoNome} />
         </div>
         <Campo label="Número interno" valor={ajuste.numero} />
@@ -80,11 +104,12 @@ export function AjusteView({ ajuste }: { ajuste: Ajuste }) {
         <div className="col-span-2 sm:col-span-2">
           <Campo label="Vigência" valor={vigencia} />
         </div>
-        <div className="col-span-2 sm:col-span-3">
+        <div className="col-span-2 sm:col-span-3 lg:col-span-4">
           <Campo label="Objeto" valor={ajuste.objeto} />
         </div>
       </dl>
 
+      <Paineis>
       <Painel titulo="Previsão por Fontes de Recursos">
         <Campo label="Federal" valor={moeda(ajuste.previsaoFederal)} />
         <Campo label="Estadual" valor={moeda(ajuste.previsaoEstadual)} />
@@ -107,6 +132,8 @@ export function AjusteView({ ajuste }: { ajuste: Ajuste }) {
       </Painel>
 
       <Painel titulo="Termo de Ciência e Notificação">
+        {/* Sem `lg:col-span-4` aqui: a grade do painel tem 3 colunas, e um
+            span de 4 abriria uma quarta coluna implícita, desalinhando tudo. */}
         <div className="col-span-2 sm:col-span-3">
           <dt className="text-xs font-medium uppercase tracking-wider text-ink-400">Arquivo</dt>
           <dd className="mt-0.5 text-sm text-ink-800 dark:text-ink-100">
@@ -149,6 +176,8 @@ export function AjusteView({ ajuste }: { ajuste: Ajuste }) {
           </dd>
         </div>
       </Painel>
+
+      </Paineis>
 
       <Autoria entidade="Ajuste" id={ajuste.id} />
     </div>

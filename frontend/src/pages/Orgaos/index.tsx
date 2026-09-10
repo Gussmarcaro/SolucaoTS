@@ -82,7 +82,7 @@ export function Orgaos() {
       </Modal>
 
       {/* Visualização */}
-      <Modal open={modal.tipo === 'ver'} onClose={fechar} title="Dados do Órgão Concessor" size="lg">
+      <Modal open={modal.tipo === 'ver'} onClose={fechar} title="Dados do Órgão Concessor" size="2xl">
         {modal.tipo === 'ver' && <OrgaoView orgao={modal.orgao} />}
       </Modal>
 

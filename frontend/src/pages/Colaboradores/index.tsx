@@ -89,7 +89,7 @@ export function Colaboradores() {
       </Modal>
 
       {/* Visualização */}
-      <Modal open={modal.tipo === 'ver'} onClose={fechar} title="Dados do Colaborador" size="lg">
+      <Modal open={modal.tipo === 'ver'} onClose={fechar} title="Dados do Colaborador" size="2xl">
         {modal.tipo === 'ver' && <ColaboradorView colaborador={modal.colaborador} />}
       </Modal>
 

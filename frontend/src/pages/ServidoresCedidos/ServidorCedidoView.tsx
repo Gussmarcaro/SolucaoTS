@@ -29,7 +29,7 @@ export function ServidorCedidoView({ servidor }: { servidor: ServidorCedido }) {
         </div>
       </div>
 
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 lg:grid-cols-4">
         <Campo label="CPF" valor={mascaraCpfCnpj(servidor.cpf)} />
         <Campo label="Função na Entidade" valor={servidor.funcaoEntidade} />
         <Campo label="Ônus do Pagamento" valor={servidor.onusPagamento} />

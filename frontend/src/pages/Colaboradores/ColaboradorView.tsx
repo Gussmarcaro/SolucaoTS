@@ -25,7 +25,7 @@ export function ColaboradorView({ colaborador }: { colaborador: Colaborador }) {
         </div>
       </div>
 
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 lg:grid-cols-4">
         <Campo label="CPF" valor={mascaraCpfCnpj(colaborador.cpf)} />
         <Campo label="CBO" valor={colaborador.cbo} />
         <Campo label="CNS" valor={colaborador.cns} />

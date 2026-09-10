@@ -90,7 +90,7 @@ export function Fornecedores() {
       </Modal>
 
       {/* Visualização */}
-      <Modal open={modal.tipo === 'ver'} onClose={fechar} title="Dados do Fornecedor" size="lg">
+      <Modal open={modal.tipo === 'ver'} onClose={fechar} title="Dados do Fornecedor" size="2xl">
         {modal.tipo === 'ver' && <FornecedorView fornecedor={modal.fornecedor} />}
       </Modal>
 

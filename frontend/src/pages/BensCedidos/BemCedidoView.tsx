@@ -23,7 +23,7 @@ export function BemCedidoView({ bem }: { bem: BemCedido }) {
         </div>
       </div>
 
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 lg:grid-cols-4">
         <Campo label="Identificador" valor={bem.identificador} />
         <Campo label="Valor" valor={formatarMoeda(bem.valor)} />
         <Campo label="Cessão" valor={dataBr(bem.dataCessao)} />

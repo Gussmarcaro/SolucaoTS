@@ -33,7 +33,7 @@ export function EntidadeView({ entidade }: { entidade: Entidade }) {
         </div>
       </div>
 
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 lg:grid-cols-4">
         <Campo label="CNPJ" valor={mascaraCpfCnpj(entidade.cnpj)} />
         <Campo label="Inscrição Estadual" valor={entidade.inscricaoEstadual} />
         <Campo label="Inscrição Municipal" valor={entidade.inscricaoMunicipal} />
@@ -49,7 +49,9 @@ export function EntidadeView({ entidade }: { entidade: Entidade }) {
         <Campo label="CEP" valor={mascaraCep(entidade.cep)} />
       </dl>
 
-      <div className="rounded-xl border border-ink-200 p-4 dark:border-ink-700">
+      {/* Painéis lado a lado no desktop — ver o comentário em AjusteView. */}
+      <div className="lg:columns-2 lg:gap-6">
+      <div className="mb-6 break-inside-avoid rounded-xl border border-ink-200 p-4 dark:border-ink-700">
         <h4 className="mb-3 text-sm font-medium text-ink-700 dark:text-ink-200">Finalidade Estatutária</h4>
         <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="sm:col-span-2">
@@ -59,7 +61,7 @@ export function EntidadeView({ entidade }: { entidade: Entidade }) {
         </dl>
       </div>
 
-      <div className="rounded-xl border border-ink-200 p-4 dark:border-ink-700">
+      <div className="mb-6 break-inside-avoid rounded-xl border border-ink-200 p-4 dark:border-ink-700">
         <h4 className="mb-3 text-sm font-medium text-ink-700 dark:text-ink-200">Estatuto</h4>
         <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
           <Campo label="Data Inicial" valor={data(entidade.estatutoDataInicial)} />
@@ -83,6 +85,8 @@ export function EntidadeView({ entidade }: { entidade: Entidade }) {
             </dd>
           </div>
         </dl>
+      </div>
+
       </div>
 
       <Autoria entidade="EntidadeBeneficiaria" id={entidade.id} />

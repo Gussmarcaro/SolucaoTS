@@ -89,7 +89,7 @@ export function ServidoresCedidos() {
       </Modal>
 
       {/* Visualização */}
-      <Modal open={modal.tipo === 'ver'} onClose={fechar} title="Dados do Servidor" size="lg">
+      <Modal open={modal.tipo === 'ver'} onClose={fechar} title="Dados do Servidor" size="2xl">
         {modal.tipo === 'ver' && <ServidorCedidoView servidor={modal.servidor} />}
       </Modal>
 
