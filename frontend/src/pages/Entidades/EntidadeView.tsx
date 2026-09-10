@@ -66,18 +66,28 @@ export function EntidadeView({ entidade }: { entidade: Entidade }) {
         <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
           <Campo label="Data Inicial" valor={data(entidade.estatutoDataInicial)} />
           <Campo label="Data Alteração" valor={data(entidade.estatutoDataAlteracao)} />
-          <div>
+          {/*
+            `min-w-0` nas três camadas, e cada um é necessário.
+
+            O `truncate` do nome não funcionava sozinho: item de grade nasce com
+            `min-width:auto`, o que o impede de encolher abaixo do conteúdo, e o
+            botão em `inline-flex` cresce até caber o texto inteiro. O resultado
+            é o nome do arquivo saindo para fora do painel — que é exatamente o
+            que se via aqui. Os ícones levam `shrink-0` para não serem espremidos
+            no lugar do texto.
+          */}
+          <div className="min-w-0">
             <dt className="text-xs font-medium uppercase tracking-wider text-ink-400">Arquivo</dt>
             <dd className="mt-0.5 text-sm text-ink-800 dark:text-ink-100">
               {entidade.estatutoArquivoNome ? (
                 <button
                   type="button"
                   onClick={() => abrirEstatuto(entidade.id)}
-                  className="focus-ring inline-flex items-center gap-1.5 rounded text-brand-600 hover:underline dark:text-brand-400"
+                  className="focus-ring inline-flex max-w-full items-center gap-1.5 rounded text-brand-600 hover:underline dark:text-brand-400"
                 >
-                  <FileText className="h-4 w-4" />
-                  <span className="truncate" title={entidade.estatutoArquivoNome}>{entidade.estatutoArquivoNome}</span>
-                  <ExternalLink className="h-3.5 w-3.5" />
+                  <FileText className="h-4 w-4 shrink-0" />
+                  <span className="min-w-0 truncate" title={entidade.estatutoArquivoNome}>{entidade.estatutoArquivoNome}</span>
+                  <ExternalLink className="h-3.5 w-3.5 shrink-0" />
                 </button>
               ) : (
                 '—'

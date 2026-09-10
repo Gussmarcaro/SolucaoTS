@@ -134,18 +134,20 @@ export function AjusteView({ ajuste }: { ajuste: Ajuste }) {
       <Painel titulo="Termo de Ciência e Notificação">
         {/* Sem `lg:col-span-4` aqui: a grade do painel tem 3 colunas, e um
             span de 4 abriria uma quarta coluna implícita, desalinhando tudo. */}
-        <div className="col-span-2 sm:col-span-3">
+        {/* `min-w-0` nas três camadas — sem ele o nome do arquivo cresce e sai
+            para fora do painel; ver o comentário em EntidadeView. */}
+        <div className="col-span-2 min-w-0 sm:col-span-3">
           <dt className="text-xs font-medium uppercase tracking-wider text-ink-400">Arquivo</dt>
           <dd className="mt-0.5 text-sm text-ink-800 dark:text-ink-100">
             {ajuste.termoCienciaArquivoNome ? (
               <button
                 type="button"
                 onClick={() => abrirTermoCiencia(ajuste.id)}
-                className="focus-ring inline-flex items-center gap-1.5 rounded text-brand-600 hover:underline dark:text-brand-400"
+                className="focus-ring inline-flex max-w-full items-center gap-1.5 rounded text-brand-600 hover:underline dark:text-brand-400"
               >
-                <FileText className="h-4 w-4" />
-                <span className="truncate" title={ajuste.termoCienciaArquivoNome}>{ajuste.termoCienciaArquivoNome}</span>
-                <ExternalLink className="h-3.5 w-3.5" />
+                <FileText className="h-4 w-4 shrink-0" />
+                <span className="min-w-0 truncate" title={ajuste.termoCienciaArquivoNome}>{ajuste.termoCienciaArquivoNome}</span>
+                <ExternalLink className="h-3.5 w-3.5 shrink-0" />
               </button>
             ) : (
               '—'
