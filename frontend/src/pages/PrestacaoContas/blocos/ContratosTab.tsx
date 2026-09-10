@@ -14,6 +14,8 @@ import {
 } from '@/lib/dominiosFaseV';
 import { Combobox } from '@/components/ui/Combobox';
 import { listarPlano } from '@/services/ajusteCsv.service';
+import { listarContratos } from '@/services/contratos.service';
+import type { Contrato as ContratoFirmado } from '@/types/contrato';
 import { Modal } from '@/components/ui/Modal';
 import { GradeSimples } from '@/components/ui/GradeSimples';
 import type { ColunaDef } from '@/hooks/useResizableColumns';
@@ -179,10 +181,65 @@ function ContratoForm({ prestacaoId, ajusteId, item, onSuccess, onCancel }: { pr
   const [proposta, setProposta] = useState(
     item?.propostaCategoria ? `${item.propostaCategoria}|${item.propostaSubcategoria ?? ''}` : '',
   );
+  const [firmadoId, setFirmadoId] = useState('');
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
   const ehRne = credorTipoDoc === 'RNE';
+
+  /*
+   * Contratos Firmados — o cadastro do órgão, em Cadastro → Contratos.
+   *
+   * É o mesmo contrato: quem o assinou já o cadastrou lá, com número, credor,
+   * datas, objeto e valor. Redigitar tudo aqui é trabalho repetido e, pior,
+   * chance de divergir — e o que o TCESP recebe é o que está gravado nesta
+   * aba, não no cadastro.
+   *
+   * Só para contrato **novo**. Em edição o combo não aparece: o contrato já
+   * está preenchido, e escolher outro sobrescreveria o que foi ajustado à mão.
+   */
+  const [firmados, setFirmados] = useState<ContratoFirmado[]>([]);
+
+  useEffect(() => {
+    if (item) return;
+    let vivo = true;
+    listarContratos({ filtros: { ativo: true }, page: 1, pageSize: 500, orderBy: 'numero', orderDir: 'asc' })
+      .then((r) => vivo && setFirmados(r.data))
+      .catch(() => undefined);
+    return () => {
+      vivo = false;
+    };
+  }, [item]);
+
+  /**
+   * Copia do cadastro o que é **o mesmo contrato**, e só isso.
+   *
+   * Ficam de fora, de propósito: natureza da contratação, critério de seleção,
+   * tipo de valor e classificação da despesa. A natureza é o caso claro — no
+   * cadastro é texto livre ("Serviços"), aqui é uma lista de códigos oficiais
+   * do TCESP. Adivinhar o código a partir da palavra seria inventar dado que
+   * vai transmitido, e um código errado só apareceria na análise do Tribunal.
+   *
+   * O preenchimento é **sugestão, não trava**: tudo continua editável, porque
+   * um aditivo pode ter mudado valor ou vigência depois do cadastro.
+   */
+  function carregarDoFirmado(id: string) {
+    const c = firmados.find((f) => f.id === id);
+    if (!c) return;
+    setFirmadoId(id);
+    setNumero(c.numero);
+    setCredorTipoDoc(c.credorDocumentoTipo);
+    setCredorNumeroDoc(mascaraCpfCnpj(c.credorDocumento));
+    setCredorNome(c.credorNome);
+    setDataAssinatura(c.dataAssinatura);
+    setObjeto(c.objeto);
+    setValor(numeroParaMascaraMoeda(c.valorMontante));
+    setVigInicial(c.vigenciaInicio);
+    // Sem fim no cadastro significa vigência indeterminada — é a mesma regra
+    // que o cadastro documenta no seu próprio campo ("Em branco = indeterminada").
+    setVigenciaTipo(c.vigenciaFim ? 'PRE_ESTABELECIDA' : 'INDETERMINADA');
+    setVigFinal(c.vigenciaFim ?? '');
+  }
 
   async function submeter(e: React.FormEvent) {
     e.preventDefault();
@@ -230,6 +287,32 @@ function ContratoForm({ prestacaoId, ajusteId, item, onSuccess, onCancel }: { pr
   return (
     <form onSubmit={submeter} onKeyDown={enterComoTab} className="space-y-4">
       {erro && <AlertaErro msg={erro} />}
+
+      {/* Buscar do cadastro — só no contrato novo, e opcional: contrato antigo
+          que não esteja no cadastro continua sendo digitado. */}
+      {!item && (
+        <div className="rounded-xl border border-ink-200 bg-ink-50/50 p-3 dark:border-ink-700 dark:bg-ink-800/30">
+          <Combobox
+            label="Buscar em Contratos Firmados"
+            name="contratoFirmado"
+            value={firmadoId}
+            onChange={carregarDoFirmado}
+            options={firmados.map((c) => ({
+              value: c.id,
+              label: `${c.numero} — ${c.credorNome}`,
+              sub: `${mascaraCpfCnpj(c.credorDocumento)} · ${dataBr(c.dataAssinatura)} · ${formatarMoeda(c.valorMontante)}`,
+            }))}
+            placeholder={
+              firmados.length
+                ? 'Digite o número ou o credor para localizar...'
+                : 'Nenhum contrato cadastrado em Cadastro → Contratos'
+            }
+            disabled={!firmados.length}
+            hint="Preenche número, credor, datas, objeto e valor. Tudo continua editável — natureza, critério e classificação são desta aba e não vêm do cadastro."
+          />
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input label="Número do contrato *" name="numero" value={numero} onChange={(e) => setNumero(e.target.value)} />
         <Input label="Data de assinatura *" name="assinatura" type="date" value={dataAssinatura} onChange={(e) => setDataAssinatura(e.target.value)} />
