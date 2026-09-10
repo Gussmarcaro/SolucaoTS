@@ -169,6 +169,23 @@ na URL: `@` vira `%40`, `#` vira `%23`, `/` vira `%2F`. O `@` é o pior deles �
 é o separador entre a senha e o servidor, então um `@` cru faz o driver
 procurar um servidor com nome errado, e o erro não aponta a causa.
 
+> **Quem lê este arquivo é o systemd, não o `dotenv`.** O serviço o carrega com
+> `EnvironmentFile=`, e o parser é mais rígido que o de um `.env` comum:
+>
+> - valor com **espaço** ou com **`<` `>`** precisa de aspas —
+>   `SMTP_FROM="Solução TS <suporte@dominio.com>"`;
+> - **`#` sem aspas vira comentário** dali em diante, o que corta uma senha ao
+>   meio sem avisar;
+> - **nada de espaço em volta do `=`**.
+>
+> Uma linha malformada pode derrubar o arquivo **inteiro**, e o sintoma engana:
+> a API sobe reclamando de *todas* as variáveis de uma vez, como se ninguém
+> tivesse preenchido nada. Se isso acontecer, procure a linha, não as variáveis:
+>
+> ```bash
+> journalctl -u solucaots-api -n 50 --no-pager | grep -i "Failed to parse"
+> ```
+
 Dono e permissão. **O dono importa**: se você editou como root, o arquivo fica
 dele, e o passo 6 roda como `solucao` — que não conseguiria lê-lo.
 
@@ -370,6 +387,7 @@ mexer no banco — é o momento de maior risco.
 | Erro 404 em rota do sistema | Falta o `try_files` do SPA no nginx |
 | Erro de banco | `journalctl -u postgresql -n 50` |
 | `EACCES` no `npm ci` | `node_modules` com arquivo do root — ver abaixo |
+| Variáveis do `.env` "ausentes" no boot | Linha malformada; o systemd é rígido — ver passo 5 |
 | Erro 500 na tela | A tela mostra um **código** — busque-o no log da API |
 
 Esse último é proposital: cada requisição tem um id, e o 500 devolve esse id ao
