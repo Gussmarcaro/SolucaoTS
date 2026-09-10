@@ -388,6 +388,7 @@ mexer no banco — é o momento de maior risco.
 | Erro de banco | `journalctl -u postgresql -n 50` |
 | `EACCES` no `npm ci` | `node_modules` com arquivo do root — ver abaixo |
 | Variáveis do `.env` "ausentes" no boot | Linha malformada; o systemd é rígido — ver passo 5 |
+| E-mail de senha cai no spam | `APP_URL` com IP cru — ver abaixo |
 | Erro 500 na tela | A tela mostra um **código** — busque-o no log da API |
 
 Esse último é proposital: cada requisição tem um id, e o 500 devolve esse id ao
@@ -422,3 +423,26 @@ rm -rf node_modules && npm ci
 A causa é sempre a mesma: **a aplicação é instalada e executada pelo `solucao`**;
 root só copia o serviço, mexe no nginx e reinicia. Misturar os dois é o que
 produz este erro semanas depois, na atualização — não na instalação.
+
+---
+
+## O e-mail de redefinição cai no spam
+
+O log diz `"evento":"email-enviado"` — o servidor SMTP aceitou —, e a mensagem
+não aparece na caixa de entrada. Antes de mexer no SMTP, mande um teste **só
+com texto, sem link**: se esse chegar, o canal está bom e o problema é o
+conteúdo.
+
+O culpado costuma ser o `APP_URL` apontando para o **IP**. O link fica
+`http://143.95.165.44/redefinir-senha?token=...` — endereço numérico, sem
+certificado, com um token na query. É o desenho exato de um golpe de
+redefinição de senha, e o Gmail penaliza pesado.
+
+Não há o que ajustar no envio: a saída é o domínio com HTTPS (passos 8 e o DNS
+apontando para a VPS) e `APP_URL=https://seudominio`. Enquanto o `APP_URL` for
+um IP, todo e-mail do sistema tende ao spam — para todos os usuários, não só
+para quem marcou "não é spam" uma vez.
+
+Vale conferir o **DKIM** no cPanel (*Email Deliverability* → *Repair*) de
+qualquer forma, mas ele não resolve isto: o teste sem link já chegava à caixa
+de entrada, o que mostra que o remetente não era o problema.
