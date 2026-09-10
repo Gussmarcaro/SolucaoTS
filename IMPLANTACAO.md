@@ -386,7 +386,8 @@ mexer no banco — é o momento de maior risco.
 | Erro 502 no navegador | A API caiu; veja o log acima |
 | Erro 404 em rota do sistema | Falta o `try_files` do SPA no nginx |
 | Erro de banco | `journalctl -u postgresql -n 50` |
-| `EACCES` no `npm ci` | `node_modules` com arquivo do root — ver abaixo |
+| `EACCES` no `npm ci` ou no build | pasta do root — ver abaixo |
+| Publiquei e o site não mudou | o build falhou e o `dist/` antigo ficou — ver abaixo |
 | Variáveis do `.env` "ausentes" no boot | Linha malformada; o systemd é rígido — ver passo 5 |
 | E-mail de senha cai no spam | `APP_URL` com IP cru — ver abaixo |
 | Erro 500 na tela | A tela mostra um **código** — busque-o no log da API |
@@ -397,13 +398,26 @@ imediata.
 
 ---
 
-## `EACCES` no `npm ci` — arquivo do root no `node_modules`
+## `EACCES` no `npm ci` ou no `npm run build` — arquivo do root
+
+Duas caras do mesmo problema:
 
 ```
 npm error code EACCES
 npm error syscall unlink
 npm error path /home/solucao/app/backend/node_modules/.bin/…
 ```
+
+```
+error during build:
+EACCES, Permission denied: /home/solucao/app/frontend/dist/assets
+    at emptyOutDir (…/vite/dist/node/chunks/…)
+```
+
+O segundo é o mais traiçoeiro. O Vite apaga o `dist/` antes de reconstruir; se
+a pasta é do root, ele falha — e **o `dist/` antigo continua lá, servido pelo
+nginx**. O site segue no ar, com a versão velha, e a publicação parece ter
+funcionado. Confira sempre a última linha do build: tem de ser `✓ built in …`.
 
 Algum `npm` rodou como root e deixou arquivos dele na pasta. O `solucao` não
 consegue apagá-los para reinstalar. Devolva a posse da pasta, **como root**:
