@@ -1,21 +1,20 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
+import { Combobox, type OpcaoCombo } from '@/components/ui/Combobox';
 import { Button } from '@/components/ui/Button';
 import { FormularioNovo } from '@/components/ui/LabelCampo';
 import {
-  apenasDigitos,
   mascaraCpfCnpj,
   mascaraMoeda,
   moedaParaNumero,
   numeroParaMascaraMoeda,
-  tipoDocumento,
 } from '@/lib/masks';
-import { isDocumentoValido } from '@/lib/validators';
-import { capitalizarNome } from '@/lib/nomeProprio';
+import { listarFornecedores } from '@/services/fornecedores.service';
 import { atualizarContrato, criarContrato } from '@/services/contratos.service';
 import { extrairCodigoErro, extrairMensagemErro } from '@/services/http';
+import type { Fornecedor } from '@/types/fornecedor';
 import type { Contrato, ContratoPayload } from '@/types/contrato';
 
 interface Props {
@@ -33,10 +32,11 @@ const NATUREZAS = [
   'Outros',
 ];
 
+/** O credor gravado que não está entre os fornecedores ativos. */
+const PRESERVADO = '__gravado__';
+
 type Campos = {
   numero: string;
-  credorNome: string;
-  credorDocumento: string;
   naturezaContratacao: string;
   objeto: string;
   dataAssinatura: string;
@@ -48,8 +48,6 @@ type Campos = {
 function estadoInicial(c?: Contrato | null): Campos {
   return {
     numero: c?.numero ?? '',
-    credorNome: c?.credorNome ?? '',
-    credorDocumento: c?.credorDocumento ?? '',
     naturezaContratacao: c?.naturezaContratacao ?? '',
     objeto: c?.objeto ?? '',
     dataAssinatura: c?.dataAssinatura ?? '',
@@ -66,6 +64,82 @@ export function ContratoForm({ contrato, onSuccess, onCancel }: Props) {
   const [alerta, setAlerta] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
+  /**
+   * Credor escolhido no cadastro de Fornecedores / Prestadores.
+   *
+   * O contrato continua **gravando** nome, documento e tipo do credor, em vez
+   * de guardar uma chave estrangeira: é a fotografia do credor na data da
+   * assinatura. Derivar do cadastro na hora de exibir reescreveria contratos
+   * antigos se o fornecedor mudasse de razão social — e o contrato assinado
+   * não muda porque o cadastro mudou.
+   *
+   * É o mesmo arranjo do Documento Fiscal, e pela mesma razão.
+   */
+  const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
+  const [credorId, setCredorId] = useState('');
+  const [erroCredor, setErroCredor] = useState<string | undefined>();
+
+  // Só os ativos entram na lista. Um credor já gravado que não esteja entre
+  // eles não some: vira a opção PRESERVADO, logo abaixo.
+  useEffect(() => {
+    let vivo = true;
+    listarFornecedores({
+      filtros: { ativo: true },
+      page: 1,
+      pageSize: 500,
+      orderBy: 'nome',
+      orderDir: 'asc',
+    })
+      .then((r) => vivo && setFornecedores(r.data))
+      .catch(() => undefined);
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
+  /**
+   * O credor já gravado neste contrato, quando não está entre os ativos.
+   *
+   * Sem isto, editar um contrato antigo — ou de um fornecedor inativado depois —
+   * abriria com o campo vazio, e salvar apagaria o credor. Vale também para os
+   * contratos cadastrados antes de existir esta ligação, que foram digitados à
+   * mão e podem não ter fornecedor correspondente.
+   */
+  const credorForaDaLista =
+    !!contrato && !fornecedores.some((f) => f.documento === contrato.credorDocumento);
+
+  // Assim que a lista chega, pré-seleciona o credor do contrato em edição.
+  useEffect(() => {
+    if (!contrato) return;
+    const achado = fornecedores.find((f) => f.documento === contrato.credorDocumento);
+    setCredorId(achado ? achado.id : PRESERVADO);
+  }, [contrato, fornecedores]);
+
+  const opcoesCredor: OpcaoCombo[] = [
+    ...(credorForaDaLista && contrato
+      ? [
+          {
+            value: PRESERVADO,
+            label: contrato.credorNome,
+            sub: `${contrato.credorDocumentoTipo} ${mascaraCpfCnpj(contrato.credorDocumento)} · gravado neste contrato, fora da lista de ativos`,
+          },
+        ]
+      : []),
+    ...fornecedores.map((f) => ({
+      value: f.id,
+      label: f.nome,
+      sub: `${f.documentoTipo} ${mascaraCpfCnpj(f.documento)}`,
+    })),
+  ];
+
+  /** O credor que está selecionado, para mostrar o documento ao lado. */
+  const credorEscolhido = fornecedores.find((f) => f.id === credorId) ?? null;
+  const documentoDoCredor = credorEscolhido
+    ? mascaraCpfCnpj(credorEscolhido.documento)
+    : credorId === PRESERVADO && contrato
+      ? mascaraCpfCnpj(contrato.credorDocumento)
+      : '';
+
   const set = (campo: keyof Campos, valor: string) => {
     setForm((prev) => ({ ...prev, [campo]: valor }));
     setErros((prev) => ({ ...prev, [campo]: undefined }));
@@ -75,8 +149,6 @@ export function ContratoForm({ contrato, onSuccess, onCancel }: Props) {
   function validar(): boolean {
     const novos: Partial<Record<keyof Campos, string>> = {};
     if (!form.numero.trim()) novos.numero = 'Informe o número do contrato.';
-    if (form.credorNome.trim().length < 2) novos.credorNome = 'Informe o credor.';
-    if (!isDocumentoValido(form.credorDocumento)) novos.credorDocumento = 'CPF/CNPJ inválido.';
     if (!form.naturezaContratacao) novos.naturezaContratacao = 'Selecione a natureza.';
     if (!form.objeto.trim()) novos.objeto = 'Descreva o objeto do contrato.';
     if (!form.dataAssinatura) novos.dataAssinatura = 'Informe a data de assinatura.';
@@ -84,8 +156,11 @@ export function ContratoForm({ contrato, onSuccess, onCancel }: Props) {
     if (form.vigenciaFim && form.vigenciaFim < form.vigenciaInicio)
       novos.vigenciaFim = 'O fim não pode ser anterior ao início.';
     if (moedaParaNumero(form.valor) <= 0) novos.valor = 'Informe o valor do contrato.';
+
+    const semCredor = !credorId ? 'Selecione o credor (Fornecedor / Prestador).' : undefined;
+    setErroCredor(semCredor);
     setErros(novos);
-    return Object.keys(novos).length === 0;
+    return Object.keys(novos).length === 0 && !semCredor;
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -93,11 +168,23 @@ export function ContratoForm({ contrato, onSuccess, onCancel }: Props) {
     setAlerta(null);
     if (!validar()) return;
 
+    /*
+     * O credor é copiado do cadastro para o contrato — fotografia, não vínculo.
+     * Quando é o credor já gravado (fora da lista de ativos), reenvia-se o que
+     * estava lá: editar o valor ou a vigência não pode trocar o credor.
+     */
+    if (!credorEscolhido && credorId !== PRESERVADO) {
+      setErroCredor('Selecione o credor (Fornecedor / Prestador).');
+      return;
+    }
+
     const payload: ContratoPayload = {
       numero: form.numero.trim(),
-      credorNome: form.credorNome.trim(),
-      credorDocumento: apenasDigitos(form.credorDocumento),
-      credorDocumentoTipo: tipoDocumento(form.credorDocumento),
+      credorNome: credorEscolhido ? credorEscolhido.nome : contrato!.credorNome,
+      credorDocumento: credorEscolhido ? credorEscolhido.documento : contrato!.credorDocumento,
+      credorDocumentoTipo: credorEscolhido
+        ? credorEscolhido.documentoTipo
+        : contrato!.credorDocumentoTipo,
       naturezaContratacao: form.naturezaContratacao,
       objeto: form.objeto.trim(),
       dataAssinatura: form.dataAssinatura,
@@ -143,17 +230,42 @@ export function ContratoForm({ contrato, onSuccess, onCancel }: Props) {
             inputMode="numeric"
           />
 
+          {/* Credor: escolhido no cadastro, não digitado. O CPF/CNPJ vem junto e
+              não se edita — dois campos livres divergiriam sem nada acusar. */}
           <div className="sm:col-span-2">
-            <Input label="Credor (Nome / Razão Social) *" name="credorNome" value={form.credorNome} onChange={(e) => set('credorNome', capitalizarNome(e.target.value))} error={erros.credorNome} />
+            <Combobox
+              label="Credor (Fornecedor / Prestador) *"
+              name="credorId"
+              value={credorId}
+              onChange={(v) => {
+                setCredorId(v);
+                setErroCredor(undefined);
+                setAlerta(null);
+              }}
+              options={opcoesCredor}
+              placeholder={
+                opcoesCredor.length
+                  ? 'Digite para localizar o fornecedor...'
+                  : 'Nenhum fornecedor ativo cadastrado'
+              }
+              error={erroCredor}
+              // A lista vazia precisa dizer para onde ir: antes o campo era
+              // digitável, e quem não achar o credor concluiria que a tela quebrou.
+              hint={
+                opcoesCredor.length
+                  ? 'Vem de Cadastro → Fornecedores / Prestadores (CPF e CNPJ).'
+                  : 'Cadastre o credor primeiro em Cadastro → Fornecedores / Prestadores.'
+              }
+            />
           </div>
           <Input
-            label="CPF / CNPJ do Credor *"
+            label="CPF / CNPJ do Credor"
+            anotacao="(Automático)"
             name="credorDocumento"
-            value={mascaraCpfCnpj(form.credorDocumento)}
-            onChange={(e) => set('credorDocumento', e.target.value)}
-            error={erros.credorDocumento}
-            placeholder="000.000.000-00"
-            inputMode="numeric"
+            value={documentoDoCredor}
+            readOnly
+            placeholder="Selecione o credor acima"
+            hint="Vem do cadastro do fornecedor escolhido."
           />
           <Select
             label="Natureza da Contratação *"
