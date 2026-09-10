@@ -76,7 +76,27 @@ const POR_RELACAO: Record<string, (tenant: string) => Record<string, unknown>> =
   RelacaoEmpregado: (t) => ({ prestacao: { ajuste: { clienteId: t } } }),
   ServidorCedido: (t) => ({ prestacao: { ajuste: { clienteId: t } } }),
   EmpenhoPrestacao: (t) => ({ prestacao: { ajuste: { clienteId: t } } }),
-  DocumentoFiscal: (t) => ({ prestacao: { ajuste: { clienteId: t } } }),
+};
+
+/**
+ * Models que ganharam a coluna `clienteId` e ainda **não** foram preenchidos.
+ *
+ * Sem esta lista, a nota fiscal desapareceria da tela no instante em que a
+ * coluna nasceu: `ehRaizDeTenant` passaria a valer, o filtro viraria
+ * `clienteId = X`, e todas as notas gravadas antes — com o campo nulo — não
+ * casariam com nada. Dado que existe e não aparece é pior que erro: ninguém
+ * reclama de um registro que sumiu sem barulho, até a prestação fechar errada.
+ *
+ * O `OR` aceita as duas formas ao mesmo tempo — a nota nova pela coluna, a
+ * antiga pelo caminho do pai. **A entrada sai daqui quando o backfill rodar**,
+ * e `verificar:tenant` cobra a mudança para que ninguém esqueça: um `OR`
+ * esquecido é uma porta a mais no isolamento, e portas a mais é o que não se
+ * pode ter aqui.
+ */
+const EM_MIGRACAO: Record<string, (tenant: string) => Record<string, unknown>> = {
+  DocumentoFiscal: (t) => ({
+    OR: [{ clienteId: t }, { prestacao: { ajuste: { clienteId: t } } }],
+  }),
 };
 
 /** O model está sujeito ao filtro? `Cliente` entra por um caminho próprio. */
@@ -104,14 +124,17 @@ export function aplicarTenant(
 ): ArgsPrisma | undefined {
   if (!tenant || (!ehRaizDeTenant(model) && !ehFiltradoPorRelacao(model))) return args;
 
-  // Três formas de chegar ao órgão, em ordem de precisão: o próprio id (o
-  // `Cliente`), a coluna própria (as raízes) e a relação até uma raiz.
+  // Quatro formas de chegar ao órgão, em ordem de precisão: o próprio id (o
+  // `Cliente`), a coluna própria (as raízes), a relação até uma raiz, e — só
+  // durante uma migração — as duas ao mesmo tempo.
   const filtro =
     model === 'Cliente'
       ? { id: tenant }
-      : ehRaizDeTenant(model)
-        ? { clienteId: tenant }
-        : POR_RELACAO[model](tenant);
+      : model in EM_MIGRACAO
+        ? EM_MIGRACAO[model](tenant)
+        : ehRaizDeTenant(model)
+          ? { clienteId: tenant }
+          : POR_RELACAO[model](tenant);
   const a: ArgsPrisma = { ...(args ?? {}) };
 
   if (POR_CHAVE_UNICA.has(operation)) {

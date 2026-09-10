@@ -75,7 +75,7 @@ console.log('\nIsolamento multi-tenant\n');
 
   // Filho não é raiz: alcança o órgão pelo pai. Marcá-lo como raiz obrigaria a
   // uma coluna que a relação já dispensa — e a mantê-la sincronizada.
-  for (const m of ['Pagamento', 'DocumentoFiscal', 'PrestacaoContas', 'TermoAditivo', 'Meta']) {
+  for (const m of ['Pagamento', 'PrestacaoContas', 'TermoAditivo', 'Meta']) {
     conferir(`${m} não é raiz (herda pelo pai)`, !ehRaizDeTenant(m));
   }
 
@@ -90,11 +90,24 @@ console.log('\nIsolamento multi-tenant\n');
     RelacaoEmpregado: 'o relatório do titular busca por CPF',
     ServidorCedido: 'o relatório do titular busca por CPF',
     EmpenhoPrestacao: 'o relatório do titular busca por CPF',
-    DocumentoFiscal: 'o relatório do titular busca por CPF',
   };
   for (const [m, porque] of Object.entries(PORTAS)) {
     conferir(`${m} é filtrado por relação`, ehFiltradoPorRelacao(m), porque);
   }
+
+  /*
+   * A nota fiscal saiu de PORTAS: ganhou coluna própria e virou raiz.
+   *
+   * Mas ela não vira raiz "limpa" enquanto o backfill não rodar, e é isso que
+   * esta checagem trava: o filtro tem de aceitar também o caminho antigo, senão
+   * toda nota gravada antes some da tela. O relatório do titular, que a varre
+   * por CPF, continua coberto pelos dois braços do `OR`.
+   */
+  conferir(
+    'DocumentoFiscal é raiz (tem coluna própria)',
+    ehRaizDeTenant('DocumentoFiscal'),
+    'a nota passou a ser do órgão, não da prestação',
+  );
   conferir('tabela de domínio não é raiz', !ehRaizDeTenant('Cbo'), 'catálogo oficial é comum a todos');
 }
 
@@ -244,12 +257,30 @@ console.log('\nIsolamento multi-tenant\n');
     'fecha a subárvore inteira: os blocos começam por garantirPrestacao',
   );
 
-  const doisSaltos = aplicarTenant('DocumentoFiscal', 'findMany', { where: { credorNumeroDoc: '1' } }, T);
+  /*
+   * A nota fiscal passou a ser do órgão, e está no meio da migração: tem a
+   * coluna `clienteId`, mas as gravadas antes ainda a têm nula.
+   *
+   * Por isso o filtro aceita **as duas formas**. Sem o segundo braço do `OR`,
+   * toda nota anterior à mudança sumiria da tela sem erro nenhum — e sumiço
+   * silencioso é o pior defeito possível aqui: ninguém reclama de um registro
+   * que não aparece, até a prestação fechar com valor a menos.
+   *
+   * Esta checagem muda quando o backfill rodar: aí o `OR` sai, e o filtro passa
+   * a ser só `clienteId`. Enquanto o `OR` existir, existe um caminho a mais
+   * para o dado — e é justamente o que não se pode esquecer aberto.
+   */
+  const emMigracao = aplicarTenant('DocumentoFiscal', 'findMany', { where: { credorNumeroDoc: '1' } }, T);
   conferir(
-    'documento fiscal chega ao órgão em dois saltos',
-    json(doisSaltos?.where) ===
-      json({ AND: [{ credorNumeroDoc: '1' }, { prestacao: { ajuste: { clienteId: T } } }] }),
-    json(doisSaltos?.where),
+    'documento fiscal aceita a coluna nova e o caminho antigo (migração)',
+    json(emMigracao?.where) ===
+      json({
+        AND: [
+          { credorNumeroDoc: '1' },
+          { OR: [{ clienteId: T }, { prestacao: { ajuste: { clienteId: T } } }] },
+        ],
+      }),
+    json(emMigracao?.where),
   );
 
   const doSino = aplicarTenant('DocumentoRegularidade', 'findMany', {}, T);

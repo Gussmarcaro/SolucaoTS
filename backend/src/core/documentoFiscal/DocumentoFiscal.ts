@@ -37,7 +37,16 @@ export const TIPOS_DOCUMENTO_FISCAL: TipoDocumentoFiscal[] = [
 /** Entidade de domínio — Documento Fiscal (bloco da prestação). */
 export interface DocumentoFiscal {
   id: string;
-  prestacaoId: string;
+  /**
+   * Vínculo antigo com a prestação — **em migração**.
+   *
+   * A nota passou a ser do órgão, e quais prestações a apropriam agora está em
+   * `PrestacaoDocumentoFiscal`. O campo continua aqui, nulo nas notas novas,
+   * enquanto as duas formas convivem; sai quando o backfill terminar.
+   */
+  prestacaoId: string | null;
+  /** Órgão dono da nota. Nulo só nas gravadas antes desta mudança. */
+  clienteId: string | null;
   numero: string;
   credorTipoDoc: TipoDocumento;
   credorNumeroDoc: string;

@@ -8,6 +8,7 @@ import { paraDataISO } from '@/shared/datas';
 
 const selecao = {
   id: true,
+  clienteId: true,
   prestacaoId: true,
   numero: true,
   credorTipoDoc: true,
@@ -40,6 +41,7 @@ type Row = Prisma.DocumentoFiscalGetPayload<{ select: typeof selecao }>;
 function toDomain(row: Row): DocumentoFiscal {
   return {
     id: row.id,
+    clienteId: row.clienteId,
     prestacaoId: row.prestacaoId,
     numero: row.numero,
     credorTipoDoc: row.credorTipoDoc as TipoDocumento,

@@ -229,6 +229,7 @@ model Cliente {
   contratosFirmados     ContratoFirmado[]
   bensCedidos           BemCedido[]
   servidoresCedidos     ServidorCedidoCadastro[]
+  documentosFiscais     DocumentoFiscal[]
 
   @@unique([codigoMunicipio, codigoEntidade])
   @@index([tipoOrgao])
@@ -969,6 +970,7 @@ model PrestacaoContas {
   extratoFisicoFinanceiro ExtratoFisicoFinanceiro?
   termoBensCedidos        TermoBensCedidos?
   ajustesSaldo            AjustesSaldo?
+  documentosApropriados   PrestacaoDocumentoFiscal[]
 
   @@index([responsavelId])
   @@index([ajusteId])
@@ -1200,16 +1202,37 @@ model Contrato {
   propostaCategoria        String?
   propostaSubcategoria     String?
 
-  criadoPor         String?           @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
-  prestacao         PrestacaoContas   @relation(fields: [prestacaoId], references: [id])
-  documentosFiscais DocumentoFiscal[]
+  criadoPor             String?                    @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
+  prestacao             PrestacaoContas            @relation(fields: [prestacaoId], references: [id])
+  documentosFiscais     DocumentoFiscal[]
+  documentosApropriados PrestacaoDocumentoFiscal[]
 
   @@unique([prestacaoId, numero, dataAssinatura, credorTipoDoc, credorNumeroDoc])
 }
 
+/// A nota fiscal é do **órgão**, não da prestação de contas.
+///
+/// Era filha da prestação, e isso invertia o mundo real: o órgão lança a
+/// despesa quando ela acontece, e a prestação é o retrato disso num exercício.
+/// A inversão tinha custo concreto — a mesma conta de luz rateada entre cinco
+/// ajustes era digitada cinco vezes, e a trava de duplicidade, sendo por
+/// prestação, nunca impediu isso.
+///
+/// Agora a nota é lançada uma vez em Execução → Financeiro → Despesas, e
+/// `PrestacaoDocumentoFiscal` diz quais prestações a apropriam e em que
+/// percentual. O valor bruto continua cheio na nota: é assim que o TCESP o
+/// recebe, com o `rateio_percentual` ao lado.
+///
+/// **Migração em fases** (a mesma disciplina do multi-tenant): `prestacaoId`
+/// segue aqui, opcional, até o backfill criar as linhas de ligação. Enquanto
+/// as duas formas convivem, nada quebra; a remoção é o último passo.
 model DocumentoFiscal {
   id                   String               @id @default(uuid()) @db.Uuid
-  prestacaoId          String               @db.Uuid
+  /// Órgão dono da nota. Opcional só até o backfill — depois é obrigatório.
+  clienteId            String?              @db.Uuid
+  /// @deprecated Vínculo antigo, substituído por `PrestacaoDocumentoFiscal`.
+  /// Continua preenchido durante a migração e sai na fase final.
+  prestacaoId          String?              @db.Uuid
   numero               String
   credorTipoDoc        TipoDocumento
   credorNumeroDoc      String
@@ -1266,14 +1289,56 @@ model DocumentoFiscal {
   rateioProveniente Boolean   @default(false)
   rateioPercentual  Decimal?  @db.Decimal(5, 2)
 
-  criadoPor  String?         @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
-  prestacao  PrestacaoContas @relation(fields: [prestacaoId], references: [id])
-  contrato   Contrato?       @relation(fields: [contratoId], references: [id])
-  rateio     Rateio?         @relation(fields: [rateioId], references: [id])
+  criadoPor  String?                    @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
+  cliente    Cliente?                   @relation(fields: [clienteId], references: [id])
+  prestacao  PrestacaoContas?           @relation(fields: [prestacaoId], references: [id])
+  contrato   Contrato?                  @relation(fields: [contratoId], references: [id])
+  rateio     Rateio?                    @relation(fields: [rateioId], references: [id])
   pagamentos Pagamento[]
   glosas     Glosa[]
+  prestacoes PrestacaoDocumentoFiscal[]
 
+  // A nota passa a ser única **no órgão**, não na prestação. É a trava que
+  // faltava: a mesma nota lançada em duas prestações nunca conflitava, e era
+  // exatamente isso que o rateio manual produzia.
+  //
+  // Convive com a chave antiga durante a migração, como as chaves do
+  // multi-tenant: com `clienteId` nulo, o Postgres não considera conflito, e
+  // quem segura a duplicidade continua sendo a de baixo.
+  @@unique([clienteId, numero, credorTipoDoc, credorNumeroDoc])
   @@unique([prestacaoId, numero, credorTipoDoc, credorNumeroDoc])
+  @@index([clienteId, dataEmissao])
+}
+
+/// Quanto de uma nota fiscal entra numa prestação de contas.
+///
+/// A tabela existe porque uma nota rateada — luz, aluguel, contador — se
+/// divide entre vários ajustes, e cada ajuste presta contas separadamente. Sem
+/// ela, a única saída era lançar a mesma nota uma vez por ajuste.
+///
+/// `percentual` é **fotografia**: o cálculo do rateio no momento em que a nota
+/// foi apropriada. Editar o método de rateio meses depois não pode mexer numa
+/// prestação já transmitida.
+model PrestacaoDocumentoFiscal {
+  id                String  @id @default(uuid()) @db.Uuid
+  prestacaoId       String  @db.Uuid
+  documentoFiscalId String  @db.Uuid
+  /// Parcela desta nota que cabe a esta prestação. 100 quando não há rateio.
+  percentual        Decimal @default(100) @db.Decimal(5, 2)
+  /// Contrato **desta prestação** a que a nota se refere.
+  ///
+  /// Fica aqui, e não na nota, porque `Contrato` é um bloco da prestação: uma
+  /// nota que alimenta três prestações se refere a três contratos distintos,
+  /// um em cada. É daqui que sai o `identificacao_contrato` do envio.
+  contratoId        String? @db.Uuid
+  criadoPor         String? @db.Uuid
+
+  prestacao       PrestacaoContas @relation(fields: [prestacaoId], references: [id], onDelete: Cascade)
+  documentoFiscal DocumentoFiscal @relation(fields: [documentoFiscalId], references: [id], onDelete: Cascade)
+  contrato        Contrato?       @relation(fields: [contratoId], references: [id])
+
+  @@unique([prestacaoId, documentoFiscalId])
+  @@index([documentoFiscalId])
 }
 
 model Pagamento {
