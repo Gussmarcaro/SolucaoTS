@@ -3,10 +3,10 @@ import { LoginUseCase } from '@/application/auth/LoginUseCase';
 import { SolicitarRecuperacaoUseCase } from '@/application/auth/SolicitarRecuperacaoUseCase';
 import { RedefinirSenhaUseCase } from '@/application/auth/RedefinirSenhaUseCase';
 import { PrismaUsuarioRepository } from '@/infrastructure/database/PrismaUsuarioRepository';
-import { ConsoleEmailService } from '@/infrastructure/email/ConsoleEmailService';
+import { criarEmailService } from '@/infrastructure/email/criarEmailService';
 
 const repo = new PrismaUsuarioRepository();
-const emailService = new ConsoleEmailService();
+const emailService = criarEmailService();
 const login = new LoginUseCase(repo);
 const solicitar = new SolicitarRecuperacaoUseCase(repo, emailService);
 const redefinir = new RedefinirSenhaUseCase(repo);
