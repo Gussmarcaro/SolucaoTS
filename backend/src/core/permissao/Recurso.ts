@@ -65,6 +65,10 @@ export const RECURSOS: Recurso[] = [
   { id: 'CADASTRO_SERVIDORES_CEDIDOS', rotulo: 'Servidores Cedidos', secao: 'Cadastro' },
   { id: 'CADASTRO_RATEIO', rotulo: 'Rateio Administrativo', secao: 'Cadastro' },
   { id: 'CADASTRO_EMPRESAS', rotulo: 'Empresas (suspenso)', secao: 'Cadastro' },
+  // Execução → Financeiro. A despesa é lançada aqui, no órgão, e a prestação
+  // apenas se apropria dela — por isso o recurso é próprio, e não o da
+  // prestação: quem lança nota não precisa poder transmitir ao Tribunal.
+  { id: 'EXECUCAO_DESPESAS', rotulo: 'Despesas (Documentos Fiscais)', secao: 'Execução' },
   { id: 'PRESTACAO_CONTAS', rotulo: 'Prestação de Contas', secao: 'Prestação', temAprovacao: true },
   { id: 'FISCALIZACAO', rotulo: 'Fiscalização | Monitoramento', secao: 'Prestação' },
   { id: 'AGENDA', rotulo: 'Agenda de Compromissos', secao: 'Prestação' },

@@ -83,6 +83,48 @@ export class PrismaDocumentoFiscalRepository implements IDocumentoFiscalReposito
     return row ? toDomain(row) : null;
   }
 
+  /**
+   * As notas do órgão, da mais recente para a mais antiga.
+   *
+   * Sem `where`: quem recorta é a extension de tenant. Escrever o filtro aqui
+   * daria a impressão de que ele é opcional em consultas novas — e é o
+   * contrário: consulta sem recorte é a falha que funciona perfeitamente para
+   * quem a escreveu, e para os outros órgãos também.
+   */
+  async listarDoOrgao(): Promise<DocumentoFiscal[]> {
+    const rows = await prisma.documentoFiscal.findMany({
+      select: selecao,
+      orderBy: [{ dataEmissao: 'desc' }, { numero: 'desc' }],
+    });
+    return rows.map(toDomain);
+  }
+
+  /**
+   * Duplicidade no órgão.
+   *
+   * `findFirst`, e não `findUnique` pela chave composta: durante a migração a
+   * mesma nota pode existir com `clienteId` nulo (gravada pela prestação) e a
+   * chave única não a alcançaria. O recorte por órgão continua vindo da
+   * extension.
+   */
+  async buscarDuplicadoNoOrgao(
+    numero: string,
+    credorTipoDoc: TipoDocumento,
+    credorNumeroDoc: string,
+  ): Promise<DocumentoFiscal | null> {
+    const row = await prisma.documentoFiscal.findFirst({
+      where: { numero, credorTipoDoc, credorNumeroDoc },
+      select: selecao,
+    });
+    return row ? toDomain(row) : null;
+  }
+
+  /** A nota nasce sem prestação: quem a apropria decide isso depois. */
+  async criarNoOrgao(dados: DadosDocumentoFiscal): Promise<DocumentoFiscal> {
+    const row = await prisma.documentoFiscal.create({ data: { ...dados }, select: selecao });
+    return toDomain(row);
+  }
+
   async buscarDuplicado(
     prestacaoId: string,
     numero: string,

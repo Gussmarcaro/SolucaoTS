@@ -5,6 +5,22 @@ import type { DadosDocumentoFiscal } from './dtos';
 /** Port de persistência de Documento Fiscal (no escopo de uma Prestação). */
 export interface IDocumentoFiscalRepository {
   listarPorPrestacao(prestacaoId: string): Promise<DocumentoFiscal[]>;
+  /**
+   * Todas as notas do órgão — a tela de Execução → Financeiro → Despesas.
+   *
+   * O recorte por órgão não aparece aqui porque não é responsabilidade deste
+   * port: a extension de tenant o aplica na camada de dados, para valer também
+   * em qualquer consulta futura que alguém escreva.
+   */
+  listarDoOrgao(): Promise<DocumentoFiscal[]>;
+  /** Duplicidade no órgão — a nota é única por número + credor no cliente. */
+  buscarDuplicadoNoOrgao(
+    numero: string,
+    credorTipoDoc: TipoDocumento,
+    credorNumeroDoc: string,
+  ): Promise<DocumentoFiscal | null>;
+  /** Cria a nota sem vínculo com prestação; o `clienteId` é carimbado. */
+  criarNoOrgao(dados: DadosDocumentoFiscal): Promise<DocumentoFiscal>;
   buscarPorId(id: string): Promise<DocumentoFiscal | null>;
   buscarDuplicado(
     prestacaoId: string,

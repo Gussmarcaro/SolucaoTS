@@ -104,7 +104,7 @@ export const navigation: NavNode[] = [
         children: [
           { label: 'Contas Bancárias', to: '/execucao/financeiro/contas-bancarias' },
           { label: 'Receitas', to: '/execucao/financeiro/receitas' },
-          { label: 'Despesas', to: '/execucao/financeiro/despesas' },
+          { label: 'Despesas', to: '/execucao/financeiro/despesas', recurso: 'EXECUCAO_DESPESAS' },
           { label: 'Pagamentos', to: '/execucao/financeiro/pagamentos' },
           { label: 'Conciliação Bancária', to: '/execucao/financeiro/conciliacao' },
         ],

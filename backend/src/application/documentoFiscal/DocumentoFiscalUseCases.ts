@@ -179,6 +179,63 @@ export class DocumentoFiscalUseCases {
       );
   }
 
+  // ---------------------------------------------------------------------------
+  // Escopo do órgão — Execução → Financeiro → Despesas
+  //
+  // A nota é lançada aqui, quando a despesa acontece, e não dentro de uma
+  // prestação. A prestação depois se apropria dela (`PrestacaoDocumentoFiscal`).
+  //
+  // O rateio **não** é resolvido neste escopo, e é a diferença que importa: o
+  // percentual depende do ajuste, e aqui ainda não se sabe qual. A nota guarda
+  // o método escolhido; o percentual é calculado quando uma prestação a
+  // apropria, para o ajuste dela. É o que permite a mesma conta de luz servir a
+  // cinco ajustes com cinco percentuais, sem ser digitada cinco vezes.
+  // ---------------------------------------------------------------------------
+
+  async listarDoOrgao(): Promise<DocumentoFiscal[]> {
+    return this.repo.listarDoOrgao();
+  }
+
+  async criarNoOrgao(input: DocumentoFiscalDTO): Promise<DocumentoFiscal> {
+    const dados = validar(input);
+    await this.checarDuplicadoNoOrgao(dados);
+    return this.repo.criarNoOrgao(dados);
+  }
+
+  async atualizarNoOrgao(id: string, input: DocumentoFiscalDTO): Promise<DocumentoFiscal> {
+    await this.garantirDoOrgao(id);
+    const dados = validar(input);
+    await this.checarDuplicadoNoOrgao(dados, id);
+    return this.repo.atualizar(id, dados);
+  }
+
+  async excluirDoOrgao(id: string): Promise<void> {
+    await this.garantirDoOrgao(id);
+    await this.repo.excluir(id);
+  }
+
+  /**
+   * A nota existe e é deste órgão?
+   *
+   * A conferência é a busca em si: a extension de tenant já recorta, então uma
+   * nota de outro órgão simplesmente "não existe" — que é também a resposta
+   * certa do ponto de vista de não revelar o que há do outro lado.
+   */
+  private async garantirDoOrgao(id: string): Promise<DocumentoFiscal> {
+    const doc = await this.repo.buscarPorId(id);
+    if (!doc) throw new NotFoundError('Documento fiscal não encontrado.');
+    return doc;
+  }
+
+  private async checarDuplicadoNoOrgao(d: DadosDocumentoFiscal, ignorarId?: string) {
+    const dup = await this.repo.buscarDuplicadoNoOrgao(d.numero, d.credorTipoDoc, d.credorNumeroDoc);
+    if (dup && dup.id !== ignorarId)
+      throw new ConflictError(
+        `Já existe um documento fiscal nº ${d.numero} deste credor.`,
+        'DOC_FISCAL_DUPLICADO',
+      );
+  }
+
   async listar(prestacaoId: string): Promise<DocumentoFiscal[]> {
     await this.garantirPrestacao(prestacaoId);
     return this.repo.listarPorPrestacao(prestacaoId);

@@ -43,7 +43,12 @@ export const TIPO_RETENCAO_LABEL: Record<TipoRetencao, string> = {
 
 export interface DocumentoFiscal {
   id: string;
-  prestacaoId: string;
+  /**
+   * Vínculo antigo com a prestação — nulo nas notas lançadas pelo Financeiro.
+   * Quais prestações apropriam a nota passou a ser `PrestacaoDocumentoFiscal`
+   * no servidor; este campo sai quando a migração fechar.
+   */
+  prestacaoId: string | null;
   numero: string;
   credorTipoDoc: TipoDocumento;
   credorNumeroDoc: string;

@@ -27,6 +27,7 @@ import { SuporteController } from '@/presentation/controllers/SuporteController'
 import { RelatorioController } from '@/presentation/controllers/RelatorioController';
 import { PermissaoController } from '@/presentation/controllers/PermissaoController';
 import { PerfilController } from '@/presentation/controllers/PerfilController';
+import { DespesaController } from '@/presentation/controllers/DespesaController';
 import { autenticar } from '@/presentation/middlewares/autenticar';
 import { exigirGrupo } from '@/presentation/middlewares/exigirGrupo';
 import { exigirPermissao } from '@/presentation/middlewares/exigirPermissao';
@@ -67,6 +68,20 @@ routes.use('/tarefas', exigirPermissao('FISCALIZACAO'), tarefaRoutes);
 // alcançar o compromisso dos outros continua exigindo Total (`administraAgenda`).
 routes.use('/compromissos', exigirPermissao('AGENDA', { DELETE: 'UPDATE' }), compromissoRoutes);
 routes.use('/rateios', exigirPermissao('CADASTRO_RATEIO'), rateioRoutes);
+
+/*
+ * Despesas — os documentos fiscais do órgão (Execução → Financeiro).
+ *
+ * Recurso próprio, e não o da prestação: quem lança nota fiscal no dia a dia
+ * não precisa poder transmitir ao Tribunal, e são funções que costumam ser de
+ * pessoas diferentes. A mesma nota depois aparece na prestação, sob
+ * PRESTACAO_CONTAS.
+ */
+const despesas = new DespesaController();
+routes.get('/despesas', exigirPermissao('EXECUCAO_DESPESAS'), (req, res, next) => despesas.listar(req, res, next));
+routes.post('/despesas', exigirPermissao('EXECUCAO_DESPESAS'), (req, res, next) => despesas.criar(req, res, next));
+routes.put('/despesas/:id', exigirPermissao('EXECUCAO_DESPESAS'), (req, res, next) => despesas.atualizar(req, res, next));
+routes.delete('/despesas/:id', exigirPermissao('EXECUCAO_DESPESAS'), (req, res, next) => despesas.excluir(req, res, next));
 routes.use('/grupos', exigirPermissao('CONFIG_GRUPOS'), grupoRoutes);
 routes.use('/orgaos', exigirPermissao('CONFIG_ORGAOS'), clienteRoutes);
 routes.use('/auditoria', exigirPermissao('CONFIG_AUDITORIA'), auditoriaRoutes);
