@@ -51,6 +51,13 @@ export function SobreModal({ open, onClose }: Props) {
             {build.toLocaleDateString('pt-BR')} às{' '}
             {build.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
           </Linha>
+          {/* O commit responde "qual versão", que a data sozinha não responde.
+              Some quando o build roda fora de um repositório. */}
+          {__APP_COMMIT__ && (
+            <Linha rotulo="Revisão">
+              <span className="font-mono">{__APP_COMMIT__}</span>
+            </Linha>
+          )}
         </dl>
       </div>
     </Modal>
