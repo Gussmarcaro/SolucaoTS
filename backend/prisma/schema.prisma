@@ -1840,6 +1840,9 @@ model AjusteContaBancaria {
 
   ajuste Ajuste @relation(fields: [ajusteId], references: [id], onDelete: Cascade)
 
-  @@unique([ajusteId, banco, agencia, conta])
+  // O tipo entra na chave: corrente e aplicação da mesma conta compartilham
+  // banco, agência e número, e o ajuste precisa poder declarar as duas — como
+  // já acontece em `Disponibilidade`, que segue o schema oficial.
+  @@unique([ajusteId, banco, agencia, conta, contaTipo])
   @@index([ajusteId])
 }

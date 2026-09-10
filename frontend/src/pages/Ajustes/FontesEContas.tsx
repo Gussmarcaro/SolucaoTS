@@ -89,7 +89,8 @@ export function FontesEContas({ fontes, onFontes, contas, onContas }: Props) {
             <p className="text-sm font-medium text-ink-700 dark:text-ink-200">Contas bancárias</p>
             <p className="text-xs text-ink-400">
               Opcionais. Cadastradas aqui, o pagamento escolhe entre elas em vez de redigitar
-              banco, agência e conta.
+              banco, agência e conta. A <strong>corrente e a aplicação</strong> da mesma conta
+              têm o mesmo número — cadastre as duas, informando o <strong>tipo</strong> de cada.
             </p>
           </div>
           <Button

@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/Badge';
 import { SelectDominio } from '@/components/ui/SelectDominio';
 import { BANCO, TIPO_DOCUMENTO_BANCARIO, TIPO_DOCUMENTO_BANCARIO_OUTROS } from '@/lib/dominiosFaseV';
 import { buscarAjuste } from '@/services/ajustes.service';
+import { chaveContaAjuste, rotuloContaAjuste } from '@/types/ajuste';
 import type { Ajuste, ContaBancariaAjuste } from '@/types/ajuste';
 import { apenasDigitos, dataBr, formatarMoeda, mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
 import { extrairMensagemErro } from '@/services/http';
@@ -144,8 +145,6 @@ export function RepassesTab({
 
 function RepasseForm({ prestacaoId, item, empenhos, ajuste, onSuccess, onCancel }: { prestacaoId: string; item: Repasse | null; empenhos: EmpenhoPrestacao[]; ajuste: Ajuste | null; onSuccess: () => void; onCancel: () => void }) {
   const contasDoAjuste = ajuste?.contasBancarias ?? [];
-  const chaveConta = (c: { id?: string; banco: number; agencia: number; conta: string }) =>
-    c.id ?? `${c.banco}-${c.agencia}-${c.conta}`;
   const rotuloBanco = (codigo: number) =>
     BANCO.find((b) => b.value === String(codigo))?.label ?? String(codigo);
 
@@ -161,7 +160,7 @@ function RepasseForm({ prestacaoId, item, empenhos, ajuste, onSuccess, onCancel 
 
   /** Preenche banco, agência e conta de uma vez, pela conta escolhida. */
   function escolherConta(valor: string) {
-    const c = contasDoAjuste.find((x) => chaveConta(x) === valor);
+    const c = contasDoAjuste.find((x) => chaveContaAjuste(x) === valor);
     if (!c) return;
     setBanco(String(c.banco));
     setAgencia(String(c.agencia));
@@ -169,6 +168,16 @@ function RepasseForm({ prestacaoId, item, empenhos, ajuste, onSuccess, onCancel 
   }
 
   /** Qual das contas do ajuste corresponde ao que está gravado. */
+  /*
+   * Qual das contas do ajuste corresponde ao que está gravado.
+   *
+   * O repasse guarda banco, agência e conta — **não o tipo**, porque o schema
+   * oficial não o transmite aqui (só em `disponibilidades.saldos`). Então, se a
+   * corrente e a aplicação da mesma conta estiverem cadastradas, esta busca cai
+   * na primeira. É indiferente para o que se envia ao Tribunal: os três campos
+   * gravados são idênticos nas duas. Guardar o tipo só para desempatar a
+   * exibição criaria um dado que nada mais usa e que ninguém manteria.
+   */
   const contaAtual: ContaBancariaAjuste | null =
     contasDoAjuste.find(
       (c) =>
@@ -257,12 +266,12 @@ function RepasseForm({ prestacaoId, item, empenhos, ajuste, onSuccess, onCancel 
             <Select
               label="Conta do ajuste *"
               name="contaAjuste"
-              value={contaAtual ? chaveConta(contaAtual) : ''}
+              value={contaAtual ? chaveContaAjuste(contaAtual) : ''}
               onChange={(e) => escolherConta(e.target.value)}
               placeholder="Selecione a conta..."
               options={contasDoAjuste.map((c) => ({
-                value: chaveConta(c),
-                label: c.apelido || `${rotuloBanco(c.banco)} · Ag. ${c.agencia} · C/C ${c.conta}`,
+                value: chaveContaAjuste(c),
+                label: rotuloContaAjuste(c, rotuloBanco),
               }))}
             />
           </div>

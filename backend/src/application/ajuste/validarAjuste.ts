@@ -117,13 +117,29 @@ export function normalizarEValidarAjuste(input: CriarAjusteDTO): DadosAjuste {
     },
   );
 
+  /*
+   * O tipo faz parte da identidade da conta.
+   *
+   * Conta corrente e aplicação da **mesma** conta compartilham banco, agência e
+   * número — é o arranjo comum: o saldo fica parte na corrente, parte aplicado.
+   * Sem o tipo na chave, declarar as duas era recusado, e o ajuste não
+   * conseguia descrever a conta que o órgão de fato tem.
+   *
+   * Não é interpretação nossa: `disponibilidades.saldos` do schema oficial
+   * exige `conta_tipo` em cada saldo e é único por `conta+tipo` — o Tribunal
+   * já espera o mesmo número aparecendo nos dois tipos.
+   */
+  const mesmaConta = (a: (typeof contasBancarias)[number], b: (typeof contasBancarias)[number]) =>
+    a.banco === b.banco && a.agencia === b.agencia && a.conta === b.conta;
+
   const repetida = contasBancarias.find(
-    (c, i) =>
-      contasBancarias.findIndex(
-        (o) => o.banco === c.banco && o.agencia === c.agencia && o.conta === c.conta,
-      ) !== i,
+    (c, i) => contasBancarias.findIndex((o) => mesmaConta(o, c) && o.contaTipo === c.contaTipo) !== i,
   );
-  if (repetida) throw new BusinessError('Há conta bancária repetida no ajuste.');
+  if (repetida)
+    throw new BusinessError(
+      `A conta ${repetida.conta} (agência ${repetida.agencia}) aparece duas vezes com o mesmo tipo. ` +
+        'Se forem a corrente e a aplicação, informe o tipo de cada uma.',
+    );
 
   const previsaoFederal = previsao(input.previsaoFederal, 'federal');
   const previsaoEstadual = previsao(input.previsaoEstadual, 'estadual');

@@ -22,6 +22,7 @@ import {
 } from '@/services/prestacaoBlocos.service';
 import type { DocumentoFiscal, MeioPagamento, Pagamento, PagamentoPayload } from '@/types/prestacaoBlocos';
 import { buscarAjuste } from '@/services/ajustes.service';
+import { chaveContaAjuste, rotuloContaAjuste } from '@/types/ajuste';
 import type { Ajuste } from '@/types/ajuste';
 import { ConfirmarExclusao } from '@/pages/Ajustes/tabs/TermosAditivosTab';
 
@@ -297,13 +298,13 @@ function PgForm({
   /** Contas do ajuste. Sem nenhuma cadastrada, continua-se digitando. */
   const contasDoAjuste = ajuste?.contasBancarias ?? [];
   const opcoesConta = contasDoAjuste.map((c) => ({
-    value: c.id ?? `${c.banco}-${c.agencia}-${c.conta}`,
-    label: c.apelido || `${rotuloBanco(c.banco)} · Ag. ${c.agencia} · C/C ${c.conta}`,
+    value: chaveContaAjuste(c),
+    label: rotuloContaAjuste(c, rotuloBanco),
   }));
 
   /** Preenche banco, agência e conta de uma vez, a partir da escolhida. */
   function escolherConta(valor: string) {
-    const c = contasDoAjuste.find((x) => (x.id ?? `${x.banco}-${x.agencia}-${x.conta}`) === valor);
+    const c = contasDoAjuste.find((x) => chaveContaAjuste(x) === valor);
     if (!c) return;
     setBanco(String(c.banco));
     setAgencia(String(c.agencia));

@@ -1,3 +1,5 @@
+import { CONTA_TIPO } from '@/lib/dominiosFaseV';
+
 export type TipoAjuste =
   | 'CONTRATO_GESTAO'
   | 'CONVENIO'
@@ -35,6 +37,31 @@ export interface ContaBancariaAjuste {
   contaTipo: number | null;
   apelido: string | null;
 }
+
+/**
+ * Como a conta se apresenta numa lista de escolha.
+ *
+ * **O tipo faz parte do rótulo, não é enfeite.** Corrente e aplicação da mesma
+ * conta têm banco, agência e número iguais — sem o tipo, as duas apareceriam
+ * como a mesma linha repetida e não haveria como escolher entre elas. Pelo
+ * mesmo motivo não se escreve "C/C" fixo: chamar de conta corrente a aplicação
+ * é dizer o contrário do que o cadastro diz.
+ */
+export function rotuloContaAjuste(
+  c: ContaBancariaAjuste,
+  rotuloBanco: (codigo: number) => string,
+): string {
+  const tipo = CONTA_TIPO.find((o) => o.value === String(c.contaTipo))?.label;
+  const base = `${rotuloBanco(c.banco)} · Ag. ${c.agencia} · Conta ${c.conta}`;
+  const completo = tipo ? `${base} (${tipo})` : base;
+  // O apelido é o nome que o órgão deu à conta; quando existe, é por ele que a
+  // pessoa a procura. O tipo continua ao lado, porque é o que separa as duas.
+  return c.apelido ? (tipo ? `${c.apelido} (${tipo})` : c.apelido) : completo;
+}
+
+/** Chave estável de uma conta do ajuste, para o `value` do seletor. */
+export const chaveContaAjuste = (c: ContaBancariaAjuste): string =>
+  c.id ?? `${c.banco}-${c.agencia}-${c.conta}-${c.contaTipo ?? ''}`;
 
 export interface Ajuste {
   id: string;
