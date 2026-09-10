@@ -97,6 +97,12 @@ const EM_MIGRACAO: Record<string, (tenant: string) => Record<string, unknown>> =
   DocumentoFiscal: (t) => ({
     OR: [{ clienteId: t }, { prestacao: { ajuste: { clienteId: t } } }],
   }),
+  Pagamento: (t) => ({
+    OR: [{ clienteId: t }, { prestacao: { ajuste: { clienteId: t } } }],
+  }),
+  Receita: (t) => ({
+    OR: [{ clienteId: t }, { prestacao: { ajuste: { clienteId: t } } }],
+  }),
 };
 
 /** O model está sujeito ao filtro? `Cliente` entra por um caminho próprio. */

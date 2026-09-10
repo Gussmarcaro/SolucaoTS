@@ -103,9 +103,9 @@ export const navigation: NavNode[] = [
         icon: Wallet,
         children: [
           { label: 'Contas Bancárias', to: '/execucao/financeiro/contas-bancarias' },
-          { label: 'Receitas', to: '/execucao/financeiro/receitas' },
+          { label: 'Receitas', to: '/execucao/financeiro/receitas', recurso: 'EXECUCAO_RECEITAS' },
           { label: 'Despesas', to: '/execucao/financeiro/despesas', recurso: 'EXECUCAO_DESPESAS' },
-          { label: 'Pagamentos', to: '/execucao/financeiro/pagamentos' },
+          { label: 'Pagamentos', to: '/execucao/financeiro/pagamentos', recurso: 'EXECUCAO_PAGAMENTOS' },
           { label: 'Conciliação Bancária', to: '/execucao/financeiro/conciliacao' },
         ],
       },

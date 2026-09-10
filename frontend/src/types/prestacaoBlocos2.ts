@@ -20,7 +20,14 @@ export const ehAplicacaoFinanceira = (t: ReceitaTipo): boolean => t.startsWith('
 
 export interface Receita {
   id: string;
-  prestacaoId: string;
+  /**
+   * Prestação que se apropriou deste lançamento, ou `null` enquanto nenhuma o
+   * fez — ele é lançado no Financeiro, antes de existir prestação.
+   */
+  prestacaoId: string | null;
+  /** Órgão dono; parceria a que pertence. Nulos só nos gravados antes da mudança. */
+  clienteId?: string | null;
+  ajusteId?: string | null;
   tipo: ReceitaTipo;
   descricao: string | null;
   dataPrevista: string | null;

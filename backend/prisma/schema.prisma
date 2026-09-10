@@ -230,6 +230,8 @@ model Cliente {
   bensCedidos           BemCedido[]
   servidoresCedidos     ServidorCedidoCadastro[]
   documentosFiscais     DocumentoFiscal[]
+  pagamentos            Pagamento[]
+  receitas              Receita[]
 
   @@unique([codigoMunicipio, codigoEntidade])
   @@index([tipoOrgao])
@@ -809,6 +811,8 @@ model Ajuste {
   projetos         Projeto[]
   tarefas          Tarefa[]
   compromissos     Compromisso[]
+  pagamentos       Pagamento[]
+  receitas         Receita[]
 
   @@unique([clienteId, codigoAjuste])
   @@index([entidadeBeneficiariaId])
@@ -1341,9 +1345,25 @@ model PrestacaoDocumentoFiscal {
   @@index([documentoFiscalId])
 }
 
+/// **Em migração para Execução → Financeiro.**
+///
+/// O lançamento é do órgão, e a prestação de contas apenas se apropria dele —
+/// o dinheiro entra (ou sai) quando entra, e a prestação é o retrato disso num
+/// exercício. Daí os três campos abaixo:
+///
+/// - `clienteId` — o órgão dono, e a raiz de tenant;
+/// - `ajusteId` — a parceria a que o lançamento pertence, que antes se
+///   alcançava só pela prestação;
+/// - `prestacaoId` — agora **opcional**: nulo enquanto ninguém o apropriou.
+///   A escolha é explícita, feita na aba da prestação.
+///
+/// Os três nascem opcionais e assim ficam até o backfill; é a mesma disciplina
+/// do multi-tenant, e do que já foi feito com o documento fiscal.
 model Pagamento {
   id                String        @id @default(uuid()) @db.Uuid
-  prestacaoId       String        @db.Uuid
+  clienteId         String?       @db.Uuid
+  ajusteId          String?       @db.Uuid
+  prestacaoId       String?       @db.Uuid
   documentoFiscalId String?       @db.Uuid // null p/ Folha Ordinária (nº 9999)
   dataPagamento     DateTime      @db.Date
   valor             Decimal       @db.Decimal(15, 2)
@@ -1355,7 +1375,9 @@ model Pagamento {
   numeroTransacao   String?       @db.VarChar(40)
 
   criadoPor       String?          @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
-  prestacao       PrestacaoContas  @relation(fields: [prestacaoId], references: [id])
+  cliente         Cliente?         @relation(fields: [clienteId], references: [id])
+  ajuste          Ajuste?          @relation(fields: [ajusteId], references: [id])
+  prestacao       PrestacaoContas? @relation(fields: [prestacaoId], references: [id])
   documentoFiscal DocumentoFiscal? @relation(fields: [documentoFiscalId], references: [id])
 
   @@index([documentoFiscalId])
@@ -1378,9 +1400,25 @@ model Disponibilidade {
   @@unique([prestacaoId, banco, agencia, conta, contaTipo])
 }
 
+/// **Em migração para Execução → Financeiro.**
+///
+/// O lançamento é do órgão, e a prestação de contas apenas se apropria dele —
+/// o dinheiro entra (ou sai) quando entra, e a prestação é o retrato disso num
+/// exercício. Daí os três campos abaixo:
+///
+/// - `clienteId` — o órgão dono, e a raiz de tenant;
+/// - `ajusteId` — a parceria a que o lançamento pertence, que antes se
+///   alcançava só pela prestação;
+/// - `prestacaoId` — agora **opcional**: nulo enquanto ninguém o apropriou.
+///   A escolha é explícita, feita na aba da prestação.
+///
+/// Os três nascem opcionais e assim ficam até o backfill; é a mesma disciplina
+/// do multi-tenant, e do que já foi feito com o documento fiscal.
 model Receita {
   id               String    @id @default(uuid()) @db.Uuid
-  prestacaoId      String    @db.Uuid
+  clienteId        String?   @db.Uuid
+  ajusteId         String?   @db.Uuid
+  prestacaoId      String?   @db.Uuid
   tipo             String // REPASSE_RECEBIDO, APLIC_FINANC_*, OUTRA, RECURSO_PROPRIO
   descricao        String?
   dataPrevista     DateTime? @db.Date
@@ -1398,10 +1436,14 @@ model Receita {
   contaCorrente   String?
   numeroTransacao String? @db.VarChar(40)
 
-  criadoPor String?         @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
-  prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id])
+  criadoPor String?          @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
+  cliente   Cliente?         @relation(fields: [clienteId], references: [id])
+  ajuste    Ajuste?          @relation(fields: [ajusteId], references: [id])
+  prestacao PrestacaoContas? @relation(fields: [prestacaoId], references: [id])
 
   @@index([prestacaoId])
+  @@index([clienteId, dataRepasse])
+  @@index([ajusteId])
 }
 
 model ServidorCedido {

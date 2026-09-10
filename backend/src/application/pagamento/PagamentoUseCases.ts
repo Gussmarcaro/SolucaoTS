@@ -76,6 +76,43 @@ export class PagamentoUseCases {
       throw new BusinessError('Documento fiscal vinculado não pertence a esta prestação.');
   }
 
+  // ---------------------------------------------------------------------------
+  // Escopo do órgão — Execução → Financeiro → Pagamentos
+  //
+  // O pagamento é lançado quando o dinheiro sai, e não dentro de uma prestação.
+  // A prestação depois **escolhe** quais pagamentos do período entram nela.
+  // ---------------------------------------------------------------------------
+
+  async listarDoOrgao(): Promise<Pagamento[]> {
+    return this.repo.listarDoOrgao();
+  }
+
+  async criarNoOrgao(input: PagamentoDTO): Promise<Pagamento> {
+    return this.repo.criarNoOrgao(validar(input));
+  }
+
+  async atualizarNoOrgao(id: string, input: PagamentoDTO): Promise<Pagamento> {
+    await this.garantirDoOrgao(id);
+    return this.repo.atualizar(id, validar(input));
+  }
+
+  async excluirDoOrgao(id: string): Promise<void> {
+    await this.garantirDoOrgao(id);
+    await this.repo.excluir(id);
+  }
+
+  /**
+   * O pagamento existe e é deste órgão?
+   *
+   * A conferência é a própria busca: a extension de tenant já recorta, então um
+   * registro de outro órgão simplesmente "não existe".
+   */
+  private async garantirDoOrgao(id: string): Promise<Pagamento> {
+    const pg = await this.repo.buscarPorId(id);
+    if (!pg) throw new NotFoundError('Pagamento não encontrado.');
+    return pg;
+  }
+
   async listar(prestacaoId: string): Promise<Pagamento[]> {
     await this.garantirPrestacao(prestacaoId);
     return this.repo.listarPorPrestacao(prestacaoId);

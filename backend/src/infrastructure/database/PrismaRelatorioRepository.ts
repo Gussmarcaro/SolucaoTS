@@ -90,13 +90,22 @@ export class PrismaRelatorioRepository implements IRelatorioRepository {
     ]);
 
     const porPrestacao = new Map(prestacoes.map((p) => [p.id, p.ajusteId]));
+    /*
+     * `prestacaoId` é opcional desde que o lançamento passou a ser do órgão: o
+     * pagamento existe antes de qualquer prestação se apropriar dele.
+     *
+     * Linha sem prestação é **ignorada aqui de propósito** — este relatório
+     * mede execução por ajuste através da prestação, e um lançamento ainda não
+     * apropriado não pertence a nenhuma. O `continue` que já existia para
+     * prestação desconhecida cobre os dois casos.
+     */
     const somar = (
-      linhas: { prestacaoId: string; _sum: Record<string, unknown> }[],
+      linhas: { prestacaoId: string | null; _sum: Record<string, unknown> }[],
       campo: string,
     ) => {
       const acc = new Map<string, number>();
       for (const l of linhas) {
-        const ajusteId = porPrestacao.get(l.prestacaoId);
+        const ajusteId = l.prestacaoId ? porPrestacao.get(l.prestacaoId) : undefined;
         if (!ajusteId) continue;
         acc.set(ajusteId, (acc.get(ajusteId) ?? 0) + num(l._sum[campo]));
       }

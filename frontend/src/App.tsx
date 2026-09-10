@@ -34,6 +34,8 @@ import { Transparencia } from '@/pages/Transparencia';
 import { TransparenciaRelatorio } from '@/pages/Transparencia/Relatorio';
 import { ProvisionarOrgao } from '@/pages/Suporte/ProvisionarOrgao';
 import { Despesas } from '@/pages/Despesas';
+import { ReceitasOrgao } from '@/pages/ReceitasOrgao';
+import { PagamentosOrgao } from '@/pages/PagamentosOrgao';
 import { Perfil } from '@/pages/Perfil';
 import { Placeholder } from '@/pages/Placeholder';
 
@@ -147,7 +149,14 @@ export default function App() {
 
           {/* Execução */}
           <Route path="/execucao/financeiro/contas-bancarias" element={<Placeholder title="Contas Bancárias" />} />
-          <Route path="/execucao/financeiro/receitas" element={<Placeholder title="Receitas" />} />
+          <Route
+            path="/execucao/financeiro/receitas"
+            element={
+              <RequerPermissao recurso="EXECUCAO_RECEITAS">
+                <ReceitasOrgao />
+              </RequerPermissao>
+            }
+          />
           <Route
             path="/execucao/financeiro/despesas"
             element={
@@ -156,7 +165,14 @@ export default function App() {
               </RequerPermissao>
             }
           />
-          <Route path="/execucao/financeiro/pagamentos" element={<Placeholder title="Pagamentos" />} />
+          <Route
+            path="/execucao/financeiro/pagamentos"
+            element={
+              <RequerPermissao recurso="EXECUCAO_PAGAMENTOS">
+                <PagamentosOrgao />
+              </RequerPermissao>
+            }
+          />
           <Route path="/execucao/financeiro/conciliacao" element={<Placeholder title="Conciliação Bancária" />} />
           <Route path="/execucao/tecnico" element={<Placeholder title="Técnico" />} />
 

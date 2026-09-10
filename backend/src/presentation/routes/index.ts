@@ -28,6 +28,8 @@ import { RelatorioController } from '@/presentation/controllers/RelatorioControl
 import { PermissaoController } from '@/presentation/controllers/PermissaoController';
 import { PerfilController } from '@/presentation/controllers/PerfilController';
 import { DespesaController } from '@/presentation/controllers/DespesaController';
+import { ReceitaOrgaoController } from '@/presentation/controllers/ReceitaOrgaoController';
+import { PagamentoOrgaoController } from '@/presentation/controllers/PagamentoOrgaoController';
 import { autenticar } from '@/presentation/middlewares/autenticar';
 import { exigirGrupo } from '@/presentation/middlewares/exigirGrupo';
 import { exigirPermissao } from '@/presentation/middlewares/exigirPermissao';
@@ -82,6 +84,21 @@ routes.get('/despesas', exigirPermissao('EXECUCAO_DESPESAS'), (req, res, next) =
 routes.post('/despesas', exigirPermissao('EXECUCAO_DESPESAS'), (req, res, next) => despesas.criar(req, res, next));
 routes.put('/despesas/:id', exigirPermissao('EXECUCAO_DESPESAS'), (req, res, next) => despesas.atualizar(req, res, next));
 routes.delete('/despesas/:id', exigirPermissao('EXECUCAO_DESPESAS'), (req, res, next) => despesas.excluir(req, res, next));
+
+// Receitas e Pagamentos do órgão, pelo mesmo desenho das Despesas: recurso
+// próprio, porque lançar movimento financeiro no dia a dia e transmitir a
+// prestação ao Tribunal costumam ser funções de pessoas diferentes.
+const receitasOrgao = new ReceitaOrgaoController();
+routes.get('/receitas', exigirPermissao('EXECUCAO_RECEITAS'), (req, res, next) => receitasOrgao.listar(req, res, next));
+routes.post('/receitas', exigirPermissao('EXECUCAO_RECEITAS'), (req, res, next) => receitasOrgao.criar(req, res, next));
+routes.put('/receitas/:id', exigirPermissao('EXECUCAO_RECEITAS'), (req, res, next) => receitasOrgao.atualizar(req, res, next));
+routes.delete('/receitas/:id', exigirPermissao('EXECUCAO_RECEITAS'), (req, res, next) => receitasOrgao.excluir(req, res, next));
+
+const pagamentosOrgao = new PagamentoOrgaoController();
+routes.get('/pagamentos', exigirPermissao('EXECUCAO_PAGAMENTOS'), (req, res, next) => pagamentosOrgao.listar(req, res, next));
+routes.post('/pagamentos', exigirPermissao('EXECUCAO_PAGAMENTOS'), (req, res, next) => pagamentosOrgao.criar(req, res, next));
+routes.put('/pagamentos/:id', exigirPermissao('EXECUCAO_PAGAMENTOS'), (req, res, next) => pagamentosOrgao.atualizar(req, res, next));
+routes.delete('/pagamentos/:id', exigirPermissao('EXECUCAO_PAGAMENTOS'), (req, res, next) => pagamentosOrgao.excluir(req, res, next));
 routes.use('/grupos', exigirPermissao('CONFIG_GRUPOS'), grupoRoutes);
 routes.use('/orgaos', exigirPermissao('CONFIG_ORGAOS'), clienteRoutes);
 routes.use('/auditoria', exigirPermissao('CONFIG_AUDITORIA'), auditoriaRoutes);

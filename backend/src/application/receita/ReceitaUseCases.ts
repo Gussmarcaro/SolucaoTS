@@ -95,6 +95,46 @@ export class ReceitaUseCases {
     return r;
   }
 
+
+  // ---------------------------------------------------------------------------
+  // Escopo do órgão — Execução → Financeiro
+  //
+  // O lançamento acontece aqui, quando o dinheiro entra ou sai, e não dentro de
+  // uma prestação. A prestação depois **escolhe** quais lançamentos do período
+  // entram nela — seleção explícita, não automática.
+  // ---------------------------------------------------------------------------
+
+  async listarDoOrgao(): Promise<Receita[]> {
+    return this.repo.listarDoOrgao();
+  }
+
+  async criarNoOrgao(input: ReceitaDTO): Promise<Receita> {
+    return this.repo.criarNoOrgao(validar(input));
+  }
+
+  async atualizarNoOrgao(id: string, input: ReceitaDTO): Promise<Receita> {
+    await this.garantirDoOrgao(id);
+    return this.repo.atualizar(id, validar(input));
+  }
+
+  async excluirDoOrgao(id: string): Promise<void> {
+    await this.garantirDoOrgao(id);
+    await this.repo.excluir(id);
+  }
+
+  /**
+   * O lançamento existe e é deste órgão?
+   *
+   * A conferência é a própria busca: a extension de tenant já recorta, então um
+   * registro de outro órgão simplesmente "não existe" — que é também a resposta
+   * certa do ponto de vista de não revelar o que há do outro lado.
+   */
+  private async garantirDoOrgao(id: string) {
+    const r = await this.repo.buscarPorId(id);
+    if (!r) throw new NotFoundError('Receita não encontrada.');
+    return r;
+  }
+
   async listar(prestacaoId: string): Promise<Receita[]> {
     await this.garantirPrestacao(prestacaoId);
     return this.repo.listarPorPrestacao(prestacaoId);

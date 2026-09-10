@@ -75,7 +75,7 @@ console.log('\nIsolamento multi-tenant\n');
 
   // Filho não é raiz: alcança o órgão pelo pai. Marcá-lo como raiz obrigaria a
   // uma coluna que a relação já dispensa — e a mantê-la sincronizada.
-  for (const m of ['Pagamento', 'PrestacaoContas', 'TermoAditivo', 'Meta']) {
+  for (const m of ['PrestacaoContas', 'TermoAditivo', 'Meta']) {
     conferir(`${m} não é raiz (herda pelo pai)`, !ehRaizDeTenant(m));
   }
 
@@ -103,11 +103,13 @@ console.log('\nIsolamento multi-tenant\n');
    * toda nota gravada antes some da tela. O relatório do titular, que a varre
    * por CPF, continua coberto pelos dois braços do `OR`.
    */
-  conferir(
-    'DocumentoFiscal é raiz (tem coluna própria)',
-    ehRaizDeTenant('DocumentoFiscal'),
-    'a nota passou a ser do órgão, não da prestação',
-  );
+  for (const m of ['DocumentoFiscal', 'Pagamento', 'Receita']) {
+    conferir(
+      `${m} é raiz (tem coluna própria)`,
+      ehRaizDeTenant(m),
+      'o lançamento passou a ser do órgão, não da prestação',
+    );
+  }
   conferir('tabela de domínio não é raiz', !ehRaizDeTenant('Cbo'), 'catálogo oficial é comum a todos');
 }
 
@@ -307,10 +309,13 @@ console.log('\nIsolamento multi-tenant\n');
 
 // --- o que não deve ser tocado ---------------------------------------------
 {
+  // Bloco que **continua** herdando o órgão pelo pai. Pagamento e Receita
+  // saíram desta lista: passaram a ter coluna própria, porque agora são
+  // lançados no Financeiro, antes de existir prestação que os aproprie.
   const filho: ArgsPrisma = { where: { prestacaoId: 'p1' } };
   conferir(
     'consulta a bloco da prestação passa intacta',
-    aplicarTenant('Pagamento', 'findMany', filho, T) === filho,
+    aplicarTenant('Disponibilidade', 'findMany', filho, T) === filho,
     'chega pelo id da prestação, que já foi filtrada',
   );
 
