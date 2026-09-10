@@ -11,6 +11,9 @@ import { SelectDominio } from '@/components/ui/SelectDominio';
 import { BANCO, FONTE_RECURSO } from '@/lib/dominiosFaseV';
 import { apenasDigitos, dataBr, formatarMoeda, mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
 import { extrairMensagemErro } from '@/services/http';
+import { buscarAjuste } from '@/services/ajustes.service';
+import { chaveContaAjuste, rotuloContaAjuste } from '@/types/ajuste';
+import type { Ajuste } from '@/types/ajuste';
 import { receitasApi } from '@/services/prestacaoBlocos2.service';
 import { RECEITA_TIPO_LABEL, ehAplicacaoFinanceira, type Receita, type ReceitaPayload, type ReceitaTipo } from '@/types/prestacaoBlocos2';
 import { ConfirmarExclusao } from '@/pages/Ajustes/tabs/TermosAditivosTab';
@@ -27,12 +30,30 @@ const COLUNAS: ColunaDef[] = [
   { key: 'valor', label: 'Valor', width: 170, align: 'right', sortKey: 'valor' },
 ];
 
-export function ReceitasTab({ prestacaoId }: { prestacaoId: string }) {
+export function ReceitasTab({ prestacaoId, ajusteId }: { prestacaoId: string; ajusteId: string }) {
   const [lista, setLista] = useState<Receita[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [modal, setModal] = useState<ModalState>({ tipo: 'fechado' });
   const [refreshKey, setRefreshKey] = useState(0);
+
+  /**
+   * O ajuste da prestação — dele saem as contas bancárias e as fontes de
+   * recurso que a receita pode usar, como já acontece em Pagamentos e
+   * Repasses. Falha aqui não mostra erro: sem o ajuste, os campos voltam a
+   * ser digitáveis, que é o comportamento anterior.
+   */
+  const [ajuste, setAjuste] = useState<Ajuste | null>(null);
+
+  useEffect(() => {
+    let vivo = true;
+    buscarAjuste(ajusteId)
+      .then((a) => vivo && setAjuste(a))
+      .catch(() => undefined);
+    return () => {
+      vivo = false;
+    };
+  }, [ajusteId]);
 
   useEffect(() => {
     let vivo = true;
@@ -106,7 +127,7 @@ export function ReceitasTab({ prestacaoId }: { prestacaoId: string }) {
       />
 
       <Modal open={modal.tipo === 'form'} onClose={() => setModal({ tipo: 'fechado' })} title={modal.tipo === 'form' && modal.item ? 'Editar Receita' : 'Nova Receita'} size="lg">
-        {modal.tipo === 'form' && <ReceitaForm prestacaoId={prestacaoId} item={modal.item} onSuccess={recarregar} onCancel={() => setModal({ tipo: 'fechado' })} />}
+        {modal.tipo === 'form' && <ReceitaForm prestacaoId={prestacaoId} item={modal.item} ajuste={ajuste} onSuccess={recarregar} onCancel={() => setModal({ tipo: 'fechado' })} />}
       </Modal>
       <ConfirmarExclusao
         aberto={modal.tipo === 'excluir'}
@@ -118,7 +139,7 @@ export function ReceitasTab({ prestacaoId }: { prestacaoId: string }) {
   );
 }
 
-function ReceitaForm({ prestacaoId, item, onSuccess, onCancel }: { prestacaoId: string; item: Receita | null; onSuccess: () => void; onCancel: () => void }) {
+function ReceitaForm({ prestacaoId, item, ajuste, onSuccess, onCancel }: { prestacaoId: string; item: Receita | null; ajuste: Ajuste | null; onSuccess: () => void; onCancel: () => void }) {
   const [tipo, setTipo] = useState<ReceitaTipo>(item?.tipo ?? 'REPASSE_RECEBIDO');
   const [valor, setValor] = useState(item ? numeroParaMascaraMoeda(Math.abs(item.valor)) : '');
   const [negativo, setNegativo] = useState(item ? item.valor < 0 : false);
@@ -132,6 +153,48 @@ function ReceitaForm({ prestacaoId, item, onSuccess, onCancel }: { prestacaoId: 
   const [transacao, setTransacao] = useState(item?.numeroTransacao ?? '');
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
+
+  /*
+   * Contas e fontes do ajuste — a mesma restrição de Pagamentos e Repasses.
+   *
+   * A receita guarda banco, agência e conta soltos, e é assim que ficam: este
+   * bloco é controle interno do órgão e não vai ao TCESP (`receitas` é um
+   * objeto de totais no schema oficial). O que muda é **como se preenche** —
+   * escolhendo a conta que o ajuste já declara, em vez de redigitar três
+   * campos e arriscar um dígito trocado que ninguém confere.
+   */
+  const contasDoAjuste = ajuste?.contasBancarias ?? [];
+  const fontesDoAjuste = ajuste?.fontesRecurso ?? [];
+  const opcoesFonte = fontesDoAjuste.length
+    ? FONTE_RECURSO.filter((o) => fontesDoAjuste.includes(Number(o.value)))
+    : FONTE_RECURSO;
+
+  const rotuloBanco = (codigo: number) =>
+    BANCO.find((b) => b.value === String(codigo))?.label ?? String(codigo);
+
+  /** Qual das contas do ajuste corresponde ao que está preenchido. */
+  const contaAtual =
+    contasDoAjuste.find(
+      (c) =>
+        String(c.banco) === apenasDigitos(banco) &&
+        String(c.agencia) === apenasDigitos(agencia) &&
+        c.conta === conta,
+    ) ?? null;
+
+  /** Preenche os três de uma vez — ou limpa, que aqui é opção legítima. */
+  function escolherConta(valor: string) {
+    if (!valor) {
+      setBanco('');
+      setAgencia('');
+      setConta('');
+      return;
+    }
+    const c = contasDoAjuste.find((x) => chaveContaAjuste(x) === valor);
+    if (!c) return;
+    setBanco(String(c.banco));
+    setAgencia(String(c.agencia));
+    setConta(c.conta);
+  }
 
   async function submeter(e: React.FormEvent) {
     e.preventDefault();
@@ -170,7 +233,7 @@ function ReceitaForm({ prestacaoId, item, onSuccess, onCancel }: { prestacaoId: 
         <Input label="Valor (R$) *" name="valor" value={valor} onChange={(e) => setValor(mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
         <Input label="Data do Repasse" name="dataRepasse" type="date" value={dataRepasse} onChange={(e) => setDataRepasse(e.target.value)} />
         <Input label="Data Prevista" name="dataPrevista" type="date" value={dataPrevista} onChange={(e) => setDataPrevista(e.target.value)} />
-        <SelectDominio label="Fonte de Recurso" name="fonte" value={apenasDigitos(fonte)} onChange={setFonte} options={FONTE_RECURSO} />
+        <SelectDominio label="Fonte de Recurso" name="fonte" value={apenasDigitos(fonte)} onChange={setFonte} options={opcoesFonte} />
         <div className="sm:col-span-2">
           <Input label="Descrição" name="descricao" value={descricao} onChange={(e) => setDescricao(e.target.value)} />
         </div>
@@ -196,11 +259,34 @@ function ReceitaForm({ prestacaoId, item, onSuccess, onCancel }: { prestacaoId: 
           Identificação bancária{' '}
           <span className="text-ink-400">— controle interno, não enviada ao TCESP</span>
         </legend>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <SelectDominio label="Banco" name="banco" value={apenasDigitos(banco)} onChange={setBanco} options={BANCO} />
-          <Input label="Agência" name="agencia" value={apenasDigitos(agencia)} onChange={(e) => setAgencia(e.target.value)} inputMode="numeric" />
-          <Input label="Conta Corrente" name="conta" value={conta} onChange={(e) => setConta(e.target.value)} />
-        </div>
+        {/* Com contas no ajuste, escolhe-se uma e os três campos vêm juntos;
+            sem elas, digita-se. Restringir sem ter o que oferecer trancaria o
+            lançamento — e aqui o bloco inteiro é opcional, então a lista traz
+            também a opção de não informar conta nenhuma. */}
+        {contasDoAjuste.length > 0 ? (
+          <div>
+            <Select
+              label="Conta do ajuste"
+              name="contaAjuste"
+              value={contaAtual ? chaveContaAjuste(contaAtual) : ''}
+              onChange={(e) => escolherConta(e.target.value)}
+              placeholder="Não informada"
+              options={contasDoAjuste.map((c) => ({
+                value: chaveContaAjuste(c),
+                label: rotuloContaAjuste(c, rotuloBanco),
+              }))}
+            />
+            <p className="mt-1 text-xs text-ink-400">
+              Banco, agência e conta vêm do cadastro do Ajuste.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <SelectDominio label="Banco" name="banco" value={apenasDigitos(banco)} onChange={setBanco} options={BANCO} />
+            <Input label="Agência" name="agencia" value={apenasDigitos(agencia)} onChange={(e) => setAgencia(e.target.value)} inputMode="numeric" />
+            <Input label="Conta Corrente" name="conta" value={conta} onChange={(e) => setConta(e.target.value)} />
+          </div>
+        )}
         <div className="mt-4">
           <Input label="Nº da Transação (opcional)" name="transacao" value={transacao} onChange={(e) => setTransacao(e.target.value)} />
         </div>

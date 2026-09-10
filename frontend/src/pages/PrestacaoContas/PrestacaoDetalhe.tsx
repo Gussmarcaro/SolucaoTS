@@ -344,7 +344,7 @@ export function PrestacaoDetalhe() {
             <div className="space-y-8">
               <section>
                 <h3 className="mb-3 text-sm font-semibold text-ink-800 dark:text-ink-100">Receitas</h3>
-                <ReceitasTab prestacaoId={prestacao.id} />
+                <ReceitasTab prestacaoId={prestacao.id} ajusteId={prestacao.ajusteId} />
               </section>
               <section>
                 <h3 className="mb-1 text-sm font-semibold text-ink-800 dark:text-ink-100">Repasses recebidos</h3>
