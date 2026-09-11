@@ -40,7 +40,11 @@ ajusteRoutes.put('/:ajusteId/empenhos/:id', (req, res, next) => empenhos.atualiz
 ajusteRoutes.delete('/:ajusteId/empenhos/:id', (req, res, next) => empenhos.excluir(req, res, next));
 
 // --- Plano de Aplicação (importação CSV) ---
+// A estrutura-modelo vem antes da rota com :ajusteId — senão "padrao" seria
+// lido como um id de ajuste.
+ajusteRoutes.get('/plano-aplicacao/padrao', (req, res) => plano.padrao(req, res));
 ajusteRoutes.get('/:ajusteId/plano-aplicacao', (req, res, next) => plano.listar(req, res, next));
+ajusteRoutes.put('/:ajusteId/plano-aplicacao', (req, res, next) => plano.salvarDigitado(req, res, next));
 ajusteRoutes.post('/:ajusteId/plano-aplicacao/importar', uploadCsv, (req, res, next) => plano.importar(req, res, next));
 ajusteRoutes.delete('/:ajusteId/plano-aplicacao', (req, res, next) => plano.limpar(req, res, next));
 

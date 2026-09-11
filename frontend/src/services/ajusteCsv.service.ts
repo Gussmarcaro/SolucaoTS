@@ -70,3 +70,17 @@ export async function importarBensAjuste(ajusteId: string, file: File): Promise<
 export async function limparBensAjuste(ajusteId: string): Promise<void> {
   await http.delete(`/ajustes/${ajusteId}/bens`);
 }
+
+/**
+ * Grava o plano digitado na tela (substitui o plano do ajuste).
+ *
+ * `valorMensal` vai como número; o servidor é que expande em 12 competências —
+ * a regra "anual = mensal × 12" mora num lugar só.
+ */
+export async function salvarPlanoDigitado(
+  ajusteId: string,
+  payload: { ano: number; itens: { categoria: string; subcategoria: string; valorMensal: number }[] },
+): Promise<PlanoItem[]> {
+  const { data } = await http.put<PlanoItem[]>(`/ajustes/${ajusteId}/plano-aplicacao`, payload);
+  return data;
+}

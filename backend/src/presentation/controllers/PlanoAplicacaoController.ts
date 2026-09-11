@@ -3,6 +3,7 @@ import { PlanoAplicacaoUseCases } from '@/application/planoAplicacao/PlanoAplica
 import { PrismaPlanoAplicacaoRepository } from '@/infrastructure/database/PrismaPlanoAplicacaoRepository';
 import { PrismaAjusteRepository } from '@/infrastructure/database/PrismaAjusteRepository';
 import { BusinessError } from '@/shared/errors';
+import { PLANO_PADRAO } from '@/core/planoAplicacao/planoPadrao';
 
 const casos = new PlanoAplicacaoUseCases(
   new PrismaPlanoAplicacaoRepository(),
@@ -35,5 +36,19 @@ export class PlanoAplicacaoController {
     } catch (e) {
       return next(e);
     }
+  }
+
+  /** `PUT /ajustes/:ajusteId/plano-aplicacao` — o plano digitado na tela. */
+  async salvarDigitado(req: Request, res: Response, next: NextFunction) {
+    try {
+      return res.json(await casos.salvarDigitado(req.params.ajusteId, req.body));
+    } catch (e) {
+      return next(e);
+    }
+  }
+
+  /** `GET /ajustes/plano-aplicacao/padrao` — a estrutura-modelo para a tela. */
+  async padrao(_req: Request, res: Response) {
+    return res.json(PLANO_PADRAO);
   }
 }

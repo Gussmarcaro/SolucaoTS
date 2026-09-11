@@ -8,6 +8,7 @@ import { extrairMensagemErro } from '@/services/http';
 import { importarPlano, limparPlano, listarPlano } from '@/services/ajusteCsv.service';
 import type { PlanoItem } from '@/types/ajusteCsv';
 import { ImportadorCsv } from './ImportadorCsv';
+import { PlanoDigitado } from './PlanoDigitado';
 import { ConfirmarExclusao } from './TermosAditivosTab';
 
 const COLUNAS: ColunaDef[] = [
@@ -23,6 +24,8 @@ export function PlanoAplicacaoTab({ ajusteId }: { ajusteId: string }) {
   const [erro, setErro] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [confirmarLimpar, setConfirmarLimpar] = useState(false);
+  // Abre em "digitar": é o caminho da maioria, e o CSV fica a um clique.
+  const [modo, setModo] = useState<'digitar' | 'importar'>('digitar');
 
   useEffect(() => {
     let vivo = true;
@@ -41,11 +44,46 @@ export function PlanoAplicacaoTab({ ajusteId }: { ajusteId: string }) {
 
   return (
     <div className="space-y-4">
-      <ImportadorCsv
-        dica="CSV com colunas: categoria; subcategoria; ano; mês; valor; descrição (opcional)."
-        onImportar={(f) => importarPlano(ajusteId, f)}
-        onConcluido={recarregar}
-      />
+      {/*
+        Duas formas de preencher, e cada uma resolve um caso.
+
+        A digitação cobre o comum: o modelo de 16 seções com o mesmo valor todo
+        mês. O CSV cobre o resto — valor variando mês a mês, e rubricas fora
+        deste padrão. Tirar o CSV deixaria de fora quem tem plano próprio;
+        deixar só o CSV é o que obrigava a montar um arquivo para digitar um
+        quadro que já existe no papel.
+      */}
+      <div className="flex flex-wrap items-center gap-1 rounded-xl border border-ink-200 p-1 dark:border-ink-700">
+        {(['digitar', 'importar'] as const).map((m) => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => setModo(m)}
+            className={`focus-ring flex-1 rounded-lg px-3 py-1.5 text-sm transition-colors ${
+              modo === m
+                ? 'bg-brand-500 font-medium text-white'
+                : 'text-ink-600 hover:bg-ink-100 dark:text-ink-300 dark:hover:bg-ink-800'
+            }`}
+          >
+            {m === 'digitar' ? 'Digitar (modelo padrão)' : 'Importar CSV'}
+          </button>
+        ))}
+      </div>
+
+      {modo === 'digitar' ? (
+        <PlanoDigitado
+          ajusteId={ajusteId}
+          itens={lista}
+          anoSugerido={new Date().getFullYear()}
+          onSalvo={recarregar}
+        />
+      ) : (
+        <ImportadorCsv
+          dica="CSV com colunas: categoria; subcategoria; ano; mês; valor; descrição (opcional)."
+          onImportar={(f) => importarPlano(ajusteId, f)}
+          onConcluido={recarregar}
+        />
+      )}
 
       <div className="flex items-center justify-between">
         <p className="text-sm text-ink-500 dark:text-ink-400">
@@ -68,7 +106,7 @@ export function PlanoAplicacaoTab({ ajusteId }: { ajusteId: string }) {
         chave={(i) => i.id}
         carregando={carregando}
         erro={erro}
-        vazio="Importe um CSV para preencher o plano de aplicação."
+        vazio="Preencha o quadro acima ou importe um CSV."
         valorOrdenacao={(campo, i) => {
           if (campo === 'categoria') return i.categoria;
           if (campo === 'subcategoria') return i.subcategoria;
