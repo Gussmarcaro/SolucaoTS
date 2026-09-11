@@ -847,11 +847,23 @@ model Programa {
 }
 
 model Meta {
-  id            String  @id @default(uuid()) @db.Uuid
-  programaId    String  @db.Uuid
-  codigoMeta    String
-  descricao     String?
-  quantificavel Boolean @default(true) // define se usa quantidade_realizada ou resultado_meta
+  id                 String   @id @default(uuid()) @db.Uuid
+  programaId         String   @db.Uuid
+  codigoMeta         String
+  descricao          String?
+  quantificavel      Boolean  @default(true) // define se usa quantidade_realizada ou resultado_meta
+  /// Quanto se pretende realizar, e em quê. **Controle interno** — o schema
+  /// oficial transmite só o realizado (`quantidade_realizada`), porque a meta
+  /// pactuada já está no Plano de Metas do módulo Ajuste, no portal do TCESP.
+  ///
+  /// Sem estes dois campos a marca `quantificavel` não levava a lugar nenhum:
+  /// dizia-se que a meta era quantificável e não havia onde dizer **quanto**.
+  /// E a aferição da prestação ficava sem referência para comparar o realizado.
+  ///
+  /// A unidade não é enfeite: "5000" sozinho não diz se são consultas, horas ou
+  /// toneladas. Decimal, e não inteiro, porque nem toda meta se conta em peças.
+  quantidadePrevista Decimal? @db.Decimal(15, 2)
+  unidadeMedida      String?
 
   criadoPor String?  @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   programa  Programa @relation(fields: [programaId], references: [id])

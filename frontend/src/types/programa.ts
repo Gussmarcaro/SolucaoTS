@@ -4,6 +4,10 @@ export interface Meta {
   codigoMeta: string;
   descricao: string | null;
   quantificavel: boolean;
+  /** Quanto se pretende realizar — só nas quantificáveis. Controle interno. */
+  quantidadePrevista: number | null;
+  /** A unidade do número acima: consultas, atendimentos, horas... */
+  unidadeMedida: string | null;
 }
 
 export interface Programa {
@@ -21,4 +25,7 @@ export interface MetaPayload {
   codigoMeta: string;
   descricao?: string | null;
   quantificavel?: boolean;
+  /** Aceita texto: a tela envia "5000,5" já com o ponto decimal. */
+  quantidadePrevista?: number | string | null;
+  unidadeMedida?: string | null;
 }

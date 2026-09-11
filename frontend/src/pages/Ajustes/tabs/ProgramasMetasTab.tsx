@@ -105,8 +105,14 @@ export function ProgramasMetasTab({ ajusteId }: { ajusteId: string }) {
                       <div className="flex min-w-0 items-center gap-2">
                         <span className="font-mono text-xs text-ink-700 dark:text-ink-200">{m.codigoMeta}</span>
                         {m.descricao && <span className="truncate text-sm text-ink-500 dark:text-ink-400">— {m.descricao}</span>}
+                        {/* Mostra a meta, não só o tipo: o número é o que se
+                            quer conferir de relance na lista. */}
                         <Badge tone={m.quantificavel ? 'brand' : 'neutral'}>
-                          {m.quantificavel ? 'Quantificável' : 'Qualitativa'}
+                          {m.quantificavel
+                            ? m.quantidadePrevista != null
+                              ? `${m.quantidadePrevista.toLocaleString('pt-BR')} ${m.unidadeMedida ?? ''}`.trim()
+                              : 'Quantificável'
+                            : 'Qualitativa'}
                         </Badge>
                       </div>
                       <div className="flex shrink-0 items-center gap-1">
@@ -241,6 +247,10 @@ function MetaForm({
   const [codigoMeta, setCodigoMeta] = useState(meta?.codigoMeta ?? '');
   const [descricao, setDescricao] = useState(meta?.descricao ?? '');
   const [quantificavel, setQuantificavel] = useState(meta?.quantificavel ?? true);
+  const [quantidade, setQuantidade] = useState(
+    meta?.quantidadePrevista != null ? String(meta.quantidadePrevista).replace('.', ',') : '',
+  );
+  const [unidade, setUnidade] = useState(meta?.unidadeMedida ?? '');
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
@@ -248,7 +258,19 @@ function MetaForm({
     e.preventDefault();
     setErro(null);
     if (!codigoMeta.trim()) return setErro('Informe o código da meta.');
-    const payload = { codigoMeta: codigoMeta.trim(), descricao: descricao.trim() || null, quantificavel };
+    if (quantificavel) {
+      if (!quantidade.trim()) return setErro('Informe a quantidade prevista da meta.');
+      if (!unidade.trim()) return setErro('Informe a unidade de medida da meta.');
+    }
+    const payload = {
+      codigoMeta: codigoMeta.trim(),
+      descricao: descricao.trim() || null,
+      quantificavel,
+      // Vazios na meta qualitativa: o servidor recusaria número numa meta que
+      // se afere por "cumprida / não cumprida".
+      quantidadePrevista: quantificavel ? quantidade.replace(',', '.') : null,
+      unidadeMedida: quantificavel ? unidade.trim() : null,
+    };
     setSalvando(true);
     try {
       if (meta) await atualizarMeta(ajusteId, programaId, meta.id, payload);
@@ -281,6 +303,41 @@ function MetaForm({
         />
         Meta quantificável (usa quantidade realizada)
       </label>
+
+      {/*
+        A meta prevista só existe na meta quantificável — e é ela que faltava.
+        Marcar "quantificável" não abria campo nenhum, então dizia-se que a meta
+        tinha número e não havia onde informá-lo.
+
+        Não é transmitida: o schema oficial manda só o realizado, porque a meta
+        pactuada já está no Plano de Metas do portal. Serve ao órgão e à
+        Comissão de Fiscalização, que precisam de uma referência para comparar.
+      */}
+      {quantificavel && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-12">
+          <div className="sm:col-span-4">
+            <Input
+              label="Quantidade prevista *"
+              name="quantidadePrevista"
+              value={quantidade}
+              onChange={(e) => setQuantidade(e.target.value.replace(/[^\d,]/g, ''))}
+              placeholder="Ex.: 5000"
+              inputMode="decimal"
+            />
+          </div>
+          <div className="sm:col-span-8">
+            <Input
+              label="Unidade de medida *"
+              name="unidadeMedida"
+              value={unidade}
+              onChange={(e) => setUnidade(e.target.value)}
+              placeholder="Ex.: consultas, atendimentos, horas"
+              hint="Sem a unidade, o número sozinho não diz o que foi pactuado."
+            />
+          </div>
+        </div>
+      )}
+
       <Rodape salvando={salvando} onCancel={onCancel} />
     </form>
   );

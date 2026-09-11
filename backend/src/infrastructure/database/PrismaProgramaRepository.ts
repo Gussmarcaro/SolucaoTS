@@ -9,25 +9,45 @@ const programaSelect = {
   ajusteId: true,
   nome: true,
   metas: {
-    select: { id: true, programaId: true, codigoMeta: true, descricao: true, quantificavel: true },
+    select: { id: true, programaId: true, codigoMeta: true, descricao: true, quantificavel: true, quantidadePrevista: true, unidadeMedida: true },
     orderBy: { codigoMeta: 'asc' },
   },
 } satisfies Prisma.ProgramaSelect;
 
 type ProgramaRow = Prisma.ProgramaGetPayload<{ select: typeof programaSelect }>;
 
+/**
+ * Uma meta do banco para o domínio.
+ *
+ * Extraído porque o mapeamento estava repetido em três lugares — e foi
+ * exatamente por isso que o campo novo precisou ser lembrado três vezes.
+ */
+function metaToDomain(m: {
+  id: string;
+  programaId: string;
+  codigoMeta: string;
+  descricao: string | null;
+  quantificavel: boolean;
+  quantidadePrevista: Prisma.Decimal | null;
+  unidadeMedida: string | null;
+}): Meta {
+  return {
+    id: m.id,
+    programaId: m.programaId,
+    codigoMeta: m.codigoMeta,
+    descricao: m.descricao,
+    quantificavel: m.quantificavel,
+    quantidadePrevista: m.quantidadePrevista == null ? null : Number(m.quantidadePrevista),
+    unidadeMedida: m.unidadeMedida,
+  };
+}
+
 function programaToDomain(row: ProgramaRow): Programa {
   return {
     id: row.id,
     ajusteId: row.ajusteId,
     nome: row.nome,
-    metas: row.metas.map((m) => ({
-      id: m.id,
-      programaId: m.programaId,
-      codigoMeta: m.codigoMeta,
-      descricao: m.descricao,
-      quantificavel: m.quantificavel,
-    })),
+    metas: row.metas.map(metaToDomain),
   };
 }
 
@@ -86,12 +106,12 @@ export class PrismaProgramaRepository implements IProgramaRepository {
 
   async criarMeta(programaId: string, dados: DadosMeta): Promise<Meta> {
     const m = await prisma.meta.create({ data: { programaId, ...dados } });
-    return { id: m.id, programaId: m.programaId, codigoMeta: m.codigoMeta, descricao: m.descricao, quantificavel: m.quantificavel };
+    return metaToDomain(m);
   }
 
   async atualizarMeta(id: string, dados: DadosMeta): Promise<Meta> {
     const m = await prisma.meta.update({ where: { id }, data: dados });
-    return { id: m.id, programaId: m.programaId, codigoMeta: m.codigoMeta, descricao: m.descricao, quantificavel: m.quantificavel };
+    return metaToDomain(m);
   }
 
   async excluirMeta(id: string): Promise<void> {

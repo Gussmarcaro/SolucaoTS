@@ -7,10 +7,44 @@ import { BusinessError, ConflictError, NotFoundError } from '@/shared/errors';
 function validarMeta(input: MetaDTO): DadosMeta {
   const codigoMeta = input.codigoMeta?.trim() ?? '';
   if (!codigoMeta) throw new BusinessError('Informe o código da meta.');
+
+  const quantificavel = input.quantificavel ?? true;
+
+  /*
+   * A quantidade prevista é obrigatória **na meta quantificável**, e proibida
+   * na qualitativa.
+   *
+   * É o que dá sentido à marca: dizer que a meta é quantificável sem dizer
+   * quanto deixa a aferição da prestação sem referência para comparar. E
+   * guardar um número numa meta qualitativa criaria dado que nenhuma tela lê —
+   * o caminho dela é "cumprida / não cumprida", não uma contagem.
+   */
+  const bruto = input.quantidadePrevista;
+  const quantidade =
+    bruto === undefined || bruto === null || bruto === ''
+      ? null
+      : typeof bruto === 'string'
+        ? Number(bruto.replace(',', '.'))
+        : bruto;
+
+  if (quantificavel) {
+    if (quantidade === null) throw new BusinessError('Informe a quantidade prevista da meta.');
+    if (!Number.isFinite(quantidade) || quantidade <= 0)
+      throw new BusinessError('A quantidade prevista da meta deve ser maior que zero.');
+  }
+
+  const unidade = input.unidadeMedida?.trim() || null;
+  // Sem unidade, "5000" não diz se são consultas, horas ou toneladas — e é
+  // justamente essa leitura que a Comissão de Fiscalização precisa fazer.
+  if (quantificavel && !unidade)
+    throw new BusinessError('Informe a unidade de medida da meta (consultas, atendimentos, horas...).');
+
   return {
     codigoMeta,
     descricao: input.descricao?.trim() || null,
-    quantificavel: input.quantificavel ?? true,
+    quantificavel,
+    quantidadePrevista: quantificavel ? quantidade : null,
+    unidadeMedida: quantificavel ? unidade : null,
   };
 }
 

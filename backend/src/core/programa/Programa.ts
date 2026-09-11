@@ -5,6 +5,10 @@ export interface Meta {
   codigoMeta: string;
   descricao: string | null;
   quantificavel: boolean;
+  /** Quanto se pretende realizar — só nas quantificáveis. Controle interno. */
+  quantidadePrevista: number | null;
+  /** A unidade do número acima: consultas, atendimentos, horas... */
+  unidadeMedida: string | null;
 }
 
 /** Programa do plano de metas, com suas metas. */
