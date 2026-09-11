@@ -30,13 +30,25 @@ function validar(input: EmpenhoPrestacaoDTO): DadosEmpenhoPrestacao {
   const valor = typeof input.valor === 'string' ? Number(input.valor) : input.valor;
   if (!Number.isFinite(valor) || valor <= 0) throw new BusinessError('Valor do empenho inválido.');
 
+  /*
+   * O histórico é **obrigatório** — os cinco schemas oficiais o listam em
+   * `required`, nos cinco tipos de ajuste.
+   *
+   * Era opcional aqui, e a falha ficava invisível até o envio: o `limpo()` do
+   * montador remove nulos, então o campo simplesmente sumia do JSON e o
+   * documento era recusado por propriedade obrigatória ausente — longe da tela
+   * onde o dado deixou de ser digitado, e meses depois.
+   */
+  const historico = input.historico?.trim() ?? '';
+  if (!historico) throw new BusinessError('Informe o histórico do empenho.');
+
   return {
     numero,
     dataEmissao,
     classificacaoEconomica,
     fonteRecursoTipo,
     valor,
-    historico: input.historico?.trim() || null,
+    historico,
     cpfOrdenadorDespesa: cpf,
   };
 }

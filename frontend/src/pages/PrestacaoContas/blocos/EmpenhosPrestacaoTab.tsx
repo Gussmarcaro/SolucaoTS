@@ -141,7 +141,7 @@ function EmpenhoForm({ prestacaoId, item, onSuccess, onCancel }: { prestacaoId: 
       classificacaoEconomica: classificacao.trim(),
       fonteRecursoTipo: Number(apenasDigitos(fonte)),
       valor: moedaParaNumero(valor),
-      historico: historico.trim() || null,
+      historico: historico.trim(),
       cpfOrdenadorDespesa: apenasDigitos(cpf),
     };
     setSalvando(true);
@@ -168,7 +168,7 @@ function EmpenhoForm({ prestacaoId, item, onSuccess, onCancel }: { prestacaoId: 
         <Input label="Valor (R$) *" name="valor" value={valor} onChange={(e) => setValor(mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
         <Input label="CPF do Ordenador *" name="cpf" value={mascaraCpfCnpj(cpf)} onChange={(e) => setCpf(e.target.value)} placeholder="000.000.000-00" inputMode="numeric" />
         <div className="sm:col-span-2">
-          <Input label="Histórico" name="historico" value={historico} onChange={(e) => setHistorico(e.target.value)} />
+          <Input label="Histórico *" name="historico" value={historico} onChange={(e) => setHistorico(e.target.value)} hint="Exigido pelo schema oficial do TCESP." />
         </div>
       </div>
       <div className="flex items-center justify-end gap-2 pt-1">

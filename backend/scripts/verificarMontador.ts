@@ -193,6 +193,7 @@ const casos: Array<[string, (d: DadosMontagem) => void, string]> = [
   ['previsto do repasse acima do empenho', (d) => { d.repasses[0].valorPrevisto = 70_000; }, 'não pode superar o valor do empenho'],
   ['soma dos repasses acima do empenho', (d) => { d.repasses.push({ ...d.repasses[0], valorRepasse: 30_000, valorPrevisto: 30_000, justificativaDiferenca: null }); }, 'supera o valor do empenho'],
   ['emissão de empenho no futuro', (d) => { d.empenhos[0].dataEmissao = '2027-01-01'; }, 'não pode ser futura'],
+  ['empenho sem histórico', (d) => { d.empenhos[0].historico = null; }, 'histórico é obrigatório'],
   ['assinatura de contrato há mais de 20 anos', (d) => { d.contratos[0].dataAssinatura = '1990-01-01'; }, 'data de assinatura'],
   ['vigência inicial muito no futuro', (d) => { d.contratos[0].vigenciaDataInicial = '2035-01-01'; }, 'início da vigência'],
   ['vigência acima de 10 anos', (d) => { d.contratos[0].vigenciaDataFinal = '2040-01-01'; }, 'não pode passar de 10 anos'],

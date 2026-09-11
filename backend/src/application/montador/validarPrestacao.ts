@@ -101,9 +101,20 @@ export function validarPrestacao(
       erros.push(`Receitas: o repasse de ${r.dataRepasse} deve estar dentro do exercício ${d.ano}.`);
   }
 
-  // --- Empenhos: emissão não futura ---
+  // --- Empenhos: emissão não futura, histórico obrigatório ---
   for (const e of d.empenhos) {
     if (e.dataEmissao > hojeISO) erros.push(`Empenho ${e.numero}: a data de emissão não pode ser futura.`);
+    /*
+     * `historico` está em `required` nos cinco schemas oficiais.
+     *
+     * Sem esta regra a falha só aparecia no envio, e de forma enganosa: o
+     * `limpo()` remove nulos, então o campo sumia do JSON e o Tribunal recusava
+     * por propriedade ausente — longe da tela onde o dado deixou de ser
+     * digitado. É exatamente o tipo de erro que este validador existe para
+     * antecipar.
+     */
+    if (!e.historico?.trim())
+      erros.push(`Empenho ${e.numero}: o histórico é obrigatório.`);
   }
 
   // --- Glosas: todo documento fiscal informado precisa de análise ---
