@@ -36,4 +36,13 @@ export class CronogramaController {
       return next(e);
     }
   }
+
+  /** `PUT /ajustes/:ajusteId/cronograma` — o cronograma digitado na tela. */
+  async salvarDigitado(req: Request, res: Response, next: NextFunction) {
+    try {
+      return res.json(await casos.salvarDigitado(req.params.ajusteId, req.body));
+    } catch (e) {
+      return next(e);
+    }
+  }
 }

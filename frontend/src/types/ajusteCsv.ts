@@ -12,6 +12,9 @@ export interface PlanoItem {
 export interface CronogramaItem {
   id: string;
   ajusteId: string;
+  /** Rubrica do plano; nula nas linhas agregadas vindas do CSV. */
+  categoria: string | null;
+  subcategoria: string | null;
   ano: number;
   mes: number;
   valor: number;

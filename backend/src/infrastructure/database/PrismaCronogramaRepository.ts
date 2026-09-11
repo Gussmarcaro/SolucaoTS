@@ -7,6 +7,8 @@ import type { CronogramaItem } from '@/core/cronograma/CronogramaItem';
 const selecao = {
   id: true,
   ajusteId: true,
+  categoria: true,
+  subcategoria: true,
   ano: true,
   mes: true,
   valor: true,
@@ -18,6 +20,8 @@ function toDomain(row: Row): CronogramaItem {
   return {
     id: row.id,
     ajusteId: row.ajusteId,
+    categoria: row.categoria,
+    subcategoria: row.subcategoria,
     ano: row.ano,
     mes: row.mes,
     valor: Number(row.valor),
@@ -25,6 +29,8 @@ function toDomain(row: Row): CronogramaItem {
 }
 
 const ordem: Prisma.CronogramaDesembolsoItemOrderByWithRelationInput[] = [
+  { categoria: 'asc' },
+  { subcategoria: 'asc' },
   { ano: 'asc' },
   { mes: 'asc' },
 ];

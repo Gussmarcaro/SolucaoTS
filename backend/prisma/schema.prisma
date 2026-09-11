@@ -889,12 +889,27 @@ model PlanoAplicacaoItem {
 }
 
 // Importado via CSV (CronogramaDesembolsoExemplo.csv)
+/// Cronograma de Desembolso — o Plano de Aplicação fracionado pelos meses da
+/// vigência.
+///
+/// A rubrica (categoria + subcategoria) é **opcional** porque o cronograma
+/// nasceu agregado: uma linha por mês, com o total. O CSV continua produzindo
+/// esse formato, e as importações antigas o têm. Com rubrica, a linha é o
+/// detalhamento que a tela digita — "salários em março".
+///
+/// Não é o Plano de Aplicação repetido: o plano diz **quanto por mês em média**
+/// (anual ÷ 12); o cronograma diz **quando de fato sai**, que raramente é o
+/// mesmo número doze vezes — 13º em dezembro, rescisões concentradas, reajuste
+/// a partir de maio.
 model CronogramaDesembolsoItem {
-  id       String  @id @default(uuid()) @db.Uuid
-  ajusteId String  @db.Uuid
-  ano      Int
-  mes      Int // normalizado 1-12
-  valor    Decimal @db.Decimal(15, 2)
+  id           String  @id @default(uuid()) @db.Uuid
+  ajusteId     String  @db.Uuid
+  /// Nulas nas linhas agregadas (CSV e importações anteriores à digitação).
+  categoria    String?
+  subcategoria String?
+  ano          Int
+  mes          Int // normalizado 1-12
+  valor        Decimal @db.Decimal(15, 2)
 
   criadoPor String? @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   ajuste    Ajuste  @relation(fields: [ajusteId], references: [id])

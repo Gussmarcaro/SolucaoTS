@@ -84,3 +84,19 @@ export async function salvarPlanoDigitado(
   const { data } = await http.put<PlanoItem[]>(`/ajustes/${ajusteId}/plano-aplicacao`, payload);
   return data;
 }
+
+/**
+ * Grava o cronograma digitado (substitui o cronograma do ajuste).
+ *
+ * Sem a regra de ×12 do plano: aqui cada mês tem o seu valor, que é o motivo
+ * de o bloco existir.
+ */
+export async function salvarCronogramaDigitado(
+  ajusteId: string,
+  payload: {
+    itens: { categoria: string; subcategoria: string; ano: number; mes: number; valor: number }[];
+  },
+): Promise<CronogramaItem[]> {
+  const { data } = await http.put<CronogramaItem[]>(`/ajustes/${ajusteId}/cronograma`, payload);
+  return data;
+}

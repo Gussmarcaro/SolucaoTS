@@ -50,6 +50,7 @@ ajusteRoutes.delete('/:ajusteId/plano-aplicacao', (req, res, next) => plano.limp
 
 // --- Cronograma de Desembolso (importação CSV) ---
 ajusteRoutes.get('/:ajusteId/cronograma', (req, res, next) => cronograma.listar(req, res, next));
+ajusteRoutes.put('/:ajusteId/cronograma', (req, res, next) => cronograma.salvarDigitado(req, res, next));
 ajusteRoutes.post('/:ajusteId/cronograma/importar', uploadCsv, (req, res, next) => cronograma.importar(req, res, next));
 ajusteRoutes.delete('/:ajusteId/cronograma', (req, res, next) => cronograma.limpar(req, res, next));
 
