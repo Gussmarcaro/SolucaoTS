@@ -128,6 +128,74 @@ export function RelatorioAtividadesTab({ prestacaoId, ajusteId }: { prestacaoId:
   );
 }
 
+/**
+ * O previsto ao lado do realizado, com o percentual entre os dois.
+ *
+ * Existe porque a aferição pedia um número sem dizer contra o que compará-lo: a
+ * conta acabava sendo feita de cabeça, ou conferida noutra tela. O percentual é
+ * a leitura que interessa — "3.800 de 5.000 consultas (76%)" diz num relance o
+ * que dois números soltos não dizem.
+ *
+ * **Não decide nada.** A caixa "Meta atendida" continua sendo do usuário: 76%
+ * pode ser cumprimento integral de uma meta revista por aditivo, e 100% pode
+ * esconder um serviço prestado fora do padrão. A aritmética informa; quem
+ * responde pela avaliação é quem assina.
+ */
+function ComparativoMeta({
+  prevista,
+  unidade,
+  realizado,
+}: {
+  prevista: number;
+  unidade: string | null;
+  realizado: string;
+}) {
+  const num = Number(realizado.replace(',', '.'));
+  const temRealizado = realizado.trim() !== '' && Number.isFinite(num);
+  const pct = temRealizado && prevista > 0 ? (num / prevista) * 100 : null;
+
+  const br = (v: number) => v.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+  const sufixo = unidade ? ` ${unidade}` : '';
+
+  return (
+    <div className="rounded-xl border border-ink-200/70 bg-ink-50/50 px-3 py-2 text-sm dark:border-ink-800/70 dark:bg-ink-800/30">
+      <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
+        <span className="text-ink-500 dark:text-ink-400">
+          Meta estipulada:{' '}
+          <strong className="tabular-nums text-ink-800 dark:text-ink-100">
+            {br(prevista)}
+            {sufixo}
+          </strong>
+        </span>
+        {temRealizado && (
+          <>
+            <span className="text-ink-500 dark:text-ink-400">
+              Realizado:{' '}
+              <strong className="tabular-nums text-ink-800 dark:text-ink-100">
+                {br(num)}
+                {sufixo}
+              </strong>
+            </span>
+            <span
+              className={
+                pct != null && pct >= 100
+                  ? 'font-semibold text-emerald-600 dark:text-emerald-400'
+                  : 'font-semibold text-amber-600 dark:text-amber-400'
+              }
+            >
+              {pct != null ? `${br(pct)}% da meta` : ''}
+              {pct != null && pct < 100 && ` · faltam ${br(prevista - num)}${sufixo}`}
+            </span>
+          </>
+        )}
+      </div>
+      <p className="mt-1 text-xs text-ink-400">
+        Vem do cadastro do Ajuste (Programas e Metas). Só o realizado é transmitido ao TCESP.
+      </p>
+    </div>
+  );
+}
+
 function AfericaoForm({ prestacaoId, programas, item, onSuccess, onCancel }: { prestacaoId: string; programas: Programa[]; item: AfericaoMeta | null; onSuccess: () => void; onCancel: () => void }) {
   const [nomePrograma, setNomePrograma] = useState(item?.nomePrograma ?? programas[0]?.nome ?? '');
   const [codigoMeta, setCodigoMeta] = useState(item?.codigoMeta ?? '');
@@ -194,7 +262,16 @@ function AfericaoForm({ prestacaoId, programas, item, onSuccess, onCancel }: { p
           name="codigoMeta"
           value={codigoMeta}
           onChange={(e) => setCodigoMeta(e.target.value)}
-          options={metas.map((m) => ({ value: m.codigoMeta, label: `${m.codigoMeta}${m.descricao ? ` — ${m.descricao}` : ''}` }))}
+          // A meta prevista entra no rótulo: quem escolhe a meta já vê o que
+          // foi pactuado, sem depender de abrir o cadastro do ajuste.
+          options={metas.map((m) => ({
+            value: m.codigoMeta,
+            label:
+              `${m.codigoMeta}${m.descricao ? ` — ${m.descricao}` : ''}` +
+              (m.quantidadePrevista != null
+                ? ` (${m.quantidadePrevista.toLocaleString('pt-BR')}${m.unidadeMedida ? ` ${m.unidadeMedida}` : ''})`
+                : ''),
+          }))}
           placeholder="Selecione a meta"
         />
         <Input label="Período (1–15) *" name="periodo" value={apenasDigitos(periodo).slice(0, 2)} onChange={(e) => setPeriodo(e.target.value)} inputMode="numeric" hint="Conforme a periodicidade da meta." />
@@ -203,6 +280,25 @@ function AfericaoForm({ prestacaoId, programas, item, onSuccess, onCancel }: { p
         ) : (
           <Select label="Resultado da Meta *" name="resultado" value={resultado} onChange={(e) => setResultado(e.target.value as ResultadoMeta)} options={RESULTADOS} />
         )}
+
+        {/*
+          A meta estipulada, ao lado do realizado.
+
+          Sem ela a tela pedia um número e não dizia contra o que compará-lo — e
+          a conta acabava sendo feita de cabeça, ou conferida noutra tela. Vem do
+          cadastro do Ajuste, é só leitura, e não é transmitida: o schema oficial
+          manda apenas o realizado.
+        */}
+        {quantificavel && meta?.quantidadePrevista != null && (
+          <div className="sm:col-span-2">
+            <ComparativoMeta
+              prevista={meta.quantidadePrevista}
+              unidade={meta.unidadeMedida}
+              realizado={quantidade}
+            />
+          </div>
+        )}
+
         <div className="sm:col-span-2">
           <Input label="Justificativa do período" name="justPeriodo" value={justPeriodo} onChange={(e) => setJustPeriodo(e.target.value)} hint="Exigida se houver divergência (quantitativa) ou resultado não cumprido (qualitativa)." />
         </div>
