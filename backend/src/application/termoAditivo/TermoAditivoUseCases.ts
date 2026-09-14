@@ -23,11 +23,32 @@ function validar(input: TermoAditivoDTO): DadosTermoAditivo {
     throw new BusinessError('Data de assinatura inválida.');
   }
 
+  /*
+   * A nova vigência precisa ser posterior à assinatura do próprio aditivo.
+   *
+   * Prorrogar para uma data anterior ao instrumento que prorroga não é erro de
+   * digitação improvável: é o que acontece quando alguém troca a ordem dos dois
+   * campos de data, e o resultado seria um cronograma desenhado para um prazo
+   * que já terminou.
+   */
+  let novaVigenciaFinal: Date | null = null;
+  if (input.novaVigenciaFinal) {
+    try {
+      novaVigenciaFinal = parseDataISO(input.novaVigenciaFinal);
+    } catch {
+      throw new BusinessError('Nova vigência final inválida.');
+    }
+    if (novaVigenciaFinal < dataAssinatura)
+      throw new BusinessError('A nova vigência não pode ser anterior à assinatura do aditivo.');
+  }
+
   return {
     numero,
     dataAssinatura,
     valorAcrescido: numeroOpcional(input.valorAcrescido, 'Valor acrescido'),
     valorSuprimido: numeroOpcional(input.valorSuprimido, 'Valor suprimido'),
+    novaVigenciaFinal,
+    objeto: input.objeto?.trim() || null,
   };
 }
 

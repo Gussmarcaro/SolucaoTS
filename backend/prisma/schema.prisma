@@ -822,15 +822,32 @@ model Ajuste {
 }
 
 model TermoAditivo {
-  id             String   @id @default(uuid()) @db.Uuid
-  ajusteId       String   @db.Uuid
-  numero         String
-  dataAssinatura DateTime @db.Date
-  valorAcrescido Decimal? @db.Decimal(15, 2)
-  valorSuprimido Decimal? @db.Decimal(15, 2)
+  id                String    @id @default(uuid()) @db.Uuid
+  ajusteId          String    @db.Uuid
+  numero            String
+  dataAssinatura    DateTime  @db.Date
+  valorAcrescido    Decimal?  @db.Decimal(15, 2)
+  valorSuprimido    Decimal?  @db.Decimal(15, 2)
+  /// Nova data final da vigência, quando o aditivo prorroga.
+  ///
+  /// A prorrogação é o aditivo mais comum e não tinha onde ser registrada: o
+  /// ajuste guardava uma vigência que o aditivo mudava sem deixar rastro, e o
+  /// cronograma continuava desenhado para o prazo antigo.
+  novaVigenciaFinal DateTime? @db.Date
+  /// O que o aditivo alterou, em texto — o TCESP pede a descrição.
+  objeto            String?
 
   criadoPor String? @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   ajuste    Ajuste  @relation(fields: [ajusteId], references: [id])
+
+  /// Plano e cronograma que este aditivo (re)definiu.
+  ///
+  /// A norma manda o aditivo replicar Plano de Aplicação e Cronograma, e a
+  /// razão é prática: prorrogar para 2028 cria um exercício que o plano não
+  /// tinha. Sem o vínculo, esses exercícios apareceriam do nada e ninguém
+  /// saberia por qual instrumento foram pactuados.
+  planoAplicacao PlanoAplicacaoItem[]
+  cronograma     CronogramaDesembolsoItem[]
 
   @@index([ajusteId])
 }
@@ -877,6 +894,8 @@ model Meta {
 model PlanoAplicacaoItem {
   id                   String  @id @default(uuid()) @db.Uuid
   ajusteId             String  @db.Uuid
+  /// Aditivo que definiu este item. Nulo no plano original do ajuste.
+  termoAditivoId       String? @db.Uuid
   categoria            String // ex: RECURSOS HUMANOS
   subcategoria         String // ex: SALÁRIOS E ORDENADOS
   /// Categoria de Despesa AUDESP (`categoria_despesas_tipo`, 88 códigos).
@@ -895,8 +914,9 @@ model PlanoAplicacaoItem {
   valor                Decimal @db.Decimal(15, 2)
   descricao            String?
 
-  criadoPor String? @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
-  ajuste    Ajuste  @relation(fields: [ajusteId], references: [id])
+  criadoPor    String?       @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
+  ajuste       Ajuste        @relation(fields: [ajusteId], references: [id])
+  termoAditivo TermoAditivo? @relation(fields: [termoAditivoId], references: [id])
 
   @@index([ajusteId])
 }
@@ -915,17 +935,20 @@ model PlanoAplicacaoItem {
 /// mesmo número doze vezes — 13º em dezembro, rescisões concentradas, reajuste
 /// a partir de maio.
 model CronogramaDesembolsoItem {
-  id           String  @id @default(uuid()) @db.Uuid
-  ajusteId     String  @db.Uuid
+  id             String  @id @default(uuid()) @db.Uuid
+  ajusteId       String  @db.Uuid
+  /// Aditivo que definiu este item. Nulo no cronograma original do ajuste.
+  termoAditivoId String? @db.Uuid
   /// Nulas nas linhas agregadas (CSV e importações anteriores à digitação).
-  categoria    String?
-  subcategoria String?
-  ano          Int
-  mes          Int // normalizado 1-12
-  valor        Decimal @db.Decimal(15, 2)
+  categoria      String?
+  subcategoria   String?
+  ano            Int
+  mes            Int // normalizado 1-12
+  valor          Decimal @db.Decimal(15, 2)
 
-  criadoPor String? @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
-  ajuste    Ajuste  @relation(fields: [ajusteId], references: [id])
+  criadoPor    String?       @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
+  ajuste       Ajuste        @relation(fields: [ajusteId], references: [id])
+  termoAditivo TermoAditivo? @relation(fields: [termoAditivoId], references: [id])
 
   @@index([ajusteId])
 }

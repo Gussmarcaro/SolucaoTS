@@ -2,6 +2,8 @@ import type { PlanoAplicacaoItem } from '@/core/planoAplicacao/PlanoAplicacaoIte
 
 /** Item normalizado do plano, pronto para persistência (sem id/ajusteId). */
 export interface DadosPlanoItem {
+  /** Aditivo que definiu o item; nulo no plano original do ajuste. */
+  termoAditivoId?: string | null;
   categoria: string;
   subcategoria: string;
   categoriaDespesaTipo?: number | null;

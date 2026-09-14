@@ -12,6 +12,8 @@ const selecao = {
   dataAssinatura: true,
   valorAcrescido: true,
   valorSuprimido: true,
+  novaVigenciaFinal: true,
+  objeto: true,
 } satisfies Prisma.TermoAditivoSelect;
 
 type Row = Prisma.TermoAditivoGetPayload<{ select: typeof selecao }>;
@@ -24,6 +26,8 @@ function toDomain(row: Row): TermoAditivo {
     dataAssinatura: paraDataISO(row.dataAssinatura),
     valorAcrescido: row.valorAcrescido == null ? null : Number(row.valorAcrescido),
     valorSuprimido: row.valorSuprimido == null ? null : Number(row.valorSuprimido),
+    novaVigenciaFinal: row.novaVigenciaFinal ? paraDataISO(row.novaVigenciaFinal) : null,
+    objeto: row.objeto,
   };
 }
 

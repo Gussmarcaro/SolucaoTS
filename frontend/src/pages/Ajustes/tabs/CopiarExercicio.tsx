@@ -24,11 +24,14 @@ export function CopiarExercicio({
   carregarExercicios,
   copiar,
   onCopiado,
+  rotuloBotao,
 }: {
   /** "plano" ou "cronograma" — entra nas frases do diálogo. */
   rotulo: string;
   carregarExercicios: () => Promise<number[]>;
   copiar: (p: { de: number; para: number; reajustePercentual: number }) => Promise<unknown>;
+  /** Rótulo do botão. O padrão serve à aba; o aditivo usa outro. */
+  rotuloBotao?: string;
   onCopiado: () => void;
 }) {
   const [aberto, setAberto] = useState(false);
@@ -89,7 +92,7 @@ export function CopiarExercicio({
     <>
       <Button type="button" variant="secondary" size="sm" onClick={() => setAberto(true)}>
         <Copy className="h-4 w-4" />
-        Copiar de outro exercício
+        {rotuloBotao ?? 'Copiar de outro exercício'}
       </Button>
 
       <Modal

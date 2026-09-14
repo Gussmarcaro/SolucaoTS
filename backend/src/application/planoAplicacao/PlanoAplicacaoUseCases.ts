@@ -121,7 +121,21 @@ export class PlanoAplicacaoUseCases {
    */
   async copiarExercicio(
     ajusteId: string,
-    input: { de?: number | string; para?: number | string; reajustePercentual?: number | string | null },
+    input: {
+      de?: number | string;
+      para?: number | string;
+      reajustePercentual?: number | string | null;
+      /**
+       * Aditivo que está replicando o plano.
+       *
+       * A norma manda o aditivo replicar Plano e Cronograma, e a razão é
+       * prática: prorrogar para 2028 cria um exercício que o plano não tinha.
+       * Guardar quem o criou é o que permite responder, meses depois, por qual
+       * instrumento aquele exercício foi pactuado — pergunta que a fiscalização
+       * faz e que "apareceu do nada" não responde.
+       */
+      termoAditivoId?: string | null;
+    },
   ): Promise<PlanoAplicacaoItem[]> {
     await this.garantirAjuste(ajusteId);
 
@@ -146,7 +160,9 @@ export class PlanoAplicacaoUseCases {
       throw new BusinessError(`Não há plano cadastrado no exercício ${de}.`);
 
     const fator = 1 + reajuste / 100;
+    const termoAditivoId = input.termoAditivoId?.trim() || null;
     const itens: DadosPlanoItem[] = origem.map((i) => ({
+      termoAditivoId,
       categoria: i.categoria,
       subcategoria: i.subcategoria,
       categoriaDespesaTipo: i.categoriaDespesaTipo,

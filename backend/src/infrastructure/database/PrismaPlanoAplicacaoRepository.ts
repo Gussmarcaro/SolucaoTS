@@ -7,6 +7,7 @@ import type { PlanoAplicacaoItem } from '@/core/planoAplicacao/PlanoAplicacaoIte
 const selecao = {
   id: true,
   ajusteId: true,
+  termoAditivoId: true,
   categoria: true,
   subcategoria: true,
   categoriaDespesaTipo: true,
@@ -22,6 +23,7 @@ function toDomain(row: Row): PlanoAplicacaoItem {
   return {
     id: row.id,
     ajusteId: row.ajusteId,
+    termoAditivoId: row.termoAditivoId,
     categoria: row.categoria,
     subcategoria: row.subcategoria,
     categoriaDespesaTipo: row.categoriaDespesaTipo,

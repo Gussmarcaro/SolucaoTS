@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react';
-import { AlertCircle, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
+import { AlertCircle, CopyPlus, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
+import {
+  copiarCronogramaExercicio,
+  copiarPlanoExercicio,
+  exerciciosDoCronograma,
+  exerciciosDoPlano,
+} from '@/services/ajusteCsv.service';
+import { CopiarExercicio } from './CopiarExercicio';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
@@ -19,7 +26,8 @@ import type { TermoAditivo, TermoAditivoPayload } from '@/types/ajusteFilhos';
 type ModalState =
   | { tipo: 'fechado' }
   | { tipo: 'form'; termo: TermoAditivo | null }
-  | { tipo: 'excluir'; termo: TermoAditivo };
+  | { tipo: 'excluir'; termo: TermoAditivo }
+  | { tipo: 'replicar'; termo: TermoAditivo };
 
 /** Ações sempre primeiro, como nas grades dos cadastros. */
 const COLUNAS: ColunaDef[] = [
@@ -90,15 +98,45 @@ export function TermosAditivosTab({ ajusteId }: { ajusteId: string }) {
                   <IconBtn title="Editar" onClick={() => setModal({ tipo: 'form', termo: t })}>
                     <Pencil className="h-4 w-4" />
                   </IconBtn>
+                  {/*
+                    Replicar plano e cronograma é ação **do aditivo**, e não da
+                    aba do plano: a norma manda o aditivo replicá-los, e o
+                    exercício criado precisa saber por qual instrumento foi
+                    pactuado. Feita daqui, a cópia já nasce carimbada.
+                  */}
+                  <IconBtn title="Replicar plano e cronograma" onClick={() => setModal({ tipo: 'replicar', termo: t })}>
+                    <CopyPlus className="h-4 w-4" />
+                  </IconBtn>
                   <IconBtn title="Excluir" danger onClick={() => setModal({ tipo: 'excluir', termo: t })}>
                     <Trash2 className="h-4 w-4" />
                   </IconBtn>
                 </div>
               );
             case 'numero':
-              return <span className="block truncate font-medium text-ink-800 dark:text-ink-100">{t.numero}</span>;
+              return (
+                <div className="min-w-0">
+                  <span className="block truncate font-medium text-ink-800 dark:text-ink-100">{t.numero}</span>
+                  {t.objeto && (
+                    <span className="block truncate text-xs text-ink-400" title={t.objeto}>
+                      {t.objeto}
+                    </span>
+                  )}
+                </div>
+              );
             case 'assinatura':
-              return <span className="block truncate text-ink-600 dark:text-ink-300">{dataBr(t.dataAssinatura)}</span>;
+              return (
+                <div className="min-w-0">
+                  <span className="block truncate text-ink-600 dark:text-ink-300">{dataBr(t.dataAssinatura)}</span>
+                  {/* A prorrogação é o que o aditivo mais faz — e é o dado que
+                      manda no cronograma. Aparece junto da assinatura porque as
+                      duas datas só se leem em par. */}
+                  {t.novaVigenciaFinal && (
+                    <span className="block truncate text-xs text-brand-600 dark:text-brand-400">
+                      prorroga até {dataBr(t.novaVigenciaFinal)}
+                    </span>
+                  )}
+                </div>
+              );
             case 'acrescimo':
               return (
                 <span className="block truncate tabular-nums text-emerald-600 dark:text-emerald-400">
@@ -116,6 +154,66 @@ export function TermosAditivosTab({ ajusteId }: { ajusteId: string }) {
           }
         }}
       />
+
+      {/*
+        Replicar plano e cronograma pelo aditivo.
+
+        Os dois blocos ficam juntos porque a prorrogação mexe nos dois: o
+        exercício novo precisa de plano **e** de desembolsos, e replicar só um
+        deixaria o ajuste com metade do ano pactuada.
+      */}
+      <Modal
+        open={modal.tipo === 'replicar'}
+        onClose={() => setModal({ tipo: 'fechado' })}
+        title={modal.tipo === 'replicar' ? `Replicar pelo aditivo ${modal.termo.numero}` : ''}
+        size="lg"
+      >
+        {modal.tipo === 'replicar' && (
+          <div className="space-y-4">
+            <p className="text-sm text-ink-600 dark:text-ink-300">
+              A norma manda o termo aditivo replicar o <strong>Plano de Aplicação</strong> e o{' '}
+              <strong>Cronograma de Desembolso</strong>. Copie cada um para o exercício que este
+              aditivo pactua — o que for criado aqui fica vinculado a ele.
+            </p>
+            {modal.termo.novaVigenciaFinal && (
+              <p className="text-sm text-brand-600 dark:text-brand-400">
+                Este aditivo prorroga a vigência até{' '}
+                <strong>{dataBr(modal.termo.novaVigenciaFinal)}</strong>.
+              </p>
+            )}
+            <div className="flex flex-wrap items-center gap-2">
+              <CopiarExercicio
+                rotulo="plano"
+                rotuloBotao="Replicar plano"
+                carregarExercicios={() => exerciciosDoPlano(ajusteId)}
+                copiar={(p) =>
+                  copiarPlanoExercicio(ajusteId, {
+                    ...p,
+                    termoAditivoId: modal.tipo === 'replicar' ? modal.termo.id : undefined,
+                  })
+                }
+                onCopiado={recarregar}
+              />
+              <CopiarExercicio
+                rotulo="cronograma"
+                rotuloBotao="Replicar cronograma"
+                carregarExercicios={() => exerciciosDoCronograma(ajusteId)}
+                copiar={(p) =>
+                  copiarCronogramaExercicio(ajusteId, {
+                    ...p,
+                    termoAditivoId: modal.tipo === 'replicar' ? modal.termo.id : undefined,
+                  })
+                }
+                onCopiado={recarregar}
+              />
+            </div>
+            <p className="text-xs text-ink-400">
+              Depois de replicar, revise os valores nas abas Plano de Aplicação e Cronograma: o
+              aditivo costuma mudar mais que um percentual.
+            </p>
+          </div>
+        )}
+      </Modal>
 
       <Modal
         open={modal.tipo === 'form'}
@@ -162,6 +260,8 @@ function TermoForm({
   const [dataAssinatura, setDataAssinatura] = useState(termo?.dataAssinatura ?? '');
   const [acrescido, setAcrescido] = useState(termo?.valorAcrescido != null ? numeroParaMascaraMoeda(termo.valorAcrescido) : '');
   const [suprimido, setSuprimido] = useState(termo?.valorSuprimido != null ? numeroParaMascaraMoeda(termo.valorSuprimido) : '');
+  const [novaVigencia, setNovaVigencia] = useState(termo?.novaVigenciaFinal ?? '');
+  const [objeto, setObjeto] = useState(termo?.objeto ?? '');
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
@@ -176,6 +276,8 @@ function TermoForm({
       dataAssinatura,
       valorAcrescido: acrescido ? moedaParaNumero(acrescido) : null,
       valorSuprimido: suprimido ? moedaParaNumero(suprimido) : null,
+      novaVigenciaFinal: novaVigencia || null,
+      objeto: objeto.trim() || null,
     };
     setSalvando(true);
     try {
@@ -202,6 +304,27 @@ function TermoForm({
         <Input label="Data de Assinatura *" name="dataAssinatura" type="date" value={dataAssinatura} onChange={(e) => setDataAssinatura(e.target.value)} />
         <Input label="Valor Acrescido (R$)" name="acrescido" value={acrescido} onChange={(e) => setAcrescido(mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
         <Input label="Valor Suprimido (R$)" name="suprimido" value={suprimido} onChange={(e) => setSuprimido(mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
+        {/* A prorrogação é o aditivo mais comum e não tinha onde ser
+            registrada: o ajuste guardava uma vigência que o aditivo mudava sem
+            deixar rastro, e o cronograma continuava desenhado para o prazo
+            antigo. */}
+        <Input
+          label="Nova vigência final"
+          name="novaVigencia"
+          type="date"
+          value={novaVigencia}
+          onChange={(e) => setNovaVigencia(e.target.value)}
+          hint="Preencha quando o aditivo prorrogar o prazo."
+        />
+        <div className="sm:col-span-2">
+          <Input
+            label="Objeto do aditivo"
+            name="objeto"
+            value={objeto}
+            onChange={(e) => setObjeto(e.target.value)}
+            placeholder="O que este aditivo altera"
+          />
+        </div>
       </div>
       <div className="flex items-center justify-end gap-2 pt-1">
         <Button type="button" variant="secondary" onClick={onCancel} disabled={salvando}>Cancelar</Button>

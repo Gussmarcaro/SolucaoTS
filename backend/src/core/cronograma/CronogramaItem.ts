@@ -2,6 +2,8 @@
 export interface CronogramaItem {
   id: string;
   ajusteId: string;
+  /** Aditivo que definiu este item; nulo no cronograma original. */
+  termoAditivoId: string | null;
   /** Rubrica do plano; nula nas linhas agregadas vindas do CSV. */
   categoria: string | null;
   subcategoria: string | null;

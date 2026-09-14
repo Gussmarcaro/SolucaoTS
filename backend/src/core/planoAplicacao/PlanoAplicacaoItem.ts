@@ -2,6 +2,8 @@
 export interface PlanoAplicacaoItem {
   id: string;
   ajusteId: string;
+  /** Aditivo que definiu este item; nulo no plano original. */
+  termoAditivoId: string | null;
   categoria: string;
   subcategoria: string;
   /** Categoria de Despesa AUDESP — o elo com a execução. Null nos planos antigos. */

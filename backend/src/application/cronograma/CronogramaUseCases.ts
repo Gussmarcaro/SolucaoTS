@@ -94,7 +94,13 @@ export class CronogramaUseCases {
    */
   async copiarExercicio(
     ajusteId: string,
-    input: { de?: number | string; para?: number | string; reajustePercentual?: number | string | null },
+    input: {
+      de?: number | string;
+      para?: number | string;
+      reajustePercentual?: number | string | null;
+      /** Aditivo que está replicando o cronograma — ver o caso de uso do plano. */
+      termoAditivoId?: string | null;
+    },
   ): Promise<CronogramaItem[]> {
     await this.garantirAjuste(ajusteId);
 
@@ -119,7 +125,9 @@ export class CronogramaUseCases {
       throw new BusinessError(`Não há cronograma cadastrado no exercício ${de}.`);
 
     const fator = 1 + reajuste / 100;
+    const termoAditivoId = input.termoAditivoId?.trim() || null;
     const itens: DadosCronogramaItem[] = origem.map((i) => ({
+      termoAditivoId,
       categoria: i.categoria,
       subcategoria: i.subcategoria,
       ano: para,

@@ -7,6 +7,7 @@ import type { CronogramaItem } from '@/core/cronograma/CronogramaItem';
 const selecao = {
   id: true,
   ajusteId: true,
+  termoAditivoId: true,
   categoria: true,
   subcategoria: true,
   ano: true,
@@ -20,6 +21,7 @@ function toDomain(row: Row): CronogramaItem {
   return {
     id: row.id,
     ajusteId: row.ajusteId,
+    termoAditivoId: row.termoAditivoId,
     categoria: row.categoria,
     subcategoria: row.subcategoria,
     ano: row.ano,

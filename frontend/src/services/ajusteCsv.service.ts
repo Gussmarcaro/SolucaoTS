@@ -122,7 +122,7 @@ export async function exerciciosDoPlano(ajusteId: string): Promise<number[]> {
 
 export async function copiarPlanoExercicio(
   ajusteId: string,
-  payload: { de: number; para: number; reajustePercentual: number },
+  payload: { de: number; para: number; reajustePercentual: number; termoAditivoId?: string },
 ): Promise<PlanoItem[]> {
   const { data } = await http.post<PlanoItem[]>(
     `/ajustes/${ajusteId}/plano-aplicacao/copiar`,
@@ -138,7 +138,7 @@ export async function exerciciosDoCronograma(ajusteId: string): Promise<number[]
 
 export async function copiarCronogramaExercicio(
   ajusteId: string,
-  payload: { de: number; para: number; reajustePercentual: number },
+  payload: { de: number; para: number; reajustePercentual: number; termoAditivoId?: string },
 ): Promise<CronogramaItem[]> {
   const { data } = await http.post<CronogramaItem[]>(
     `/ajustes/${ajusteId}/cronograma/copiar`,

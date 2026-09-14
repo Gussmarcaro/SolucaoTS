@@ -2,6 +2,8 @@ import type { CronogramaItem } from '@/core/cronograma/CronogramaItem';
 
 /** Item normalizado do cronograma, pronto para persistência (sem id/ajusteId). */
 export interface DadosCronogramaItem {
+  /** Aditivo que definiu o item; nulo no cronograma original do ajuste. */
+  termoAditivoId?: string | null;
   categoria?: string | null;
   subcategoria?: string | null;
   ano: number;
