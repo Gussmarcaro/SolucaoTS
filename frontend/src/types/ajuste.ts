@@ -31,6 +31,8 @@ export const STATUS_AJUSTE_LABEL: Record<StatusAjuste, string> = {
 /** Conta bancária declarada no ajuste. */
 export interface ContaBancariaAjuste {
   id?: string;
+  /** Conta do cadastro do órgão de onde esta foi escolhida; null nas digitadas. */
+  contaBancariaId?: string | null;
   banco: number;
   agencia: number;
   conta: string;

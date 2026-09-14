@@ -38,6 +38,7 @@ import { ReceitasOrgao } from '@/pages/ReceitasOrgao';
 import { PagamentosOrgao } from '@/pages/PagamentosOrgao';
 import { GuiasRecolhimento } from '@/pages/GuiasRecolhimento';
 import { Conciliacao } from '@/pages/Conciliacao';
+import { ContasBancarias } from '@/pages/ContasBancarias';
 import { Perfil } from '@/pages/Perfil';
 import { Placeholder } from '@/pages/Placeholder';
 
@@ -150,7 +151,14 @@ export default function App() {
           />
 
           {/* Execução */}
-          <Route path="/execucao/financeiro/contas-bancarias" element={<Placeholder title="Contas Bancárias" />} />
+          <Route
+            path="/execucao/financeiro/contas-bancarias"
+            element={
+              <RequerPermissao recurso="EXECUCAO_CONTAS">
+                <ContasBancarias />
+              </RequerPermissao>
+            }
+          />
           <Route
             path="/execucao/financeiro/receitas"
             element={

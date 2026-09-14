@@ -147,6 +147,10 @@ export function normalizarEValidarAjuste(input: CriarAjusteDTO): DadosAjuste {
         );
 
       return {
+        // De qual conta do cadastro do órgão esta veio. Os campos soltos
+        // continuam sendo a fotografia do ajuste: renomear a conta no
+        // cadastro não reescreve o que o ajuste declarou.
+        contaBancariaId: String(c.contaBancariaId ?? '').trim() || null,
         banco,
         agencia,
         conta,

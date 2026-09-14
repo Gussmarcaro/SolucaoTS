@@ -53,7 +53,16 @@ const selecao = {
   atualizadoEm: true,
   fontesRecurso: { select: { fonteRecursoTipo: true }, orderBy: { fonteRecursoTipo: 'asc' } },
   contasBancarias: {
-    select: { id: true, banco: true, agencia: true, conta: true, contaTipo: true, fonteRecursoTipo: true, apelido: true },
+    select: {
+      id: true,
+      contaBancariaId: true,
+      banco: true,
+      agencia: true,
+      conta: true,
+      contaTipo: true,
+      fonteRecursoTipo: true,
+      apelido: true,
+    },
     orderBy: [{ banco: 'asc' }, { agencia: 'asc' }, { conta: 'asc' }],
   },
   entidadeBeneficiaria: { select: { razaoSocial: true } },
@@ -78,6 +87,7 @@ function toDomain(row: Row): Ajuste {
     fontesRecurso: row.fontesRecurso.map((f) => f.fonteRecursoTipo),
     contasBancarias: row.contasBancarias.map((c) => ({
       id: c.id,
+      contaBancariaId: c.contaBancariaId,
       banco: c.banco,
       agencia: c.agencia,
       conta: c.conta,

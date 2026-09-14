@@ -32,6 +32,7 @@ import { ReceitaOrgaoController } from '@/presentation/controllers/ReceitaOrgaoC
 import { PagamentoOrgaoController } from '@/presentation/controllers/PagamentoOrgaoController';
 import { GuiaRecolhimentoController } from '@/presentation/controllers/GuiaRecolhimentoController';
 import { ConciliacaoController } from '@/presentation/controllers/ConciliacaoController';
+import { ContaBancariaController } from '@/presentation/controllers/ContaBancariaController';
 import { uploadOfx } from '@/infrastructure/upload/upload';
 import { autenticar } from '@/presentation/middlewares/autenticar';
 import { exigirGrupo } from '@/presentation/middlewares/exigirGrupo';
@@ -87,6 +88,15 @@ routes.get('/despesas', exigirPermissao('EXECUCAO_DESPESAS'), (req, res, next) =
 routes.post('/despesas', exigirPermissao('EXECUCAO_DESPESAS'), (req, res, next) => despesas.criar(req, res, next));
 routes.put('/despesas/:id', exigirPermissao('EXECUCAO_DESPESAS'), (req, res, next) => despesas.atualizar(req, res, next));
 routes.delete('/despesas/:id', exigirPermissao('EXECUCAO_DESPESAS'), (req, res, next) => despesas.excluir(req, res, next));
+
+// Contas bancárias do órgão — o cadastro de onde o Ajuste escolhe e onde a
+// conciliação reconhece o extrato.
+const contas = new ContaBancariaController();
+routes.get('/contas-bancarias', exigirPermissao('EXECUCAO_CONTAS'), (req, res, next) => contas.listar(req, res, next));
+routes.post('/contas-bancarias', exigirPermissao('EXECUCAO_CONTAS'), (req, res, next) => contas.criar(req, res, next));
+routes.put('/contas-bancarias/:id', exigirPermissao('EXECUCAO_CONTAS'), (req, res, next) => contas.atualizar(req, res, next));
+routes.patch('/contas-bancarias/:id/status', exigirPermissao('EXECUCAO_CONTAS'), (req, res, next) => contas.definirAtivo(req, res, next));
+routes.delete('/contas-bancarias/:id', exigirPermissao('EXECUCAO_CONTAS'), (req, res, next) => contas.excluir(req, res, next));
 
 // Receitas e Pagamentos do órgão, pelo mesmo desenho das Despesas: recurso
 // próprio, porque lançar movimento financeiro no dia a dia e transmitir a

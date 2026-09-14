@@ -23,6 +23,8 @@ export interface CriarAjusteDTO {
   fontesRecurso?: (number | string)[];
   /** Contas bancárias do ajuste, que os pagamentos poderão usar. */
   contasBancarias?: {
+    /** Conta do cadastro do órgão de onde esta foi escolhida. */
+    contaBancariaId?: string | null;
     banco?: number | string | null;
     agencia?: number | string | null;
     conta?: string | null;
@@ -77,6 +79,7 @@ export interface DadosAjuste {
 
   fontesRecurso: number[];
   contasBancarias: {
+    contaBancariaId: string | null;
     banco: number;
     agencia: number;
     conta: string;

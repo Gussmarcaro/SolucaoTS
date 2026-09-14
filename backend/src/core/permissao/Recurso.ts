@@ -68,6 +68,7 @@ export const RECURSOS: Recurso[] = [
   // Execução → Financeiro. A despesa é lançada aqui, no órgão, e a prestação
   // apenas se apropria dela — por isso o recurso é próprio, e não o da
   // prestação: quem lança nota não precisa poder transmitir ao Tribunal.
+  { id: 'EXECUCAO_CONTAS', rotulo: 'Contas Bancárias', secao: 'Execução' },
   { id: 'EXECUCAO_RECEITAS', rotulo: 'Receitas', secao: 'Execução' },
   { id: 'EXECUCAO_DESPESAS', rotulo: 'Despesas (Documentos Fiscais)', secao: 'Execução' },
   { id: 'EXECUCAO_PAGAMENTOS', rotulo: 'Pagamentos', secao: 'Execução' },

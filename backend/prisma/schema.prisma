@@ -234,6 +234,7 @@ model Cliente {
   receitas              Receita[]
   GuiaRecolhimento      GuiaRecolhimento[]
   lancamentosExtrato    LancamentoExtrato[]
+  contasBancarias       ContaBancaria[]
 
   @@unique([codigoMunicipio, codigoEntidade])
   @@index([tipoOrgao])
@@ -1386,6 +1387,46 @@ model DocumentoFiscal {
 /// `percentual` é **fotografia**: o cálculo do rateio no momento em que a nota
 /// foi apropriada. Editar o método de rateio meses depois não pode mexer numa
 /// prestação já transmitida.
+/// Conta bancária do órgão — o cadastro central.
+///
+/// Antes, a mesma conta era digitada em três lugares: na lista do Ajuste, no
+/// pagamento e no extrato importado. Três digitações do mesmo número é um
+/// dígito trocado esperando para acontecer — e quando acontece, o extrato
+/// simplesmente deixa de casar, sem erro nenhum.
+///
+/// Aqui ela é cadastrada uma vez. O Ajuste **escolhe** dela e acrescenta o que
+/// é dele (a fonte de recurso que entra na conta); a conciliação a reconhece
+/// pelo número e passa a exibir o apelido em vez de "001 / 1234 / 56789-0".
+///
+/// O `apelido` é o que resolve a leitura: "Repasse Saúde 2026" diz numa olhada
+/// o que três números não dizem.
+model ContaBancaria {
+  id         String  @id @default(uuid()) @db.Uuid
+  clienteId  String? @db.Uuid
+  banco      Int
+  agencia    String
+  conta      String
+  /// 1 = Conta Corrente, 2 = Investimento (tabela oficial `conta_tipo`).
+  ///
+  /// Faz parte da identidade: corrente e aplicação da mesma conta compartilham
+  /// número, e é o par conta+tipo que as distingue — como já vale no Ajuste e
+  /// em `Disponibilidade`.
+  contaTipo  Int?
+  apelido    String?
+  observacao String?
+  ativo      Boolean @default(true)
+
+  criadoPor    String?  @db.Uuid
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  cliente      Cliente?              @relation(fields: [clienteId], references: [id])
+  contasAjuste AjusteContaBancaria[]
+
+  @@unique([clienteId, banco, agencia, conta, contaTipo])
+  @@index([clienteId])
+}
+
 enum TipoLancamentoExtrato {
   CREDITO
   DEBITO
@@ -2099,6 +2140,15 @@ model AjusteFonteRecurso {
 model AjusteContaBancaria {
   id               String  @id @default(uuid()) @db.Uuid
   ajusteId         String  @db.Uuid
+  /// Conta do cadastro central de onde esta linha veio.
+  ///
+  /// Opcional, e assim fica: as contas declaradas antes do cadastro existir não
+  /// têm origem, e exigi-la agora trancaria a edição de todo ajuste antigo.
+  ///
+  /// Os campos abaixo continuam gravados mesmo com a ligação — são a fotografia
+  /// do que o ajuste declarou. Derivá-los do cadastro faria uma correção de
+  /// apelido ou de tipo reescrever ajustes já enviados ao Tribunal.
+  contaBancariaId  String? @db.Uuid
   banco            Int
   agencia          Int
   conta            String
@@ -2111,7 +2161,8 @@ model AjusteContaBancaria {
   fonteRecursoTipo Int?
   apelido          String? // como a tela mostra, quando o órgão nomeia a conta
 
-  ajuste Ajuste @relation(fields: [ajusteId], references: [id], onDelete: Cascade)
+  ajuste        Ajuste         @relation(fields: [ajusteId], references: [id], onDelete: Cascade)
+  contaBancaria ContaBancaria? @relation(fields: [contaBancariaId], references: [id])
 
   // O tipo entra na chave: corrente e aplicação da mesma conta compartilham
   // banco, agência e número, e o ajuste precisa poder declarar as duas — como
