@@ -107,7 +107,7 @@ export const navigation: NavNode[] = [
           { label: 'Despesas', to: '/execucao/financeiro/despesas', recurso: 'EXECUCAO_DESPESAS' },
           { label: 'Pagamentos', to: '/execucao/financeiro/pagamentos', recurso: 'EXECUCAO_PAGAMENTOS' },
           { label: 'Guias de Recolhimento', to: '/execucao/financeiro/guias', recurso: 'EXECUCAO_GUIAS' },
-          { label: 'Conciliação Bancária', to: '/execucao/financeiro/conciliacao' },
+          { label: 'Conciliação Bancária', to: '/execucao/financeiro/conciliacao', recurso: 'EXECUCAO_CONCILIACAO' },
         ],
       },
       { label: 'Técnico', to: '/execucao/tecnico' },

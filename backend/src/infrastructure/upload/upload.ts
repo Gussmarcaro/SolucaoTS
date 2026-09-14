@@ -30,3 +30,26 @@ export const uploadPdf = multer({
     cb(null, true);
   },
 }).single('arquivo');
+
+/**
+ * Upload do extrato OFX (campo "file"), até 10 MB, em memória.
+ *
+ * Limite maior que o do CSV porque extrato de conta movimentada, num ano
+ * inteiro, passa de 5 MB — e recusá-lo mandaria o usuário fatiar o arquivo à
+ * mão, que é justamente o trabalho que a importação existe para poupar.
+ *
+ * Sem conferência de MIME: o tipo que o navegador declara para .ofx varia
+ * demais entre sistemas (`application/x-ofx`, `text/plain`, vazio), e recusar
+ * pelo MIME barraria arquivo bom. Quem confere de verdade é o parser, que
+ * responde "o arquivo é um extrato OFX?" quando não acha transação nenhuma.
+ */
+export const uploadOfx = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (!/\.(ofx|qfx)$/i.test(file.originalname)) {
+      return cb(new BusinessError('Envie um arquivo .ofx.'));
+    }
+    cb(null, true);
+  },
+}).single('file');

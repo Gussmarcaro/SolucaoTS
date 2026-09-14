@@ -31,6 +31,8 @@ import { DespesaController } from '@/presentation/controllers/DespesaController'
 import { ReceitaOrgaoController } from '@/presentation/controllers/ReceitaOrgaoController';
 import { PagamentoOrgaoController } from '@/presentation/controllers/PagamentoOrgaoController';
 import { GuiaRecolhimentoController } from '@/presentation/controllers/GuiaRecolhimentoController';
+import { ConciliacaoController } from '@/presentation/controllers/ConciliacaoController';
+import { uploadOfx } from '@/infrastructure/upload/upload';
 import { autenticar } from '@/presentation/middlewares/autenticar';
 import { exigirGrupo } from '@/presentation/middlewares/exigirGrupo';
 import { exigirPermissao } from '@/presentation/middlewares/exigirPermissao';
@@ -108,6 +110,14 @@ routes.get('/guias-recolhimento', exigirPermissao('EXECUCAO_GUIAS'), (req, res, 
 routes.post('/guias-recolhimento', exigirPermissao('EXECUCAO_GUIAS'), (req, res, next) => guias.criar(req, res, next));
 routes.put('/guias-recolhimento/:id', exigirPermissao('EXECUCAO_GUIAS'), (req, res, next) => guias.atualizar(req, res, next));
 routes.delete('/guias-recolhimento/:id', exigirPermissao('EXECUCAO_GUIAS'), (req, res, next) => guias.excluir(req, res, next));
+
+// Conciliação bancária. É a única tela que compara o lançado com o que de fato
+// aconteceu na conta — por isso recurso próprio: quem confere o extrato não é
+// necessariamente quem lança.
+const conciliacao = new ConciliacaoController();
+routes.get('/conciliacao', exigirPermissao('EXECUCAO_CONCILIACAO'), (req, res, next) => conciliacao.listar(req, res, next));
+routes.post('/conciliacao/importar', exigirPermissao('EXECUCAO_CONCILIACAO'), uploadOfx, (req, res, next) => conciliacao.importar(req, res, next));
+routes.put('/conciliacao/:id', exigirPermissao('EXECUCAO_CONCILIACAO'), (req, res, next) => conciliacao.conciliar(req, res, next));
 routes.use('/grupos', exigirPermissao('CONFIG_GRUPOS'), grupoRoutes);
 routes.use('/orgaos', exigirPermissao('CONFIG_ORGAOS'), clienteRoutes);
 routes.use('/auditoria', exigirPermissao('CONFIG_AUDITORIA'), auditoriaRoutes);

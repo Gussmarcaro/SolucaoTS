@@ -207,6 +207,7 @@ No `backend/`:
 - `npm run verificar:workflow` — conferir as regras das tarefas de acompanhamento (sem banco).
 - `npm run verificar:agenda` — conferir visibilidade, recorrência e validação da agenda (sem banco).
 - `npm run verificar:rateio` — conferir a aritmética dos percentuais e as regras do Cadastro do Rateio (sem banco).
+- `npm run verificar:ofx` — conferir o leitor de extrato OFX e as regras de sugestão da conciliação (sem banco).
 - `npm run verificar:tenant` — conferir o isolamento multi-tenant (sem banco).
 - `npm run tenant:backfill` — atribuir um órgão aos registros anteriores ao multi-tenant (roda **uma vez**).
 - `npm run suporte:conceder -- <email>` / `suporte:revogar` / `suporte:listar` — marca da equipe do fornecedor.

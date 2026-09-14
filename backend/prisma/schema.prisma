@@ -233,6 +233,7 @@ model Cliente {
   pagamentos            Pagamento[]
   receitas              Receita[]
   GuiaRecolhimento      GuiaRecolhimento[]
+  lancamentosExtrato    LancamentoExtrato[]
 
   @@unique([codigoMunicipio, codigoEntidade])
   @@index([tipoOrgao])
@@ -1362,6 +1363,62 @@ model DocumentoFiscal {
 /// `percentual` é **fotografia**: o cálculo do rateio no momento em que a nota
 /// foi apropriada. Editar o método de rateio meses depois não pode mexer numa
 /// prestação já transmitida.
+enum TipoLancamentoExtrato {
+  CREDITO
+  DEBITO
+}
+
+/// Uma linha do extrato bancário, importada de OFX.
+///
+/// O extrato é gravado, e não apenas lido de passagem, porque a conciliação é
+/// um **estado**: o que já foi conferido precisa continuar conferido no mês
+/// seguinte, e o que foi marcado como tarifa não pode voltar a pedir atenção a
+/// cada importação.
+///
+/// `fitId` é o identificador que o banco dá à transação, e é ele que torna a
+/// reimportação segura: reimportar o mesmo arquivo — ou um período que se
+/// sobrepõe ao anterior, que é o caso comum — não duplica nada.
+model LancamentoExtrato {
+  id        String  @id @default(uuid()) @db.Uuid
+  clienteId String? @db.Uuid
+
+  /// Conta de onde veio o extrato. Guardada por extenso, e não por chave para
+  /// `AjusteContaBancaria`: o extrato é do banco e existe mesmo que a conta
+  /// saia do cadastro do ajuste depois.
+  banco   Int?
+  agencia String?
+  conta   String?
+
+  fitId     String
+  data      DateTime              @db.Date
+  valor     Decimal               @db.Decimal(15, 2)
+  tipo      TipoLancamentoExtrato
+  descricao String
+
+  /// O lançamento do sistema a que esta linha corresponde. Um dos dois, nunca
+  /// os dois: débito casa com pagamento, crédito com receita.
+  pagamentoId  String?   @db.Uuid
+  receitaId    String?   @db.Uuid
+  conciliadoEm DateTime?
+
+  /// Linha que não tem par no sistema e não deve ter: tarifa, rendimento,
+  /// transferência entre contas próprias. Sem isto, elas voltariam a pedir
+  /// conciliação a cada abertura da tela, e o usuário aprenderia a ignorar a
+  /// lista inteira.
+  ignorado   Boolean @default(false)
+  observacao String?
+
+  criadoPor String?    @db.Uuid
+  cliente   Cliente?   @relation(fields: [clienteId], references: [id])
+  pagamento Pagamento? @relation(fields: [pagamentoId], references: [id])
+  receita   Receita?   @relation(fields: [receitaId], references: [id])
+
+  /// A chave da idempotência. Inclui a conta porque bancos diferentes podem
+  /// repetir o FITID entre si.
+  @@unique([clienteId, banco, agencia, conta, fitId])
+  @@index([clienteId, data])
+}
+
 /// Guia de recolhimento das retenções (DARF, guia de ISSQN, etc.).
 ///
 /// A nota fiscal é paga pelo **líquido**: o bruto menos a retenção. O valor
@@ -1452,11 +1509,12 @@ model Pagamento {
   contaCorrente     String?
   numeroTransacao   String?       @db.VarChar(40)
 
-  criadoPor       String?          @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
-  cliente         Cliente?         @relation(fields: [clienteId], references: [id])
-  ajuste          Ajuste?          @relation(fields: [ajusteId], references: [id])
-  prestacao       PrestacaoContas? @relation(fields: [prestacaoId], references: [id])
-  documentoFiscal DocumentoFiscal? @relation(fields: [documentoFiscalId], references: [id])
+  criadoPor          String?             @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
+  cliente            Cliente?            @relation(fields: [clienteId], references: [id])
+  ajuste             Ajuste?             @relation(fields: [ajusteId], references: [id])
+  prestacao          PrestacaoContas?    @relation(fields: [prestacaoId], references: [id])
+  documentoFiscal    DocumentoFiscal?    @relation(fields: [documentoFiscalId], references: [id])
+  lancamentosExtrato LancamentoExtrato[]
 
   @@index([documentoFiscalId])
   @@index([prestacaoId])
@@ -1514,10 +1572,11 @@ model Receita {
   contaCorrente   String?
   numeroTransacao String? @db.VarChar(40)
 
-  criadoPor String?          @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
-  cliente   Cliente?         @relation(fields: [clienteId], references: [id])
-  ajuste    Ajuste?          @relation(fields: [ajusteId], references: [id])
-  prestacao PrestacaoContas? @relation(fields: [prestacaoId], references: [id])
+  criadoPor          String?             @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
+  cliente            Cliente?            @relation(fields: [clienteId], references: [id])
+  ajuste             Ajuste?             @relation(fields: [ajusteId], references: [id])
+  prestacao          PrestacaoContas?    @relation(fields: [prestacaoId], references: [id])
+  lancamentosExtrato LancamentoExtrato[]
 
   @@index([prestacaoId])
   @@index([clienteId, dataRepasse])

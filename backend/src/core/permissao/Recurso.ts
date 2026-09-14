@@ -72,6 +72,7 @@ export const RECURSOS: Recurso[] = [
   { id: 'EXECUCAO_DESPESAS', rotulo: 'Despesas (Documentos Fiscais)', secao: 'Execução' },
   { id: 'EXECUCAO_PAGAMENTOS', rotulo: 'Pagamentos', secao: 'Execução' },
   { id: 'EXECUCAO_GUIAS', rotulo: 'Guias de Recolhimento', secao: 'Execução' },
+  { id: 'EXECUCAO_CONCILIACAO', rotulo: 'Conciliação Bancária', secao: 'Execução' },
   { id: 'PRESTACAO_CONTAS', rotulo: 'Prestação de Contas', secao: 'Prestação', temAprovacao: true },
   { id: 'FISCALIZACAO', rotulo: 'Fiscalização | Monitoramento', secao: 'Prestação' },
   { id: 'AGENDA', rotulo: 'Agenda de Compromissos', secao: 'Prestação' },

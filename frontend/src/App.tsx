@@ -37,6 +37,7 @@ import { Despesas } from '@/pages/Despesas';
 import { ReceitasOrgao } from '@/pages/ReceitasOrgao';
 import { PagamentosOrgao } from '@/pages/PagamentosOrgao';
 import { GuiasRecolhimento } from '@/pages/GuiasRecolhimento';
+import { Conciliacao } from '@/pages/Conciliacao';
 import { Perfil } from '@/pages/Perfil';
 import { Placeholder } from '@/pages/Placeholder';
 
@@ -182,7 +183,14 @@ export default function App() {
               </RequerPermissao>
             }
           />
-          <Route path="/execucao/financeiro/conciliacao" element={<Placeholder title="Conciliação Bancária" />} />
+          <Route
+            path="/execucao/financeiro/conciliacao"
+            element={
+              <RequerPermissao recurso="EXECUCAO_CONCILIACAO">
+                <Conciliacao />
+              </RequerPermissao>
+            }
+          />
           <Route path="/execucao/tecnico" element={<Placeholder title="Técnico" />} />
 
           {/* Demais */}

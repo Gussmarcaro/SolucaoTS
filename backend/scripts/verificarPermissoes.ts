@@ -114,7 +114,6 @@ const MENU_SEM_RECURSO: Record<string, string> = {
   '/': 'Dashboard — todo usuário autenticado entra; cada painel dentro dela confere a própria permissão',
   '/execucao/financeiro/contas-bancarias': 'placeholder, sem backend',
   '/execucao/financeiro/rateio': 'placeholder, sem backend',
-  '/execucao/financeiro/conciliacao': 'placeholder, sem backend',
   '/execucao/tecnico': 'placeholder, sem backend',
 };
 
