@@ -14,11 +14,12 @@ import { AjusteForm } from './AjusteForm';
 import { TermosAditivosTab } from './tabs/TermosAditivosTab';
 import { EmpenhosTab } from './tabs/EmpenhosTab';
 import { PlanoAplicacaoTab } from './tabs/PlanoAplicacaoTab';
+import { ExecucaoPlanoTab } from './tabs/ExecucaoPlanoTab';
 import { CronogramaTab } from './tabs/CronogramaTab';
 import { ProgramasMetasTab } from './tabs/ProgramasMetasTab';
 import { BensAjusteTab } from './tabs/BensAjusteTab';
 
-type TabKey = 'dados' | 'termos' | 'empenhos' | 'metas' | 'plano' | 'cronograma' | 'bens';
+type TabKey = 'dados' | 'termos' | 'empenhos' | 'metas' | 'plano' | 'cronograma' | 'execucao' | 'bens';
 
 const TABS: { key: TabKey; label: string; embreve?: boolean }[] = [
   { key: 'dados', label: 'Dados' },
@@ -27,6 +28,7 @@ const TABS: { key: TabKey; label: string; embreve?: boolean }[] = [
   { key: 'metas', label: 'Programas e Metas' },
   { key: 'plano', label: 'Plano de Aplicação' },
   { key: 'cronograma', label: 'Cronograma' },
+  { key: 'execucao', label: 'Execução × Plano' },
   { key: 'bens', label: 'Bens Cedidos' },
 ];
 
@@ -142,6 +144,7 @@ export function AjusteDetalhe() {
         {aba === 'empenhos' && <EmpenhosTab ajusteId={ajuste.id} />}
         {aba === 'metas' && <ProgramasMetasTab ajusteId={ajuste.id} />}
         {aba === 'plano' && <PlanoAplicacaoTab ajusteId={ajuste.id} />}
+        {aba === 'execucao' && <ExecucaoPlanoTab ajusteId={ajuste.id} />}
         {aba === 'cronograma' && (
           <CronogramaTab
             ajusteId={ajuste.id}

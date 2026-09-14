@@ -49,3 +49,19 @@ export interface BemAjuste {
 export interface ResultadoImportacaoBens extends ResumoImportacao {
   itens: BemAjuste[];
 }
+
+/** Uma linha do quadro Execução × Plano — ver o DTO do backend. */
+export interface LinhaExecucaoPlano {
+  categoriaDespesaTipo: number;
+  /** Rubricas do plano que declaram esta categoria. Vazio no gasto fora do plano. */
+  rubricas: string[];
+  planejado: number;
+  executado: number;
+}
+
+export interface ExecucaoPlano {
+  ajusteId: string;
+  ano: number;
+  linhas: LinhaExecucaoPlano[];
+  temGastoForaDoPlano: boolean;
+}

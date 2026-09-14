@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { AjusteController } from '@/presentation/controllers/AjusteController';
 import { TermoAditivoController } from '@/presentation/controllers/TermoAditivoController';
 import { EmpenhoController } from '@/presentation/controllers/EmpenhoController';
+import { ExecucaoPlanoController } from '@/presentation/controllers/ExecucaoPlanoController';
 import { PlanoAplicacaoController } from '@/presentation/controllers/PlanoAplicacaoController';
 import { CronogramaController } from '@/presentation/controllers/CronogramaController';
 import { BemAjusteController } from '@/presentation/controllers/BemAjusteController';
@@ -12,6 +13,7 @@ const ajusteRoutes = Router();
 const c = new AjusteController();
 const termos = new TermoAditivoController();
 const empenhos = new EmpenhoController();
+const execucaoPlano = new ExecucaoPlanoController();
 const plano = new PlanoAplicacaoController();
 const cronograma = new CronogramaController();
 const bens = new BemAjusteController();
@@ -43,6 +45,8 @@ ajusteRoutes.delete('/:ajusteId/empenhos/:id', (req, res, next) => empenhos.excl
 // A estrutura-modelo vem antes da rota com :ajusteId — senão "padrao" seria
 // lido como um id de ajuste.
 ajusteRoutes.get('/plano-aplicacao/padrao', (req, res) => plano.padrao(req, res));
+// Execução × Plano — quanto de cada Categoria AUDESP já foi gasto.
+ajusteRoutes.get('/:ajusteId/execucao-plano', (req, res, next) => execucaoPlano.consultar(req, res, next));
 ajusteRoutes.get('/:ajusteId/plano-aplicacao', (req, res, next) => plano.listar(req, res, next));
 ajusteRoutes.put('/:ajusteId/plano-aplicacao', (req, res, next) => plano.salvarDigitado(req, res, next));
 ajusteRoutes.post('/:ajusteId/plano-aplicacao/importar', uploadCsv, (req, res, next) => plano.importar(req, res, next));

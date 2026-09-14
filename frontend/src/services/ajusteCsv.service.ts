@@ -2,6 +2,7 @@ import { http } from './http';
 import type {
   BemAjuste,
   CronogramaItem,
+  ExecucaoPlano,
   PlanoItem,
   ResultadoImportacaoBens,
   ResultadoImportacaoCronograma,
@@ -98,5 +99,13 @@ export async function salvarCronogramaDigitado(
   },
 ): Promise<CronogramaItem[]> {
   const { data } = await http.put<CronogramaItem[]>(`/ajustes/${ajusteId}/cronograma`, payload);
+  return data;
+}
+
+/** Execução × Plano do ajuste, no exercício. */
+export async function consultarExecucaoPlano(ajusteId: string, ano: number): Promise<ExecucaoPlano> {
+  const { data } = await http.get<ExecucaoPlano>(`/ajustes/${ajusteId}/execucao-plano`, {
+    params: { ano },
+  });
   return data;
 }
