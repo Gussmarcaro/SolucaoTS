@@ -13,6 +13,7 @@ import { BusinessError, ConflictError, NotFoundError } from '@/shared/errors';
 import { apenasDigitos, isDocumentoValido } from '@/shared/validators/documento';
 import { parseDataISO, paraDataISO } from '@/shared/datas';
 import type { IRateioRepository } from '@/application/rateio/IRateioRepository';
+import type { IPlanoAplicacaoRepository } from '@/application/planoAplicacao/IPlanoAplicacaoRepository';
 import { calcularRateio } from '@/core/rateio/Rateio';
 
 function num(v: unknown): number | null {
@@ -113,7 +114,40 @@ export class DocumentoFiscalUseCases {
     private readonly prestacoes: IPrestacaoRepository,
     /** Para calcular o percentual do rateio — ver `aplicarRateio`. */
     private readonly rateios?: IRateioRepository,
+    /** Para conferir a categoria contra o Plano de Aplicação do ajuste. */
+    private readonly planos?: IPlanoAplicacaoRepository,
   ) {}
+
+  /**
+   * A despesa tem de estar prevista no Plano de Aplicação.
+   *
+   * A regra é do negócio, não nossa: o plano do ajuste é enviado ao Audesp nos
+   * primeiros dias, com as Categorias de Despesa AUDESP, e a prestação precisa
+   * trazer as **mesmas** despesas. Nota fora do plano é execução de algo que o
+   * órgão não autorizou — e o erro só apareceria na análise do Tribunal, um ano
+   * depois de o dinheiro ter saído.
+   *
+   * **Só vale quando o plano declara categorias.** Plano importado antes deste
+   * campo não tem nenhuma, e aí a conferência é impossível: barrar tudo
+   * trancaria o lançamento de quem já tem plano cadastrado, para proteger de um
+   * erro que não se sabe se existe. É o mesmo critério das fontes de recurso e
+   * das contas bancárias do ajuste.
+   */
+  private async conferirNoPlano(prestacaoId: string, categoria: number) {
+    if (!this.planos) return;
+    const prestacao = await this.prestacoes.buscarPorId(prestacaoId);
+    if (!prestacao) return;
+
+    const previstas = await this.planos.categoriasDoAjuste(prestacao.ajusteId);
+    if (!previstas.length) return;
+
+    if (!previstas.includes(categoria))
+      throw new BusinessError(
+        'Esta Categoria de Despesa AUDESP não está no Plano de Aplicação do ajuste. ' +
+          'A entidade só pode executar as despesas previstas no plano — inclua a categoria no ' +
+          'plano (e no termo aditivo, se for o caso) antes de lançar a nota.',
+      );
+  }
 
   /**
    * Substitui o percentual pelo que o rateio escolhido determina.
@@ -244,6 +278,7 @@ export class DocumentoFiscalUseCases {
   async criar(prestacaoId: string, input: DocumentoFiscalDTO): Promise<DocumentoFiscal> {
     await this.garantirPrestacao(prestacaoId);
     const dados = validar(input);
+    await this.conferirNoPlano(prestacaoId, dados.categoriaDespesaTipo);
     await this.aplicarRateio(prestacaoId, dados);
     await this.checarDuplicado(prestacaoId, dados);
     return this.repo.criar(prestacaoId, dados);
@@ -252,6 +287,7 @@ export class DocumentoFiscalUseCases {
   async atualizar(prestacaoId: string, id: string, input: DocumentoFiscalDTO): Promise<DocumentoFiscal> {
     await this.garantirDocNaPrestacao(prestacaoId, id);
     const dados = validar(input);
+    await this.conferirNoPlano(prestacaoId, dados.categoriaDespesaTipo);
     await this.aplicarRateio(prestacaoId, dados);
     await this.checarDuplicado(prestacaoId, dados, id);
     return this.repo.atualizar(id, dados);

@@ -4,6 +4,8 @@ export interface PlanoAplicacaoItem {
   ajusteId: string;
   categoria: string;
   subcategoria: string;
+  /** Categoria de Despesa AUDESP — o elo com a execução. Null nos planos antigos. */
+  categoriaDespesaTipo: number | null;
   ano: number;
   mes: number; // 1-12
   valor: number;

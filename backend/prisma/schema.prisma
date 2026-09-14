@@ -873,14 +873,25 @@ model Meta {
 
 // Importado via CSV (PlanoAplicacaoExemplo.csv)
 model PlanoAplicacaoItem {
-  id           String  @id @default(uuid()) @db.Uuid
-  ajusteId     String  @db.Uuid
-  categoria    String // ex: RECURSOS HUMANOS
-  subcategoria String // ex: SALÁRIOS E ORDENADOS
-  ano          Int
-  mes          Int // normalizado 1-12
-  valor        Decimal @db.Decimal(15, 2)
-  descricao    String?
+  id                   String  @id @default(uuid()) @db.Uuid
+  ajusteId             String  @db.Uuid
+  categoria            String // ex: RECURSOS HUMANOS
+  subcategoria         String // ex: SALÁRIOS E ORDENADOS
+  /// Categoria de Despesa AUDESP (`categoria_despesas_tipo`, 88 códigos).
+  ///
+  /// É o elo entre o plano e a execução: o plano declarado no cadastro do
+  /// ajuste é enviado ao Audesp com estas categorias, e a prestação de contas
+  /// precisa trazer as **mesmas** despesas. Sem o campo, o plano falava a
+  /// língua interna do órgão ("Salários") e a nota fiscal a do Tribunal
+  /// (código 3), e nada ligava as duas.
+  ///
+  /// Opcional: os planos importados antes deste campo não a têm, e exigi-la
+  /// agora trancaria o lançamento de quem já tem plano cadastrado.
+  categoriaDespesaTipo Int?
+  ano                  Int
+  mes                  Int // normalizado 1-12
+  valor                Decimal @db.Decimal(15, 2)
+  descricao            String?
 
   criadoPor String? @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   ajuste    Ajuste  @relation(fields: [ajusteId], references: [id])

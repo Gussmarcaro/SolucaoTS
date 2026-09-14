@@ -4,6 +4,7 @@ import type { IAjusteRepository } from '@/application/ajuste/IAjusteRepository';
 import type { DadosPlanoItem, PlanoDigitadoDTO, ResultadoImportacaoPlano } from './dtos';
 import { BusinessError, NotFoundError } from '@/shared/errors';
 import { ehRubricaPadrao } from '@/core/planoAplicacao/planoPadrao';
+import { CATEGORIA_DESPESA_CODIGOS } from '@/core/dominio/tabelasFaseV';
 import { parsePlanoAplicacao } from '@/infrastructure/parsers/parsePlanoAplicacao';
 
 export class PlanoAplicacaoUseCases {
@@ -67,10 +68,31 @@ export class PlanoAplicacaoUseCases {
       // que depois aparece em toda tela que o lê.
       if (mensal === 0) continue;
 
+      /*
+       * A Categoria de Despesa AUDESP é o elo com a execução.
+       *
+       * O plano do ajuste é enviado ao Audesp com estas categorias, e a
+       * prestação tem de trazer as mesmas despesas. É por este código que uma
+       * nota fiscal se reconhece como prevista no plano — a rubrica interna
+       * ("Salários") o Tribunal não conhece.
+       *
+       * Conferida contra a tabela oficial: código inventado seria recusado no
+       * envio do plano, e o erro apareceria no Tribunal, não aqui.
+       */
+      const cat =
+        linha.categoriaDespesaTipo === undefined ||
+        linha.categoriaDespesaTipo === null ||
+        linha.categoriaDespesaTipo === ''
+          ? null
+          : Number(linha.categoriaDespesaTipo);
+      if (cat !== null && !CATEGORIA_DESPESA_CODIGOS.has(cat))
+        throw new BusinessError(`Categoria de Despesa AUDESP inexistente em ${subcategoria}: ${cat}.`);
+
       for (let mes = 1; mes <= 12; mes++) {
         itens.push({
           categoria,
           subcategoria,
+          categoriaDespesaTipo: cat,
           ano,
           mes,
           valor: mensal,

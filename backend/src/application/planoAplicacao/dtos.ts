@@ -4,6 +4,7 @@ import type { PlanoAplicacaoItem } from '@/core/planoAplicacao/PlanoAplicacaoIte
 export interface DadosPlanoItem {
   categoria: string;
   subcategoria: string;
+  categoriaDespesaTipo?: number | null;
   ano: number;
   mes: number;
   valor: number;
@@ -30,6 +31,7 @@ export interface PlanoDigitadoDTO {
   itens?: {
     categoria?: string;
     subcategoria?: string;
+    categoriaDespesaTipo?: number | string | null;
     valorMensal?: number | string | null;
     descricao?: string | null;
   }[];

@@ -9,6 +9,7 @@ const selecao = {
   ajusteId: true,
   categoria: true,
   subcategoria: true,
+  categoriaDespesaTipo: true,
   ano: true,
   mes: true,
   valor: true,
@@ -23,6 +24,7 @@ function toDomain(row: Row): PlanoAplicacaoItem {
     ajusteId: row.ajusteId,
     categoria: row.categoria,
     subcategoria: row.subcategoria,
+    categoriaDespesaTipo: row.categoriaDespesaTipo,
     ano: row.ano,
     mes: row.mes,
     valor: Number(row.valor),
@@ -45,6 +47,16 @@ export class PrismaPlanoAplicacaoRepository implements IPlanoAplicacaoRepository
       orderBy: ordem,
     });
     return rows.map(toDomain);
+  }
+
+  /** Só os códigos, distintos — ver a razão no port. */
+  async categoriasDoAjuste(ajusteId: string): Promise<number[]> {
+    const linhas = await prisma.planoAplicacaoItem.findMany({
+      where: { ajusteId, categoriaDespesaTipo: { not: null } },
+      select: { categoriaDespesaTipo: true },
+      distinct: ['categoriaDespesaTipo'],
+    });
+    return linhas.map((l) => l.categoriaDespesaTipo!).sort((a, b) => a - b);
   }
 
   async substituir(ajusteId: string, itens: DadosPlanoItem[]): Promise<PlanoAplicacaoItem[]> {

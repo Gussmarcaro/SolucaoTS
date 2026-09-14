@@ -6,6 +6,9 @@ import { formatarMoeda, mascaraMoeda, moedaParaNumero } from '@/lib/masks';
 import { extrairMensagemErro } from '@/services/http';
 import { salvarPlanoDigitado } from '@/services/ajusteCsv.service';
 import { PLANO_PADRAO } from '@/lib/planoPadrao';
+import { SelectDominio } from '@/components/ui/SelectDominio';
+import { CATEGORIA_DESPESA } from '@/lib/dominiosFaseV';
+import { apenasDigitos } from '@/lib/masks';
 import type { PlanoItem } from '@/types/ajusteCsv';
 
 /** Chave de uma rubrica dentro do estado — categoria e subcategoria juntas. */
@@ -59,6 +62,23 @@ export function PlanoDigitado({
     for (const [k, v] of iniciais) inicial[k] = v ? v.toFixed(2).replace('.', ',') : '';
     return inicial;
   });
+  /*
+   * A Categoria de Despesa AUDESP de cada rubrica.
+   *
+   * É a coluna que o modelo do papel tem e a tela não tinha. Ela é o elo com a
+   * execução: o plano é enviado ao Audesp por estes códigos, e a nota fiscal
+   * lançada depois precisa citar um deles — a rubrica interna ("Salários") o
+   * Tribunal não conhece.
+   */
+  const [categorias, setCategorias] = useState<Record<string, string>>(() => {
+    const inicial: Record<string, string> = {};
+    for (const i of itens) {
+      if (i.categoriaDespesaTipo != null) {
+        inicial[chave(i.categoria, i.subcategoria)] = String(i.categoriaDespesaTipo);
+      }
+    }
+    return inicial;
+  });
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
@@ -72,11 +92,22 @@ export function PlanoDigitado({
       g.subcategorias.map((s) => ({
         categoria: g.categoria,
         subcategoria: s,
+        categoriaDespesaTipo: categorias[chave(g.categoria, s)]
+          ? Number(apenasDigitos(categorias[chave(g.categoria, s)]))
+          : null,
         valorMensal: mensalDe(chave(g.categoria, s)),
       })),
     ).filter((l) => l.valorMensal > 0);
 
     if (!linhas.length) return setErro('Informe ao menos uma rubrica com valor maior que zero.');
+
+    // A categoria é o que liga o plano à execução: sem ela a rubrica entra no
+    // plano e nenhuma nota fiscal consegue se reconhecer nela.
+    const semCategoria = linhas.filter((l) => l.categoriaDespesaTipo == null);
+    if (semCategoria.length)
+      return setErro(
+        `Informe a Categoria de Despesa AUDESP em: ${semCategoria.map((l) => l.subcategoria).join(', ')}.`,
+      );
 
     setSalvando(true);
     try {
@@ -109,7 +140,7 @@ export function PlanoDigitado({
           />
         </div>
         <p className="pb-2.5 text-xs text-ink-400">
-          Digite o valor <strong>mensal</strong> de cada rubrica. O anual é o mensal × 12, e as 12
+          Informe a <strong>Categoria de Despesa AUDESP</strong> e o valor <strong>mensal</strong> de cada rubrica. O anual é o mensal × 12, e as 12
           competências são gravadas ao salvar. Rubrica em branco não é gravada.
         </p>
       </div>
@@ -119,6 +150,7 @@ export function PlanoDigitado({
           <thead className="bg-ink-50/70 text-left text-[11px] uppercase tracking-wide text-ink-400 dark:bg-ink-800/40">
             <tr>
               <th className="px-3 py-2 font-medium">Categorias e subcategorias da despesa</th>
+              <th className="w-64 px-3 py-2 font-medium">Categoria Despesa AUDESP</th>
               <th className="w-48 px-3 py-2 text-right font-medium">Mensal (R$)</th>
               <th className="w-48 px-3 py-2 text-right font-medium">Anual (R$)</th>
             </tr>
@@ -137,6 +169,8 @@ export function PlanoDigitado({
                   <td className="px-3 py-2 text-ink-800 dark:text-ink-100">
                     {g.numero}. {g.categoria}
                   </td>
+                  {/* A categoria se informa na subcategoria, como no modelo. */}
+                  <td />
                   <td className="px-3 py-2 text-right tabular-nums text-ink-800 dark:text-ink-100">
                     {formatarMoeda(subtotal)}
                   </td>
@@ -151,6 +185,14 @@ export function PlanoDigitado({
                     <tr key={k} className="hover:bg-ink-50/70 dark:hover:bg-ink-800/30">
                       <td className="px-3 py-1.5 pl-8 text-ink-600 dark:text-ink-300">
                         {g.numero}.{i + 1} {sub}
+                      </td>
+                      <td className="px-2 py-1.5">
+                        <SelectDominio
+                          name={`cat-${k}`}
+                          value={apenasDigitos(categorias[k] ?? '')}
+                          onChange={(v) => setCategorias((c) => ({ ...c, [k]: v }))}
+                          options={CATEGORIA_DESPESA}
+                        />
                       </td>
                       <td className="px-3 py-1.5">
                         <Input
@@ -176,6 +218,7 @@ export function PlanoDigitado({
           <tfoot className="border-t-2 border-ink-200 bg-ink-50/70 dark:border-ink-700 dark:bg-ink-800/40">
             <tr className="font-semibold text-ink-900 dark:text-ink-50">
               <td className="px-3 py-2">TOTAL</td>
+              <td />
               <td className="px-3 py-2 text-right tabular-nums">{formatarMoeda(totalMensal)}</td>
               <td className="px-3 py-2 text-right tabular-nums">{formatarMoeda(totalMensal * 12)}</td>
             </tr>
