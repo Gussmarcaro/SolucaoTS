@@ -15,4 +15,15 @@ export interface IPlanoAplicacaoRepository {
   categoriasDoAjuste(ajusteId: string): Promise<number[]>;
   /** Substitui TODO o plano do ajuste pelos itens informados (idempotente). */
   substituir(ajusteId: string, itens: DadosPlanoItem[]): Promise<PlanoAplicacaoItem[]>;
+  /**
+   * Substitui **só o exercício informado**, preservando os demais.
+   *
+   * O plano é anual e a parceria dura anos: salvar 2027 não pode apagar 2026,
+   * cujo exercício já foi prestado e cuja execução ainda se consulta. A
+   * substituição total continua existindo para a importação de CSV, que traz o
+   * plano inteiro num arquivo só.
+   */
+  substituirAno(ajusteId: string, ano: number, itens: DadosPlanoItem[]): Promise<PlanoAplicacaoItem[]>;
+  /** Os exercícios que o plano do ajuste já tem — para oferecer a origem da cópia. */
+  exercicios(ajusteId: string): Promise<number[]>;
 }

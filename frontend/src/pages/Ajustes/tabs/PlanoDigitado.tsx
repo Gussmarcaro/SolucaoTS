@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { formatarMoeda, mascaraMoeda, moedaParaNumero } from '@/lib/masks';
 import { extrairMensagemErro } from '@/services/http';
-import { salvarPlanoDigitado } from '@/services/ajusteCsv.service';
+import { copiarPlanoExercicio, exerciciosDoPlano, salvarPlanoDigitado } from '@/services/ajusteCsv.service';
+import { CopiarExercicio } from './CopiarExercicio';
 import { PLANO_PADRAO } from '@/lib/planoPadrao';
 import { SelectDominio } from '@/components/ui/SelectDominio';
 import { CATEGORIA_DESPESA } from '@/lib/dominiosFaseV';
@@ -139,6 +140,12 @@ export function PlanoDigitado({
             inputMode="numeric"
           />
         </div>
+        <CopiarExercicio
+          rotulo="plano"
+          carregarExercicios={() => exerciciosDoPlano(ajusteId)}
+          copiar={(p) => copiarPlanoExercicio(ajusteId, p)}
+          onCopiado={onSalvo}
+        />
         <p className="pb-2.5 text-xs text-ink-400">
           Informe a <strong>Categoria de Despesa AUDESP</strong> e o valor <strong>mensal</strong> de cada rubrica. O anual é o mensal × 12, e as 12
           competências são gravadas ao salvar. Rubrica em branco não é gravada.

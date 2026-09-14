@@ -61,4 +61,32 @@ export class PrismaCronogramaRepository implements ICronogramaRepository {
       return rows.map(toDomain);
     });
   }
+
+  /**
+   * Substitui só o exercício, preservando os demais.
+   *
+   * Numa transação, como a substituição total: apagar e recriar em duas idas
+   * deixaria uma janela em que o exercício está vazio — e é a janela em que
+   * alguém abre a tela e conclui que perdeu o trabalho.
+   */
+  async substituirAno(ajusteId: string, ano: number, itens: DadosCronogramaItem[]) {
+    return prisma.$transaction(async (tx) => {
+      await tx.cronogramaDesembolsoItem.deleteMany({ where: { ajusteId, ano } });
+      if (itens.length) {
+        await tx.cronogramaDesembolsoItem.createMany({ data: itens.map((i) => ({ ajusteId, ...i })) });
+      }
+      const rows = await tx.cronogramaDesembolsoItem.findMany({ where: { ajusteId }, select: selecao, orderBy: ordem });
+      return rows.map(toDomain);
+    });
+  }
+
+  async exercicios(ajusteId: string): Promise<number[]> {
+    const linhas = await prisma.cronogramaDesembolsoItem.findMany({
+      where: { ajusteId },
+      select: { ano: true },
+      distinct: ['ano'],
+      orderBy: { ano: 'desc' },
+    });
+    return linhas.map((l) => l.ano);
+  }
 }

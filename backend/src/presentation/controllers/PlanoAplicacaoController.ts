@@ -51,4 +51,22 @@ export class PlanoAplicacaoController {
   async padrao(_req: Request, res: Response) {
     return res.json(PLANO_PADRAO);
   }
+
+  /** `POST /ajustes/:ajusteId/plano-aplicacao/copiar` */
+  async copiar(req: Request, res: Response, next: NextFunction) {
+    try {
+      return res.json(await casos.copiarExercicio(req.params.ajusteId, req.body));
+    } catch (e) {
+      return next(e);
+    }
+  }
+
+  /** `GET .../exercicios` — os anos já cadastrados, para escolher a origem. */
+  async exercicios(req: Request, res: Response, next: NextFunction) {
+    try {
+      return res.json(await casos.exercicios(req.params.ajusteId));
+    } catch (e) {
+      return next(e);
+    }
+  }
 }

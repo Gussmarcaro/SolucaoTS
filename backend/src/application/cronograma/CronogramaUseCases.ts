@@ -32,9 +32,11 @@ export class CronogramaUseCases {
    * concentradas, reajuste a partir de maio. Se fossem todos iguais, o plano já
    * responderia.
    *
-   * **Substitui o cronograma inteiro**, como a importação de CSV. Mesclar
-   * deixaria meses de uma versão anterior pendurados — e num cronograma isso
-   * aparece como dinheiro previsto duas vezes.
+   * **Substitui os exercícios que vierem no lote**, não o cronograma inteiro:
+   * a vigência pode atravessar anos, e o quadro digitado traz todos os meses
+   * que ele mostra. Mesclar dentro do exercício deixaria meses de uma versão
+   * anterior pendurados — num cronograma isso aparece como dinheiro previsto
+   * duas vezes.
    */
   async salvarDigitado(ajusteId: string, input: CronogramaDigitadoDTO): Promise<CronogramaItem[]> {
     await this.garantirAjuste(ajusteId);
@@ -69,7 +71,68 @@ export class CronogramaUseCases {
     if (!itens.length)
       throw new BusinessError('Informe ao menos um valor no cronograma.');
 
-    return this.repo.substituir(ajusteId, itens);
+    // Um lote pode cobrir mais de um exercício (vigência que atravessa o ano).
+    // Substitui-se cada um deles, e só eles.
+    const anos = [...new Set(itens.map((i) => i.ano))];
+    let saida = await this.repo.listarPorAjuste(ajusteId);
+    for (const ano of anos) {
+      saida = await this.repo.substituirAno(
+        ajusteId,
+        ano,
+        itens.filter((i) => i.ano === ano),
+      );
+    }
+    return saida;
+  }
+
+  /**
+   * Copia o cronograma de um exercício para outro, com reajuste opcional.
+   *
+   * Mesma razão do plano: a parceria se renova e o desenho dos desembolsos
+   * repete — 13º em dezembro, rescisões no mesmo mês. Redigitar 40 rubricas ×
+   * 12 meses é 480 células.
+   */
+  async copiarExercicio(
+    ajusteId: string,
+    input: { de?: number | string; para?: number | string; reajustePercentual?: number | string | null },
+  ): Promise<CronogramaItem[]> {
+    await this.garantirAjuste(ajusteId);
+
+    const de = Number(input.de);
+    const para = Number(input.para);
+    if (!Number.isInteger(de) || !Number.isInteger(para))
+      throw new BusinessError('Informe os exercícios de origem e destino.');
+    if (de === para)
+      throw new BusinessError('O exercício de destino precisa ser diferente do de origem.');
+
+    const reajuste =
+      input.reajustePercentual === undefined ||
+      input.reajustePercentual === null ||
+      input.reajustePercentual === ''
+        ? 0
+        : Number(input.reajustePercentual);
+    if (!Number.isFinite(reajuste) || reajuste <= -100 || reajuste > 1000)
+      throw new BusinessError('Percentual de reajuste inválido.');
+
+    const origem = (await this.repo.listarPorAjuste(ajusteId)).filter((i) => i.ano === de);
+    if (!origem.length)
+      throw new BusinessError(`Não há cronograma cadastrado no exercício ${de}.`);
+
+    const fator = 1 + reajuste / 100;
+    const itens: DadosCronogramaItem[] = origem.map((i) => ({
+      categoria: i.categoria,
+      subcategoria: i.subcategoria,
+      ano: para,
+      mes: i.mes,
+      valor: Math.round(i.valor * fator * 100) / 100,
+    }));
+
+    return this.repo.substituirAno(ajusteId, para, itens);
+  }
+
+  async exercicios(ajusteId: string): Promise<number[]> {
+    await this.garantirAjuste(ajusteId);
+    return this.repo.exercicios(ajusteId);
   }
 
   async listar(ajusteId: string): Promise<CronogramaItem[]> {

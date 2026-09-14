@@ -109,3 +109,40 @@ export async function consultarExecucaoPlano(ajusteId: string, ano: number): Pro
   });
   return data;
 }
+
+// ---- Cópia entre exercícios ----
+//
+// Plano e cronograma têm o mesmo par de operações; ficam juntos aqui porque
+// quem mexe num quase sempre mexe no outro.
+
+export async function exerciciosDoPlano(ajusteId: string): Promise<number[]> {
+  const { data } = await http.get<number[]>(`/ajustes/${ajusteId}/plano-aplicacao/exercicios`);
+  return data;
+}
+
+export async function copiarPlanoExercicio(
+  ajusteId: string,
+  payload: { de: number; para: number; reajustePercentual: number },
+): Promise<PlanoItem[]> {
+  const { data } = await http.post<PlanoItem[]>(
+    `/ajustes/${ajusteId}/plano-aplicacao/copiar`,
+    payload,
+  );
+  return data;
+}
+
+export async function exerciciosDoCronograma(ajusteId: string): Promise<number[]> {
+  const { data } = await http.get<number[]>(`/ajustes/${ajusteId}/cronograma/exercicios`);
+  return data;
+}
+
+export async function copiarCronogramaExercicio(
+  ajusteId: string,
+  payload: { de: number; para: number; reajustePercentual: number },
+): Promise<CronogramaItem[]> {
+  const { data } = await http.post<CronogramaItem[]>(
+    `/ajustes/${ajusteId}/cronograma/copiar`,
+    payload,
+  );
+  return data;
+}

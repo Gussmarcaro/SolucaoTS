@@ -45,4 +45,22 @@ export class CronogramaController {
       return next(e);
     }
   }
+
+  /** `POST /ajustes/:ajusteId/cronograma/copiar` */
+  async copiar(req: Request, res: Response, next: NextFunction) {
+    try {
+      return res.json(await casos.copiarExercicio(req.params.ajusteId, req.body));
+    } catch (e) {
+      return next(e);
+    }
+  }
+
+  /** `GET .../exercicios` — os anos já cadastrados, para escolher a origem. */
+  async exercicios(req: Request, res: Response, next: NextFunction) {
+    try {
+      return res.json(await casos.exercicios(req.params.ajusteId));
+    } catch (e) {
+      return next(e);
+    }
+  }
 }

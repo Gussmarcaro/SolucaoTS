@@ -34,10 +34,11 @@ export class PlanoAplicacaoUseCases {
    * por mês). Expandir aqui, e não no cliente, mantém a regra "anual = mensal
    * × 12" num lugar só.
    *
-   * **Substitui o plano inteiro**, como a importação de CSV faz. Plano de
-   * aplicação é um documento, não uma lista que cresce: mesclar o digitado com
-   * o que já estava deixaria rubricas órfãs de uma versão anterior, sem que
-   * ninguém percebesse.
+   * **Substitui o exercício**, não o plano inteiro. Dentro do ano é documento,
+   * não lista que cresce — mesclar deixaria rubricas órfãs de uma versão
+   * anterior. Mas entre anos é acervo: a parceria dura anos, e salvar 2027 não
+   * pode apagar 2026, cujo exercício já foi prestado e cuja execução ainda se
+   * consulta.
    */
   async salvarDigitado(ajusteId: string, input: PlanoDigitadoDTO): Promise<PlanoAplicacaoItem[]> {
     await this.garantirAjuste(ajusteId);
@@ -104,7 +105,64 @@ export class PlanoAplicacaoUseCases {
     if (!itens.length)
       throw new BusinessError('Informe ao menos uma rubrica com valor maior que zero.');
 
-    return this.repo.substituir(ajusteId, itens);
+    return this.repo.substituirAno(ajusteId, ano, itens);
+  }
+
+  /**
+   * Copia o plano de um exercício para outro, com reajuste opcional.
+   *
+   * Parceria se renova todo ano e o plano muda pouco: reajuste aqui, rubrica
+   * nova ali. Redigitar 40 rubricas é o tipo de trabalho que faz alguém voltar
+   * para a planilha — e um sistema que dá mais trabalho que a planilha perde
+   * para ela.
+   *
+   * O reajuste é aplicado sobre o **mensal**, e o arredondamento é por rubrica,
+   * em duas casas: é o número que a pessoa vai ver e conferir na tela.
+   */
+  async copiarExercicio(
+    ajusteId: string,
+    input: { de?: number | string; para?: number | string; reajustePercentual?: number | string | null },
+  ): Promise<PlanoAplicacaoItem[]> {
+    await this.garantirAjuste(ajusteId);
+
+    const de = Number(input.de);
+    const para = Number(input.para);
+    if (!Number.isInteger(de) || !Number.isInteger(para))
+      throw new BusinessError('Informe os exercícios de origem e destino.');
+    if (de === para)
+      throw new BusinessError('O exercício de destino precisa ser diferente do de origem.');
+
+    const reajuste =
+      input.reajustePercentual === undefined ||
+      input.reajustePercentual === null ||
+      input.reajustePercentual === ''
+        ? 0
+        : Number(input.reajustePercentual);
+    if (!Number.isFinite(reajuste) || reajuste <= -100 || reajuste > 1000)
+      throw new BusinessError('Percentual de reajuste inválido.');
+
+    const origem = (await this.repo.listarPorAjuste(ajusteId)).filter((i) => i.ano === de);
+    if (!origem.length)
+      throw new BusinessError(`Não há plano cadastrado no exercício ${de}.`);
+
+    const fator = 1 + reajuste / 100;
+    const itens: DadosPlanoItem[] = origem.map((i) => ({
+      categoria: i.categoria,
+      subcategoria: i.subcategoria,
+      categoriaDespesaTipo: i.categoriaDespesaTipo,
+      ano: para,
+      mes: i.mes,
+      valor: Math.round(i.valor * fator * 100) / 100,
+      descricao: i.descricao,
+    }));
+
+    return this.repo.substituirAno(ajusteId, para, itens);
+  }
+
+  /** Exercícios já cadastrados — a origem possível da cópia. */
+  async exercicios(ajusteId: string): Promise<number[]> {
+    await this.garantirAjuste(ajusteId);
+    return this.repo.exercicios(ajusteId);
   }
 
   async listar(ajusteId: string): Promise<PlanoAplicacaoItem[]> {

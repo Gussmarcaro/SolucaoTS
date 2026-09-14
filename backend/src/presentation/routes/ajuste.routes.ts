@@ -49,12 +49,16 @@ ajusteRoutes.get('/plano-aplicacao/padrao', (req, res) => plano.padrao(req, res)
 ajusteRoutes.get('/:ajusteId/execucao-plano', (req, res, next) => execucaoPlano.consultar(req, res, next));
 ajusteRoutes.get('/:ajusteId/plano-aplicacao', (req, res, next) => plano.listar(req, res, next));
 ajusteRoutes.put('/:ajusteId/plano-aplicacao', (req, res, next) => plano.salvarDigitado(req, res, next));
+ajusteRoutes.get('/:ajusteId/plano-aplicacao/exercicios', (req, res, next) => plano.exercicios(req, res, next));
+ajusteRoutes.post('/:ajusteId/plano-aplicacao/copiar', (req, res, next) => plano.copiar(req, res, next));
 ajusteRoutes.post('/:ajusteId/plano-aplicacao/importar', uploadCsv, (req, res, next) => plano.importar(req, res, next));
 ajusteRoutes.delete('/:ajusteId/plano-aplicacao', (req, res, next) => plano.limpar(req, res, next));
 
 // --- Cronograma de Desembolso (importação CSV) ---
 ajusteRoutes.get('/:ajusteId/cronograma', (req, res, next) => cronograma.listar(req, res, next));
 ajusteRoutes.put('/:ajusteId/cronograma', (req, res, next) => cronograma.salvarDigitado(req, res, next));
+ajusteRoutes.get('/:ajusteId/cronograma/exercicios', (req, res, next) => cronograma.exercicios(req, res, next));
+ajusteRoutes.post('/:ajusteId/cronograma/copiar', (req, res, next) => cronograma.copiar(req, res, next));
 ajusteRoutes.post('/:ajusteId/cronograma/importar', uploadCsv, (req, res, next) => cronograma.importar(req, res, next));
 ajusteRoutes.delete('/:ajusteId/cronograma', (req, res, next) => cronograma.limpar(req, res, next));
 

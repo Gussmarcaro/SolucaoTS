@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { formatarMoeda, mascaraMoeda, moedaParaNumero, nomeMes } from '@/lib/masks';
 import { extrairMensagemErro } from '@/services/http';
-import { salvarCronogramaDigitado } from '@/services/ajusteCsv.service';
+import { copiarCronogramaExercicio, exerciciosDoCronograma, salvarCronogramaDigitado } from '@/services/ajusteCsv.service';
+import { CopiarExercicio } from './CopiarExercicio';
 import { PLANO_PADRAO } from '@/lib/planoPadrao';
 import type { CronogramaItem, PlanoItem } from '@/types/ajusteCsv';
 
@@ -198,10 +199,18 @@ export function CronogramaDigitado({
           {nomeMes(competencias[competencias.length - 1].mes)}/{competencias[competencias.length - 1].ano}
           {!vigenciaInicial && ' — vigência não informada no ajuste, usando 12 meses do plano.'}
         </p>
+        <div className="flex flex-wrap items-center gap-2">
+        <CopiarExercicio
+          rotulo="cronograma"
+          carregarExercicios={() => exerciciosDoCronograma(ajusteId)}
+          copiar={(p) => copiarCronogramaExercicio(ajusteId, p)}
+          onCopiado={onSalvo}
+        />
         <Button type="button" variant="secondary" size="sm" onClick={distribuirDoPlano}>
           <Wand2 className="h-4 w-4" />
           Distribuir igualmente do plano
         </Button>
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-ink-200 dark:border-ink-700">
