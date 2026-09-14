@@ -1,6 +1,6 @@
 # Mapa de navegação do sistema Solução TS
 
-> Extraído automaticamente do menu do sistema (`navigation.ts`) em 2026-08-24.
+> Extraído automaticamente do menu do sistema (`navigation.ts`) em 2026-09-14.
 > Estes são os caminhos que existem de fato. Nenhum outro caminho deve ser afirmado.
 
 ## Menu principal
@@ -19,6 +19,7 @@
 - **Execução → Financeiro → Receitas** — rota `/execucao/financeiro/receitas`
 - **Execução → Financeiro → Despesas** — rota `/execucao/financeiro/despesas`
 - **Execução → Financeiro → Pagamentos** — rota `/execucao/financeiro/pagamentos`
+- **Execução → Financeiro → Guias de Recolhimento** — rota `/execucao/financeiro/guias`
 - **Execução → Financeiro → Conciliação Bancária** — rota `/execucao/financeiro/conciliacao`
 - **Execução → Técnico** — rota `/execucao/tecnico`
 - **Prestação de Contas** — rota `/prestacao-contas`

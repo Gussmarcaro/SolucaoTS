@@ -30,6 +30,7 @@ import { PerfilController } from '@/presentation/controllers/PerfilController';
 import { DespesaController } from '@/presentation/controllers/DespesaController';
 import { ReceitaOrgaoController } from '@/presentation/controllers/ReceitaOrgaoController';
 import { PagamentoOrgaoController } from '@/presentation/controllers/PagamentoOrgaoController';
+import { GuiaRecolhimentoController } from '@/presentation/controllers/GuiaRecolhimentoController';
 import { autenticar } from '@/presentation/middlewares/autenticar';
 import { exigirGrupo } from '@/presentation/middlewares/exigirGrupo';
 import { exigirPermissao } from '@/presentation/middlewares/exigirPermissao';
@@ -99,6 +100,14 @@ routes.get('/pagamentos', exigirPermissao('EXECUCAO_PAGAMENTOS'), (req, res, nex
 routes.post('/pagamentos', exigirPermissao('EXECUCAO_PAGAMENTOS'), (req, res, next) => pagamentosOrgao.criar(req, res, next));
 routes.put('/pagamentos/:id', exigirPermissao('EXECUCAO_PAGAMENTOS'), (req, res, next) => pagamentosOrgao.atualizar(req, res, next));
 routes.delete('/pagamentos/:id', exigirPermissao('EXECUCAO_PAGAMENTOS'), (req, res, next) => pagamentosOrgao.excluir(req, res, next));
+
+// Guias de recolhimento das retenções. Recurso próprio: recolher tributo é
+// tarefa de quem cuida do fiscal, não necessariamente de quem lança nota.
+const guias = new GuiaRecolhimentoController();
+routes.get('/guias-recolhimento', exigirPermissao('EXECUCAO_GUIAS'), (req, res, next) => guias.apurar(req, res, next));
+routes.post('/guias-recolhimento', exigirPermissao('EXECUCAO_GUIAS'), (req, res, next) => guias.criar(req, res, next));
+routes.put('/guias-recolhimento/:id', exigirPermissao('EXECUCAO_GUIAS'), (req, res, next) => guias.atualizar(req, res, next));
+routes.delete('/guias-recolhimento/:id', exigirPermissao('EXECUCAO_GUIAS'), (req, res, next) => guias.excluir(req, res, next));
 routes.use('/grupos', exigirPermissao('CONFIG_GRUPOS'), grupoRoutes);
 routes.use('/orgaos', exigirPermissao('CONFIG_ORGAOS'), clienteRoutes);
 routes.use('/auditoria', exigirPermissao('CONFIG_AUDITORIA'), auditoriaRoutes);

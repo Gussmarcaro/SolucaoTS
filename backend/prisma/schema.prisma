@@ -232,6 +232,7 @@ model Cliente {
   documentosFiscais     DocumentoFiscal[]
   pagamentos            Pagamento[]
   receitas              Receita[]
+  GuiaRecolhimento      GuiaRecolhimento[]
 
   @@unique([codigoMunicipio, codigoEntidade])
   @@index([tipoOrgao])
@@ -1361,6 +1362,45 @@ model DocumentoFiscal {
 /// `percentual` é **fotografia**: o cálculo do rateio no momento em que a nota
 /// foi apropriada. Editar o método de rateio meses depois não pode mexer numa
 /// prestação já transmitida.
+/// Guia de recolhimento das retenções (DARF, guia de ISSQN, etc.).
+///
+/// A nota fiscal é paga pelo **líquido**: o bruto menos a retenção. O valor
+/// retido fica com a entidade e é recolhido depois, numa **guia única por
+/// tributo**, reunindo todas as notas do mês. Sem este registro, o dinheiro
+/// retido desaparecia do sistema entre o pagamento da nota e o recolhimento —
+/// e a diferença aparecia na conciliação sem explicação.
+///
+/// A competência é a do **pagamento** da nota, não a da emissão: retém-se ao
+/// pagar. Nota emitida em março e paga em abril entra na guia de abril.
+///
+/// Uma guia por órgão, tributo e competência — é assim que ela é emitida e
+/// paga. Quais notas a compõem não é gravado: sai da consulta, e recalcular
+/// mostra a composição real mesmo depois de alguém corrigir uma nota.
+model GuiaRecolhimento {
+  id              String       @id @default(uuid()) @db.Uuid
+  clienteId       String?      @db.Uuid
+  tipo            TipoRetencao
+  /// Competência: ano e mês em que as notas foram pagas.
+  ano             Int
+  mes             Int
+  /// Valor da guia. Gravado, e não derivado: a guia é um documento com um
+  /// número que foi pago — corrigir uma nota depois não reescreve o que já
+  /// se recolheu.
+  valor           Decimal      @db.Decimal(15, 2)
+  dataVencimento  DateTime?    @db.Date
+  /// Nula enquanto a guia não foi paga. É o que separa "a recolher" de
+  /// "recolhida".
+  dataPagamento   DateTime?    @db.Date
+  numeroDocumento String?      @db.VarChar(60)
+  observacao      String?
+
+  criadoPor String?  @db.Uuid
+  cliente   Cliente? @relation(fields: [clienteId], references: [id])
+
+  @@unique([clienteId, tipo, ano, mes])
+  @@index([clienteId, ano, mes])
+}
+
 model PrestacaoDocumentoFiscal {
   id                String  @id @default(uuid()) @db.Uuid
   prestacaoId       String  @db.Uuid

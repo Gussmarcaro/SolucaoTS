@@ -108,6 +108,7 @@ export const ENTIDADE_LABEL: Record<string, string> = {
   BemPrestacao: 'Bem da prestação',
   Contrato: 'Contrato da prestação',
   DocumentoFiscal: 'Documento fiscal',
+  GuiaRecolhimento: 'Guia de recolhimento',
   PrestacaoDocumentoFiscal: 'Documento fiscal na prestação',
   Pagamento: 'Pagamento',
   Disponibilidade: 'Disponibilidade',

@@ -36,6 +36,7 @@ import { ProvisionarOrgao } from '@/pages/Suporte/ProvisionarOrgao';
 import { Despesas } from '@/pages/Despesas';
 import { ReceitasOrgao } from '@/pages/ReceitasOrgao';
 import { PagamentosOrgao } from '@/pages/PagamentosOrgao';
+import { GuiasRecolhimento } from '@/pages/GuiasRecolhimento';
 import { Perfil } from '@/pages/Perfil';
 import { Placeholder } from '@/pages/Placeholder';
 
@@ -170,6 +171,14 @@ export default function App() {
             element={
               <RequerPermissao recurso="EXECUCAO_PAGAMENTOS">
                 <PagamentosOrgao />
+              </RequerPermissao>
+            }
+          />
+          <Route
+            path="/execucao/financeiro/guias"
+            element={
+              <RequerPermissao recurso="EXECUCAO_GUIAS">
+                <GuiasRecolhimento />
               </RequerPermissao>
             }
           />
