@@ -1,6 +1,6 @@
 import { prisma } from './prisma';
 import type { IMontadorRepository } from '@/application/montador/IMontadorRepository';
-import type { CodigosInexistentes, DadosMontagem } from '@/application/montador/tipos';
+import type { CodigosInexistentes, ContextoConferencia, DadosMontagem } from '@/application/montador/tipos';
 import { paraDataISO } from '@/shared/datas';
 
 const dISO = (d: Date | null) => (d ? paraDataISO(d) : null);
@@ -386,6 +386,40 @@ export class PrismaMontadorRepository implements IMontadorRepository {
             inclusaoPagamentos: (ajustesSaldoRow.inclusaoPagamentos as unknown as AjustesSaldoBloco['inclusaoPagamentos']) ?? [],
           }
         : null,
+    };
+  }
+
+  /**
+   * O contexto do **ajuste** para a conferência de pendências.
+   *
+   * Três consultas curtas em vez de carregar plano e programas por inteiro: a
+   * pergunta é "quais categorias" e "quantas metas", não o conteúdo delas — e
+   * o plano tem uma linha por rubrica **e mês**, então trazê-lo inteiro custa
+   * centenas de linhas para responder meia dúzia de números.
+   */
+  async contextoConferencia(prestacaoId: string): Promise<ContextoConferencia | null> {
+    const prestacao = await prisma.prestacaoContas.findUnique({
+      where: { id: prestacaoId },
+      // `empenhaRepasse` é marca do **órgão**, não da prestação: é o concessor
+      // que empenha (ou não) o repasse. O default ligado é deliberado — ver
+      // `blocosAplicaveis`: esconder a aba faz o documento sair sem empenho.
+      select: { ajusteId: true, ajuste: { select: { cliente: { select: { empenhaRepasse: true } } } } },
+    });
+    if (!prestacao) return null;
+
+    const [categorias, metasPrevistas] = await Promise.all([
+      prisma.planoAplicacaoItem.findMany({
+        where: { ajusteId: prestacao.ajusteId, categoriaDespesaTipo: { not: null } },
+        select: { categoriaDespesaTipo: true },
+        distinct: ['categoriaDespesaTipo'],
+      }),
+      prisma.meta.count({ where: { programa: { ajusteId: prestacao.ajusteId } } }),
+    ]);
+
+    return {
+      categoriasDoPlano: categorias.map((c) => c.categoriaDespesaTipo!).sort((a, b) => a - b),
+      metasPrevistas,
+      orgaoEmpenha: prestacao.ajuste?.cliente?.empenhaRepasse ?? true,
     };
   }
 

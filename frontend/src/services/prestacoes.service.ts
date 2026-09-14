@@ -4,6 +4,7 @@ import type {
   FiltrosPrestacao,
   Paginado,
   Prestacao,
+  ResultadoConferencia,
 } from '@/types/prestacao';
 
 export async function listarPrestacoes(params: {
@@ -92,5 +93,17 @@ export async function consultarStatusPrestacao(
   body: CredenciaisEnvio & { protocolo: string },
 ): Promise<StatusConsulta> {
   const { data } = await http.post<StatusConsulta>(`/prestacoes/${id}/consultar-status`, body);
+  return data;
+}
+
+/**
+ * Conferência de prontidão da prestação.
+ *
+ * Monta o documento no servidor e o descarta — o mesmo custo da prévia do
+ * JSON. É o preço de a conferência enxergar exatamente o que seria
+ * transmitido, em vez de uma segunda opinião que pode divergir dele.
+ */
+export async function conferirPrestacao(id: string): Promise<ResultadoConferencia> {
+  const { data } = await http.get<ResultadoConferencia>(`/prestacoes/${id}/conferencia`);
   return data;
 }

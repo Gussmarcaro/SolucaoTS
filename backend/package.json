@@ -38,7 +38,8 @@
     "bootstrap": "tsx prisma/seeds/bootstrap.ts",
     "verificar:rateio": "tsx scripts/verificarRateio.ts",
     "verificar:ofx": "tsx scripts/verificarOfx.ts",
-    "financeiro:backfill": "tsx prisma/seeds/backfillFinanceiro.ts"
+    "financeiro:backfill": "tsx prisma/seeds/backfillFinanceiro.ts",
+    "verificar:conferencia": "tsx scripts/verificarConferencia.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.116.0",

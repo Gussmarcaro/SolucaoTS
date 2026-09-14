@@ -1,6 +1,6 @@
 # Verificação automática a cada push e pull request.
 #
-# O repositório acumulou sete scripts `verificar:*` e uma suíte de testes, mas
+# O repositório acumulou onze scripts `verificar:*` e uma suíte de testes, mas
 # até aqui nada os executava sozinho — uma rede de segurança que ninguém
 # segurava. É o que este arquivo resolve.
 #
@@ -89,6 +89,10 @@ jobs:
           npm run verificar:assistente
           npm run verificar:workflow
           npm run verificar:tenant
+          npm run verificar:agenda
+          npm run verificar:rateio
+          npm run verificar:ofx
+          npm run verificar:conferencia
 
       # Aqui os 11 testes de isolamento deixam de ser pulados.
       - name: Testes de integração

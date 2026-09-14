@@ -131,3 +131,28 @@ export function blocosAplicaveis(
     return true;
   });
 }
+
+/** Gravidade de uma pendência da conferência (espelha o backend). */
+export type SeveridadePendencia = 'IMPEDE' | 'ATENCAO';
+
+export interface Pendencia {
+  /** Bloco a que pertence, para abrir a aba certa; null quando é do ajuste. */
+  bloco: string | null;
+  titulo: string;
+  severidade: SeveridadePendencia;
+}
+
+/**
+ * "Esta prestação está pronta?"
+ *
+ * `erros` é o que o **Tribunal rejeita**; `pendencias` é o que passa na
+ * validação e mesmo assim está errado — prestação sem nenhuma nota é o caso
+ * clássico, e é estruturalmente válida. Os dois vêm separados de propósito:
+ * misturá-los faria o usuário tratar uma prestação vazia como erro de formato.
+ */
+export interface ResultadoConferencia {
+  pronta: boolean;
+  erros: string[];
+  avisos: string[];
+  pendencias: Pendencia[];
+}

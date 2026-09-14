@@ -26,6 +26,7 @@ import {
   type Prestacao,
 } from '@/types/prestacao';
 import { cn } from '@/lib/cn';
+import { PainelConferencia } from './PainelConferencia';
 import { DocumentosFiscaisSelecao } from './blocos/DocumentosFiscaisSelecao';
 import { PagamentosSelecao } from './blocos/PagamentosSelecao';
 import { ReceitasSelecao } from './blocos/ReceitasSelecao';
@@ -299,6 +300,11 @@ export function PrestacaoDetalhe() {
           <Campo label="Data de envio" valor={prestacao.dataEnvio ? new Date(prestacao.dataEnvio).toLocaleString('pt-BR') : '—'} />
         </dl>
       </div>
+
+      {/* Antes dos blocos, de propósito: a pergunta "está pronta?" tem de
+          aparecer para quem ainda está preenchendo, não só para quem abre o
+          Espelho — que é quem já decidiu transmitir. */}
+      <PainelConferencia prestacaoId={prestacao.id} onIrParaBloco={setBlocoAtivo} />
 
       {/* Blocos: navegação (esquerda) + painel (direita) */}
       <div className="grid gap-4 lg:grid-cols-[260px_1fr]">

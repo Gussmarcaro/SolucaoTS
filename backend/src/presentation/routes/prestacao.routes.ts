@@ -53,6 +53,8 @@ prestacaoRoutes.get('/:id', (req, res, next) => c.buscar(req, res, next));
 // Montagem do documento JSON (prévia)
 const montador = new MontadorController();
 prestacaoRoutes.get('/:prestacaoId/json', (req, res, next) => montador.gerar(req, res, next));
+// "Esta prestação está pronta?" — erros do montador + pendências de completude.
+prestacaoRoutes.get('/:prestacaoId/conferencia', (req, res, next) => montador.conferir(req, res, next));
 
 // Transmissão à API do TCESP (Fase D) — default de ambiente = PILOTO
 const transmissao = new TransmissaoController();

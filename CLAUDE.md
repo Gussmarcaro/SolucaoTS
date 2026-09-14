@@ -208,6 +208,7 @@ No `backend/`:
 - `npm run verificar:agenda` — conferir visibilidade, recorrência e validação da agenda (sem banco).
 - `npm run verificar:rateio` — conferir a aritmética dos percentuais e as regras do Cadastro do Rateio (sem banco).
 - `npm run verificar:ofx` — conferir o leitor de extrato OFX e as regras de sugestão da conciliação (sem banco).
+- `npm run verificar:conferencia` — conferir o critério do painel "esta prestação está pronta?" (sem banco).
 - `npm run verificar:tenant` — conferir o isolamento multi-tenant (sem banco).
 - `npm run tenant:backfill` — atribuir um órgão aos registros anteriores ao multi-tenant (roda **uma vez**).
 - `npm run financeiro:backfill` — ligar os lançamentos financeiros antigos ao novo modelo (roda **uma vez**, e simula por padrão; use `-- --executar`). **Depois do `tenant:backfill`**, e **antes** de usar as abas de seleção da prestação.
@@ -216,11 +217,11 @@ No `backend/`:
 
 No `frontend/`: `npm run dev` (Vite em :5173) e `npm run build`.
 
-**A CI roda tudo isso a cada push e pull request** (`.github/workflows/ci.yml`): typecheck dos dois projetos, os sete `verificar:*`, o `npm test` e o build do frontend. O job do backend sobe um **Postgres de serviço** e aponta `DATABASE_URL_TEST` para ele — é lá que os testes de isolamento multi-tenant efetivamente rodam, já que a máquina de desenvolvimento pode não ter banco.
+**A CI roda tudo isso a cada push e pull request** (`.github/workflows/ci.yml`): typecheck dos dois projetos, os onze `verificar:*`, o `npm test` e o build do frontend. O job do backend sobe um **Postgres de serviço** e aponta `DATABASE_URL_TEST` para ele — é lá que os testes de isolamento multi-tenant efetivamente rodam, já que a máquina de desenvolvimento pode não ter banco.
 
 Duas camadas de checagem automatizada:
 
-- **`verificar:*`** (montador, auditoria, alertas, permissões, assistente, workflow, tenant) — regras puras, **sem banco**. Rodam em qualquer lugar e são a rede do dia a dia.
+- **`verificar:*`** (montador, auditoria, alertas, permissões, assistente, workflow, tenant, agenda, rateio, ofx, conferência) — regras puras, **sem banco**. Rodam em qualquer lugar e são a rede do dia a dia.
 - **`npm test`** (vitest + supertest) — integração de verdade, **com Postgres**. Hoje cobre o isolamento multi-tenant de ponta a ponta: dois órgãos provisionados, e cada cenário provando que um **não** alcança o outro (listagem, busca por id, alteração, busca global, contagem, usuários, `/orgaos`).
 
   Sem `DATABASE_URL_TEST` a suíte **pula** em vez de falhar — quem clonou para mexer no frontend não deve ver vermelho por não ter Postgres. Para rodar de fato:
@@ -456,6 +457,22 @@ Renderiza o **mesmo `documentoJSON`** que vai ao TCESP (`GET /prestacoes/:id/jso
 - **Erros e avisos no topo**, antes dos 29 blocos: quem abre o espelho para transmitir precisa saber o que barra o envio antes de ler o documento.
 - Impressão pelo navegador (`@media print` em `index.css`): menu e barra somem, cabeçalho de tabela repete entre páginas, e `break-inside-avoid` evita bloco partido ao meio.
 - Basta faixa **Consulta** em `PRESTACAO_CONTAS` — revisar não deveria exigir permissão de editar.
+
+## "Esta prestação está pronta?" — o painel de pendências
+
+No topo do dossiê da prestação, acima dos blocos. `GET /prestacoes/:id/conferencia`.
+
+O Espelho já mostrava erros e avisos — mas só para quem o abre, e **quem abre o Espelho já decidiu transmitir**. O erro caro não é o de quem confere; é o de quem não sabia que havia o que conferir. Daí a resposta vir para onde se preenche.
+
+**A distinção que justifica o módulo:** `erros` é o que o **Tribunal rejeita**; **pendência** é o que **passa na validação e mesmo assim está errado**. O JSON Schema aceita `documentos_fiscais: []` — uma prestação sem nenhuma nota, sem nenhum pagamento e sem nenhum empenho é estruturalmente válida, é transmitida, é aceita, e volta como inconformidade meses depois. Essa lacuna não era coberta por nada, e é o que `conferirPrestacao` preenche. Os dois vêm separados na resposta e na tela: misturá-los faria o usuário tratar prestação vazia como erro de formato.
+
+- **Vazio legítimo não é pendência.** Desconto, devolução, glosa, bem cedido, empregado e servidor cedido costumam ser zero numa parceria que correu bem. Apontá-los ensinaria a ignorar o painel — que é a única coisa que um painel de pendências não pode fazer. Acrescentá-los à lista é o erro mais caro deste módulo, e `verificar:conferencia` reprova explicitamente cada um.
+- **O que depende de contexto só é cobrado quando o contexto confirma.** Empenho só de quem empenha (`Cliente.empenhaRepasse`); relatório de atividades só se o ajuste **tem** metas; categoria fora do plano só se há plano. Sem isso, a pendência viraria ruído para uma parte dos clientes. Esse contexto vem de `IMontadorRepository.contextoConferencia` — consulta própria, e não campos novos em `DadosMontagem`, que é o que vira documento JSON e não pode ser engordado com dado que não se transmite.
+- **A regra do plano é reconferida aqui.** `conferirNoPlano` já barra ao apropriar a nota, mas a barreira é daquele instante: o plano muda depois, e nota apropriada antes da regra nunca passou por ela.
+- **Monta o documento e o descarta.** Mesmo custo da prévia do JSON, e é o preço de a conferência enxergar exatamente o que seria transmitido, em vez de uma segunda opinião que pode divergir. Por isso **carrega sob demanda**, no botão — não ao abrir o dossiê.
+- **Cada pendência leva à aba onde se resolve.** Painel que aponta problema sem dizer onde arrumá-lo devolve ao usuário a busca que ele veio evitar. Pendência do ajuste (não da prestação) não vira botão: não há aba para onde levar.
+- `pronta` exige as duas coisas — nenhum erro **e** nenhuma pendência `IMPEDE`. Atenção e aviso não travam: são para ler.
+- **`npm run verificar:conferencia`** (31 checagens, sem banco) cobre o critério, não a aritmética. Errar aqui é silencioso nos dois sentidos: uma pendência a mais e o painel vira ruído; uma a menos e ele afirma que está tudo certo numa prestação oca.
 
 ## Relatórios
 

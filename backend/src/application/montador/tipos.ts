@@ -281,6 +281,45 @@ export interface PublicacaoMontagem {
   enderecoInternet: string | null;
 }
 
+/** Gravidade de uma pendência da conferência. */
+export type SeveridadePendencia =
+  /** A prestação não deveria ser transmitida assim. */
+  | 'IMPEDE'
+  /** Merece um olhar; pode ser legítimo. */
+  | 'ATENCAO';
+
+export interface Pendencia {
+  /** Bloco a que a pendência pertence, para a tela abrir a aba certa; null quando é do ajuste. */
+  bloco: string | null;
+  titulo: string;
+  severidade: SeveridadePendencia;
+}
+
+/**
+ * O que a conferência precisa saber e os dados da montagem não carregam.
+ *
+ * Existe para a regra continuar pura: sem este contexto, `conferirPrestacao`
+ * teria de consultar plano e metas por conta própria, e deixaria de ser
+ * testável sem banco.
+ */
+export interface ContextoConferencia {
+  /** Categorias AUDESP previstas no Plano de Aplicação do ajuste; vazio = sem plano. */
+  categoriasDoPlano: number[];
+  /** Quantas metas o ajuste tem; 0 = nenhuma, e aí o relatório vazio é coerente. */
+  metasPrevistas: number;
+  /** Se o órgão empenha o repasse — governa a cobrança do bloco de empenhos. */
+  orgaoEmpenha: boolean;
+}
+
+/** Resposta de `GET /prestacoes/:id/conferencia`. */
+export interface ResultadoConferencia {
+  /** Sem erro de validação e sem pendência que impeça. */
+  pronta: boolean;
+  erros: string[];
+  avisos: string[];
+  pendencias: Pendencia[];
+}
+
 export interface ResultadoMontagem {
   documento: Record<string, unknown>;
   avisos: string[];

@@ -38,7 +38,7 @@ export class MontarPrestacaoUseCase {
  * da classificação econômica é por exercício, que é o ano de emissão do
  * empenho (§17 #2) — não o ano da prestação.
  */
-function codigosUsados(d: DadosMontagem): {
+export function codigosUsados(d: DadosMontagem): {
   cbos: string[];
   classificacoes: Array<{ codigo: string; exercicio: number }>;
 } {
