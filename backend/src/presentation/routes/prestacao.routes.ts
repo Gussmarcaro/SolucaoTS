@@ -62,6 +62,10 @@ prestacaoRoutes.post('/:prestacaoId/consultar-status', (req, res, next) => trans
 prestacaoRoutes.delete('/:id', (req, res, next) => c.excluir(req, res, next));
 
 // --- Documentos Fiscais (bloco) ---
+prestacaoRoutes.get('/:prestacaoId/documentos-fiscais/apropriados', (req, res, next) => docs.listarApropriados(req, res, next));
+prestacaoRoutes.get('/:prestacaoId/documentos-fiscais/candidatos', (req, res, next) => docs.listarCandidatos(req, res, next));
+prestacaoRoutes.post('/:prestacaoId/documentos-fiscais/:id/apropriar', (req, res, next) => docs.apropriar(req, res, next));
+prestacaoRoutes.delete('/:prestacaoId/documentos-fiscais/:id/apropriar', (req, res, next) => docs.desapropriar(req, res, next));
 prestacaoRoutes.get('/:prestacaoId/documentos-fiscais', (req, res, next) => docs.listar(req, res, next));
 prestacaoRoutes.post('/:prestacaoId/documentos-fiscais', (req, res, next) => docs.criar(req, res, next));
 prestacaoRoutes.put('/:prestacaoId/documentos-fiscais/:id', (req, res, next) => docs.atualizar(req, res, next));

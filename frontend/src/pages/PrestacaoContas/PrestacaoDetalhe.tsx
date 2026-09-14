@@ -26,7 +26,7 @@ import {
   type Prestacao,
 } from '@/types/prestacao';
 import { cn } from '@/lib/cn';
-import { DocumentosFiscaisTab } from './blocos/DocumentosFiscaisTab';
+import { DocumentosFiscaisSelecao } from './blocos/DocumentosFiscaisSelecao';
 import { PagamentosTab } from './blocos/PagamentosTab';
 import { ReceitasTab } from './blocos/ReceitasTab';
 import { DisponibilidadesTab } from './blocos/DisponibilidadesTab';
@@ -337,7 +337,7 @@ export function PrestacaoDetalhe() {
           ) : blocoAtivo === 'glosas' ? (
             <GlosasTab prestacaoId={prestacao.id} />
           ) : blocoAtivo === 'documentosFiscais' ? (
-            <DocumentosFiscaisTab prestacaoId={prestacao.id} ajusteId={prestacao.ajusteId} />
+            <DocumentosFiscaisSelecao prestacaoId={prestacao.id} />
           ) : blocoAtivo === 'pagamentos' ? (
             <PagamentosTab prestacaoId={prestacao.id} ajusteId={prestacao.ajusteId} />
           ) : blocoAtivo === 'receitas' ? (

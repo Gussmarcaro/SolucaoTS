@@ -69,6 +69,82 @@ function toDomain(row: Row): DocumentoFiscal {
 }
 
 export class PrismaDocumentoFiscalRepository implements IDocumentoFiscalRepository {
+  /**
+   * As notas apropriadas por esta prestação, pela tabela de ligação.
+   *
+   * O percentual vem da ligação, não da nota: a mesma nota rateada vale 30%
+   * numa prestação e 50% noutra, e guardar isso na nota obrigaria a duplicá-la.
+   */
+  async listarApropriados(prestacaoId: string) {
+    const rows = await prisma.prestacaoDocumentoFiscal.findMany({
+      where: { prestacaoId },
+      select: {
+        percentual: true,
+        contratoId: true,
+        documentoFiscal: { select: selecao },
+      },
+      orderBy: [{ documentoFiscal: { dataEmissao: 'asc' } }, { documentoFiscal: { numero: 'asc' } }],
+    });
+
+    return rows.map((r) => {
+      const doc = toDomain(r.documentoFiscal);
+      const percentual = Number(r.percentual);
+      return {
+        ...doc,
+        percentual,
+        contratoIdPrestacao: r.contratoId,
+        // Duas casas: percentual com dízima produz centavo a mais na soma, e a
+        // prestação compara este número com o pagamento, que é exato.
+        valorApropriado: Math.round(doc.valorBruto * (percentual / 100) * 100) / 100,
+      };
+    });
+  }
+
+  /**
+   * As notas do órgão no exercício, menos as que esta prestação já apropriou.
+   *
+   * O recorte por órgão vem da extension; o por exercício vem daqui, porque é
+   * regra de negócio: nota de outro ano não pertence a esta prestação.
+   */
+  async listarCandidatos(prestacaoId: string, ano: number) {
+    const rows = await prisma.documentoFiscal.findMany({
+      where: {
+        dataEmissao: {
+          gte: new Date(Date.UTC(ano, 0, 1)),
+          lte: new Date(Date.UTC(ano, 11, 31)),
+        },
+        prestacoes: { none: { prestacaoId } },
+      },
+      select: selecao,
+      orderBy: [{ dataEmissao: 'asc' }, { numero: 'asc' }],
+    });
+    return rows.map(toDomain);
+  }
+
+  /**
+   * Cria ou atualiza a apropriação.
+   *
+   * `upsert` porque apropriar duas vezes é gesto comum — o usuário marca, o
+   * rateio muda, ele marca de novo. Recusar a segunda obrigaria a desmarcar
+   * antes, sem nada ganhar.
+   */
+  async apropriar(
+    prestacaoId: string,
+    documentoFiscalId: string,
+    dados: { percentual: number; contratoId: string | null },
+  ): Promise<void> {
+    await prisma.prestacaoDocumentoFiscal.upsert({
+      where: { prestacaoId_documentoFiscalId: { prestacaoId, documentoFiscalId } },
+      create: { prestacaoId, documentoFiscalId, ...dados },
+      update: dados,
+    });
+  }
+
+  /** A nota continua existindo no órgão; só sai desta prestação. */
+  async desapropriar(prestacaoId: string, documentoFiscalId: string): Promise<void> {
+    await prisma.prestacaoDocumentoFiscal.deleteMany({ where: { prestacaoId, documentoFiscalId } });
+  }
+
   async listarPorPrestacao(prestacaoId: string): Promise<DocumentoFiscal[]> {
     const rows = await prisma.documentoFiscal.findMany({
       where: { prestacaoId },

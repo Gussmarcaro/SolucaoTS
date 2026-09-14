@@ -37,9 +37,21 @@ export class PrismaMontadorRepository implements IMontadorRepository {
       await Promise.all([
         prisma.relacaoEmpregado.findMany({ where: { prestacaoId } }),
         prisma.bemPrestacao.findMany({ where: { prestacaoId } }),
-        prisma.documentoFiscal.findMany({
+        /*
+         * As notas vêm pela **tabela de ligação**, não por `prestacaoId`.
+         *
+         * A nota é do órgão, e uma nota rateada alimenta várias prestações com
+         * percentuais diferentes — o percentual é da ligação, e é ele que vai
+         * como `rateio_percentual` no envio. Ler pela nota mandaria o
+         * percentual de outra prestação.
+         *
+         * O contrato também vem da ligação: `Contrato` é um bloco da
+         * prestação, e a mesma nota se refere a contratos distintos em cada uma.
+         */
+        prisma.prestacaoDocumentoFiscal.findMany({
           where: { prestacaoId },
           include: {
+            documentoFiscal: true,
             contrato: {
               select: {
                 numero: true,
@@ -110,28 +122,38 @@ export class PrismaMontadorRepository implements IMontadorRepository {
         valor: n(b.valor),
       })),
 
-      documentosFiscais: documentosFiscais.map((f) => ({
-        numero: f.numero,
-        credorTipoDoc: f.credorTipoDoc,
-        credorNumeroDoc: f.credorNumeroDoc,
-        credorNome: f.credorNome,
-        descricao: f.descricao,
-        dataEmissao: paraDataISO(f.dataEmissao),
-        estadoEmissor: f.estadoEmissor,
-        valorBruto: Number(f.valorBruto),
-        valorEncargos: Number(f.valorEncargos),
-        categoriaDespesaTipo: f.categoriaDespesaTipo,
-        contrato: f.contrato
-          ? {
-              numero: f.contrato.numero,
-              dataAssinatura: paraDataISO(f.contrato.dataAssinatura),
-              credorTipoDoc: f.contrato.credorTipoDoc,
-              credorNumeroDoc: f.contrato.credorNumeroDoc,
-            }
-          : null,
-        rateioProveniente: f.rateioProveniente,
-        rateioPercentual: n(f.rateioPercentual),
-      })),
+      documentosFiscais: documentosFiscais.map((ligacao) => {
+        const f = ligacao.documentoFiscal;
+        const percentual = Number(ligacao.percentual);
+        return {
+          numero: f.numero,
+          credorTipoDoc: f.credorTipoDoc,
+          credorNumeroDoc: f.credorNumeroDoc,
+          credorNome: f.credorNome,
+          descricao: f.descricao,
+          dataEmissao: paraDataISO(f.dataEmissao),
+          estadoEmissor: f.estadoEmissor,
+          // O valor bruto vai **cheio**, e é assim que o TCESP o recebe: o
+          // schema traz o valor da nota e o percentual ao lado, não o valor já
+          // rateado. Multiplicar aqui mandaria um valor que não existe em
+          // documento nenhum.
+          valorBruto: Number(f.valorBruto),
+          valorEncargos: Number(f.valorEncargos),
+          categoriaDespesaTipo: f.categoriaDespesaTipo,
+          contrato: ligacao.contrato
+            ? {
+                numero: ligacao.contrato.numero,
+                dataAssinatura: paraDataISO(ligacao.contrato.dataAssinatura),
+                credorTipoDoc: ligacao.contrato.credorTipoDoc,
+                credorNumeroDoc: ligacao.contrato.credorNumeroDoc,
+              }
+            : null,
+          rateioProveniente: f.rateioProveniente,
+          // 100% não é rateio: é a nota inteira. Mandar `rateio_percentual: 100`
+          // numa nota não rateada faria o Tribunal ler como rateio de 100%.
+          rateioPercentual: f.rateioProveniente ? percentual : null,
+        };
+      }),
 
       pagamentos: pagamentos.map((p) => ({
         folha: p.documentoFiscalId == null,

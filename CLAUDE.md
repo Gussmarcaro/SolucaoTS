@@ -210,6 +210,7 @@ No `backend/`:
 - `npm run verificar:ofx` — conferir o leitor de extrato OFX e as regras de sugestão da conciliação (sem banco).
 - `npm run verificar:tenant` — conferir o isolamento multi-tenant (sem banco).
 - `npm run tenant:backfill` — atribuir um órgão aos registros anteriores ao multi-tenant (roda **uma vez**).
+- `npm run financeiro:backfill` — ligar os lançamentos financeiros antigos ao novo modelo (roda **uma vez**, e simula por padrão; use `-- --executar`). **Depois do `tenant:backfill`**, e **antes** de usar as abas de seleção da prestação.
 - `npm run suporte:conceder -- <email>` / `suporte:revogar` / `suporte:listar` — marca da equipe do fornecedor.
 - `npm run bootstrap -- --orgao … --cnpj … --email … --senha …` — **banco vazio**: cria o primeiro órgão, o grupo e o primeiro usuário (com marca de suporte). Recusa rodar se já houver usuário.
 

@@ -1,3 +1,4 @@
+import type { DocumentoFiscal } from '@/core/documentoFiscal/DocumentoFiscal';
 import type {
   TipoDocumento,
   TipoDocumentoFiscal,
@@ -47,4 +48,17 @@ export interface DadosDocumentoFiscal {
   rateioProveniente: boolean;
   rateioId: string | null;
   rateioPercentual: number | null;
+}
+
+/**
+ * Uma nota vista **de dentro de uma prestação**.
+ *
+ * É a nota do órgão mais o que a ligação acrescenta: o percentual apropriado e
+ * o contrato daquela prestação. O `valorApropriado` é derivado, e vem calculado
+ * para a tela não repetir a conta — e não repetir significa não divergir.
+ */
+export interface DocumentoFiscalApropriado extends DocumentoFiscal {
+  percentual: number;
+  contratoIdPrestacao: string | null;
+  valorApropriado: number;
 }

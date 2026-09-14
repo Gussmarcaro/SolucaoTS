@@ -270,6 +270,86 @@ export class DocumentoFiscalUseCases {
       );
   }
 
+  // ---------------------------------------------------------------------------
+  // Apropriação — a prestação escolhe quais notas do órgão entram nela
+  // ---------------------------------------------------------------------------
+
+  /** As notas já apropriadas, com o percentual e o valor de cada uma. */
+  async listarApropriados(prestacaoId: string) {
+    await this.garantirPrestacao(prestacaoId);
+    return this.repo.listarApropriados(prestacaoId);
+  }
+
+  /** As notas do órgão, no exercício, que esta prestação ainda não apropriou. */
+  async listarCandidatos(prestacaoId: string) {
+    const prestacao = await this.prestacoes.buscarPorId(prestacaoId);
+    if (!prestacao) throw new NotFoundError('Prestação não encontrada.');
+    return this.repo.listarCandidatos(prestacaoId, prestacao.ano);
+  }
+
+  /**
+   * Inclui a nota nesta prestação.
+   *
+   * É aqui que o rateio vira percentual — e só aqui ele **pode** virar: o
+   * percentual depende do ajuste, e o ajuste só se conhece quando uma prestação
+   * se apropria da nota. No lançamento, em Financeiro → Despesas, guarda-se o
+   * método; o número sai deste momento.
+   *
+   * Duas conferências acontecem juntas, e as duas são a regra do negócio:
+   *
+   * - **a categoria tem de estar no Plano de Aplicação** — a entidade só executa
+   *   o que foi pactuado, e o plano vai ao Audesp nos primeiros dias;
+   * - **o ajuste tem de participar do rateio** — rateio que não inclui este
+   *   ajuste não se aplica a esta despesa. Apropriar com 0% subestimaria o
+   *   gasto em silêncio, que é pior que recusar.
+   */
+  async apropriar(prestacaoId: string, documentoFiscalId: string, contratoId?: string | null) {
+    const prestacao = await this.prestacoes.buscarPorId(prestacaoId);
+    if (!prestacao) throw new NotFoundError('Prestação não encontrada.');
+
+    const doc = await this.repo.buscarPorId(documentoFiscalId);
+    if (!doc) throw new NotFoundError('Documento fiscal não encontrado.');
+
+    await this.conferirNoPlano(prestacaoId, doc.categoriaDespesaTipo);
+
+    const percentual = await this.percentualDoRateio(doc, prestacao.ajusteId);
+    await this.repo.apropriar(prestacaoId, documentoFiscalId, {
+      percentual,
+      contratoId: contratoId?.trim() || null,
+    });
+  }
+
+  async desapropriar(prestacaoId: string, documentoFiscalId: string) {
+    await this.garantirPrestacao(prestacaoId);
+    await this.repo.desapropriar(prestacaoId, documentoFiscalId);
+  }
+
+  /**
+   * Quanto desta nota cabe a este ajuste.
+   *
+   * Sem rateio, a nota inteira: 100. Com rateio, o que o quadro determina — e
+   * nunca o que o cliente mandar, que permitiria gravar 30% num ajuste que o
+   * rateio diz ser 10%.
+   */
+  private async percentualDoRateio(doc: DocumentoFiscal, ajusteId: string): Promise<number> {
+    if (!doc.rateioProveniente || !doc.rateioId || !this.rateios) return 100;
+
+    const rateio = await this.rateios.buscarPorId(doc.rateioId);
+    if (!rateio) throw new BusinessError('O rateio desta nota não foi encontrado.');
+
+    const participante = rateio.participantes.find((p) => p.ajusteId === ajusteId);
+    if (!participante)
+      throw new BusinessError(
+        `O ajuste desta prestação não participa do rateio "${rateio.titulo}". ` +
+          'Inclua-o no quadro do rateio, ou escolha outro método na nota.',
+      );
+
+    const { linhas } = calcularRateio(
+      rateio.participantes.map((p) => ({ ajusteId: p.ajusteId, base: p.base })),
+    );
+    return linhas.find((l) => l.ajusteId === ajusteId)?.percentualExibido ?? 0;
+  }
+
   async listar(prestacaoId: string): Promise<DocumentoFiscal[]> {
     await this.garantirPrestacao(prestacaoId);
     return this.repo.listarPorPrestacao(prestacaoId);

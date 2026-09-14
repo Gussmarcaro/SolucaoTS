@@ -1,6 +1,7 @@
 import { http } from './http';
 import type {
   DocumentoFiscal,
+  DocumentoFiscalApropriado,
   DocumentoFiscalPayload,
   Pagamento,
   PagamentoPayload,
@@ -90,4 +91,38 @@ export async function atualizarPagamento(prestacaoId: string, id: string, payloa
 
 export async function excluirPagamento(prestacaoId: string, id: string): Promise<void> {
   await http.delete(`/prestacoes/${prestacaoId}/pagamentos/${id}`);
+}
+
+// ---- Apropriação de documentos fiscais ----
+//
+// A nota é do órgão (Financeiro → Despesas); a prestação escolhe quais entram
+// nela. O percentual do rateio é calculado no servidor, no momento da escolha —
+// é lá que o ajuste fica conhecido.
+
+export async function listarApropriados(prestacaoId: string): Promise<DocumentoFiscalApropriado[]> {
+  const { data } = await http.get<DocumentoFiscalApropriado[]>(
+    `/prestacoes/${prestacaoId}/documentos-fiscais/apropriados`,
+  );
+  return data;
+}
+
+export async function listarCandidatos(prestacaoId: string): Promise<DocumentoFiscal[]> {
+  const { data } = await http.get<DocumentoFiscal[]>(
+    `/prestacoes/${prestacaoId}/documentos-fiscais/candidatos`,
+  );
+  return data;
+}
+
+export async function apropriarDocumento(
+  prestacaoId: string,
+  documentoId: string,
+  contratoId?: string | null,
+): Promise<void> {
+  await http.post(`/prestacoes/${prestacaoId}/documentos-fiscais/${documentoId}/apropriar`, {
+    contratoId,
+  });
+}
+
+export async function desapropriarDocumento(prestacaoId: string, documentoId: string): Promise<void> {
+  await http.delete(`/prestacoes/${prestacaoId}/documentos-fiscais/${documentoId}/apropriar`);
 }

@@ -142,3 +142,16 @@ export interface PagamentoPayload {
   contaCorrente?: string | null;
   numeroTransacao?: string | null;
 }
+
+/**
+ * Uma nota vista **de dentro de uma prestação**.
+ *
+ * É a nota do órgão mais o que a ligação acrescenta: o percentual apropriado e
+ * o contrato daquela prestação. O `valorApropriado` vem calculado do servidor
+ * para a tela não repetir a conta — e não repetir significa não divergir.
+ */
+export interface DocumentoFiscalApropriado extends DocumentoFiscal {
+  percentual: number;
+  contratoIdPrestacao: string | null;
+  valorApropriado: number;
+}
