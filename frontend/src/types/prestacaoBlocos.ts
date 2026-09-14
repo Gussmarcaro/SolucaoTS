@@ -132,6 +132,8 @@ export interface Pagamento {
 }
 
 export interface PagamentoPayload {
+  /** Parceria do lançamento. Opcional: a apropriação pela prestação também a define. */
+  ajusteId?: string | null;
   documentoFiscalId?: string | null;
   dataPagamento: string;
   valor: number;

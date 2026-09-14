@@ -76,12 +76,19 @@ prestacaoRoutes.get('/:prestacaoId/documentos-fiscais/:id/arquivo', (req, res, n
 prestacaoRoutes.delete('/:prestacaoId/documentos-fiscais/:id/arquivo', (req, res, next) => docs.removerArquivo(req, res, next));
 
 // --- Pagamentos (bloco) ---
+prestacaoRoutes.get('/:prestacaoId/pagamentos/candidatos', (req, res, next) => pagamentos.listarCandidatos(req, res, next));
+prestacaoRoutes.post('/:prestacaoId/pagamentos/:id/apropriar', (req, res, next) => pagamentos.apropriar(req, res, next));
+prestacaoRoutes.delete('/:prestacaoId/pagamentos/:id/apropriar', (req, res, next) => pagamentos.desapropriar(req, res, next));
 prestacaoRoutes.get('/:prestacaoId/pagamentos', (req, res, next) => pagamentos.listar(req, res, next));
 prestacaoRoutes.post('/:prestacaoId/pagamentos', (req, res, next) => pagamentos.criar(req, res, next));
 prestacaoRoutes.put('/:prestacaoId/pagamentos/:id', (req, res, next) => pagamentos.atualizar(req, res, next));
 prestacaoRoutes.delete('/:prestacaoId/pagamentos/:id', (req, res, next) => pagamentos.excluir(req, res, next));
 
 // --- Blocos simples ---
+// Apropriação — antes do `bloco`, senão "candidatos" seria lido como um :id.
+prestacaoRoutes.get('/:prestacaoId/receitas/candidatos', (req, res, next) => receitas.listarCandidatos(req, res, next));
+prestacaoRoutes.post('/:prestacaoId/receitas/:id/apropriar', (req, res, next) => receitas.apropriar(req, res, next));
+prestacaoRoutes.delete('/:prestacaoId/receitas/:id/apropriar', (req, res, next) => receitas.desapropriar(req, res, next));
 bloco('receitas', receitas);
 bloco('disponibilidades', disponibilidades);
 // Valor único do bloco Disponibilidades (não é um item da lista de saldos).

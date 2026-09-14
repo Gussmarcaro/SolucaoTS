@@ -65,6 +65,7 @@ function validar(input: ReceitaDTO): DadosReceita {
   if (agencia !== null && agencia <= 0) throw new BusinessError('Agência inválida.');
 
   return {
+    ajusteId: input.ajusteId?.trim() || null,
     tipo,
     descricao: input.descricao?.trim() || null,
     dataPrevista: dataOpcional(input.dataPrevista, 'Data prevista'),
@@ -133,6 +134,46 @@ export class ReceitaUseCases {
     const r = await this.repo.buscarPorId(id);
     if (!r) throw new NotFoundError('Receita não encontrada.');
     return r;
+  }
+
+
+  // ---------------------------------------------------------------------------
+  // Apropriação — a prestação escolhe quais lançamentos do órgão entram nela
+  // ---------------------------------------------------------------------------
+
+  /** Os candidatos: do ajuste desta prestação, no exercício, ainda livres. */
+  async listarCandidatos(prestacaoId: string) {
+    const prestacao = await this.prestacoes.buscarPorId(prestacaoId);
+    if (!prestacao) throw new NotFoundError('Prestação não encontrada.');
+    return this.repo.listarCandidatos(prestacao.ajusteId, prestacao.ano);
+  }
+
+  /**
+   * Inclui na prestação.
+   *
+   * Recusa o que já pertence a **outra** prestação: o mesmo dinheiro em duas
+   * prestações é o erro que esta tela existe para impedir, e ele não se
+   * descobre olhando — some no meio de centenas de linhas.
+   */
+  async apropriar(prestacaoId: string, id: string) {
+    const prestacao = await this.prestacoes.buscarPorId(prestacaoId);
+    if (!prestacao) throw new NotFoundError('Prestação não encontrada.');
+
+    const item = await this.repo.buscarPorId(id);
+    if (!item) throw new NotFoundError('Lançamento não encontrado.');
+    if (item.prestacaoId && item.prestacaoId !== prestacaoId)
+      throw new BusinessError('Este lançamento já pertence a outra prestação de contas.');
+    if (item.ajusteId && item.ajusteId !== prestacao.ajusteId)
+      throw new BusinessError('Este lançamento é de outro ajuste.');
+
+    await this.repo.apropriar(id, prestacaoId, prestacao.ajusteId);
+  }
+
+  async desapropriar(prestacaoId: string, id: string) {
+    const item = await this.repo.buscarPorId(id);
+    if (!item || item.prestacaoId !== prestacaoId)
+      throw new NotFoundError('Lançamento não encontrado nesta prestação.');
+    await this.repo.desapropriar(id);
   }
 
   async listar(prestacaoId: string): Promise<Receita[]> {

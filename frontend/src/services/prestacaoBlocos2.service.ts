@@ -70,3 +70,18 @@ export const repassesApi = crud<Repasse, RepassePayload>('repasses');
 export const bensApi = crud<BemPrestacao, BemPrestacaoPayload>('bens');
 export const servidoresApi = crud<ServidorPrestacao, ServidorPrestacaoPayload>('servidores-cedidos');
 export const afericoesApi = crud<AfericaoMeta, AfericaoMetaPayload>('relatorio-atividades');
+
+// ---- Apropriação de receitas ----
+export const receitasSelecao = {
+  apropriados: (prestacaoId: string) => receitasApi.listar(prestacaoId),
+  candidatos: async (prestacaoId: string): Promise<Receita[]> => {
+    const { data } = await http.get<Receita[]>(`/prestacoes/${prestacaoId}/receitas/candidatos`);
+    return data;
+  },
+  apropriar: async (prestacaoId: string, id: string): Promise<void> => {
+    await http.post(`/prestacoes/${prestacaoId}/receitas/${id}/apropriar`);
+  },
+  desapropriar: async (prestacaoId: string, id: string): Promise<void> => {
+    await http.delete(`/prestacoes/${prestacaoId}/receitas/${id}/apropriar`);
+  },
+};

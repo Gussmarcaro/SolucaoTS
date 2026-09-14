@@ -1,6 +1,7 @@
 import type { MeioPagamento } from '@/core/pagamento/Pagamento';
 
 export interface PagamentoDTO {
+  ajusteId?: string | null;
   documentoFiscalId?: string | null;
   dataPagamento: string;
   valor: number | string;
@@ -14,6 +15,8 @@ export interface PagamentoDTO {
 
 /** Dados normalizados/validados prontos para persistência. */
 export interface DadosPagamento {
+  /** Parceria do lançamento; nula até alguém dizer qual. */
+  ajusteId?: string | null;
   documentoFiscalId: string | null;
   dataPagamento: Date;
   valor: number;

@@ -126,3 +126,18 @@ export async function apropriarDocumento(
 export async function desapropriarDocumento(prestacaoId: string, documentoId: string): Promise<void> {
   await http.delete(`/prestacoes/${prestacaoId}/documentos-fiscais/${documentoId}/apropriar`);
 }
+
+// ---- Apropriação de pagamentos ----
+export const pagamentosSelecao = {
+  apropriados: (prestacaoId: string) => listarPagamentos(prestacaoId),
+  candidatos: async (prestacaoId: string): Promise<Pagamento[]> => {
+    const { data } = await http.get<Pagamento[]>(`/prestacoes/${prestacaoId}/pagamentos/candidatos`);
+    return data;
+  },
+  apropriar: async (prestacaoId: string, id: string): Promise<void> => {
+    await http.post(`/prestacoes/${prestacaoId}/pagamentos/${id}/apropriar`);
+  },
+  desapropriar: async (prestacaoId: string, id: string): Promise<void> => {
+    await http.delete(`/prestacoes/${prestacaoId}/pagamentos/${id}/apropriar`);
+  },
+};

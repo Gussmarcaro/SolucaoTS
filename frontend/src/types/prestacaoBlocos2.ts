@@ -49,6 +49,8 @@ export interface Receita {
 }
 
 export interface ReceitaPayload {
+  /** Parceria do lançamento. Opcional: a apropriação pela prestação também a define. */
+  ajusteId?: string | null;
   tipo: ReceitaTipo;
   descricao?: string | null;
   dataPrevista?: string | null;

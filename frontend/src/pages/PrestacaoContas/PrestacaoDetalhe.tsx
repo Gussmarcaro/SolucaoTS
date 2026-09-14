@@ -27,8 +27,8 @@ import {
 } from '@/types/prestacao';
 import { cn } from '@/lib/cn';
 import { DocumentosFiscaisSelecao } from './blocos/DocumentosFiscaisSelecao';
-import { PagamentosTab } from './blocos/PagamentosTab';
-import { ReceitasTab } from './blocos/ReceitasTab';
+import { PagamentosSelecao } from './blocos/PagamentosSelecao';
+import { ReceitasSelecao } from './blocos/ReceitasSelecao';
 import { DisponibilidadesTab } from './blocos/DisponibilidadesTab';
 import { DescontosTab } from './blocos/DescontosTab';
 import { DevolucoesTab } from './blocos/DevolucoesTab';
@@ -339,12 +339,12 @@ export function PrestacaoDetalhe() {
           ) : blocoAtivo === 'documentosFiscais' ? (
             <DocumentosFiscaisSelecao prestacaoId={prestacao.id} />
           ) : blocoAtivo === 'pagamentos' ? (
-            <PagamentosTab prestacaoId={prestacao.id} ajusteId={prestacao.ajusteId} />
+            <PagamentosSelecao prestacaoId={prestacao.id} />
           ) : blocoAtivo === 'receitas' ? (
             <div className="space-y-8">
               <section>
                 <h3 className="mb-3 text-sm font-semibold text-ink-800 dark:text-ink-100">Receitas</h3>
-                <ReceitasTab prestacaoId={prestacao.id} ajusteId={prestacao.ajusteId} />
+                <ReceitasSelecao prestacaoId={prestacao.id} />
               </section>
               <section>
                 <h3 className="mb-1 text-sm font-semibold text-ink-800 dark:text-ink-100">Repasses recebidos</h3>

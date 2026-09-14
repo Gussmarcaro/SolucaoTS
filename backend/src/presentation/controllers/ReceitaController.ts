@@ -38,4 +38,31 @@ export class ReceitaController {
       return next(e);
     }
   }
+
+  /** `GET .../candidatos` — o que a prestação pode apropriar. */
+  async listarCandidatos(req: Request, res: Response, next: NextFunction) {
+    try {
+      return res.json(await casos.listarCandidatos(req.params.prestacaoId));
+    } catch (e) {
+      return next(e);
+    }
+  }
+
+  async apropriar(req: Request, res: Response, next: NextFunction) {
+    try {
+      await casos.apropriar(req.params.prestacaoId, req.params.id);
+      return res.status(204).end();
+    } catch (e) {
+      return next(e);
+    }
+  }
+
+  async desapropriar(req: Request, res: Response, next: NextFunction) {
+    try {
+      await casos.desapropriar(req.params.prestacaoId, req.params.id);
+      return res.status(204).end();
+    } catch (e) {
+      return next(e);
+    }
+  }
 }

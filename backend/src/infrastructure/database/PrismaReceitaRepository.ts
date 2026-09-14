@@ -72,6 +72,45 @@ export class PrismaReceitaRepository implements IReceitaRepository {
     return toDomain(row);
   }
 
+
+  /**
+   * Candidatos: sem prestação, do ajuste (ou sem ajuste), no exercício.
+   *
+   * O recorte por órgão vem da extension; estes três são regra de negócio e
+   * ficam explícitos.
+   */
+  async listarCandidatos(ajusteId: string, ano: number) {
+    const rows = await prisma.receita.findMany({
+      where: {
+        prestacaoId: null,
+        OR: [{ ajusteId }, { ajusteId: null }],
+        dataRepasse: {
+          gte: new Date(Date.UTC(ano, 0, 1)),
+          lte: new Date(Date.UTC(ano, 11, 31)),
+        },
+      },
+      select: selecao,
+      orderBy: [{ dataRepasse: 'asc' }, { id: 'asc' }],
+    });
+    return rows.map(toDomain);
+  }
+
+  /** Carimba a prestação **e** o ajuste: apropriar é decidir a parceria. */
+  async apropriar(id: string, prestacaoId: string, ajusteId: string): Promise<void> {
+    await prisma.receita.update({ where: { id }, data: { prestacaoId, ajusteId } });
+  }
+
+  /**
+   * Tira da prestação, preservando o ajuste.
+   *
+   * O ajuste é fato do lançamento — o dinheiro entrou naquela parceria —, e
+   * apagá-lo faria o lançamento reaparecer como "sem ajuste" na lista de
+   * candidatos de qualquer prestação.
+   */
+  async desapropriar(id: string): Promise<void> {
+    await prisma.receita.update({ where: { id }, data: { prestacaoId: null } });
+  }
+
   async buscarPorId(id: string): Promise<Receita | null> {
     const row = await prisma.receita.findUnique({ where: { id }, select: selecao });
     return row ? toDomain(row) : null;

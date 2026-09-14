@@ -5,6 +5,25 @@ import type { DadosPagamento } from './dtos';
 export interface IPagamentoRepository {
   listarPorPrestacao(prestacaoId: string): Promise<Pagamento[]>;
   /**
+   * Pagamentos do órgão que esta prestação **poderia** apropriar.
+   *
+   * Duas condições, e cada uma evita um erro distinto:
+   *
+   * - **ainda sem prestação** — o já apropriado por outra não pode
+   *   entrar aqui, senão o mesmo dinheiro apareceria em duas prestações;
+   * - **do ajuste desta prestação, ou sem ajuste definido** — lançamento de
+   *   outra parceria não pertence a esta prestação, e incluí-lo passaria
+   *   despercebido. O "sem ajuste" entra porque a tela do Financeiro permite
+   *   lançar antes de saber a parceria, e a apropriação é que a define.
+   */
+  listarCandidatos(ajusteId: string, ano: number): Promise<Pagamento[]>;
+
+  /** Inclui na prestação, carimbando também o ajuste. */
+  apropriar(id: string, prestacaoId: string, ajusteId: string): Promise<void>;
+
+  /** Retira da prestação. O lançamento continua existindo no órgão. */
+  desapropriar(id: string): Promise<void>;
+  /**
    * Todos os lançamentos do órgão — a tela de Execução → Financeiro.
    *
    * Sem parâmetro de órgão: quem recorta é a extension de tenant, na camada de
