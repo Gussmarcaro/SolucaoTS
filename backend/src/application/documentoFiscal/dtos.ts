@@ -11,6 +11,7 @@ export interface DocumentoFiscalDTO {
   credorNumeroDoc: string;
   credorNome?: string | null;
   contratoNumero?: string | null;
+  contratoFirmadoId?: string | null;
   contratoId?: string | null;
   descricao: string;
   dataEmissao: string;
@@ -34,6 +35,7 @@ export interface DadosDocumentoFiscal {
   credorNumeroDoc: string;
   credorNome: string | null;
   contratoNumero: string | null;
+  contratoFirmadoId: string | null;
   contratoId: string | null;
   descricao: string;
   dataEmissao: Date;

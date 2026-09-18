@@ -4,6 +4,7 @@ import { PrismaDocumentoFiscalRepository } from '@/infrastructure/database/Prism
 import { PrismaPrestacaoRepository } from '@/infrastructure/database/PrismaPrestacaoRepository';
 import { PrismaRateioRepository } from '@/infrastructure/database/PrismaRateioRepository';
 import { PrismaPlanoAplicacaoRepository } from '@/infrastructure/database/PrismaPlanoAplicacaoRepository';
+import { PrismaContratoRepository } from '@/infrastructure/database/PrismaContratoRepository';
 
 /**
  * Despesas — os documentos fiscais do **órgão**, em Execução → Financeiro.
@@ -21,6 +22,7 @@ const casos = new DocumentoFiscalUseCases(
   new PrismaPrestacaoRepository(),
   new PrismaRateioRepository(),
   new PrismaPlanoAplicacaoRepository(),
+  new PrismaContratoRepository(),
 );
 
 export class DespesaController {

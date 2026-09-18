@@ -52,6 +52,8 @@ export interface DocumentoFiscal {
   credorNumeroDoc: string;
   credorNome: string | null;
   contratoNumero: string | null;
+  /** Contrato do cadastro do orgao de onde a nota veio; null nas digitadas antes do vinculo. */
+  contratoFirmadoId: string | null;
   /** Contrato da prestação a que a nota se refere — herda as categorias. */
   contratoId: string | null;
   descricao: string;

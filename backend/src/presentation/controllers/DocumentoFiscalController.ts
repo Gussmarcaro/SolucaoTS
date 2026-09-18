@@ -6,12 +6,14 @@ import { PrismaDocumentoFiscalRepository } from '@/infrastructure/database/Prism
 import { PrismaPrestacaoRepository } from '@/infrastructure/database/PrismaPrestacaoRepository';
 import { PrismaRateioRepository } from '@/infrastructure/database/PrismaRateioRepository';
 import { PrismaPlanoAplicacaoRepository } from '@/infrastructure/database/PrismaPlanoAplicacaoRepository';
+import { PrismaContratoRepository } from '@/infrastructure/database/PrismaContratoRepository';
 
 const casos = new DocumentoFiscalUseCases(
   new PrismaDocumentoFiscalRepository(),
   new PrismaPrestacaoRepository(),
   new PrismaRateioRepository(),
   new PrismaPlanoAplicacaoRepository(),
+  new PrismaContratoRepository(),
 );
 
 function arquivoDaRequisicao(req: Request): ArquivoPdf {

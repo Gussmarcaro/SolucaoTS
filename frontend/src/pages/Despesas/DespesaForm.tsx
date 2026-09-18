@@ -7,13 +7,15 @@ import { SelectDominio } from '@/components/ui/SelectDominio';
 import { Combobox, type OpcaoCombo } from '@/components/ui/Combobox';
 import { enterComoTab } from '@/lib/enterComoTab';
 import { CATEGORIA_DESPESA, ESTADO_EMISSOR } from '@/lib/dominiosFaseV';
-import { apenasDigitos, mascaraCpfCnpj, mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
+import { apenasDigitos, dataBr, formatarMoeda, mascaraCpfCnpj, mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
 import { listarFornecedores } from '@/services/fornecedores.service';
+import { listarContratos } from '@/services/contratos.service';
 import { listarRateios } from '@/services/rateios.service';
 import { despesasApi } from '@/services/despesas.service';
 import { extrairMensagemErro } from '@/services/http';
 import { vigentesEm } from '@/types/rateio';
 import type { Fornecedor } from '@/types/fornecedor';
+import type { Contrato } from '@/types/contrato';
 import type { Rateio } from '@/types/rateio';
 import {
   TIPO_DOCUMENTO_FISCAL_LABEL,
@@ -56,7 +58,19 @@ export function DespesaForm({
   const [retencao, setRetencao] = useState(item ? numeroParaMascaraMoeda(item.valorEncargos) : '');
   const [retencaoTipo, setRetencaoTipo] = useState<TipoRetencao | ''>(item?.retencaoTipo ?? '');
   const [categoria, setCategoria] = useState(item ? String(item.categoriaDespesaTipo) : '');
+  /*
+   * O contrato vem do cadastro, não da digitação.
+   *
+   * Era texto livre, e por isso "12/2025" e "012/2025" eram dois contratos
+   * diferentes para o sistema e o mesmo para o mundo — nada reunia as notas de
+   * um contrato, e nada conferia se o credor batia.
+   *
+   * O número continua sendo gravado: é **fotografia**, igual ao credor.
+   * Renumerar o contrato no cadastro não pode reescrever o que a nota declarou.
+   */
+  const [contratoFirmadoId, setContratoFirmadoId] = useState(item?.contratoFirmadoId ?? '');
   const [contratoNumero, setContratoNumero] = useState(item?.contratoNumero ?? '');
+  const [contratos, setContratos] = useState<Contrato[]>([]);
 
   const [credorId, setCredorId] = useState('');
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
@@ -75,6 +89,9 @@ export function DespesaForm({
       .catch(() => undefined);
     listarRateios({ page: 1, pageSize: 200, orderBy: 'vigenciaInicio', orderDir: 'desc' })
       .then((r) => vivo && setRateios(r.data))
+      .catch(() => undefined);
+    listarContratos({ filtros: { ativo: true }, page: 1, pageSize: 500, orderBy: 'numero', orderDir: 'asc' })
+      .then((r) => vivo && setContratos(r.data))
       .catch(() => undefined);
     return () => {
       vivo = false;
@@ -107,6 +124,60 @@ export function DespesaForm({
       sub: `${f.documentoTipo} ${mascaraCpfCnpj(f.documento)}`,
     })),
   ];
+
+  /*
+   * O contrato gravado que saiu do cadastro (ou foi inativado) vira opção
+   * própria — mesmo cuidado do credor: sem isso, editar uma nota antiga abriria
+   * com o campo vazio, e salvar apagaria o vínculo sem ninguém pedir.
+   */
+  const contratoForaDaLista =
+    !!item?.contratoFirmadoId && !contratos.some((c) => c.id === item.contratoFirmadoId);
+
+  const opcoesContrato: OpcaoCombo[] = [
+    ...(contratoForaDaLista && item
+      ? [
+          {
+            value: item.contratoFirmadoId!,
+            label: item.contratoNumero || 'contrato gravado nesta nota',
+            sub: 'fora do cadastro ativo · gravado nesta nota',
+          },
+        ]
+      : []),
+    ...contratos.map((c) => ({
+      value: c.id,
+      label: `${c.numero} — ${c.credorNome}`,
+      sub: `${mascaraCpfCnpj(c.credorDocumento)} · ${c.objeto}`,
+    })),
+  ];
+
+  const contratoEscolhido = contratos.find((c) => c.id === contratoFirmadoId) ?? null;
+  const credorEscolhido = fornecedores.find((f) => f.id === credorId) ?? null;
+
+  /*
+   * Credor divergente é **aviso, não bloqueio**.
+   *
+   * Nota de um credor apontando contrato de outro quase sempre é engano — mas
+   * "quase" é o problema: cessão, sucessão e subcontratação existem. Recusar a
+   * gravação obrigaria o usuário a mentir num campo para registrar o que de
+   * fato aconteceu. Mostra-se a divergência; quem decide é ele.
+   */
+  const credorDivergente =
+    !!contratoEscolhido &&
+    !!credorEscolhido &&
+    apenasDigitos(contratoEscolhido.credorDocumento) !== apenasDigitos(credorEscolhido.documento);
+
+  const dicaContrato = contratoEscolhido
+    ? credorDivergente
+      ? `Atenção: o contrato é de ${contratoEscolhido.credorNome}, e o credor desta nota é outro.`
+      : `Vigência ${dataBr(contratoEscolhido.vigenciaInicio)} a ${contratoEscolhido.vigenciaFim ? dataBr(contratoEscolhido.vigenciaFim) : 'indeterminada'} · ${formatarMoeda(contratoEscolhido.valorMontante)}`
+    : 'Vem de Cadastro → Contratos.';
+
+  /** Escolher o contrato copia o número para a nota — fotografia, como o credor. */
+  function escolherContrato(id: string) {
+    setContratoFirmadoId(id);
+    const c = contratos.find((x) => x.id === id);
+    setContratoNumero(c ? c.numero : '');
+  }
 
   /*
    * Só os rateios vigentes na data de emissão.
@@ -145,6 +216,7 @@ export function DespesaForm({
       credorNumeroDoc: escolhido ? escolhido.documento : item!.credorNumeroDoc,
       credorNome: escolhido ? escolhido.nome : item!.credorNome,
       contratoNumero: contratoNumero.trim() || null,
+      contratoFirmadoId: contratoFirmadoId || null,
       descricao: descricao.trim(),
       dataEmissao,
       estadoEmissor: estadoEmissor ? Number(apenasDigitos(estadoEmissor)) : null,
@@ -215,7 +287,15 @@ export function DespesaForm({
           />
         </div>
         <div className="sm:col-span-4">
-          <Input label="Nº do contrato (opcional)" name="contratoNumero" value={contratoNumero} onChange={(e) => setContratoNumero(e.target.value)} />
+          <Combobox
+            label="Contrato (opcional)"
+            name="contratoFirmadoId"
+            value={contratoFirmadoId}
+            onChange={escolherContrato}
+            options={opcoesContrato}
+            placeholder="Selecione o contrato..."
+            hint={dicaContrato}
+          />
         </div>
 
         <div className="sm:col-span-12">

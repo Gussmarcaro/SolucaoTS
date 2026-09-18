@@ -15,6 +15,7 @@ import { parseDataISO, paraDataISO } from '@/shared/datas';
 import type { IRateioRepository } from '@/application/rateio/IRateioRepository';
 import type { IPlanoAplicacaoRepository } from '@/application/planoAplicacao/IPlanoAplicacaoRepository';
 import { calcularRateio } from '@/core/rateio/Rateio';
+import type { IContratoRepository } from '@/application/contrato/IContratoRepository';
 
 function num(v: unknown): number | null {
   if (v === undefined || v === null || v === '') return null;
@@ -88,6 +89,7 @@ function validar(input: DocumentoFiscalDTO): DadosDocumentoFiscal {
     credorNumeroDoc,
     credorNome,
     contratoNumero: input.contratoNumero?.trim() || null,
+    contratoFirmadoId: input.contratoFirmadoId?.trim() || null,
     contratoId: input.contratoId?.trim() || null,
     descricao,
     dataEmissao,
@@ -116,7 +118,33 @@ export class DocumentoFiscalUseCases {
     private readonly rateios?: IRateioRepository,
     /** Para conferir a categoria contra o Plano de Aplicação do ajuste. */
     private readonly planos?: IPlanoAplicacaoRepository,
+    /** Para conferir o contrato escolhido — ver conferirContrato. */
+    private readonly contratos?: IContratoRepository,
   ) {}
+
+  /**
+   * O contrato escolhido existe, está ativo e é deste órgão?
+   *
+   * O id chega do cliente, e a chave estrangeira do banco não sabe de órgãos:
+   * ela aceitaria alegremente o contrato de outro cliente. Quem responde é a
+   * consulta, porque a extension de tenant já recorta — contrato de outro órgão
+   * simplesmente "não existe".
+   *
+   * **Credor divergente é aviso, não bloqueio.** Nota de um credor apontando
+   * contrato de outro quase sempre é engano, mas "quase" é o problema: cessão,
+   * sucessão e subcontratação existem, e recusar a gravação obrigaria o usuário
+   * a mentir num campo para registrar o que de fato aconteceu. A divergência é
+   * mostrada na tela, onde ele decide.
+   */
+  private async conferirContrato(contratoFirmadoId: string | null) {
+    if (!contratoFirmadoId || !this.contratos) return;
+    const contrato = await this.contratos.buscarPorId(contratoFirmadoId);
+    if (!contrato) throw new BusinessError('Contrato não encontrado no cadastro deste órgão.');
+    if (!contrato.ativo)
+      throw new BusinessError(
+        `O contrato ${contrato.numero} está inativo — reative-o no cadastro ou escolha outro.`,
+      );
+  }
 
   /**
    * A despesa tem de estar prevista no Plano de Aplicação.
@@ -232,6 +260,7 @@ export class DocumentoFiscalUseCases {
 
   async criarNoOrgao(input: DocumentoFiscalDTO): Promise<DocumentoFiscal> {
     const dados = validar(input);
+    await this.conferirContrato(dados.contratoFirmadoId);
     await this.checarDuplicadoNoOrgao(dados);
     return this.repo.criarNoOrgao(dados);
   }
@@ -239,6 +268,7 @@ export class DocumentoFiscalUseCases {
   async atualizarNoOrgao(id: string, input: DocumentoFiscalDTO): Promise<DocumentoFiscal> {
     await this.garantirDoOrgao(id);
     const dados = validar(input);
+    await this.conferirContrato(dados.contratoFirmadoId);
     await this.checarDuplicadoNoOrgao(dados, id);
     return this.repo.atualizar(id, dados);
   }

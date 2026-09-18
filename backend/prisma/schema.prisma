@@ -400,7 +400,8 @@ model ContratoFirmado {
   criadoEm            DateTime      @default(now())
   atualizadoEm        DateTime      @updatedAt
 
-  cliente Cliente? @relation(fields: [clienteId], references: [id])
+  cliente           Cliente?          @relation(fields: [clienteId], references: [id])
+  documentosFiscais DocumentoFiscal[]
 
   @@unique([numero, credorDocumento])
   @@index([clienteId])
@@ -1313,7 +1314,15 @@ model DocumentoFiscal {
   credorTipoDoc        TipoDocumento
   credorNumeroDoc      String
   credorNome           String?
+  // Número do contrato, como esta nota o declara. Continua sendo **fotografia**,
+  // e não derivado do cadastro: renumerar um contrato lá não pode reescrever o
+  // que a nota disse na época. É preenchido a partir do cadastro escolhido.
   contratoNumero       String?
+  // Contrato do **cadastro do órgão** (Cadastro → Contratos) de onde a nota
+  // veio. Nasceu como texto livre digitado: dois lançamentos da mesma despesa
+  // escreviam "12/2025" e "012/2025", e nada os reunia. O vínculo é o que
+  // permite, do contrato, alcançar as notas — e conferir se o credor bate.
+  contratoFirmadoId    String?              @db.Uuid
   // Contrato da prestação a que esta nota se refere.
   //
   // É o que permite herdar as categorias e controlar o saldo do contrato. Também
@@ -1365,14 +1374,15 @@ model DocumentoFiscal {
   rateioProveniente Boolean   @default(false)
   rateioPercentual  Decimal?  @db.Decimal(5, 2)
 
-  criadoPor  String?                    @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
-  cliente    Cliente?                   @relation(fields: [clienteId], references: [id])
-  prestacao  PrestacaoContas?           @relation(fields: [prestacaoId], references: [id])
-  contrato   Contrato?                  @relation(fields: [contratoId], references: [id])
-  rateio     Rateio?                    @relation(fields: [rateioId], references: [id])
-  pagamentos Pagamento[]
-  glosas     Glosa[]
-  prestacoes PrestacaoDocumentoFiscal[]
+  criadoPor       String?                    @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
+  cliente         Cliente?                   @relation(fields: [clienteId], references: [id])
+  prestacao       PrestacaoContas?           @relation(fields: [prestacaoId], references: [id])
+  contrato        Contrato?                  @relation(fields: [contratoId], references: [id])
+  contratoFirmado ContratoFirmado?           @relation(fields: [contratoFirmadoId], references: [id])
+  rateio          Rateio?                    @relation(fields: [rateioId], references: [id])
+  pagamentos      Pagamento[]
+  glosas          Glosa[]
+  prestacoes      PrestacaoDocumentoFiscal[]
 
   // A nota passa a ser única **no órgão**, não na prestação. É a trava que
   // faltava: a mesma nota lançada em duas prestações nunca conflitava, e era
