@@ -25,9 +25,17 @@ ajusteRoutes.get('/:id', (req, res, next) => c.buscar(req, res, next));
 ajusteRoutes.put('/:id', (req, res, next) => c.atualizar(req, res, next));
 
 // --- Termo de Ciência e Notificação (PDF) ---
-ajusteRoutes.post('/:id/termo-ciencia', uploadPdf, (req, res, next) => c.enviarTermoCiencia(req, res, next));
-ajusteRoutes.get('/:id/termo-ciencia', (req, res, next) => c.baixarTermoCiencia(req, res, next));
-ajusteRoutes.delete('/:id/termo-ciencia', (req, res, next) => c.removerTermoCiencia(req, res, next));
+// Os dois anexos do ajuste seguem o mesmo trio de rotas; o que muda é só qual
+// documento cada uma endereça. A rota do termo mantém o caminho antigo de
+// propósito — trocá-lo quebraria o frontend em cache de quem estiver com a tela
+// aberta no momento da publicação.
+ajusteRoutes.post('/:id/termo-ciencia', uploadPdf, (req, res, next) => c.enviarDocumento('TERMO_CIENCIA', req, res, next));
+ajusteRoutes.get('/:id/termo-ciencia', (req, res, next) => c.baixarDocumento('TERMO_CIENCIA', req, res, next));
+ajusteRoutes.delete('/:id/termo-ciencia', (req, res, next) => c.removerDocumento('TERMO_CIENCIA', req, res, next));
+
+ajusteRoutes.post('/:id/ajuste-assinado', uploadPdf, (req, res, next) => c.enviarDocumento('AJUSTE_ASSINADO', req, res, next));
+ajusteRoutes.get('/:id/ajuste-assinado', (req, res, next) => c.baixarDocumento('AJUSTE_ASSINADO', req, res, next));
+ajusteRoutes.delete('/:id/ajuste-assinado', (req, res, next) => c.removerDocumento('AJUSTE_ASSINADO', req, res, next));
 
 // --- Termos Aditivos (aninhados ao ajuste) ---
 ajusteRoutes.get('/:ajusteId/termos-aditivos', (req, res, next) => termos.listar(req, res, next));

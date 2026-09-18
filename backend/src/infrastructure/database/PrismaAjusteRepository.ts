@@ -2,10 +2,11 @@ import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
 import type { IAjusteRepository } from '@/application/ajuste/IAjusteRepository';
 import type {
-  ArquivoTermoCiencia,
+  ArquivoAjuste,
   DadosAjuste,
   ListarAjustesParams,
   Paginado,
+  TipoDocumentoAjuste,
 } from '@/application/ajuste/dtos';
 import type { Ajuste, Periodicidade, StatusAjuste, TipoAjuste } from '@/core/ajuste/Ajuste';
 import { paraDataISO } from '@/shared/datas';
@@ -46,6 +47,8 @@ const selecao = {
   // Só os metadados do termo — `termoCienciaArquivo` fica de fora de propósito.
   termoCienciaArquivoNome: true,
   termoCienciaArquivoTamanho: true,
+  ajusteAssinadoArquivoNome: true,
+  ajusteAssinadoArquivoTamanho: true,
   publicacaoLocal: true,
   publicacaoLink: true,
   publicacaoData: true,
@@ -127,6 +130,8 @@ function toDomain(row: Row): Ajuste {
 
     termoCienciaArquivoNome: row.termoCienciaArquivoNome,
     termoCienciaArquivoTamanho: row.termoCienciaArquivoTamanho,
+    ajusteAssinadoArquivoNome: row.ajusteAssinadoArquivoNome,
+    ajusteAssinadoArquivoTamanho: row.ajusteAssinadoArquivoTamanho,
 
     publicacaoLocal: row.publicacaoLocal,
     publicacaoLink: row.publicacaoLink,
@@ -188,6 +193,28 @@ function toData(dados: DadosAjuste) {
   };
 }
 
+/**
+ * De qual trio de colunas cada documento vive.
+ *
+ * É o único lugar do sistema que conhece esses nomes. Acima daqui tudo fala em
+ * `TipoDocumentoAjuste`, então acrescentar um terceiro anexo é uma linha aqui e
+ * uma no enum — nenhuma regra, nenhuma rota e nenhuma tela a mais.
+ */
+const COLUNAS: Record<TipoDocumentoAjuste, { arquivo: string; nome: string; tamanho: string; padrao: string }> = {
+  TERMO_CIENCIA: {
+    arquivo: 'termoCienciaArquivo',
+    nome: 'termoCienciaArquivoNome',
+    tamanho: 'termoCienciaArquivoTamanho',
+    padrao: 'termo-ciencia.pdf',
+  },
+  AJUSTE_ASSINADO: {
+    arquivo: 'ajusteAssinadoArquivo',
+    nome: 'ajusteAssinadoArquivoNome',
+    tamanho: 'ajusteAssinadoArquivoTamanho',
+    padrao: 'ajuste-celebrado.pdf',
+  },
+};
+
 export class PrismaAjusteRepository implements IAjusteRepository {
   async buscarPorId(id: string): Promise<Ajuste | null> {
     const row = await prisma.ajuste.findUnique({ where: { id }, select: selecao });
@@ -236,44 +263,45 @@ export class PrismaAjusteRepository implements IAjusteRepository {
     return toDomain(row);
   }
 
-  async salvarTermoCiencia(id: string, arquivo: ArquivoTermoCiencia): Promise<Ajuste> {
+  async salvarDocumento(
+    id: string,
+    tipo: TipoDocumentoAjuste,
+    arquivo: ArquivoAjuste,
+  ): Promise<Ajuste> {
+    const c = COLUNAS[tipo];
     const row = await prisma.ajuste.update({
       where: { id },
       data: {
-        termoCienciaArquivo: arquivo.conteudo,
-        termoCienciaArquivoNome: arquivo.nome,
-        termoCienciaArquivoTamanho: arquivo.tamanho,
+        [c.arquivo]: arquivo.conteudo,
+        [c.nome]: arquivo.nome,
+        [c.tamanho]: arquivo.tamanho,
       },
       select: selecao,
     });
     return toDomain(row);
   }
 
-  async obterTermoCiencia(id: string): Promise<ArquivoTermoCiencia | null> {
-    const row = await prisma.ajuste.findUnique({
+  async obterDocumento(id: string, tipo: TipoDocumentoAjuste): Promise<ArquivoAjuste | null> {
+    const c = COLUNAS[tipo];
+    const row = (await prisma.ajuste.findUnique({
       where: { id },
-      select: {
-        termoCienciaArquivo: true,
-        termoCienciaArquivoNome: true,
-        termoCienciaArquivoTamanho: true,
-      },
-    });
-    if (!row?.termoCienciaArquivo) return null;
+      select: { [c.arquivo]: true, [c.nome]: true, [c.tamanho]: true },
+    })) as Record<string, unknown> | null;
+
+    const conteudo = row?.[c.arquivo] as Uint8Array | null | undefined;
+    if (!conteudo) return null;
     return {
-      conteudo: Buffer.from(row.termoCienciaArquivo),
-      nome: row.termoCienciaArquivoNome ?? 'termo-ciencia.pdf',
-      tamanho: row.termoCienciaArquivoTamanho ?? row.termoCienciaArquivo.length,
+      conteudo: Buffer.from(conteudo),
+      nome: (row?.[c.nome] as string | null) ?? c.padrao,
+      tamanho: (row?.[c.tamanho] as number | null) ?? conteudo.length,
     };
   }
 
-  async removerTermoCiencia(id: string): Promise<Ajuste> {
+  async removerDocumento(id: string, tipo: TipoDocumentoAjuste): Promise<Ajuste> {
+    const c = COLUNAS[tipo];
     const row = await prisma.ajuste.update({
       where: { id },
-      data: {
-        termoCienciaArquivo: null,
-        termoCienciaArquivoNome: null,
-        termoCienciaArquivoTamanho: null,
-      },
+      data: { [c.arquivo]: null, [c.nome]: null, [c.tamanho]: null },
       select: selecao,
     });
     return toDomain(row);

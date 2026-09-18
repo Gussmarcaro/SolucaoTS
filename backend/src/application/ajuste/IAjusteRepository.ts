@@ -1,5 +1,5 @@
 import type { Ajuste } from '@/core/ajuste/Ajuste';
-import type { ArquivoTermoCiencia, DadosAjuste, ListarAjustesParams, Paginado } from './dtos';
+import type { ArquivoAjuste, DadosAjuste, ListarAjustesParams, Paginado, TipoDocumentoAjuste } from './dtos';
 
 /** Port de persistência de Ajuste. */
 export interface IAjusteRepository {
@@ -11,9 +11,9 @@ export interface IAjusteRepository {
   atualizar(id: string, dados: DadosAjuste): Promise<Ajuste>;
   listar(params: ListarAjustesParams): Promise<Paginado<Ajuste>>;
 
-  /** Grava (ou substitui) o PDF do Termo de Ciência e Notificação. */
-  salvarTermoCiencia(id: string, arquivo: ArquivoTermoCiencia): Promise<Ajuste>;
+  /** Grava (ou substitui) o PDF do documento indicado. */
+  salvarDocumento(id: string, tipo: TipoDocumentoAjuste, arquivo: ArquivoAjuste): Promise<Ajuste>;
   /** Lê o PDF — a única consulta que carrega o binário. */
-  obterTermoCiencia(id: string): Promise<ArquivoTermoCiencia | null>;
-  removerTermoCiencia(id: string): Promise<Ajuste>;
+  obterDocumento(id: string, tipo: TipoDocumentoAjuste): Promise<ArquivoAjuste | null>;
+  removerDocumento(id: string, tipo: TipoDocumentoAjuste): Promise<Ajuste>;
 }

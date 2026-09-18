@@ -2,7 +2,7 @@ import { Autoria } from '@/components/ui/Autoria';
 import { ExternalLink, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { dataBr, formatarMoeda, mascaraCelular, mascaraCep, mascaraCpf } from '@/lib/masks';
-import { abrirTermoCiencia } from '@/services/ajustes.service';
+import { abrirDocumentoAjuste, type DocumentoAjuste } from '@/services/ajustes.service';
 import {
   PERIODICIDADE_LABEL,
   STATUS_AJUSTE_LABEL,
@@ -35,6 +35,37 @@ function Painel({ titulo, children }: { titulo: string; children: React.ReactNod
       <h4 className="mb-3 text-sm font-medium text-ink-700 dark:text-ink-200">{titulo}</h4>
       <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">{children}</dl>
     </div>
+  );
+}
+
+/**
+ * O anexo como link, ou um travessão quando não há.
+ *
+ * `min-w-0` nas três camadas — sem ele o nome do arquivo cresce e empurra o
+ * painel para fora; ver o comentário em EntidadeView.
+ */
+function LinkArquivo({
+  ajusteId,
+  documento,
+  nome,
+}: {
+  ajusteId: string;
+  documento: DocumentoAjuste;
+  nome: string | null;
+}) {
+  if (!nome) return <>—</>;
+  return (
+    <button
+      type="button"
+      onClick={() => abrirDocumentoAjuste(ajusteId, documento)}
+      className="focus-ring inline-flex max-w-full items-center gap-1.5 rounded text-brand-600 hover:underline dark:text-brand-400"
+    >
+      <FileText className="h-4 w-4 shrink-0" />
+      <span className="min-w-0 truncate" title={nome}>
+        {nome}
+      </span>
+      <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+    </button>
   );
 }
 
@@ -137,21 +168,28 @@ export function AjusteView({ ajuste }: { ajuste: Ajuste }) {
         {/* `min-w-0` nas três camadas — sem ele o nome do arquivo cresce e sai
             para fora do painel; ver o comentário em EntidadeView. */}
         <div className="col-span-2 min-w-0 sm:col-span-3">
-          <dt className="text-xs font-medium uppercase tracking-wider text-ink-400">Arquivo</dt>
+          <dt className="text-xs font-medium uppercase tracking-wider text-ink-400">
+            Termo de Ciência e Notificação
+          </dt>
           <dd className="mt-0.5 text-sm text-ink-800 dark:text-ink-100">
-            {ajuste.termoCienciaArquivoNome ? (
-              <button
-                type="button"
-                onClick={() => abrirTermoCiencia(ajuste.id)}
-                className="focus-ring inline-flex max-w-full items-center gap-1.5 rounded text-brand-600 hover:underline dark:text-brand-400"
-              >
-                <FileText className="h-4 w-4 shrink-0" />
-                <span className="min-w-0 truncate" title={ajuste.termoCienciaArquivoNome}>{ajuste.termoCienciaArquivoNome}</span>
-                <ExternalLink className="h-3.5 w-3.5 shrink-0" />
-              </button>
-            ) : (
-              '—'
-            )}
+            <LinkArquivo
+              ajusteId={ajuste.id}
+              documento="termo-ciencia"
+              nome={ajuste.termoCienciaArquivoNome}
+            />
+          </dd>
+        </div>
+
+        <div className="col-span-2 min-w-0 sm:col-span-3">
+          <dt className="text-xs font-medium uppercase tracking-wider text-ink-400">
+            Ajuste Celebrado
+          </dt>
+          <dd className="mt-0.5 text-sm text-ink-800 dark:text-ink-100">
+            <LinkArquivo
+              ajusteId={ajuste.id}
+              documento="ajuste-assinado"
+              nome={ajuste.ajusteAssinadoArquivoNome}
+            />
           </dd>
         </div>
       </Painel>

@@ -38,22 +38,38 @@ export async function atualizarAjuste(id: string, payload: AjustePayload): Promi
   return data;
 }
 
-/** Anexa (ou substitui) o PDF do Termo de Ciência. Exige o ajuste já criado. */
-export async function enviarTermoCiencia(id: string, arquivo: File): Promise<Ajuste> {
+/**
+ * Os dois anexos do ajuste — o Termo de Ciência e o instrumento assinado.
+ *
+ * Um par de funções por documento seriam seis funções quase iguais, e a sexta
+ * é sempre a que esquece um detalhe. O tipo vira o caminho da rota, que é a
+ * única coisa que de fato muda entre elas.
+ */
+export type DocumentoAjuste = 'termo-ciencia' | 'ajuste-assinado';
+
+/** Anexa (ou substitui) o PDF. Exige o ajuste já criado. */
+export async function enviarDocumentoAjuste(
+  id: string,
+  doc: DocumentoAjuste,
+  arquivo: File,
+): Promise<Ajuste> {
   const form = new FormData();
   form.append('arquivo', arquivo);
-  const { data } = await http.post<Ajuste>(`/ajustes/${id}/termo-ciencia`, form);
+  const { data } = await http.post<Ajuste>(`/ajustes/${id}/${doc}`, form);
   return data;
 }
 
-export async function removerTermoCiencia(id: string): Promise<Ajuste> {
-  const { data } = await http.delete<Ajuste>(`/ajustes/${id}/termo-ciencia`);
+export async function removerDocumentoAjuste(
+  id: string,
+  doc: DocumentoAjuste,
+): Promise<Ajuste> {
+  const { data } = await http.delete<Ajuste>(`/ajustes/${id}/${doc}`);
   return data;
 }
 
 /** Baixa o PDF e abre numa nova aba (o Blob evita perder o header de auth). */
-export async function abrirTermoCiencia(id: string): Promise<void> {
-  const { data } = await http.get<Blob>(`/ajustes/${id}/termo-ciencia`, { responseType: 'blob' });
+export async function abrirDocumentoAjuste(id: string, doc: DocumentoAjuste): Promise<void> {
+  const { data } = await http.get<Blob>(`/ajustes/${id}/${doc}`, { responseType: 'blob' });
   const url = URL.createObjectURL(data);
   window.open(url, '_blank', 'noopener');
   setTimeout(() => URL.revokeObjectURL(url), 60_000);

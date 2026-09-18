@@ -789,6 +789,14 @@ model Ajuste {
   termoCienciaArquivoNome    String?
   termoCienciaArquivoTamanho Int?
 
+  // O ajuste celebrado — o instrumento assinado em si. Colunas próprias, e não
+  // uma tabela de documentos: são dois anexos fixos e nomeados, cada um com o
+  // seu lugar na tela. Uma tabela genérica só se paga quando o usuário puder
+  // criar tipos novos, e aqui ele não pode — quem define são os manuais.
+  ajusteAssinadoArquivo        Bytes?
+  ajusteAssinadoArquivoNome    String?
+  ajusteAssinadoArquivoTamanho Int?
+
   // Publicação do ajuste
   publicacaoLocal String?
   publicacaoLink  String?

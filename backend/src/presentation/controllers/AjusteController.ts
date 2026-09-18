@@ -5,7 +5,23 @@ import { ListarAjustesUseCase } from '@/application/ajuste/ListarAjustesUseCase'
 import { GerenciarAjusteUseCase } from '@/application/ajuste/GerenciarAjusteUseCase';
 import { PrismaAjusteRepository } from '@/infrastructure/database/PrismaAjusteRepository';
 import { BusinessError } from '@/shared/errors';
-import type { FiltrosAjuste } from '@/application/ajuste/dtos';
+import type { FiltrosAjuste, TipoDocumentoAjuste } from '@/application/ajuste/dtos';
+import { DOCUMENTO_AJUSTE_LABEL } from '@/application/ajuste/dtos';
+
+/**
+ * O nome do arquivo como o usuário o vê.
+ *
+ * O multipart entrega o nome em **latin1** (é o que o busboy faz com o
+ * `Content-Disposition`), então "Declaração" chega como "DeclaraÃ§Ã£o" e é
+ * assim que fica gravado — o usuário reconhece o próprio arquivo pelo nome, e
+ * um nome corrompido é erro visível em toda tela que o mostre.
+ *
+ * Reinterpretar os mesmos bytes como UTF-8 desfaz isso. Para nome só com ASCII
+ * a conversão não muda nada, então não há risco de estragar o que está certo.
+ */
+function nomeOriginal(nome: string): string {
+  return Buffer.from(nome, 'latin1').toString('utf8');
+}
 
 const repo = new PrismaAjusteRepository();
 const criar = new CriarAjusteUseCase(repo);
@@ -39,13 +55,13 @@ export class AjusteController {
   }
 
   /** Anexa (ou substitui) o PDF do Termo de Ciência. Multipart, campo "arquivo". */
-  async enviarTermoCiencia(req: Request, res: Response, next: NextFunction) {
+  async enviarDocumento(tipo: TipoDocumentoAjuste, req: Request, res: Response, next: NextFunction) {
     try {
       const file = req.file;
-      if (!file) throw new BusinessError('Selecione o PDF do termo.');
+      if (!file) throw new BusinessError(`Selecione o PDF do ${DOCUMENTO_AJUSTE_LABEL[tipo]}.`);
       return res.json(
-        await gerenciar.salvarTermoCiencia(req.params.id, {
-          nome: file.originalname,
+        await gerenciar.salvarDocumento(req.params.id, tipo, {
+          nome: nomeOriginal(file.originalname),
           tamanho: file.size,
           conteudo: file.buffer,
         }),
@@ -55,9 +71,9 @@ export class AjusteController {
     }
   }
 
-  async baixarTermoCiencia(req: Request, res: Response, next: NextFunction) {
+  async baixarDocumento(tipo: TipoDocumentoAjuste, req: Request, res: Response, next: NextFunction) {
     try {
-      const arquivo = await gerenciar.obterTermoCiencia(req.params.id);
+      const arquivo = await gerenciar.obterDocumento(req.params.id, tipo);
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Length', arquivo.tamanho);
       res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(arquivo.nome)}"`);
@@ -67,9 +83,9 @@ export class AjusteController {
     }
   }
 
-  async removerTermoCiencia(req: Request, res: Response, next: NextFunction) {
+  async removerDocumento(tipo: TipoDocumentoAjuste, req: Request, res: Response, next: NextFunction) {
     try {
-      return res.json(await gerenciar.removerTermoCiencia(req.params.id));
+      return res.json(await gerenciar.removerDocumento(req.params.id, tipo));
     } catch (e) {
       return next(e);
     }

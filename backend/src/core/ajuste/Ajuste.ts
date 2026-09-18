@@ -75,6 +75,9 @@ export interface Ajuste {
   /** Metadados do Termo de Ciência — o PDF é lido à parte, sob demanda. */
   termoCienciaArquivoNome: string | null;
   termoCienciaArquivoTamanho: number | null;
+  /** O instrumento assinado em si — metadados; o binário nunca sai no select. */
+  ajusteAssinadoArquivoNome: string | null;
+  ajusteAssinadoArquivoTamanho: number | null;
 
   // Publicação do ajuste
   publicacaoLocal: string | null;

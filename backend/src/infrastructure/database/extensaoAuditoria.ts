@@ -59,6 +59,7 @@ const CAMPOS_OMITIDOS = new Set([
   // trilha. O nome e o tamanho do arquivo continuam sendo auditados.
   'estatutoArquivo',
   'termoCienciaArquivo',
+  'ajusteAssinadoArquivo',
   'ataArquivo',
   'arquivo',
 ]);
@@ -150,6 +151,7 @@ async function registrar(params: {
 const CAMPOS_PESADOS = new Set([
   'estatutoArquivo',
   'termoCienciaArquivo',
+  'ajusteAssinadoArquivo',
   'ataArquivo',
   'arquivo',
 ]);

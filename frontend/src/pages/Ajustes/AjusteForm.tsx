@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { AlertCircle, ExternalLink, FileText, Loader2, Search, Trash2, Upload } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { AlertCircle, ExternalLink, Loader2, Search } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
@@ -17,13 +17,7 @@ import {
 import { isCpfValido, isEmailValido } from '@/lib/validators';
 import { capitalizarNome } from '@/lib/nomeProprio';
 import { consultarCep } from '@/services/viacep.service';
-import {
-  abrirTermoCiencia,
-  atualizarAjuste,
-  criarAjuste,
-  enviarTermoCiencia,
-  removerTermoCiencia,
-} from '@/services/ajustes.service';
+import { atualizarAjuste, criarAjuste, enviarDocumentoAjuste } from '@/services/ajustes.service';
 import { listarEntidades } from '@/services/entidades.service';
 import { listarOrgaos } from '@/services/orgaos.service';
 import { extrairCodigoErro, extrairMensagemErro } from '@/services/http';
@@ -39,6 +33,7 @@ import {
   type ContaBancariaAjuste,
 } from '@/types/ajuste';
 import { FontesEContas } from './FontesEContas';
+import { AnexoPdf, type Anexado } from './AnexoPdf';
 
 interface Props {
   ajuste?: Ajuste | null;
@@ -85,14 +80,6 @@ type Campos = {
   publicacaoLink: string;
   publicacaoData: string;
 };
-
-/** Espelha o limite do backend (multer + use case). */
-const MAX_TERMO = 5 * 1024 * 1024;
-
-function tamanhoLegivel(bytes: number): string {
-  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-  return `${Math.max(1, Math.round(bytes / 1024))} KB`;
-}
 
 function estadoInicial(a?: Ajuste | null): Campos {
   return {
@@ -154,30 +141,26 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
   const [orgaos, setOrgaos] = useState<{ value: string; label: string }[]>([]);
   const [carregandoOrgaos, setCarregandoOrgaos] = useState(true);
 
-  // Termo de Ciência: o PDF escolhido só sobe depois de salvar, porque a rota
-  // precisa do id do ajuste.
-  const [arquivo, setArquivo] = useState<File | null>(null);
-  const [anexado, setAnexado] = useState<{ nome: string; tamanho: number } | null>(
-    ajuste?.termoCienciaArquivoNome
-      ? { nome: ajuste.termoCienciaArquivoNome, tamanho: ajuste.termoCienciaArquivoTamanho ?? 0 }
-      : null,
-  );
-  const [erroArquivo, setErroArquivo] = useState<string | null>(null);
-  const inputArquivo = useRef<HTMLInputElement>(null);
+  /*
+   * Os dois anexos: o PDF escolhido só sobe **depois** de salvar, porque a rota
+   * precisa do id do ajuste — que, num cadastro novo, só existe após a
+   * gravação. Por isso o arquivo mora aqui, e não dentro do `AnexoPdf`.
+   */
+  const anexadoDe = (nome: string | null, tamanho: number | null) =>
+    nome ? { nome, tamanho: tamanho ?? 0 } : null;
 
-  function escolherArquivo(f: File | null) {
-    setErroArquivo(null);
-    if (!f) return setArquivo(null);
-    if (f.type !== 'application/pdf' && !/\.pdf$/i.test(f.name)) {
-      setArquivo(null);
-      return setErroArquivo('O termo precisa ser um arquivo PDF.');
-    }
-    if (f.size > MAX_TERMO) {
-      setArquivo(null);
-      return setErroArquivo('O termo excede o limite de 5 MB.');
-    }
-    setArquivo(f);
-  }
+  const [arquivo, setArquivo] = useState<File | null>(null);
+  const [anexado, setAnexado] = useState<Anexado | null>(
+    anexadoDe(ajuste?.termoCienciaArquivoNome ?? null, ajuste?.termoCienciaArquivoTamanho ?? null),
+  );
+
+  const [arquivoAjuste, setArquivoAjuste] = useState<File | null>(null);
+  const [anexadoAjuste, setAnexadoAjuste] = useState<Anexado | null>(
+    anexadoDe(
+      ajuste?.ajusteAssinadoArquivoNome ?? null,
+      ajuste?.ajusteAssinadoArquivoTamanho ?? null,
+    ),
+  );
 
   const [buscandoCep, setBuscandoCep] = useState(false);
 
@@ -206,19 +189,6 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
     }
   }
 
-  async function handleRemoverTermo() {
-    setErroArquivo(null);
-    if (editando && anexado) {
-      try {
-        await removerTermoCiencia(ajuste!.id);
-      } catch (e) {
-        return setErroArquivo(extrairMensagemErro(e, 'Não foi possível remover o termo.'));
-      }
-    }
-    setAnexado(null);
-    setArquivo(null);
-    if (inputArquivo.current) inputArquivo.current.value = '';
-  }
 
   useEffect(() => {
     let vivo = true;
@@ -348,15 +318,20 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
         ? await atualizarAjuste(ajuste!.id, payload)
         : await criarAjuste(payload);
 
-      // Upload em seguida: a rota do termo precisa do id, que no cadastro novo
-      // só existe agora. Falhar aqui não desfaz o ajuste já gravado.
-      if (arquivo) {
+      // Uploads em seguida: as rotas dos anexos precisam do id, que no cadastro
+      // novo só existe agora. Falhar aqui não desfaz o ajuste já gravado — e é
+      // por isso que a mensagem diz exatamente o que foi e o que não foi.
+      for (const envio of [
+        { arquivo, documento: 'termo-ciencia' as const, nome: 'o termo' },
+        { arquivo: arquivoAjuste, documento: 'ajuste-assinado' as const, nome: 'o ajuste celebrado' },
+      ]) {
+        if (!envio.arquivo) continue;
         try {
-          await enviarTermoCiencia(salvo.id, arquivo);
+          await enviarDocumentoAjuste(salvo.id, envio.documento, envio.arquivo);
         } catch (e) {
           setSalvando(false);
           return setAlerta(
-            `Ajuste salvo, mas o termo não foi anexado: ${extrairMensagemErro(e, 'falha no envio')}.`,
+            `Ajuste salvo, mas ${envio.nome} não foi anexado: ${extrairMensagemErro(e, 'falha no envio')}.`,
           );
         }
       }
@@ -559,30 +534,31 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
           {/* Termo de Ciência e Notificação */}
           <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700 sm:col-span-2">
             <legend className="px-1 text-[13px] font-normal text-ink-600 dark:text-ink-300">Termo de Ciência e Notificação</legend>
-            <span className="mb-1.5 block text-sm font-medium text-ink-700 dark:text-ink-300">Anexar arquivo PDF</span>
-            {anexado && !arquivo ? (
-              <div className="flex items-center gap-2 rounded-xl border border-ink-200 bg-ink-50/60 px-3 py-2 text-sm dark:border-ink-700 dark:bg-ink-800/40">
-                <FileText className="h-4 w-4 shrink-0 text-ink-400" />
-                <span className="flex-1 truncate text-ink-700 dark:text-ink-200" title={anexado.nome}>{anexado.nome}</span>
-                {anexado.tamanho > 0 && <span className="text-xs text-ink-400">{tamanhoLegivel(anexado.tamanho)}</span>}
-                {editando && (
-                  <button type="button" title="Abrir PDF" onClick={() => abrirTermoCiencia(ajuste!.id).catch(() => setErroArquivo('Não foi possível abrir o PDF.'))} className="focus-ring rounded-lg p-1.5 text-ink-400 transition-colors hover:bg-ink-100 hover:text-ink-700 dark:hover:bg-ink-800">
-                    <ExternalLink className="h-4 w-4" />
-                  </button>
-                )}
-                <button type="button" title="Remover" onClick={handleRemoverTermo} className="focus-ring rounded-lg p-1.5 text-ink-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10">
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            ) : (
-              <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-ink-300 px-3 py-2 text-sm text-ink-500 transition-colors hover:border-brand-400 hover:text-ink-700 dark:border-ink-600 dark:text-ink-400 dark:hover:text-ink-200">
-                <Upload className="h-4 w-4 shrink-0" />
-                <span className="flex-1 truncate">{arquivo ? arquivo.name : 'Selecionar o PDF do termo...'}</span>
-                {arquivo && <span className="text-xs text-ink-400">{tamanhoLegivel(arquivo.size)}</span>}
-                <input ref={inputArquivo} type="file" accept="application/pdf,.pdf" className="sr-only" onChange={(e) => escolherArquivo(e.target.files?.[0] ?? null)} />
-              </label>
-            )}
-            {erroArquivo && <p className="mt-1 text-xs font-medium text-red-500">{erroArquivo}</p>}
+            <AnexoPdf
+              ajusteId={editando ? ajuste!.id : undefined}
+              documento="termo-ciencia"
+              rotulo="do termo"
+              arquivo={arquivo}
+              onArquivo={setArquivo}
+              anexado={anexado}
+              onAnexado={setAnexado}
+            />
+          </fieldset>
+
+          {/* Ajuste Celebrado — o instrumento assinado em si. Fica ao lado do
+              termo, e não dentro dele: são dois documentos distintos, e quem
+              confere a prestação procura cada um pelo nome. */}
+          <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700 sm:col-span-2">
+            <legend className="px-1 text-[13px] font-normal text-ink-600 dark:text-ink-300">Ajuste Celebrado</legend>
+            <AnexoPdf
+              ajusteId={editando ? ajuste!.id : undefined}
+              documento="ajuste-assinado"
+              rotulo="do ajuste celebrado"
+              arquivo={arquivoAjuste}
+              onArquivo={setArquivoAjuste}
+              anexado={anexadoAjuste}
+              onAnexado={setAnexadoAjuste}
+            />
           </fieldset>
 
           {/* Publicação do ajuste */}

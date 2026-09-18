@@ -110,7 +110,22 @@ export interface DadosAjuste {
 }
 
 /** PDF do Termo de Ciência e Notificação vindo do upload (multipart). */
-export interface ArquivoTermoCiencia {
+/**
+ * Os documentos que se anexam ao ajuste.
+ *
+ * Enumerados, e não texto livre: são dois anexos que os manuais nomeiam, e
+ * cada um tem lugar próprio na tela. Um terceiro custa uma entrada aqui, três
+ * colunas no schema e um caso no adapter — nenhuma regra nova.
+ */
+export type TipoDocumentoAjuste = 'TERMO_CIENCIA' | 'AJUSTE_ASSINADO';
+
+/** Rótulo para a mensagem de erro falar a língua do usuário. */
+export const DOCUMENTO_AJUSTE_LABEL: Record<TipoDocumentoAjuste, string> = {
+  TERMO_CIENCIA: 'Termo de Ciência e Notificação',
+  AJUSTE_ASSINADO: 'Ajuste Celebrado',
+};
+
+export interface ArquivoAjuste {
   nome: string;
   tamanho: number;
   conteudo: Buffer;

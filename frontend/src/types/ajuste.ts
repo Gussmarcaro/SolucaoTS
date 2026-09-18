@@ -116,6 +116,8 @@ export interface Ajuste {
   /** Metadados do PDF do termo — o conteúdo vem pela rota de download. */
   termoCienciaArquivoNome: string | null;
   termoCienciaArquivoTamanho: number | null;
+  ajusteAssinadoArquivoNome: string | null;
+  ajusteAssinadoArquivoTamanho: number | null;
 
   publicacaoLocal: string | null;
   publicacaoLink: string | null;
