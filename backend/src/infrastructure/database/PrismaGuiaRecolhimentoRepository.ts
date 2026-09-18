@@ -54,13 +54,17 @@ export class PrismaGuiaRecolhimentoRepository implements IGuiaRecolhimentoReposi
 
     const notas = await prisma.documentoFiscal.findMany({
       where: {
-        retencaoTipo: { not: null },
         valorEncargos: { gt: 0 },
         pagamentos: { some: {} },
+        // Ou tem o detalhamento, ou tem o tipo antigo. Nota com valor retido e
+        // nenhum dos dois não é apurável: não se sabe qual tributo recolher, e
+        // chutar seria pior que omitir.
+        OR: [{ retencoes: { some: {} } }, { retencaoTipo: { not: null } }],
       },
       select: {
         retencaoTipo: true,
         valorEncargos: true,
+        retencoes: { select: { tipo: true, valor: true } },
         pagamentos: { select: { dataPagamento: true }, orderBy: { dataPagamento: 'asc' }, take: 1 },
       },
     });
@@ -72,12 +76,28 @@ export class PrismaGuiaRecolhimentoRepository implements IGuiaRecolhimentoReposi
 
       const ano = primeiro.getUTCFullYear();
       const mes = primeiro.getUTCMonth() + 1;
-      const tipo = n.retencaoTipo as TipoRetencao;
-      const k = `${tipo}-${ano}-${mes}`;
-      const atual = mapa.get(k) ?? { tipo, ano, mes, valorApurado: 0, notas: 0 };
-      atual.valorApurado += Number(n.valorEncargos);
-      atual.notas += 1;
-      mapa.set(k, atual);
+
+      /*
+       * O detalhamento manda; o campo antigo é a ponte.
+       *
+       * Uma nota de serviço retém IRRF, PIS, COFINS e CSLL ao mesmo tempo, e
+       * cada um vai para a sua guia. Enquanto havia um tipo só, o total inteiro
+       * era atribuído a um tributo — e as outras três guias saíam zeradas.
+       *
+       * Notas gravadas antes da quebra continuam sendo lidas pelo campo antigo,
+       * senão elas sumiriam das guias no dia da publicação.
+       */
+      const partes = n.retencoes.length
+        ? n.retencoes.map((r) => ({ tipo: r.tipo as TipoRetencao, valor: Number(r.valor) }))
+        : [{ tipo: n.retencaoTipo as TipoRetencao, valor: Number(n.valorEncargos) }];
+
+      for (const parte of partes) {
+        const k = `${parte.tipo}-${ano}-${mes}`;
+        const atual = mapa.get(k) ?? { tipo: parte.tipo, ano, mes, valorApurado: 0, notas: 0 };
+        atual.valorApurado += parte.valor;
+        atual.notas += 1;
+        mapa.set(k, atual);
+      }
     }
 
     return [...mapa.values()].map((v) => ({

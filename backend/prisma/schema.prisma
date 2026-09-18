@@ -1383,6 +1383,7 @@ model DocumentoFiscal {
   pagamentos      Pagamento[]
   glosas          Glosa[]
   prestacoes      PrestacaoDocumentoFiscal[]
+  retencoes       RetencaoDocumentoFiscal[]
 
   // A nota passa a ser única **no órgão**, não na prestação. É a trava que
   // faltava: a mesma nota lançada em duas prestações nunca conflitava, e era
@@ -1538,6 +1539,31 @@ model GuiaRecolhimento {
 
   @@unique([clienteId, tipo, ano, mes])
   @@index([clienteId, ano, mes])
+}
+
+/// As retenções de uma nota, uma linha por tributo.
+///
+/// Uma nota de serviço costuma reter IRRF, PIS, COFINS e CSLL ao mesmo tempo —
+/// o campo único do `DocumentoFiscal` obrigava a somar tudo num valor só e
+/// escolher um tipo, e a guia de recolhimento saía atribuindo o total ao
+/// tributo errado.
+///
+/// `DocumentoFiscal.valorEncargos` **continua existindo e continua sendo o
+/// total**: é ele que o TCESP recebe como `valor_encargos`, e é contra ele que
+/// a validação compara o valor bruto. Aqui mora o detalhamento, que é nosso —
+/// o Tribunal não o pede, mas é o que permite recolher cada tributo na guia
+/// certa. O caso de uso mantém os dois coerentes: o total é a soma.
+model RetencaoDocumentoFiscal {
+  id                String       @id @default(uuid()) @db.Uuid
+  documentoFiscalId String       @db.Uuid
+  tipo              TipoRetencao
+  valor             Decimal      @db.Decimal(15, 2)
+
+  documentoFiscal DocumentoFiscal @relation(fields: [documentoFiscalId], references: [id], onDelete: Cascade)
+
+  // O mesmo tributo duas vezes na mesma nota não é retenção nova, é a mesma
+  // com o valor partido — e partida ela não fecha com a guia.
+  @@unique([documentoFiscalId, tipo])
 }
 
 model PrestacaoDocumentoFiscal {

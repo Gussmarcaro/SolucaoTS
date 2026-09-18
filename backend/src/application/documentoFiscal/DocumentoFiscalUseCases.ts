@@ -51,14 +51,56 @@ function validar(input: DocumentoFiscalDTO): DadosDocumentoFiscal {
 
   const valorBruto = num(input.valorBruto);
   if (valorBruto == null || valorBruto <= 0) throw new BusinessError('Valor bruto inválido.');
-  const valorEncargos = num(input.valorEncargos) ?? 0;
+  const encargosInformados = num(input.valorEncargos) ?? 0;
+  /*
+   * As retenções, e a relação delas com o total.
+   *
+   * Uma nota de serviço costuma reter IRRF, PIS, COFINS e CSLL ao mesmo tempo.
+   * O detalhamento é nosso — o TCESP recebe só o total, em `valor_encargos` —,
+   * mas é ele que permite recolher cada tributo na guia certa.
+   *
+   * **Quando a quebra vem, ela manda:** `valorEncargos` passa a ser a soma, e
+   * não o que o cliente disser. Aceitar os dois independentes deixaria a nota
+   * afirmar que reteve 900 e detalhar 850, e nada acusaria — a guia sairia por
+   * um número e o Tribunal receberia outro.
+   */
+  const retencoes = (Array.isArray(input.retencoes) ? input.retencoes : [])
+    .map((r) => ({ tipo: (r.tipo ?? '').trim(), valor: num(r.valor) ?? 0 }))
+    .filter((r) => r.tipo || r.valor);
+
+  const vistos = new Set<string>();
+  for (const r of retencoes) {
+    if (!TIPOS_RETENCAO.includes(r.tipo as TipoRetencao))
+      throw new BusinessError(`Tipo de retenção inválido: ${r.tipo || '(vazio)'}.`);
+    if (r.valor <= 0) throw new BusinessError(`A retenção de ${r.tipo} deve ser maior que zero.`);
+    // O mesmo tributo duas vezes não é retenção nova: é a mesma com o valor
+    // partido, e partida ela não fecha com a guia.
+    if (vistos.has(r.tipo)) throw new BusinessError(`${r.tipo} aparece mais de uma vez.`);
+    vistos.add(r.tipo);
+  }
+
+  const valorEncargos = retencoes.length
+    ? Math.round(retencoes.reduce((s, r) => s + r.valor, 0) * 100) / 100
+    : encargosInformados;
+
   if (valorEncargos < 0) throw new BusinessError('Valor de encargos não pode ser negativo.');
   if (valorEncargos >= valorBruto)
-    throw new BusinessError('Os encargos devem ser menores que o valor bruto.');
+    throw new BusinessError(
+      retencoes.length
+        ? 'A soma das retenções deve ser menor que o valor bruto.'
+        : 'Os encargos devem ser menores que o valor bruto.',
+    );
 
-  // Retenção: opcional e conferida contra a lista. Não é exigida junto do
-  // valor porque os documentos anteriores a este campo têm valor e nenhum tipo.
-  const retencao = input.retencaoTipo?.trim() || null;
+  /*
+   * O campo antigo continua preenchido quando há exatamente **uma** retenção.
+   *
+   * Não é redundância inútil: relatório, grade e a guia das notas antigas ainda
+   * o leem, e zerá-lo agora esconderia retenção que hoje aparece. Com duas ou
+   * mais, não há um tipo que represente o conjunto — e mentir ali seria pior
+   * que deixar nulo.
+   */
+  const retencao =
+    retencoes.length === 1 ? retencoes[0].tipo : retencoes.length ? null : input.retencaoTipo?.trim() || null;
   if (retencao !== null && !TIPOS_RETENCAO.includes(retencao as TipoRetencao))
     throw new BusinessError('Tipo de retenção inválido.');
 
@@ -96,6 +138,7 @@ function validar(input: DocumentoFiscalDTO): DadosDocumentoFiscal {
     estadoEmissor: num(input.estadoEmissor),
     valorBruto,
     valorEncargos,
+    retencoes: retencoes.map((r) => ({ tipo: r.tipo as TipoRetencao, valor: r.valor })),
     retencaoTipo: retencao as TipoRetencao | null,
     tipoDocumento: tipoDoc as TipoDocumentoFiscal | null,
     categoriaDespesaTipo,

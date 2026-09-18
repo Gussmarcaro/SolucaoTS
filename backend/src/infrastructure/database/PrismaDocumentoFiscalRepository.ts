@@ -23,6 +23,7 @@ const selecao = {
   valorBruto: true,
   valorEncargos: true,
   retencaoTipo: true,
+  retencoes: { select: { tipo: true, valor: true }, orderBy: { tipo: "asc" } },
   tipoDocumento: true,
   categoriaDespesaTipo: true,
   propostaCategoria: true,
@@ -57,6 +58,7 @@ function toDomain(row: Row): DocumentoFiscal {
     valorBruto: Number(row.valorBruto),
     valorEncargos: Number(row.valorEncargos),
     retencaoTipo: row.retencaoTipo,
+    retencoes: row.retencoes.map((r) => ({ tipo: r.tipo, valor: Number(r.valor) })),
     tipoDocumento: row.tipoDocumento,
     categoriaDespesaTipo: row.categoriaDespesaTipo,
     propostaCategoria: row.propostaCategoria,
@@ -68,6 +70,20 @@ function toDomain(row: Row): DocumentoFiscal {
     rateioId: row.rateioId,
     rateioPercentual: row.rateioPercentual == null ? null : Number(row.rateioPercentual),
   };
+}
+
+/**
+ * Separa o detalhamento das retencoes dos campos escalares.
+ *
+ * O Prisma nao aceita um array de filhos misturado aos campos da linha: ele
+ * precisa de uma escrita aninhada. Na atualizacao,  + 
+ * substitui o conjunto inteiro, e nao calcula diferenca — sao poucas linhas
+ * por nota, e uma substituicao previsivel vale mais que tres operacoes que
+ * podem divergir.
+ */
+function separar(dados: DadosDocumentoFiscal) {
+  const { retencoes, ...escalares } = dados;
+  return { escalares, retencoes };
 }
 
 export class PrismaDocumentoFiscalRepository implements IDocumentoFiscalRepository {
@@ -199,7 +215,11 @@ export class PrismaDocumentoFiscalRepository implements IDocumentoFiscalReposito
 
   /** A nota nasce sem prestação: quem a apropria decide isso depois. */
   async criarNoOrgao(dados: DadosDocumentoFiscal): Promise<DocumentoFiscal> {
-    const row = await prisma.documentoFiscal.create({ data: { ...dados }, select: selecao });
+    const { escalares, retencoes } = separar(dados);
+    const row = await prisma.documentoFiscal.create({
+      data: { ...escalares, retencoes: { create: retencoes } },
+      select: selecao,
+    });
     return toDomain(row);
   }
 
@@ -224,15 +244,21 @@ export class PrismaDocumentoFiscalRepository implements IDocumentoFiscalReposito
   }
 
   async criar(prestacaoId: string, dados: DadosDocumentoFiscal): Promise<DocumentoFiscal> {
+    const { escalares, retencoes } = separar(dados);
     const row = await prisma.documentoFiscal.create({
-      data: { prestacaoId, ...dados },
+      data: { prestacaoId, ...escalares, retencoes: { create: retencoes } },
       select: selecao,
     });
     return toDomain(row);
   }
 
   async atualizar(id: string, dados: DadosDocumentoFiscal): Promise<DocumentoFiscal> {
-    const row = await prisma.documentoFiscal.update({ where: { id }, data: dados, select: selecao });
+    const { escalares, retencoes } = separar(dados);
+    const row = await prisma.documentoFiscal.update({
+      where: { id },
+      data: { ...escalares, retencoes: { deleteMany: {}, create: retencoes } },
+      select: selecao,
+    });
     return toDomain(row);
   }
 

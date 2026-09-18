@@ -64,6 +64,8 @@ export interface DocumentoFiscal {
   valorEncargos: number;
   /** Qual retenção o valor acima representa — controle interno. */
   retencaoTipo: TipoRetencao | null;
+  /** Detalhamento por tributo; soma o valorEncargos. Vazio nas notas antigas. */
+  retencoes: { tipo: TipoRetencao; valor: number }[];
   /** Controle interno — ver `TipoDocumentoFiscal`. */
   tipoDocumento: TipoDocumentoFiscal | null;
   categoriaDespesaTipo: number;
@@ -100,6 +102,7 @@ export interface DocumentoFiscalPayload {
   valorBruto: number;
   valorEncargos?: number | null;
   retencaoTipo?: TipoRetencao | null;
+  retencoes?: { tipo: TipoRetencao; valor: number }[];
   tipoDocumento?: TipoDocumentoFiscal | null;
   categoriaDespesaTipo: number;
   propostaCategoria?: string | null;

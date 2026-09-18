@@ -16,14 +16,13 @@ import { extrairMensagemErro } from '@/services/http';
 import { vigentesEm } from '@/types/rateio';
 import type { Fornecedor } from '@/types/fornecedor';
 import type { Contrato } from '@/types/contrato';
+import { QuadroRetencoes, somaRetencoes, type LinhaRetencao } from './QuadroRetencoes';
 import type { Rateio } from '@/types/rateio';
 import {
   TIPO_DOCUMENTO_FISCAL_LABEL,
-  TIPO_RETENCAO_LABEL,
   type DocumentoFiscal,
   type DocumentoFiscalPayload,
   type TipoDocumentoFiscal,
-  type TipoRetencao,
 } from '@/types/prestacaoBlocos';
 
 /** O credor já gravado que não está entre os fornecedores ativos. */
@@ -55,8 +54,20 @@ export function DespesaForm({
     item?.estadoEmissor != null ? String(item.estadoEmissor) : '',
   );
   const [bruto, setBruto] = useState(item ? numeroParaMascaraMoeda(item.valorBruto) : '');
-  const [retencao, setRetencao] = useState(item ? numeroParaMascaraMoeda(item.valorEncargos) : '');
-  const [retencaoTipo, setRetencaoTipo] = useState<TipoRetencao | ''>(item?.retencaoTipo ?? '');
+  /*
+   * As retenções, uma linha por tributo.
+   *
+   * Nota antiga tem o valor num campo só e, às vezes, um tipo. Ela abre como
+   * **uma** linha: sem isso, editar uma nota antiga mostraria o quadro vazio e
+   * salvar apagaria a retenção que estava lá.
+   */
+  const [retencoes, setRetencoes] = useState<LinhaRetencao[]>(() => {
+    if (item?.retencoes?.length)
+      return item.retencoes.map((r) => ({ tipo: r.tipo, valor: numeroParaMascaraMoeda(r.valor) }));
+    if (item && item.valorEncargos > 0)
+      return [{ tipo: item.retencaoTipo ?? '', valor: numeroParaMascaraMoeda(item.valorEncargos) }];
+    return [];
+  });
   const [categoria, setCategoria] = useState(item ? String(item.categoriaDespesaTipo) : '');
   /*
    * O contrato vem do cadastro, não da digitação.
@@ -198,7 +209,7 @@ export function DespesaForm({
     if (!dataEmissao) return setErro('Informe a data de emissão.');
 
     const vBruto = moedaParaNumero(bruto);
-    const vRet = retencao ? moedaParaNumero(retencao) : 0;
+    const vRet = somaRetencoes(retencoes);
     if (vBruto <= 0) return setErro('Valor bruto inválido.');
     if (vRet >= vBruto) return setErro('A retenção deve ser menor que o valor bruto.');
     if (!categoria.trim()) return setErro('Informe a categoria de despesa AUDESP.');
@@ -222,7 +233,11 @@ export function DespesaForm({
       estadoEmissor: estadoEmissor ? Number(apenasDigitos(estadoEmissor)) : null,
       valorBruto: vBruto,
       valorEncargos: vRet,
-      retencaoTipo: retencaoTipo || null,
+      // A linha sem tributo escolhido não vai: é linha em branco que o usuário
+      // acrescentou e não preencheu, não uma retenção sem tipo.
+      retencoes: retencoes.flatMap((r) =>
+        r.tipo && r.valor ? [{ tipo: r.tipo, valor: moedaParaNumero(r.valor) }] : [],
+      ),
       tipoDocumento: tipoDoc || null,
       categoriaDespesaTipo: Number(apenasDigitos(categoria)),
       rateioProveniente,
@@ -305,20 +320,12 @@ export function DespesaForm({
         <div className="sm:col-span-4">
           <Input label="Valor bruto (R$) *" name="bruto" value={bruto} onChange={(e) => setBruto(mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
         </div>
-        <div className="sm:col-span-4">
-          <Input label="Retenções (R$)" name="retencao" value={retencao} onChange={(e) => setRetencao(mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
-        </div>
-        <div className="sm:col-span-4">
-          <Select
-            label="Tipo de retenção"
-            name="retencaoTipo"
-            value={retencaoTipo}
-            onChange={(e) => setRetencaoTipo(e.target.value as TipoRetencao)}
-            options={(Object.keys(TIPO_RETENCAO_LABEL) as TipoRetencao[]).map((t) => ({
-              value: t,
-              label: TIPO_RETENCAO_LABEL[t],
-            }))}
-            placeholder="—"
+
+        <div className="sm:col-span-12">
+          <QuadroRetencoes
+            linhas={retencoes}
+            onChange={setRetencoes}
+            valorBruto={bruto ? moedaParaNumero(bruto) : 0}
           />
         </div>
 

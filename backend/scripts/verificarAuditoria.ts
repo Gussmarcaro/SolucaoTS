@@ -98,6 +98,11 @@ const FORA_DA_REGRA = new Set([
   // edição. Não há grade própria onde `criadoPor` por linha seria consultado.
   'AjusteFonteRecurso',
   'AjusteContaBancaria',
+  // Retenções da nota: são o detalhamento do `valorEncargos`, não cadastro com
+  // vida própria. A edição substitui o conjunto junto com a nota, e a autoria
+  // que se consulta é a dela — não há grade de retenções onde `criadoPor` por
+  // linha pudesse ser lido.
+  'RetencaoDocumentoFiscal',
 ]);
 
 const emLista = new Set<string>();

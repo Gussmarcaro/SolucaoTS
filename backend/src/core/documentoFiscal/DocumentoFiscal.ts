@@ -34,6 +34,12 @@ export const TIPOS_DOCUMENTO_FISCAL: TipoDocumentoFiscal[] = [
   'FATURA',
 ];
 
+/** Uma retenção da nota: o tributo e quanto dele foi retido. */
+export interface RetencaoDocumento {
+  tipo: TipoRetencao;
+  valor: number;
+}
+
 /** Entidade de domínio — Documento Fiscal (bloco da prestação). */
 export interface DocumentoFiscal {
   id: string;
@@ -61,7 +67,20 @@ export interface DocumentoFiscal {
   estadoEmissor: number | null;
   valorBruto: number;
   valorEncargos: number; // >= 0 e < valorBruto — é o valor_encargos do envio
-  /** Qual retenção o valor acima representa — controle interno. */
+  /**
+   * O detalhamento por tributo, que **soma** `valorEncargos`.
+   *
+   * Uma nota de serviço costuma reter IRRF, PIS, COFINS e CSLL juntos. O total
+   * é o que o TCESP recebe; a quebra é o que permite recolher cada tributo na
+   * guia certa. Vazia nas notas gravadas antes deste detalhamento.
+   */
+  retencoes: RetencaoDocumento[];
+  /**
+   * Qual retenção o valor representa — **legado**.
+   *
+   * Substituído por `retencoes`. Continua preenchido quando há exatamente uma,
+   * para não regredir o que já dependia dele.
+   */
   retencaoTipo: TipoRetencao | null;
   /** Espécie do documento — controle interno; ver `TipoDocumentoFiscal`. */
   tipoDocumento: TipoDocumentoFiscal | null;

@@ -1,5 +1,6 @@
 import type { DocumentoFiscal } from '@/core/documentoFiscal/DocumentoFiscal';
 import type {
+  RetencaoDocumento,
   TipoDocumento,
   TipoDocumentoFiscal,
   TipoRetencao,
@@ -19,6 +20,8 @@ export interface DocumentoFiscalDTO {
   valorBruto: number | string;
   valorEncargos?: number | string | null;
   retencaoTipo?: string | null;
+  /** Detalhamento por tributo; quando vem, define o valorEncargos. */
+  retencoes?: Array<{ tipo?: string | null; valor?: number | string | null }> | null;
   tipoDocumento?: string | null;
   categoriaDespesaTipo: number | string;
   propostaCategoria?: string | null;
@@ -43,6 +46,7 @@ export interface DadosDocumentoFiscal {
   valorBruto: number;
   valorEncargos: number;
   retencaoTipo: TipoRetencao | null;
+  retencoes: RetencaoDocumento[];
   tipoDocumento: TipoDocumentoFiscal | null;
   categoriaDespesaTipo: number;
   propostaCategoria: string | null;
