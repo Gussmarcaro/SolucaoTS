@@ -13,6 +13,14 @@ export interface IPlanoAplicacaoRepository {
    * pergunta é feita a cada nota fiscal lançada.
    */
   categoriasDoAjuste(ajusteId: string): Promise<number[]>;
+  /**
+   * As rubricas de TODOS os planos do órgão, sem repetição.
+   *
+   * Serve a despesa: ela é lançada antes de se saber a qual ajuste vai, e
+   * ainda assim precisa citar o item da proposta. Oferecer o que já existe
+   * nos planos evita que a mesma rubrica seja escrita de cinco jeitos.
+   */
+  rubricasDoOrgao(): Promise<{ categoria: string; subcategoria: string }[]>;
   /** Substitui TODO o plano do ajuste pelos itens informados (idempotente). */
   substituir(ajusteId: string, itens: DadosPlanoItem[]): Promise<PlanoAplicacaoItem[]>;
   /**

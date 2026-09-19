@@ -3,7 +3,6 @@ import type { IPlanoAplicacaoRepository } from './IPlanoAplicacaoRepository';
 import type { IAjusteRepository } from '@/application/ajuste/IAjusteRepository';
 import type { DadosPlanoItem, PlanoDigitadoDTO, ResultadoImportacaoPlano } from './dtos';
 import { BusinessError, NotFoundError } from '@/shared/errors';
-import { ehRubricaPadrao } from '@/core/planoAplicacao/planoPadrao';
 import { CATEGORIA_DESPESA_CODIGOS } from '@/core/dominio/tabelasFaseV';
 import { parsePlanoAplicacao } from '@/infrastructure/parsers/parsePlanoAplicacao';
 
@@ -53,10 +52,12 @@ export class PlanoAplicacaoUseCases {
       const subcategoria = linha.subcategoria?.trim() ?? '';
       if (!categoria || !subcategoria) continue;
 
-      // A rubrica tem de ser do padrão. Sem isto, "padrão" valeria só enquanto
-      // alguém usasse o formulário — e uma requisição direta o furaria.
-      if (!ehRubricaPadrao(categoria, subcategoria))
-        throw new BusinessError(`Rubrica fora do padrão: ${categoria} / ${subcategoria}.`);
+      // A rubrica é livre: **não existe padrão**. O modelo de 16 seções é
+      // sugestão de partida — cada entidade apresenta o plano de um jeito, e
+      // travar no modelo deixava de fora quem já tem o seu. O que se valida é
+      // o que protege o banco e a tela: não vazio e com tamanho de rótulo.
+      if (categoria.length > 120 || subcategoria.length > 160)
+        throw new BusinessError(`Rubrica longa demais: ${categoria} / ${subcategoria}.`);
 
       const bruto = linha.valorMensal;
       const mensal =

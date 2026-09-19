@@ -31,11 +31,18 @@ const PRESERVADO = '__gravado__';
 /**
  * Lançamento da despesa no escopo do órgão.
  *
- * É o formulário da aba da prestação **menos** o que só existe lá: a rubrica do
- * Plano de Aplicação, o contrato da prestação e o percentual do rateio. Os três
- * dependem do ajuste, e aqui ainda não se sabe qual — a nota pode acabar em
- * cinco prestações diferentes. O que se guarda aqui é o **método** de rateio;
- * o percentual é calculado quando uma prestação se apropria da nota.
+ * É o formulário da aba da prestação **menos** o que só existe lá: o contrato
+ * da prestação e o percentual do rateio. Os dois dependem do ajuste, e aqui
+ * ainda não se sabe qual — a nota pode acabar em cinco prestações diferentes.
+ * O que se guarda aqui é o **método** de rateio; o percentual é calculado
+ * quando uma prestação se apropria da nota.
+ *
+ * O **Item da Proposta** (a rubrica do Plano de Aplicação) fica aqui mesmo,
+ * apesar de o plano ser do ajuste: quem lança a nota sabe a que rubrica ela
+ * pertence, e adiar essa informação para a apropriação faria alguém reabrir
+ * cem notas meses depois para dizer o que já sabia no dia. As sugestões vêm
+ * dos planos de **todos** os ajustes do órgão, e o campo aceita o que não
+ * estiver neles.
  */
 export function DespesaForm({
   item,
@@ -69,6 +76,9 @@ export function DespesaForm({
     return [];
   });
   const [categoria, setCategoria] = useState(item ? String(item.categoriaDespesaTipo) : '');
+  const [propostaCategoria, setPropostaCategoria] = useState(item?.propostaCategoria ?? '');
+  const [propostaSubcategoria, setPropostaSubcategoria] = useState(item?.propostaSubcategoria ?? '');
+  const [rubricas, setRubricas] = useState<{ categoria: string; subcategoria: string }[]>([]);
   /*
    * O contrato vem do cadastro, não da digitação.
    *
@@ -103,6 +113,10 @@ export function DespesaForm({
       .catch(() => undefined);
     listarContratos({ filtros: { ativo: true }, page: 1, pageSize: 500, orderBy: 'numero', orderDir: 'asc' })
       .then((r) => vivo && setContratos(r.data))
+      .catch(() => undefined);
+    despesasApi
+      .rubricas()
+      .then((r) => vivo && setRubricas(r))
       .catch(() => undefined);
     return () => {
       vivo = false;
@@ -240,6 +254,8 @@ export function DespesaForm({
       ),
       tipoDocumento: tipoDoc || null,
       categoriaDespesaTipo: Number(apenasDigitos(categoria)),
+      propostaCategoria: propostaCategoria.trim() || null,
+      propostaSubcategoria: propostaSubcategoria.trim() || null,
       rateioProveniente,
       rateioId: rateioProveniente ? rateioId : null,
     };
@@ -331,6 +347,51 @@ export function DespesaForm({
 
         <div className="sm:col-span-12">
           <SelectDominio label="Categoria de Despesa AUDESP *" name="categoria" value={apenasDigitos(categoria)} onChange={setCategoria} options={CATEGORIA_DESPESA} />
+        </div>
+
+        {/* Item da Proposta — a rubrica do Plano de Aplicação.
+            É par com a categoria AUDESP, não substituto: o Tribunal recebe o
+            código da tabela dele; o plano fala a língua do órgão ("Recursos
+            Humanos / Salários"), e é por ela que se confere a execução contra
+            o que foi pactuado. */}
+        <div className="sm:col-span-6">
+          <Input
+            label="Item da Proposta — categoria"
+            name="propostaCategoria"
+            value={propostaCategoria}
+            onChange={(e) => setPropostaCategoria(e.target.value)}
+            list="rubricas-categoria"
+            placeholder="ex.: Recursos Humanos"
+            hint="Conforme o Plano de Aplicação. Sugestões vêm dos planos já cadastrados."
+          />
+          <datalist id="rubricas-categoria">
+            {[...new Set(rubricas.map((r) => r.categoria))].map((c) => (
+              <option key={c} value={c} />
+            ))}
+          </datalist>
+        </div>
+        <div className="sm:col-span-6">
+          <Input
+            label="Item da Proposta — subcategoria"
+            name="propostaSubcategoria"
+            value={propostaSubcategoria}
+            onChange={(e) => setPropostaSubcategoria(e.target.value)}
+            list="rubricas-subcategoria"
+            placeholder="ex.: Salários"
+          />
+          {/* Filtrada pela categoria escolhida, quando ela bate com alguma do
+              plano: oferecer "Salários" sob "Medicamentos" seria ruído. */}
+          <datalist id="rubricas-subcategoria">
+            {[
+              ...new Set(
+                rubricas
+                  .filter((r) => !propostaCategoria.trim() || r.categoria === propostaCategoria)
+                  .map((r) => r.subcategoria),
+              ),
+            ].map((s) => (
+              <option key={s} value={s} />
+            ))}
+          </datalist>
         </div>
       </div>
 

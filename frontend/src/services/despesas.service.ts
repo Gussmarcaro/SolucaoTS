@@ -24,4 +24,16 @@ export const despesasApi = {
   excluir: async (id: string): Promise<void> => {
     await http.delete(`/despesas/${id}`);
   },
+  /**
+   * As rubricas dos Planos de Aplicação do órgão — o "item da proposta".
+   *
+   * Vem de todos os ajustes, não de um: a despesa é lançada antes de se saber
+   * a qual prestação vai. É sugestão, não lista fechada.
+   */
+  rubricas: async (): Promise<{ categoria: string; subcategoria: string }[]> => {
+    const { data } = await http.get<{ categoria: string; subcategoria: string }[]>(
+      '/despesas/rubricas',
+    );
+    return data;
+  },
 };

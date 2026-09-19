@@ -3,7 +3,6 @@ import type { ICronogramaRepository } from './ICronogramaRepository';
 import type { IAjusteRepository } from '@/application/ajuste/IAjusteRepository';
 import type { CronogramaDigitadoDTO, DadosCronogramaItem, ResultadoImportacaoCronograma } from './dtos';
 import { BusinessError, NotFoundError } from '@/shared/errors';
-import { ehRubricaPadrao } from '@/core/planoAplicacao/planoPadrao';
 import { parseCronograma } from '@/infrastructure/parsers/parseCronograma';
 
 export class CronogramaUseCases {
@@ -46,8 +45,12 @@ export class CronogramaUseCases {
       const categoria = linha.categoria?.trim() ?? '';
       const subcategoria = linha.subcategoria?.trim() ?? '';
       if (!categoria || !subcategoria) continue;
-      if (!ehRubricaPadrao(categoria, subcategoria))
-        throw new BusinessError(`Rubrica fora do padrão: ${categoria} / ${subcategoria}.`);
+      // A rubrica é livre: **não existe padrão**. O modelo de 16 seções é
+      // sugestão de partida — cada entidade apresenta o plano de um jeito, e
+      // travar no modelo deixava de fora quem já tem o seu. O que se valida é
+      // o que protege o banco e a tela: não vazio e com tamanho de rótulo.
+      if (categoria.length > 120 || subcategoria.length > 160)
+        throw new BusinessError(`Rubrica longa demais: ${categoria} / ${subcategoria}.`);
 
       const ano = Number(linha.ano);
       const mes = Number(linha.mes);

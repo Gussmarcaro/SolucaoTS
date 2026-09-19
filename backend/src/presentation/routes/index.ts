@@ -85,6 +85,8 @@ routes.use('/rateios', exigirPermissao('CADASTRO_RATEIO'), rateioRoutes);
  */
 const despesas = new DespesaController();
 routes.get('/despesas', exigirPermissao('EXECUCAO_DESPESAS'), (req, res, next) => despesas.listar(req, res, next));
+// As rubricas dos planos do orgao — alimentam o campo Item da Proposta.
+routes.get('/despesas/rubricas', exigirPermissao('EXECUCAO_DESPESAS'), (req, res, next) => despesas.rubricas(req, res, next));
 routes.post('/despesas', exigirPermissao('EXECUCAO_DESPESAS'), (req, res, next) => despesas.criar(req, res, next));
 routes.put('/despesas/:id', exigirPermissao('EXECUCAO_DESPESAS'), (req, res, next) => despesas.atualizar(req, res, next));
 routes.delete('/despesas/:id', exigirPermissao('EXECUCAO_DESPESAS'), (req, res, next) => despesas.excluir(req, res, next));

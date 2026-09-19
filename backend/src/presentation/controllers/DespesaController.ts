@@ -4,6 +4,7 @@ import { PrismaDocumentoFiscalRepository } from '@/infrastructure/database/Prism
 import { PrismaPrestacaoRepository } from '@/infrastructure/database/PrismaPrestacaoRepository';
 import { PrismaRateioRepository } from '@/infrastructure/database/PrismaRateioRepository';
 import { PrismaPlanoAplicacaoRepository } from '@/infrastructure/database/PrismaPlanoAplicacaoRepository';
+const planos = new PrismaPlanoAplicacaoRepository();
 import { PrismaContratoRepository } from '@/infrastructure/database/PrismaContratoRepository';
 
 /**
@@ -26,6 +27,15 @@ const casos = new DocumentoFiscalUseCases(
 );
 
 export class DespesaController {
+  /** As rubricas dos planos do orgao, para o campo Item da Proposta. */
+  async rubricas(_req: Request, res: Response, next: NextFunction) {
+    try {
+      return res.json(await planos.rubricasDoOrgao());
+    } catch (e) {
+      return next(e);
+    }
+  }
+
   async listar(_req: Request, res: Response, next: NextFunction) {
     try {
       return res.json(await casos.listarDoOrgao());

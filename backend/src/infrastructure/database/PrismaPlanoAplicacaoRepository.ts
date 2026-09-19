@@ -61,6 +61,28 @@ export class PrismaPlanoAplicacaoRepository implements IPlanoAplicacaoRepository
     return linhas.map((l) => l.categoriaDespesaTipo!).sort((a, b) => a - b);
   }
 
+  /**
+   * As rubricas de todos os planos do órgão, sem repetição.
+   *
+   * **Parte dos ajustes, e não direto do `planoAplicacaoItem`.** O item do
+   * plano é filho do ajuste, e a extension de tenant só recorta as raízes —
+   * uma consulta direta traria as rubricas de todos os órgãos. É o mesmo
+   * cuidado dos relatórios: pega-se os ajustes (filtrados) e só então os
+   * filhos deles.
+   */
+  async rubricasDoOrgao(): Promise<{ categoria: string; subcategoria: string }[]> {
+    const ajustes = await prisma.ajuste.findMany({ select: { id: true } });
+    if (!ajustes.length) return [];
+
+    const linhas = await prisma.planoAplicacaoItem.findMany({
+      where: { ajusteId: { in: ajustes.map((a) => a.id) } },
+      select: { categoria: true, subcategoria: true },
+      distinct: ['categoria', 'subcategoria'],
+      orderBy: [{ categoria: 'asc' }, { subcategoria: 'asc' }],
+    });
+    return linhas;
+  }
+
   async substituir(ajusteId: string, itens: DadosPlanoItem[]): Promise<PlanoAplicacaoItem[]> {
     return prisma.$transaction(async (tx) => {
       await tx.planoAplicacaoItem.deleteMany({ where: { ajusteId } });
