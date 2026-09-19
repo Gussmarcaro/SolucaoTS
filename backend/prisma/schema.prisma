@@ -1384,6 +1384,7 @@ model DocumentoFiscal {
   glosas          Glosa[]
   prestacoes      PrestacaoDocumentoFiscal[]
   retencoes       RetencaoDocumentoFiscal[]
+  anexos          Anexo[]
 
   // A nota passa a ser única **no órgão**, não na prestação. É a trava que
   // faltava: a mesma nota lançada em duas prestações nunca conflitava, e era
@@ -1541,6 +1542,48 @@ model GuiaRecolhimento {
   @@index([clienteId, ano, mes])
 }
 
+/// Que papel o anexo cumpre. Enumerado porque a tela agrupa por ele e porque
+/// "o recibo" e "a nota" respondem a perguntas diferentes na fiscalização.
+enum TipoAnexo {
+  DOCUMENTO_FISCAL
+  RECIBO
+  DOCUMENTO_AUXILIAR // laudo, parecer, relatório
+  COMPROVANTE_PAGAMENTO
+}
+
+/// Os arquivos da despesa e do pagamento.
+///
+/// Uma tabela para os dois donos, e não colunas em cada model: a despesa tem
+/// três papéis de anexo e o pagamento tem um, e o auxiliar é naturalmente
+/// múltiplo (o laudo **e** o parecer). Em colunas seriam doze campos na nota
+/// para guardar, na prática, uma lista.
+///
+/// `conteudo` fica no banco, como os demais anexos do sistema: o disco da
+/// hospedagem é efêmero, e arquivo que some depois de um deploy é pior que
+/// arquivo que não se guardou. Ele nunca entra no `select` padrão — carregá-lo
+/// numa listagem traria megabytes por linha.
+///
+/// **Exatamente um dono.** Os dois campos são opcionais porque o Prisma não
+/// expressa "um ou outro"; quem garante é o caso de uso. Anexo sem dono seria
+/// arquivo órfão ocupando banco sem tela que o mostre.
+model Anexo {
+  id                String    @id @default(uuid()) @db.Uuid
+  tipo              TipoAnexo
+  documentoFiscalId String?   @db.Uuid
+  pagamentoId       String?   @db.Uuid
+  nome              String
+  tamanho           Int
+  conteudo          Bytes
+  enviadoEm         DateTime  @default(now())
+  criadoPor         String?   @db.Uuid
+
+  documentoFiscal DocumentoFiscal? @relation(fields: [documentoFiscalId], references: [id], onDelete: Cascade)
+  pagamento       Pagamento?       @relation(fields: [pagamentoId], references: [id], onDelete: Cascade)
+
+  @@index([documentoFiscalId])
+  @@index([pagamentoId])
+}
+
 /// As retenções de uma nota, uma linha por tributo.
 ///
 /// Uma nota de serviço costuma reter IRRF, PIS, COFINS e CSLL ao mesmo tempo —
@@ -1623,6 +1666,7 @@ model Pagamento {
   prestacao          PrestacaoContas?    @relation(fields: [prestacaoId], references: [id])
   documentoFiscal    DocumentoFiscal?    @relation(fields: [documentoFiscalId], references: [id])
   lancamentosExtrato LancamentoExtrato[]
+  anexos             Anexo[]
 
   @@index([documentoFiscalId])
   @@index([prestacaoId])

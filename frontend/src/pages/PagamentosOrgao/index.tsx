@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
+import { Anexos } from '@/components/ui/Anexos';
 import { GradeSimples } from '@/components/ui/GradeSimples';
 import { AcoesGrade, IconBtn } from '@/components/ui/AcoesGrade';
 import { Input } from '@/components/ui/Input';
@@ -358,6 +359,16 @@ function PagamentoOrgaoForm({
       )}
 
       <Input label="Nº da transação (opcional)" name="transacao" value={transacao} onChange={(e) => setTransacao(e.target.value)} />
+
+      {/* O comprovante — é o que a fiscalização pede quando pergunta se o
+          dinheiro de fato saiu. Depende do pagamento já existir: o envio
+          precisa do id, que num lançamento novo só há depois de salvar. */}
+      <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700">
+        <legend className="px-1 text-[13px] font-normal text-ink-600 dark:text-ink-300">
+          Comprovante
+        </legend>
+        <Anexos dono="PAGAMENTO" donoId={item?.id} tipos={['COMPROVANTE_PAGAMENTO']} />
+      </fieldset>
 
       <div className="flex items-center justify-end gap-2 pt-1">
         <Button type="button" variant="secondary" onClick={onCancel} disabled={salvando}>

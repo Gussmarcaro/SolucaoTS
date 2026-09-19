@@ -327,8 +327,12 @@ export class DocumentoFiscalUseCases {
    * A conferência é a busca em si: a extension de tenant já recorta, então uma
    * nota de outro órgão simplesmente "não existe" — que é também a resposta
    * certa do ponto de vista de não revelar o que há do outro lado.
+   *
+   * **Público de propósito.** Os anexos são filhos da nota, e o recorte por
+   * órgão alcança só as raízes: quem cuida deles precisa fazer esta pergunta
+   * antes de tocar em qualquer arquivo.
    */
-  private async garantirDoOrgao(id: string): Promise<DocumentoFiscal> {
+  async garantirDoOrgao(id: string): Promise<DocumentoFiscal> {
     const doc = await this.repo.buscarPorId(id);
     if (!doc) throw new NotFoundError('Documento fiscal não encontrado.');
     return doc;

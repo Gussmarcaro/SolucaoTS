@@ -17,6 +17,7 @@ import { vigentesEm } from '@/types/rateio';
 import type { Fornecedor } from '@/types/fornecedor';
 import type { Contrato } from '@/types/contrato';
 import { QuadroRetencoes, somaRetencoes, type LinhaRetencao } from './QuadroRetencoes';
+import { Anexos } from '@/components/ui/Anexos';
 import type { Rateio } from '@/types/rateio';
 import {
   TIPO_DOCUMENTO_FISCAL_LABEL,
@@ -394,6 +395,20 @@ export function DespesaForm({
           </datalist>
         </div>
       </div>
+
+      {/* Anexos — a nota, o recibo e os documentos auxiliares.
+          Ficam abaixo dos campos porque dependem do lançamento já existir: o
+          envio precisa do id, que num cadastro novo só há depois de salvar. */}
+      <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700">
+        <legend className="px-1 text-[13px] font-normal text-ink-600 dark:text-ink-300">
+          Arquivos <span className="text-ink-400">— nota, recibo e documentos auxiliares</span>
+        </legend>
+        <Anexos
+          dono="DESPESA"
+          donoId={item?.id}
+          tipos={['DOCUMENTO_FISCAL', 'RECIBO', 'DOCUMENTO_AUXILIAR']}
+        />
+      </fieldset>
 
       {/* Rateio — o método, não o percentual. Ver o comentário do componente. */}
       <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700">

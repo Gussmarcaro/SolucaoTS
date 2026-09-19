@@ -43,6 +43,25 @@ export const uploadPdf = multer({
  * pelo MIME barraria arquivo bom. Quem confere de verdade é o parser, que
  * responde "o arquivo é um extrato OFX?" quando não acha transação nenhuma.
  */
+/**
+ * Upload de anexo da despesa/pagamento (campo "arquivo"), até 5 MB.
+ *
+ * Aceita **PDF e imagem**, diferente do `uploadPdf`. Recibo e comprovante de
+ * transferência chegam quase sempre como foto do celular ou print do
+ * internet banking; exigir PDF obrigaria o usuário a converter o arquivo antes
+ * de anexá-lo — trabalho que ele faria fora do sistema, ou não faria.
+ */
+export const uploadAnexo = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const ok =
+      file.mimetype === 'application/pdf' || /^image\/(jpeg|png|webp|heic|heif)$/i.test(file.mimetype);
+    if (!ok) return cb(new BusinessError('Envie um PDF ou uma imagem (JPG, PNG).'));
+    cb(null, true);
+  },
+}).single('arquivo');
+
 export const uploadOfx = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },

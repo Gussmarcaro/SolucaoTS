@@ -27,13 +27,14 @@ import { SuporteController } from '@/presentation/controllers/SuporteController'
 import { RelatorioController } from '@/presentation/controllers/RelatorioController';
 import { PermissaoController } from '@/presentation/controllers/PermissaoController';
 import { PerfilController } from '@/presentation/controllers/PerfilController';
+import { AnexoController } from '@/presentation/controllers/AnexoController';
 import { DespesaController } from '@/presentation/controllers/DespesaController';
 import { ReceitaOrgaoController } from '@/presentation/controllers/ReceitaOrgaoController';
 import { PagamentoOrgaoController } from '@/presentation/controllers/PagamentoOrgaoController';
 import { GuiaRecolhimentoController } from '@/presentation/controllers/GuiaRecolhimentoController';
 import { ConciliacaoController } from '@/presentation/controllers/ConciliacaoController';
 import { ContaBancariaController } from '@/presentation/controllers/ContaBancariaController';
-import { uploadOfx } from '@/infrastructure/upload/upload';
+import { uploadAnexo, uploadOfx } from '@/infrastructure/upload/upload';
 import { autenticar } from '@/presentation/middlewares/autenticar';
 import { exigirGrupo } from '@/presentation/middlewares/exigirGrupo';
 import { exigirPermissao } from '@/presentation/middlewares/exigirPermissao';
@@ -83,6 +84,7 @@ routes.use('/rateios', exigirPermissao('CADASTRO_RATEIO'), rateioRoutes);
  * pessoas diferentes. A mesma nota depois aparece na prestação, sob
  * PRESTACAO_CONTAS.
  */
+const anexos = new AnexoController();
 const despesas = new DespesaController();
 routes.get('/despesas', exigirPermissao('EXECUCAO_DESPESAS'), (req, res, next) => despesas.listar(req, res, next));
 // As rubricas dos planos do orgao — alimentam o campo Item da Proposta.
@@ -90,6 +92,19 @@ routes.get('/despesas/rubricas', exigirPermissao('EXECUCAO_DESPESAS'), (req, res
 routes.post('/despesas', exigirPermissao('EXECUCAO_DESPESAS'), (req, res, next) => despesas.criar(req, res, next));
 routes.put('/despesas/:id', exigirPermissao('EXECUCAO_DESPESAS'), (req, res, next) => despesas.atualizar(req, res, next));
 routes.delete('/despesas/:id', exigirPermissao('EXECUCAO_DESPESAS'), (req, res, next) => despesas.excluir(req, res, next));
+
+// Anexos da despesa: nota, recibo e documentos auxiliares. Toda rota passa
+// pelo dono antes de tocar no arquivo — ver AnexoController.
+routes.get('/despesas/:id/anexos', exigirPermissao('EXECUCAO_DESPESAS'), (req, res, next) => anexos.listar('DESPESA', req, res, next));
+routes.post('/despesas/:id/anexos', exigirPermissao('EXECUCAO_DESPESAS'), uploadAnexo, (req, res, next) => anexos.enviar('DESPESA', req, res, next));
+routes.get('/despesas/:id/anexos/:anexoId', exigirPermissao('EXECUCAO_DESPESAS'), (req, res, next) => anexos.baixar('DESPESA', req, res, next));
+routes.delete('/despesas/:id/anexos/:anexoId', exigirPermissao('EXECUCAO_DESPESAS'), (req, res, next) => anexos.excluir('DESPESA', req, res, next));
+
+// Comprovante do pagamento.
+routes.get('/pagamentos/:id/anexos', exigirPermissao('EXECUCAO_PAGAMENTOS'), (req, res, next) => anexos.listar('PAGAMENTO', req, res, next));
+routes.post('/pagamentos/:id/anexos', exigirPermissao('EXECUCAO_PAGAMENTOS'), uploadAnexo, (req, res, next) => anexos.enviar('PAGAMENTO', req, res, next));
+routes.get('/pagamentos/:id/anexos/:anexoId', exigirPermissao('EXECUCAO_PAGAMENTOS'), (req, res, next) => anexos.baixar('PAGAMENTO', req, res, next));
+routes.delete('/pagamentos/:id/anexos/:anexoId', exigirPermissao('EXECUCAO_PAGAMENTOS'), (req, res, next) => anexos.excluir('PAGAMENTO', req, res, next));
 
 // Contas bancárias do órgão — o cadastro de onde o Ajuste escolhe e onde a
 // conciliação reconhece o extrato.

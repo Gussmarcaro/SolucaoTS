@@ -108,7 +108,7 @@ export class PagamentoUseCases {
    * A conferência é a própria busca: a extension de tenant já recorta, então um
    * registro de outro órgão simplesmente "não existe".
    */
-  private async garantirDoOrgao(id: string): Promise<Pagamento> {
+  async garantirDoOrgao(id: string): Promise<Pagamento> {
     const pg = await this.repo.buscarPorId(id);
     if (!pg) throw new NotFoundError('Pagamento não encontrado.');
     return pg;
