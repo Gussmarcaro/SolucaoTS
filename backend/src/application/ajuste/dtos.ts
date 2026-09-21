@@ -1,7 +1,11 @@
 import type { Periodicidade, StatusAjuste, TipoAjuste } from '@/core/ajuste/Ajuste';
 
+/**
+ * **O órgão não entra aqui.** Ele vem do token, e é carimbado na camada de
+ * dados — era o único campo do payload capaz de mover um registro para fora
+ * do órgão de quem o envia.
+ */
 export interface CriarAjusteDTO {
-  clienteId?: string | null;
   entidadeBeneficiariaId: string;
   tipoAjuste: TipoAjuste;
   descricaoResumida?: string | null;
@@ -59,7 +63,6 @@ export type AtualizarAjusteDTO = CriarAjusteDTO;
 
 /** Dados normalizados/validados prontos para persistência. */
 export interface DadosAjuste {
-  clienteId: string | null;
   entidadeBeneficiariaId: string;
   tipoAjuste: TipoAjuste;
   descricaoResumida: string | null;

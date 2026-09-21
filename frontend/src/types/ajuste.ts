@@ -127,8 +127,8 @@ export interface Ajuste {
   atualizadoEm: string;
 }
 
+/** O órgão não vai no payload: o servidor o lê do token. */
 export interface AjustePayload {
-  clienteId?: string | null;
   entidadeBeneficiariaId: string;
   tipoAjuste: TipoAjuste;
   descricaoResumida?: string | null;

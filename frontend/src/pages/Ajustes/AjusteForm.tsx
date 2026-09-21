@@ -19,7 +19,6 @@ import { capitalizarNome } from '@/lib/nomeProprio';
 import { consultarCep } from '@/services/viacep.service';
 import { atualizarAjuste, criarAjuste, enviarDocumentoAjuste } from '@/services/ajustes.service';
 import { listarEntidades } from '@/services/entidades.service';
-import { listarOrgaos } from '@/services/orgaos.service';
 import { extrairCodigoErro, extrairMensagemErro } from '@/services/http';
 import {
   PERIODICIDADE_LABEL,
@@ -45,7 +44,6 @@ const opcoesDe = <T extends string>(m: Record<T, string>) =>
   (Object.keys(m) as T[]).map((v) => ({ value: v, label: m[v] }));
 
 type Campos = {
-  clienteId: string;
   entidadeBeneficiariaId: string;
   tipoAjuste: string;
   descricaoResumida: string;
@@ -83,7 +81,6 @@ type Campos = {
 
 function estadoInicial(a?: Ajuste | null): Campos {
   return {
-    clienteId: a?.clienteId ?? '',
     entidadeBeneficiariaId: a?.entidadeBeneficiariaId ?? '',
     tipoAjuste: a?.tipoAjuste ?? '',
     descricaoResumida: a?.descricaoResumida ?? '',
@@ -138,8 +135,6 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
   const [salvando, setSalvando] = useState(false);
   const [entidades, setEntidades] = useState<{ value: string; label: string }[]>([]);
   const [carregandoEntidades, setCarregandoEntidades] = useState(true);
-  const [orgaos, setOrgaos] = useState<{ value: string; label: string }[]>([]);
-  const [carregandoOrgaos, setCarregandoOrgaos] = useState(true);
 
   /*
    * Os dois anexos: o PDF escolhido só sobe **depois** de salvar, porque a rota
@@ -204,20 +199,6 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
     };
   }, []);
 
-  useEffect(() => {
-    let vivo = true;
-    listarOrgaos({ filtros: { ativo: true }, page: 1, pageSize: 100, orderBy: 'nome', orderDir: 'asc' })
-      .then((r) => {
-        if (!vivo) return;
-        setOrgaos(r.data.map((o) => ({ value: o.id, label: `${o.nome} (mun. ${o.codigoMunicipio} / ent. ${o.codigoEntidade})` })));
-      })
-      .catch(() => vivo && setOrgaos([]))
-      .finally(() => vivo && setCarregandoOrgaos(false));
-    return () => {
-      vivo = false;
-    };
-  }, []);
-
   const set = (campo: keyof Campos, valor: string) => {
     setForm((prev) => ({ ...prev, [campo]: valor }));
     setErros((prev) => ({ ...prev, [campo]: undefined }));
@@ -273,7 +254,6 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
         fonteRecursoTipo,
         apelido,
       })),
-      clienteId: form.clienteId || null,
       entidadeBeneficiariaId: form.entidadeBeneficiariaId,
       tipoAjuste: form.tipoAjuste as TipoAjuste,
       descricaoResumida: form.descricaoResumida.trim() || null,
@@ -365,16 +345,26 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
         )}
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {/*
+            Órgão: mostrado, nunca escolhido — o mesmo que em Usuários.
+
+            Era um Select, e ele nunca escolheu nada: a lista vem de `/orgaos`,
+            que é recortada por tenant e traz só o órgão de quem está logado. O
+            que ele fazia era mandar `clienteId` no corpo da requisição, e o
+            servidor gravava — dava para criar o ajuste dentro de outro órgão e
+            para mover o próprio para fora do seu. Hoje o servidor lê o órgão do
+            token e ignora o campo; deixar o seletor na tela afirmaria que há
+            uma escolha onde não há.
+          */}
           <div className="sm:col-span-2">
-            <Select
+            <Input
               label="Órgão concessor (município/entidade TCESP)"
+              anotacao="(Automático)"
               name="clienteId"
-              value={form.clienteId}
-              onChange={(e) => set('clienteId', e.target.value)}
-              options={orgaos}
-              placeholder={carregandoOrgaos ? 'Carregando...' : orgaos.length ? 'Selecione o órgão (opcional)' : 'Nenhum órgão cadastrado'}
+              value={ajuste?.orgaoNome ?? 'O seu órgão'}
+              readOnly
+              hint="Define o código de município e entidade no descritor da prestação. O ajuste nasce no órgão de quem o cadastra e não muda de dono."
             />
-            <p className="mt-1 text-xs text-ink-400">Define o código de município e entidade no descritor da prestação. Cadastre em Configurações › Órgãos Concessores.</p>
           </div>
           <div className="sm:col-span-2">
             <Select

@@ -249,11 +249,6 @@ export class PrismaAjusteRepository implements IAjusteRepository {
     return !!e;
   }
 
-  async clienteExiste(clienteId: string): Promise<boolean> {
-    const c = await prisma.cliente.findUnique({ where: { id: clienteId }, select: { id: true } });
-    return !!c;
-  }
-
   async criar(dados: DadosAjuste): Promise<Ajuste> {
     const row = await prisma.ajuste.create({
       data: { ...toData(dados), ...filhos(dados), clienteId: tenantObrigatorio('Ajuste') },
