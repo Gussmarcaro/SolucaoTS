@@ -15,6 +15,7 @@ import {
   periodosSobrepoem,
   temQuadro,
   vigentesEm,
+  ratearValor,
 } from '../src/core/rateio/Rateio';
 import { validarRateio } from '../src/application/rateio/RateioUseCases';
 
@@ -226,6 +227,76 @@ console.log('\nCadastro do Rateio\n');
     ),
   );
 }
+
+// --- divisão do valor entre os ajustes -------------------------------------
+{
+  const soma = (ps: { valor: number }[]) =>
+    Math.round(ps.reduce((s, p) => s + p.valor, 0) * 100) / 100;
+
+  // O caso real: nota de 800, quadro 75/25.
+  {
+    const ps = ratearValor(800, [
+      { ajusteId: AJ[0], base: 1_500_000 },
+      { ajusteId: AJ[1], base: 500_000 },
+    ]);
+    conferir(
+      '800 em 75/25 dá 600 e 200',
+      ps[0].valor === 600 && ps[1].valor === 200,
+      `${ps[0].valor} / ${ps[1].valor}`,
+    );
+    conferir('e a soma fecha', soma(ps) === 800);
+  }
+
+  // O caso que o arredondamento simples erra: 100 entre três iguais.
+  {
+    const ps = ratearValor(100, [
+      { ajusteId: AJ[0], base: 1 },
+      { ajusteId: AJ[1], base: 1 },
+      { ajusteId: AJ[2], base: 1 },
+    ]);
+    conferir(
+      '100 entre três iguais soma exatamente 100',
+      soma(ps) === 100,
+      ps.map((p) => p.valor).join(' + '),
+    );
+    conferir(
+      'e nenhuma parcela se afasta mais de um centavo da exata',
+      ps.every((p) => Math.abs(p.valor - 100 / 3) <= 0.01),
+    );
+  }
+
+  // Centavo teimoso: 0,01 entre dois não pode virar zero nem dois.
+  {
+    const ps = ratearValor(0.01, [
+      { ajusteId: AJ[0], base: 1 },
+      { ajusteId: AJ[1], base: 1 },
+    ]);
+    conferir(
+      'um centavo entre dois não some nem duplica',
+      soma(ps) === 0.01,
+      ps.map((p) => p.valor).join(' + '),
+    );
+  }
+
+  conferir(
+    'valor zero devolve parcelas zeradas',
+    ratearValor(0, [{ ajusteId: AJ[0], base: 1 }])[0].valor === 0,
+  );
+  conferir('quadro vazio devolve lista vazia', ratearValor(100, []).length === 0);
+
+  // Estabilidade: a mesma despesa rateada duas vezes dá o mesmo resultado.
+  {
+    const entrada = [
+      { ajusteId: AJ[0], base: 7 },
+      { ajusteId: AJ[1], base: 11 },
+      { ajusteId: AJ[2], base: 13 },
+    ];
+    const a = ratearValor(1000.07, entrada).map((p) => p.valor).join('|');
+    const b = ratearValor(1000.07, entrada).map((p) => p.valor).join('|');
+    conferir('o resultado é estável entre chamadas', a === b, a);
+  }
+}
+
 
 console.log(falhas.length ? `\n${falhas.length} falha(s).\n` : '\nTudo ok.\n');
 process.exit(falhas.length ? 1 : 0);

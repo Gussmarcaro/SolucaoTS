@@ -227,3 +227,71 @@ export function vigentesEm<T extends { vigenciaInicio: string; vigenciaFim: stri
 ): T[] {
   return rateios.filter((r) => r.ativo && r.vigenciaInicio <= data && data <= r.vigenciaFim);
 }
+
+/** Uma parcela da despesa rateada: quanto cabe a cada ajuste. */
+export interface ParcelaRateada {
+  ajusteId: string;
+  /** O percentual exibido, o mesmo do quadro. */
+  percentual: number;
+  /** Em reais, duas casas. As parcelas somam o total **por construção**. */
+  valor: number;
+}
+
+/**
+ * Divide um valor entre os ajustes, na proporção do rateio.
+ *
+ * **Não aplica os percentuais exibidos.** Três ajustes iguais dão 33,33% cada,
+ * e 33,33% de R$ 100,00 três vezes são R$ 99,99 — o centavo sumiria, e sumiria
+ * justamente do pagamento, onde ele tem de fechar com o extrato bancário.
+ *
+ * Divide-se em **centavos**, pelo mesmo método do maior resto que o quadro já
+ * usa: cada ajuste leva o piso da sua parte e a sobra vai de centavo em centavo
+ * a quem tem o maior resto. A soma das parcelas é o total, sempre.
+ *
+ * É a conta que permite lançar a despesa inteira num lugar só e ver o dinheiro
+ * sair dividido entre os ajustes — que é o que o Tribunal orienta e o que
+ * ninguém faz à mão sem errar.
+ */
+export function ratearValor(
+  valorTotal: number,
+  participantes: { ajusteId: string; base: number }[],
+): ParcelaRateada[] {
+  const { linhas } = calcularRateio(participantes);
+  if (!linhas.length) return [];
+
+  const centavosTotais = Math.round(arredondar(valorTotal, 2) * 100);
+  const totalBase = participantes.reduce(
+    (s, p) => s + (Number.isFinite(p.base) && p.base > 0 ? p.base : 0),
+    0,
+  );
+
+  // Sem base não há proporção: divide-se igualmente, que é o mesmo critério
+  // que o quadro adota ao exibir os percentuais.
+  const exatos = linhas.map((l) => {
+    const p = participantes.find((x) => x.ajusteId === l.ajusteId);
+    const peso = totalBase > 0 ? (p && p.base > 0 ? p.base : 0) / totalBase : 1 / linhas.length;
+    return peso * centavosTotais;
+  });
+
+  const pisos = exatos.map((e) => Math.floor(e));
+  let sobra = centavosTotais - pisos.reduce((s, v) => s + v, 0);
+
+  // A sobra vai a quem tem o maior resto; empate resolve pela ordem, que é
+  // estável — assim a mesma despesa rateada duas vezes dá o mesmo resultado.
+  const ordem = exatos
+    .map((e, i) => ({ i, resto: e - Math.floor(e) }))
+    .sort((a, b) => b.resto - a.resto || a.i - b.i);
+
+  const centavos = [...pisos];
+  for (const { i } of ordem) {
+    if (sobra <= 0) break;
+    centavos[i] += 1;
+    sobra -= 1;
+  }
+
+  return linhas.map((l, i) => ({
+    ajusteId: l.ajusteId,
+    percentual: l.percentualExibido,
+    valor: centavos[i] / 100,
+  }));
+}

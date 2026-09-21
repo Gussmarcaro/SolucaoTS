@@ -4,12 +4,19 @@ import type { IPrestacaoRepository } from '@/application/prestacao/IPrestacaoRep
 import type { DadosPagamento, PagamentoDTO } from './dtos';
 import { BusinessError, NotFoundError } from '@/shared/errors';
 import { parseDataISO } from '@/shared/datas';
+import { ratearValor } from '@/core/rateio/Rateio';
+import type { IRateioRepository } from '@/application/rateio/IRateioRepository';
+import type { DocumentoFiscalUseCases } from '@/application/documentoFiscal/DocumentoFiscalUseCases';
+import type { RatearPagamentoDTO } from './dtos';
 
 function num(v: unknown): number | null {
   if (v === undefined || v === null || v === '') return null;
   const n = typeof v === 'string' ? Number(v) : (v as number);
   return Number.isFinite(n) ? n : null;
 }
+
+/** Centavos: o dinheiro nunca carrega a sujeira do ponto flutuante. */
+const arredondarCentavos = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
 function validar(input: PagamentoDTO): DadosPagamento {
   let dataPagamento: Date;
@@ -59,6 +66,9 @@ export class PagamentoUseCases {
   constructor(
     private readonly repo: IPagamentoRepository,
     private readonly prestacoes: IPrestacaoRepository,
+    /** Para o rateio do pagamento — ver ratearNoOrgao. */
+    private readonly documentos?: DocumentoFiscalUseCases,
+    private readonly rateios?: IRateioRepository,
   ) {}
 
   private async garantirPrestacao(prestacaoId: string) {
@@ -90,6 +100,72 @@ export class PagamentoUseCases {
 
   async criarNoOrgao(input: PagamentoDTO): Promise<Pagamento> {
     return this.repo.criarNoOrgao(validar(input));
+  }
+
+  /**
+   * Lança o pagamento de uma nota rateada — **um por ajuste, de uma vez**.
+   *
+   * A despesa rateada acontece uma vez e é paga por vários ajustes. Antes, quem
+   * lançava a nota de R$ 800,00 do material comum tinha de saber de cabeça que
+   * 75% eram de um ajuste e 25% de outro, fazer a conta e lançar dois
+   * pagamentos — e a segunda parcela, a menor, é a que se esquece. O dinheiro
+   * saía inteiro do banco e aparecia pela metade na prestação.
+   *
+   * Aqui o quadro do rateio faz a conta e os dois lançamentos nascem juntos.
+   * Nenhum valor vem do cliente: a base é a própria nota e a proporção é a do
+   * rateio, pelos mesmos motivos que o percentual da apropriação também não
+   * vem da tela.
+   *
+   * **A base é o líquido** (bruto − retenções), não o bruto: é o que de fato
+   * sai da conta. Ratear o bruto faria a soma dos pagamentos não bater com o
+   * extrato — justamente a conferência que a conciliação existe para fazer.
+   */
+  async ratearNoOrgao(input: RatearPagamentoDTO): Promise<Pagamento[]> {
+    if (!this.documentos || !this.rateios)
+      throw new BusinessError('Rateio de pagamento indisponível nesta instalação.');
+
+    const documentoFiscalId = String(input.documentoFiscalId ?? '').trim();
+    if (!documentoFiscalId) throw new BusinessError('Escolha o documento fiscal.');
+
+    const doc = await this.documentos.garantirDoOrgao(documentoFiscalId);
+    if (!doc.rateioProveniente || !doc.rateioId)
+      throw new BusinessError('Esta nota não está marcada como proveniente de rateio.');
+
+    const rateio = await this.rateios.buscarPorId(doc.rateioId);
+    if (!rateio) throw new BusinessError('O rateio desta nota não foi encontrado.');
+    if (!rateio.participantes.length)
+      throw new BusinessError(`O rateio "${rateio.titulo}" não tem ajustes no quadro.`);
+
+    const base = arredondarCentavos(doc.valorBruto - doc.valorEncargos);
+    if (base <= 0) throw new BusinessError('O valor líquido da nota não é maior que zero.');
+
+    const parcelas = ratearValor(base, rateio.participantes).filter((p) => p.valor > 0);
+    if (!parcelas.length)
+      throw new BusinessError('O quadro do rateio não produziu nenhuma parcela com valor.');
+
+    /*
+     * Um por vez, e não numa transação.
+     *
+     * A criação passa pelas extensions (carimbo de órgão e trilha), e o
+     * repositório expõe a criação unitária. Falha no meio deixa os anteriores
+     * gravados — que é o comportamento menos ruim aqui: o usuário vê o que
+     * entrou, e relançar o que falta é trivial. Desfazer pagamentos já
+     * conciliados seria pior.
+     */
+    const criados: Pagamento[] = [];
+    for (const parcela of parcelas) {
+      criados.push(
+        await this.repo.criarNoOrgao(
+          validar({
+            ...input,
+            ajusteId: parcela.ajusteId,
+            documentoFiscalId,
+            valor: parcela.valor,
+          }),
+        ),
+      );
+    }
+    return criados;
   }
 
   async atualizarNoOrgao(id: string, input: PagamentoDTO): Promise<Pagamento> {

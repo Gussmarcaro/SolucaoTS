@@ -13,6 +13,18 @@ export interface PagamentoDTO {
   numeroTransacao?: string | null;
 }
 
+/**
+ * O pagamento rateado: os mesmos dados de um pagamento, **sem o valor**.
+ *
+ * O valor não vem do cliente — sai do quadro do rateio aplicado ao líquido
+ * da nota. Aceitá-lo aqui permitiria lançar 500 num ajuste que o rateio diz
+ * ser 600, e nada acusaria.
+ */
+export type RatearPagamentoDTO = Omit<PagamentoDTO, 'valor' | 'ajusteId'> & {
+  documentoFiscalId: string;
+  valor?: never;
+};
+
 /** Dados normalizados/validados prontos para persistência. */
 export interface DadosPagamento {
   /** Parceria do lançamento; nula até alguém dizer qual. */

@@ -127,6 +127,8 @@ routes.delete('/receitas/:id', exigirPermissao('EXECUCAO_RECEITAS'), (req, res, 
 const pagamentosOrgao = new PagamentoOrgaoController();
 routes.get('/pagamentos', exigirPermissao('EXECUCAO_PAGAMENTOS'), (req, res, next) => pagamentosOrgao.listar(req, res, next));
 routes.post('/pagamentos', exigirPermissao('EXECUCAO_PAGAMENTOS'), (req, res, next) => pagamentosOrgao.criar(req, res, next));
+// Pagamento de nota rateada: o quadro divide, e os lancamentos nascem juntos.
+routes.post('/pagamentos/ratear', exigirPermissao('EXECUCAO_PAGAMENTOS'), (req, res, next) => pagamentosOrgao.ratear(req, res, next));
 routes.put('/pagamentos/:id', exigirPermissao('EXECUCAO_PAGAMENTOS'), (req, res, next) => pagamentosOrgao.atualizar(req, res, next));
 routes.delete('/pagamentos/:id', exigirPermissao('EXECUCAO_PAGAMENTOS'), (req, res, next) => pagamentosOrgao.excluir(req, res, next));
 

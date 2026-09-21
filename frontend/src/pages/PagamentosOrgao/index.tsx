@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { Anexos } from '@/components/ui/Anexos';
+import { PainelRateio } from './PainelRateio';
 import { GradeSimples } from '@/components/ui/GradeSimples';
 import { AcoesGrade, IconBtn } from '@/components/ui/AcoesGrade';
 import { Input } from '@/components/ui/Input';
@@ -254,6 +255,39 @@ function PagamentoOrgaoForm({
   const [transacao, setTransacao] = useState(item?.numeroTransacao ?? '');
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
+  const [rateando, setRateando] = useState(false);
+
+  /**
+   * Lança os pagamentos da nota rateada — um por ajuste.
+   *
+   * O valor **não vai** no payload: sai do quadro do rateio aplicado ao líquido
+   * da nota, no servidor. A prévia na tela é informativa; mandar o número daqui
+   * permitiria pagar 500 num ajuste que o rateio diz ser 600.
+   */
+  async function ratearPagamento() {
+    setErro(null);
+    if (!dataPagamento) return setErro('Informe a data do pagamento.');
+    if (!fonte.trim()) return setErro('Informe a fonte de recurso.');
+
+    setRateando(true);
+    try {
+      await pagamentosOrgaoApi.ratear({
+        documentoFiscalId: vinculo,
+        dataPagamento,
+        fonteRecursoTipo: Number(apenasDigitos(fonte)),
+        meioPagamento: meio,
+        banco: meio === 'BANCO' && banco ? Number(apenasDigitos(banco)) : null,
+        agencia: meio === 'BANCO' && agencia ? Number(apenasDigitos(agencia)) : null,
+        contaCorrente: meio === 'BANCO' ? conta.trim() || null : null,
+        numeroTransacao: transacao.trim() || null,
+      });
+      onSuccess();
+    } catch (e) {
+      setErro(extrairMensagemErro(e, 'Não foi possível lançar o pagamento rateado.'));
+    } finally {
+      setRateando(false);
+    }
+  }
 
   const opcoesVinculo = [
     { value: FOLHA, label: 'Folha de pagamento (nº 9999)' },
@@ -324,6 +358,18 @@ function PagamentoOrgaoForm({
           {docEscolhido.valorEncargos > 0 &&
             ` · líquido ${formatarMoeda(docEscolhido.valorBruto - docEscolhido.valorEncargos)}`}
         </p>
+      )}
+
+      {/* Nota rateada: o quadro divide e os lançamentos nascem juntos. Só no
+          cadastro novo — editar um pagamento já lançado é outra operação, e
+          "ratear" ali criaria duplicatas do que já existe. */}
+      {!item && docEscolhido?.rateioProveniente && (
+        <PainelRateio
+          doc={docEscolhido}
+          pronto={!!dataPagamento && !!fonte.trim() && (meio !== 'BANCO' || (!!banco && !!agencia && !!conta.trim()))}
+          rateando={rateando}
+          onRatear={ratearPagamento}
+        />
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
