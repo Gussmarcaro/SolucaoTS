@@ -217,12 +217,25 @@ No `backend/`:
 
 No `frontend/`: `npm run dev` (Vite em :5173) e `npm run build`.
 
-**A CI roda tudo isso a cada push e pull request** (`.github/workflows/ci.yml`): typecheck dos dois projetos, os onze `verificar:*`, o `npm test` e o build do frontend. O job do backend sobe um **Postgres de serviço** e aponta `DATABASE_URL_TEST` para ele — é lá que os testes de isolamento multi-tenant efetivamente rodam, já que a máquina de desenvolvimento pode não ter banco.
+**A CI roda tudo isso a cada push e pull request** (`.github/workflows/ci.yml`): typecheck dos dois projetos, os onze `verificar:*`, o `npm test` e o build do frontend. O job do backend sobe um **Postgres de serviço** e aponta `DATABASE_URL_TEST` para ele — é lá que os testes de integração efetivamente rodam, já que a máquina de desenvolvimento pode não ter banco.
+
+### Divisão do bundle
+
+Cada tela é um pedaço próprio (`lazy` + `Suspense` em `App.tsx`), baixado quando se entra nela. Antes tudo vinha num arquivo só de ~1 MB, e a tela de login esperava pelo Espelho, pelos Relatórios e pela Agenda antes de aparecer.
+
+- **Login, Dashboard e o layout ficam no pedaço inicial**, de propósito: adiar o Login seria trocar a primeira tela por um spinner, e o Dashboard é sempre o que vem logo depois.
+- **`vendor` separado** (React + roteador, em `vite.config.ts`). O ganho não é a primeira carga — é a segunda: essas bibliotecas mudam quando se atualiza uma dependência, o código muda toda semana, e juntos cada publicação invalidava o cache dos dois. **Os ícones ficam de fora**: `lucide-react` é árvore-sacudível e cada tela puxa os seus, então prendê-lo ali traria o conjunto inteiro para o primeiro acesso.
+- O `import()` precisa ficar **literal** no código — o ajudante `pagina()` existe só para fazer a ponte com as exportações nomeadas. Passar o caminho por variável desativaria a divisão inteira, em silêncio.
+- **`LimiteDeCarga` é a contrapartida.** Dividir criou um risco que não existia: uma aba aberta durante uma publicação depende de um arquivo que pode ter sido substituído, e o 404 derruba a árvore em tela branca. Ele recarrega **uma vez**, com a marca no `sessionStorage` e não no estado — a recarga apaga o estado, e sem a marca um erro persistente viraria laço de recargas, bem pior que a tela branca. Erro que não seja de carga ele **não** engole: vai para o console, senão o defeito se esconderia atrás de um "recarregue".
+- **A publicação não apaga os pedaços antigos** (o `scp` só sobrescreve). É o que mantém a aba antiga funcionando, e por isso o `dist/` do servidor acumula arquivos — limpar exige conferir que ninguém está com a versão anterior aberta.
 
 Duas camadas de checagem automatizada:
 
 - **`verificar:*`** (montador, auditoria, alertas, permissões, assistente, workflow, tenant, agenda, rateio, ofx, conferência) — regras puras, **sem banco**. Rodam em qualquer lugar e são a rede do dia a dia.
-- **`npm test`** (vitest + supertest) — integração de verdade, **com Postgres**. Hoje cobre o isolamento multi-tenant de ponta a ponta: dois órgãos provisionados, e cada cenário provando que um **não** alcança o outro (listagem, busca por id, alteração, busca global, contagem, usuários, `/orgaos`).
+- **`npm test`** (vitest + supertest) — integração de verdade, **com Postgres**. Cobre duas coisas, e as duas são ligações que nenhum teste puro alcança:
+
+  - **O isolamento multi-tenant** (`tests/isolamento.test.ts`), de ponta a ponta: dois órgãos provisionados, e cada cenário provando que um **não** alcança o outro (listagem, busca por id, alteração, busca global, contagem, usuários, `/orgaos`).
+  - **O caminho da prestação** (`tests/prestacao.test.ts`), do cadastro ao `documentoJSON`. `verificar:montador` já valida o montador contra o JSON Schema oficial, mas parte de um `DadosMontagem` **sintético**: ninguém provava que o que sai do banco chega naquele formato. Entre a nota digitada e o documento há um repositório com trinta `select`, um `toDomain` por bloco e o montador — um campo que pare de ser carregado atravessa os onze `verificar:*` sem acusar nada, e o documento sai válido, é aceito, e volta como inconformidade meses depois. O teste digita de um lado e confere **campo a campo** do outro. As asserções nunca são sobre a existência do bloco: `documentos_fiscais` com um item vazio passaria num teste que só conta o tamanho da lista.
 
   Sem `DATABASE_URL_TEST` a suíte **pula** em vez de falhar — quem clonou para mexer no frontend não deve ver vermelho por não ter Postgres. Para rodar de fato:
 
@@ -232,7 +245,7 @@ Duas camadas de checagem automatizada:
 
   O banco apontado é **truncado** a cada rodada; a variável é separada de `DATABASE_URL` exatamente para isso.
 
-  É a única camada que prova a ligação inteira — claim `cli` → `AsyncLocalStorage` → as duas extensions na ordem certa → o SQL com o recorte. Qualquer elo pode se soltar num refactor sem nada quebrar visivelmente: o sistema continua funcionando, e vazando.
+  É a única camada que prova as ligações inteiras — no isolamento, claim `cli` → `AsyncLocalStorage` → as duas extensions na ordem certa → o SQL com o recorte; na prestação, formulário → repositório → montador → JSON. Qualquer elo pode se soltar num refactor sem nada quebrar visivelmente: no primeiro caso o sistema continua funcionando, e vazando; no segundo, transmitindo um documento incompleto que o schema aceita.
 
 No `frontend/`, **`npm test`** (vitest) cobre a lógica pura que erra em silêncio: dígitos verificadores de CPF/CNPJ, a ida-e-volta da máscara de moeda (é ela que transforma o que o usuário digitou no valor da prestação), `dataBr` sem deslocamento de fuso e as regras da agenda espelhadas do backend (`deslocar`, `podeArrastar`, `podeExcluir`).
 

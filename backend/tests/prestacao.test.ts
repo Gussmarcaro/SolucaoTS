@@ -87,9 +87,11 @@ describe.skipIf(!TEM_BANCO)('a prestação, do cadastro ao documento JSON', () =
     token = login.body.token;
 
     // A OSC, o ajuste e a prestação — o caminho que o usuário percorre.
+    // CNPJ com dígito verificador válido: o cadastro confere, e um número
+    // inventado é recusado com 400 antes de chegar ao banco.
     const entidade = await criado('/api/entidades', {
       razaoSocial: 'ASSOCIAÇÃO VIDA E SAÚDE',
-      cnpj: '44555666000177',
+      cnpj: '44555666000181',
       cep: '01001000',
       logradouro: 'Praça da Sé',
       bairro: 'Sé',
@@ -108,6 +110,9 @@ describe.skipIf(!TEM_BANCO)('a prestação, do cadastro ao documento JSON', () =
       vigenciaInicial: '2025-01-20',
       vigenciaFinal: '2025-12-31',
       periodicidade: 'ANUAL',
+      // Obrigatória: o ajuste sem fonte de recurso é recusado, e o código é
+      // conferido contra a tabela oficial — não basta ser número.
+      fontesRecurso: [1],
     });
     ajusteId = ajuste.id;
 
@@ -148,7 +153,20 @@ describe.skipIf(!TEM_BANCO)('a prestação, do cadastro ao documento JSON', () =
   });
 
   it('leva a nota digitada até o documento, com os mesmos valores', async () => {
-    await criado(`/api/prestacoes/${prestacaoId}/documentos-fiscais`, {
+    /*
+     * O caminho real, e ele tem duas etapas.
+     *
+     * A nota é **do órgão**, não da prestação: nasce em Execução → Despesas e
+     * só depois é **apropriada** à prestação do exercício. Quem carrega o
+     * vínculo é `PrestacaoDocumentoFiscal`, e é dela que o montador lê — a
+     * mesma nota rateada alimenta várias prestações com percentuais
+     * diferentes, e o percentual é da ligação, não da nota.
+     *
+     * Lançar direto na prestação (a rota antiga, `POST
+     * /prestacoes/:id/documentos-fiscais`) grava a nota sem a ligação, e ela
+     * não chega ao documento transmitido.
+     */
+    const nota = await criado('/api/despesas', {
       numero: NOTA.numero,
       credorTipoDoc: 'CNPJ',
       credorNumeroDoc: NOTA.credorNumeroDoc,
@@ -158,6 +176,12 @@ describe.skipIf(!TEM_BANCO)('a prestação, do cadastro ao documento JSON', () =
       valorBruto: NOTA.valorBruto,
       categoriaDespesaTipo: NOTA.categoriaDespesaTipo,
     });
+
+    const ap = await post(
+      `/api/prestacoes/${prestacaoId}/documentos-fiscais/${nota.id}/apropriar`,
+      {},
+    );
+    expect(ap.status, `apropriar → ${ap.status}: ${JSON.stringify(ap.body)}`).toBeLessThan(300);
 
     const r = await get(`/api/prestacoes/${prestacaoId}/json`);
     expect(r.status, JSON.stringify(r.body)).toBe(200);
