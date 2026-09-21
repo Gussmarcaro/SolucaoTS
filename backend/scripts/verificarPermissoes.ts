@@ -105,26 +105,68 @@ const nav = readFileSync(
 /**
  * Itens de menu que podem ficar sem recurso, com o motivo.
  *
- * As telas de Execução são **placeholders sem backend**. Declarar recurso para
- * elas agora criaria o problema que a checagem acima reprova: permissão que a
- * matriz oferece e não protege nada. Os recursos entram junto com as rotas,
- * quando o módulo existir — e aí o gate do servidor passa a exigi-los.
+ * Tela que ainda é **placeholder sem backend** entra aqui: declarar recurso
+ * para ela criaria o problema que a checagem acima reprova — permissão que a
+ * matriz oferece e não protege nada. O recurso entra junto com as rotas,
+ * quando o módulo existir, e aí o gate do servidor passa a exigi-lo.
+ *
+ * **Cada entrada é podada quando deixa de valer** (ver a conferência logo
+ * abaixo). Uma exceção que sobrevive à tela que ela justificava é pior que
+ * nenhuma: o caminho volta a existir um dia, nasce sem proteção, e a
+ * justificativa já escrita faz parecer deliberado.
  */
 const MENU_SEM_RECURSO: Record<string, string> = {
   '/': 'Dashboard — todo usuário autenticado entra; cada painel dentro dela confere a própria permissão',
-  '/execucao/financeiro/rateio': 'placeholder, sem backend',
   '/execucao/tecnico': 'placeholder, sem backend',
 };
 
-const itensDoMenu = [...nav.matchAll(/{ label: '([^']+)',[^}]*?to: '([^']+)'([^}]*)}/g)].map(
-  (m) => ({
-    label: m[1],
-    to: m[2],
-    recurso: /recurso: '([A-Z_]+)'/.exec(m[3])?.[1] ?? null,
-  }),
-);
+/**
+ * Lê os itens do menu **pela rota**, não pelo formato da linha.
+ *
+ * A primeira versão casava `{ label: '…', … to: '…' }` de uma vez, o que exigia
+ * que `{ label:` estivesse na mesma linha. Item quebrado em várias linhas — que
+ * é o que o formatador faz quando o rótulo é longo — simplesmente não existia
+ * para o script, e a checagem dizia "tudo ok" sobre uma tela que nunca viu.
+ *
+ * Um item invisível é o pior resultado possível aqui: ele passaria sem recurso,
+ * ficaria fora da matriz, e o administrador configuraria tudo que enxerga
+ * concluindo que cobriu o sistema.
+ *
+ * Agora cada ocorrência de `to:` ancora a busca, e o bloco considerado é o
+ * trecho entre a chave que abre o objeto e a que o fecha.
+ */
+function lerItensDoMenu(fonte: string) {
+  const itens: Array<{ label: string; to: string; recurso: string | null }> = [];
+  for (const m of fonte.matchAll(/to: '([^']+)'/g)) {
+    const pos = m.index ?? 0;
+    const abre = fonte.lastIndexOf('{', pos);
+    const fecha = fonte.indexOf('}', pos);
+    const bloco = fonte.slice(abre, fecha === -1 ? fonte.length : fecha);
+    itens.push({
+      label: /label: '([^']+)'/.exec(bloco)?.[1] ?? '(sem rótulo)',
+      to: m[1],
+      recurso: /recurso: '([A-Z_]+)'/.exec(bloco)?.[1] ?? null,
+    });
+  }
+  return itens;
+}
+
+const itensDoMenu = lerItensDoMenu(nav);
 
 ok(itensDoMenu.length > 10, 'menu do frontend foi lido', `${itensDoMenu.length} itens com rota`);
+
+// A checagem confere a **própria cobertura**: toda rota declarada no arquivo
+// tem de virar um item aqui. Sem isto, um item que o leitor deixe escapar sai
+// de toda a verificação sem que nada acuse — é como o buraco anterior passou
+// despercebido.
+const rotasNoArquivo = (nav.match(/to: '/g) ?? []).length;
+ok(
+  itensDoMenu.length === rotasNoArquivo,
+  'nenhum item de menu escapou da leitura',
+  itensDoMenu.length === rotasNoArquivo
+    ? `${rotasNoArquivo} rotas no arquivo, ${itensDoMenu.length} lidas`
+    : `o arquivo tem ${rotasNoArquivo} rotas e só ${itensDoMenu.length} foram lidas — o leitor de navigation.ts está deixando telas de fora`,
+);
 
 const semRecursoNoMenu = itensDoMenu.filter((i) => !i.recurso && !(i.to in MENU_SEM_RECURSO));
 ok(
@@ -133,6 +175,33 @@ ok(
   semRecursoNoMenu.length
     ? `sem recurso: ${semRecursoNoMenu.map((i) => `${i.label} (${i.to})`).join(', ')} — declare o recurso ou justifique em MENU_SEM_RECURSO`
     : `${itensDoMenu.length - Object.keys(MENU_SEM_RECURSO).length} telas cobertas`,
+);
+
+/*
+ * E a poda: exceção que não corresponde mais a uma tela do menu.
+ *
+ * Sem isto, a lista só cresce. O caso que aconteceu: o Rateio saiu de
+ * `/execucao/financeiro/rateio` (placeholder) para `/cadastro/financeiro/rateio`
+ * com recurso próprio, e a exceção ficou — apontando para um caminho que não
+ * existia mais.
+ *
+ * É ruído hoje e armadilha amanhã: o dia em que alguém criar uma tela naquele
+ * caminho, ela nasce fora da matriz de permissões, e a linha de justificativa
+ * já escrita faz a omissão parecer deliberada. A checagem acima não pega —
+ * ela só olha as telas que existem.
+ *
+ * O Dashboard fica de fora da poda: ele é a raiz (`/`) e não é item de menu.
+ */
+const caminhosDoMenu = new Set(itensDoMenu.map((i) => i.to));
+const excecoesMortas = Object.keys(MENU_SEM_RECURSO).filter(
+  (caminho) => caminho !== '/' && !caminhosDoMenu.has(caminho),
+);
+ok(
+  excecoesMortas.length === 0,
+  'nenhuma exceção de menu sobrevive à tela que justificava',
+  excecoesMortas.length
+    ? `não existem mais no menu: ${excecoesMortas.join(', ')} — remova de MENU_SEM_RECURSO`
+    : 'lista podada',
 );
 
 // Recurso citado no menu que não existe no catálogo esconderia o item para
