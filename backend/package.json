@@ -39,7 +39,8 @@
     "verificar:rateio": "tsx scripts/verificarRateio.ts",
     "verificar:ofx": "tsx scripts/verificarOfx.ts",
     "financeiro:backfill": "tsx prisma/seeds/backfillFinanceiro.ts",
-    "verificar:conferencia": "tsx scripts/verificarConferencia.ts"
+    "verificar:conferencia": "tsx scripts/verificarConferencia.ts",
+    "typecheck:scripts": "tsc -p tsconfig.scripts.json --noEmit"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.116.0",

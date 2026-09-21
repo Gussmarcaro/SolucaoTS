@@ -115,6 +115,8 @@ function completa(): DadosMontagem {
 const ctxPadrao: ContextoConferencia = {
   categoriasDoPlano: [10, 20],
   metasPrevistas: 0,
+  notasSemAnexo: 0,
+  pagamentosSemComprovante: 0,
   orgaoEmpenha: true,
 };
 
@@ -256,6 +258,36 @@ console.log('\nConferência da prestação\n');
     p.every((x) => x.severidade === 'IMPEDE' || x.severidade === 'ATENCAO'),
   );
 }
+
+// --- anexos: o que a fiscalização pede ao analisar --------------------------
+{
+  const semNada = conferirPrestacao(completa(), { ...ctxPadrao, notasSemAnexo: 3 });
+  conferir('acusa nota sem arquivo anexado', tem(semNada, 'documentosFiscais', '3 documento(s)'));
+  conferir(
+    'mas não impede a transmissão — o anexo não vai no envio',
+    !semNada.some((x) => x.severidade === 'IMPEDE'),
+  );
+
+  const semComprovante = conferirPrestacao(completa(), {
+    ...ctxPadrao,
+    pagamentosSemComprovante: 2,
+  });
+  conferir('acusa pagamento sem comprovante', tem(semComprovante, 'pagamentos', '2 pagamento(s)'));
+  conferir(
+    'e também não impede',
+    !semComprovante.some((x) => x.severidade === 'IMPEDE'),
+  );
+
+  // Zero não fala: a prestação com tudo anexado não pode ganhar uma linha
+  // dizendo "0 documentos sem arquivo" — é ruído, e ruído é o que faz o
+  // painel deixar de ser lido.
+  const completos = conferirPrestacao(completa(), ctxPadrao);
+  conferir(
+    'com tudo anexado não sobra linha de anexo',
+    !completos.some((x) => x.titulo.includes('anexado')),
+  );
+}
+
 
 console.log(falhas.length ? `\n${falhas.length} falha(s).\n` : '\nTudo ok.\n');
 process.exit(falhas.length ? 1 : 0);

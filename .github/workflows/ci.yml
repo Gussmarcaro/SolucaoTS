@@ -82,6 +82,7 @@ jobs:
 
       - name: Verificações sem banco
         run: |
+          npm run typecheck:scripts
           npm run verificar:montador
           npm run verificar:auditoria
           npm run verificar:alertas

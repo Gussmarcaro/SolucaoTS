@@ -307,6 +307,16 @@ export interface ContextoConferencia {
   categoriasDoPlano: number[];
   /** Quantas metas o ajuste tem; 0 = nenhuma, e aí o relatório vazio é coerente. */
   metasPrevistas: number;
+  /**
+   * Notas desta prestação **sem nenhum arquivo anexado**.
+   *
+   * O anexo não vai no envio — o TCESP recebe os dados, não os PDFs. Mas é o
+   * que a fiscalização pede quando analisa, e é a pergunta que o sistema passou
+   * a saber responder desde que a despesa guarda os documentos.
+   */
+  notasSemAnexo: number;
+  /** Pagamentos desta prestação sem o comprovante anexado. */
+  pagamentosSemComprovante: number;
   /** Se o órgão empenha o repasse — governa a cobrança do bloco de empenhos. */
   orgaoEmpenha: boolean;
 }

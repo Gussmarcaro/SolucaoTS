@@ -29,7 +29,17 @@ function limpo<T extends Record<string, unknown>>(obj: T): T {
  * blocos capturados. Retorna também `avisos` com as lacunas conhecidas.
  * É uma PRÉVIA: alguns blocos declaratórios/certidões ainda não são capturados.
  */
-export function montarPrestacao(d: DadosMontagem, inexistentes?: CodigosInexistentes): ResultadoMontagem {
+/**
+ * `hoje` é injetável para as regras que comparam com a data corrente
+ * (emissão futura, pagamento futuro) poderem ser exercitadas contra datas
+ * fixas. Sem isso, `verificar:montador` andava com o relógio: os 16 casos
+ * de quebra passavam ou não conforme o dia em que o script rodasse.
+ */
+export function montarPrestacao(
+  d: DadosMontagem,
+  inexistentes?: CodigosInexistentes,
+  hoje?: Date,
+): ResultadoMontagem {
   const avisos: string[] = [];
   const doc: Record<string, unknown> = {};
 
@@ -513,6 +523,6 @@ export function montarPrestacao(d: DadosMontagem, inexistentes?: CodigosInexiste
   return {
     documento: doc,
     avisos,
-    erros: [...validarPrestacao(d, inexistentes), ...validarDominios(d)],
+    erros: [...validarPrestacao(d, inexistentes, hoje), ...validarDominios(d)],
   };
 }

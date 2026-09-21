@@ -1,0 +1,18 @@
+{
+  // Os scripts `verificar:*` guardam as regras do sistema — e não eram
+  // typecheckados: o `tsconfig.json` cobre só `src`, e `rootDir` impede
+  // incluir `scripts` nele.
+  //
+  // A falha que isso escondia é silenciosa, e aconteceu: ao acrescentar dois
+  // campos obrigatórios a `ContextoConferencia`, o contexto de teste continuou
+  // sem eles. O TypeScript não acusou, os campos vieram `undefined`, e as
+  // regras novas simplesmente nunca dispararam — com a bateria toda verde.
+  //
+  // Config próprio, e não alteração do principal: nada que hoje funciona muda.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "noEmit": true
+  },
+  "include": ["src", "scripts"]
+}

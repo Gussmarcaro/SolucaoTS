@@ -8,7 +8,6 @@
  *   npm run verificar:rateio
  */
 import {
-  CASAS_PERCENTUAL,
   METODOS,
   METODOS_IDS,
   calcularRateio,

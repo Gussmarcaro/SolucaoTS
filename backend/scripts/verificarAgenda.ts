@@ -198,7 +198,7 @@ console.log('\nAgenda de Compromissos\n');
   recusa('alertas repetidos são recusados', () =>
     normalizarEValidarCompromisso({
       ...base,
-      alertas: [{ minutosAntes: 30 }, { minutosAntes: 30, canal: 'SISTEMA' }],
+      alertas: [{ minutosAntes: 30 }, { minutosAntes: 30 }],
     }),
   );
 

@@ -106,7 +106,33 @@ export function conferirPrestacao(d: DadosMontagem, ctx: ContextoConferencia): P
   }
 
   /*
-   * 4. Coerências que ninguém confere à mão.
+   * 4. Os documentos estão lá?
+   *
+   * O anexo **não vai no envio** — o TCESP recebe os dados, não os PDFs —, e
+   * por isso faltar um nunca impede a transmissão. Mas é a primeira coisa que
+   * a fiscalização pede ao analisar, e até aqui a resposta morava numa pasta de
+   * rede. Agora que a despesa guarda os arquivos, a prestação sabe dizer quais
+   * faltam **antes** de alguém perguntar.
+   *
+   * Basta **um** arquivo para a nota não ser apontada, qualquer que seja o
+   * papel dele: exigir justamente o "Documento Fiscal" apontaria a nota de
+   * autônomo que tem o recibo anexado — e cobrar o que já está lá é o caminho
+   * mais curto para o painel deixar de ser lido.
+   */
+  if (ctx.notasSemAnexo > 0)
+    atencao(
+      'documentosFiscais',
+      `${ctx.notasSemAnexo} documento(s) fiscal(is) sem nenhum arquivo anexado.`,
+    );
+
+  if (ctx.pagamentosSemComprovante > 0)
+    atencao(
+      'pagamentos',
+      `${ctx.pagamentosSemComprovante} pagamento(s) sem comprovante anexado.`,
+    );
+
+  /*
+   * 5. Coerências que ninguém confere à mão.
    *
    * Nenhuma delas é irregular por si — por isso são avisos. O que elas fazem é
    * pôr diante dos olhos um número que, sozinho numa tela, ninguém compara.

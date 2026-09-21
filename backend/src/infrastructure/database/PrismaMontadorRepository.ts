@@ -407,18 +407,38 @@ export class PrismaMontadorRepository implements IMontadorRepository {
     });
     if (!prestacao) return null;
 
-    const [categorias, metasPrevistas] = await Promise.all([
-      prisma.planoAplicacaoItem.findMany({
-        where: { ajusteId: prestacao.ajusteId, categoriaDespesaTipo: { not: null } },
-        select: { categoriaDespesaTipo: true },
-        distinct: ['categoriaDespesaTipo'],
-      }),
-      prisma.meta.count({ where: { programa: { ajusteId: prestacao.ajusteId } } }),
-    ]);
+    const [categorias, metasPrevistas, notasSemAnexo, pagamentosSemComprovante] =
+      await Promise.all([
+        prisma.planoAplicacaoItem.findMany({
+          where: { ajusteId: prestacao.ajusteId, categoriaDespesaTipo: { not: null } },
+          select: { categoriaDespesaTipo: true },
+          distinct: ['categoriaDespesaTipo'],
+        }),
+        prisma.meta.count({ where: { programa: { ajusteId: prestacao.ajusteId } } }),
+        /*
+         * As notas desta prestação sem arquivo nenhum.
+         *
+         * Conta pela **ligação**, e não por `documentoFiscal.prestacaoId`: a
+         * nota é do órgão, e quais prestações a apropriam está em
+         * `PrestacaoDocumentoFiscal`. Contar pelo campo antigo deixaria de fora
+         * justamente as notas lançadas no Financeiro — que são todas as novas.
+         *
+         * `none: {}` é "nenhum anexo, de qualquer tipo": basta um arquivo para
+         * a nota não ser apontada.
+         */
+        prisma.prestacaoDocumentoFiscal.count({
+          where: { prestacaoId, documentoFiscal: { anexos: { none: {} } } },
+        }),
+        prisma.pagamento.count({
+          where: { prestacaoId, anexos: { none: { tipo: 'COMPROVANTE_PAGAMENTO' } } },
+        }),
+      ]);
 
     return {
       categoriasDoPlano: categorias.map((c) => c.categoriaDespesaTipo!).sort((a, b) => a - b),
       metasPrevistas,
+      notasSemAnexo,
+      pagamentosSemComprovante,
       orgaoEmpenha: prestacao.ajuste?.cliente?.empenhaRepasse ?? true,
     };
   }
