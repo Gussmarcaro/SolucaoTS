@@ -5,6 +5,7 @@ import { PrismaPrestacaoRepository } from '@/infrastructure/database/PrismaPrest
 import { DocumentoFiscalUseCases } from '@/application/documentoFiscal/DocumentoFiscalUseCases';
 import { PrismaDocumentoFiscalRepository } from '@/infrastructure/database/PrismaDocumentoFiscalRepository';
 import { PrismaRateioRepository } from '@/infrastructure/database/PrismaRateioRepository';
+import { PrismaAjusteRepository } from '@/infrastructure/database/PrismaAjusteRepository';
 
 /**
  * Pagamentos — no escopo do **órgão**, em Execução → Financeiro.
@@ -21,6 +22,7 @@ const casos = new PagamentoUseCases(
   new PrismaPrestacaoRepository(),
   new DocumentoFiscalUseCases(new PrismaDocumentoFiscalRepository(), new PrismaPrestacaoRepository()),
   new PrismaRateioRepository(),
+  new PrismaAjusteRepository(),
 );
 
 export class PagamentoOrgaoController {

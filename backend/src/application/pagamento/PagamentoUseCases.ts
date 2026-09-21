@@ -7,6 +7,7 @@ import { parseDataISO } from '@/shared/datas';
 import { ratearValor } from '@/core/rateio/Rateio';
 import type { IRateioRepository } from '@/application/rateio/IRateioRepository';
 import type { DocumentoFiscalUseCases } from '@/application/documentoFiscal/DocumentoFiscalUseCases';
+import type { IAjusteRepository } from '@/application/ajuste/IAjusteRepository';
 import type { RatearPagamentoDTO } from './dtos';
 
 function num(v: unknown): number | null {
@@ -74,6 +75,8 @@ export class PagamentoUseCases {
     /** Para o rateio do pagamento — ver ratearNoOrgao. */
     private readonly documentos?: DocumentoFiscalUseCases,
     private readonly rateios?: IRateioRepository,
+    /** Para achar a conta de cada ajuste no rateio — ver contaDoAjuste. */
+    private readonly ajustes?: IAjusteRepository,
   ) {}
 
   private async garantirPrestacao(prestacaoId: string) {
@@ -172,6 +175,31 @@ export class PagamentoUseCases {
    * sai da conta. Ratear o bruto faria a soma dos pagamentos não bater com o
    * extrato — justamente a conferência que a conciliação existe para fazer.
    */
+  /**
+   * A conta de onde a parcela deste ajuste sai.
+   *
+   * **Prefere a conta corrente**, pela regra do Audesp que o órgão segue:
+   * corrente é de onde se paga; conta de investimento é reserva. Com uma só,
+   * usa aquela, qualquer que seja o tipo.
+   *
+   * Devolve `null` — e o pagamento fica com a conta informada no formulário —
+   * quando o ajuste não tem conta, ou quando tem **mais de uma corrente** e
+   * portanto não há o que deduzir. Recusar o rateio inteiro por causa de um
+   * ajuste ambíguo seria pior: o usuário perderia as outras parcelas também, e
+   * ele pode corrigir a conta no lançamento.
+   */
+  private async contaDoAjuste(ajusteId: string) {
+    if (!this.ajustes) return null;
+    const ajuste = await this.ajustes.buscarPorId(ajusteId);
+    if (!ajuste) return null;
+
+    const contas = ajuste.contasBancarias;
+    if (contas.length === 1) return contas[0];
+
+    const correntes = contas.filter((c) => c.contaTipo === 1);
+    return correntes.length === 1 ? correntes[0] : null;
+  }
+
   async ratearNoOrgao(input: RatearPagamentoDTO): Promise<Pagamento[]> {
     if (!this.documentos || !this.rateios)
       throw new BusinessError('Rateio de pagamento indisponível nesta instalação.');
@@ -206,22 +234,40 @@ export class PagamentoUseCases {
      */
     const criados: Pagamento[] = [];
     for (const parcela of parcelas) {
-      criados.push(
-        await this.repo.criarNoOrgao(
-          await (async () => {
-            const dados = validar({
-              ...input,
-              ajusteId: parcela.ajusteId,
-              documentoFiscalId,
-              valor: parcela.valor,
-            });
-            // As parcelas somam o liquido, que cabe no bruto — mas a nota
-            // pode ja ter pagamento lancado, e ai nao cabe.
-            await this.conferirContraNota(dados);
-            return dados;
-          })(),
-        ),
-      );
+      /*
+       * Cada parcela sai da conta do **seu** ajuste.
+       *
+       * É assim que o dinheiro se move de verdade: cada parceria paga a sua
+       * parte com o recurso dela, e o banco mostra dois débitos — R$ 600,00 na
+       * conta de um ajuste e R$ 200,00 na do outro. A primeira versão repetia a
+       * conta informada no formulário nas duas parcelas, e o extrato então não
+       * casava com nada: a conciliação procura por conta, e as duas apontavam
+       * para a errada.
+       *
+       * A fonte de recurso vem junto, da própria conta do ajuste — é ela que
+       * declara qual recurso entra ali.
+       */
+      const conta = await this.contaDoAjuste(parcela.ajusteId);
+
+      const dados = validar({
+        ...input,
+        ajusteId: parcela.ajusteId,
+        documentoFiscalId,
+        valor: parcela.valor,
+        ...(conta
+          ? {
+              banco: conta.banco,
+              agencia: conta.agencia,
+              contaCorrente: conta.conta,
+              fonteRecursoTipo: conta.fonteRecursoTipo ?? input.fonteRecursoTipo,
+            }
+          : {}),
+      });
+
+      // As parcelas somam o líquido, que cabe no bruto — mas a nota pode já
+      // ter pagamento lançado, e aí não cabe.
+      await this.conferirContraNota(dados);
+      criados.push(await this.repo.criarNoOrgao(dados));
     }
     return criados;
   }

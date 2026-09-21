@@ -148,9 +148,19 @@ export function PainelRateio({
       </table>
 
       <p className="mt-2 text-xs text-ink-400">
-        {pronto
-          ? 'Um pagamento por ajuste será lançado, com a data, a fonte e o meio informados abaixo. O valor de cada um vem do quadro — não se digita.'
-          : 'Preencha a data, a fonte de recurso e o meio de pagamento para liberar o lançamento rateado.'}
+        {pronto ? (
+          <>
+            Um pagamento por ajuste será lançado, <strong>cada um saindo da conta do seu próprio
+            ajuste</strong> — é assim que o dinheiro se move, e é o que faz cada débito casar com o
+            extrato daquela conta. O valor vem do quadro; não se digita.
+          </>
+        ) : (
+          'Preencha a data e o meio de pagamento para liberar o lançamento rateado.'
+        )}
+      </p>
+      <p className="mt-1 text-xs text-ink-400">
+        Ajuste sem conta cadastrada — ou com mais de uma conta corrente, onde não há o que deduzir —
+        usa a conta informada abaixo, e você corrige no lançamento.
       </p>
     </div>
   );
