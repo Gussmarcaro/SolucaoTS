@@ -29,6 +29,8 @@ Checagem automatizada em duas camadas: os scripts **`verificar:*`** (regras pura
 - `Documentação/empenho_schema.json` — JSON Schema de um bloco (empenho). Lembrar que a prestação de contas real tem muitos outros blocos.
 - Arquivos `*.csv` de exemplo — formatos de importação (ver "Parsers de CSV" abaixo).
 
+**`RESTAURACAO.md`** não é leitura para codar — é o procedimento de voltar o banco a partir de um backup, escrito para ser seguido sob pressão. Os passos foram executados de verdade em 21/09/2026, com o anexo baixado do Gmail: decifrou, restaurou 75 tabelas sem erro e a aplicação subiu contra a cópia. Contém as armadilhas que aparecerem no caminho — `DROP SCHEMA public` recusado por falta de propriedade do schema, `ON_ERROR_STOP=1` sem o qual o `psql` engole erros e restaura pela metade, e o `pkill -f "tsx src/server.ts"` que derruba a API de produção junto.
+
 ## Arquitetura
 
 **Clean Architecture + Hexagonal (Ports & Adapters).** Motivo: as normativas do TCESP mudam por comunicado com frequência, então o núcleo (Domínio + Casos de Uso) fica **agnóstico** a framework/DB/UI, e integrações (API do TCE, leitura de CSV) entram como Adapters plugáveis.
