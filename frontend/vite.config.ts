@@ -44,6 +44,28 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        /*
+         * React e o roteador num pedaço à parte.
+         *
+         * Não é para o primeiro acesso — é para todos os outros. Essas
+         * bibliotecas mudam quando se atualiza uma dependência, e o código do
+         * sistema muda toda semana; juntos, cada publicação invalida o cache
+         * dos dois. Separados, quem já usou o sistema baixa só o que mudou.
+         *
+         * Os ícones ficam de fora de propósito: o `lucide-react` é
+         * árvore-sacudível e cada tela puxa os seus, então prendê-lo aqui
+         * traria o conjunto inteiro para o primeiro acesso — o oposto do que
+         * a divisão por rota acabou de fazer.
+         */
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+        },
+      },
+    },
+  },
   server: {
     port: 5173,
     proxy: {
