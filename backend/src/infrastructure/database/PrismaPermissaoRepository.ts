@@ -45,23 +45,36 @@ export class PrismaPermissaoRepository implements IPermissaoRepository {
     // fim o liberaria por completo, o oposto exato da intenção de quem salvou.
     const comMarca = [...acoes, { recursoId: MARCA_CONFIGURADO, acao: 'READ' as AcaoPermissao }];
 
-    // Garante o catálogo das combinações usadas antes de vincular.
-    const ids = new Map<string, string>();
-    for (const { recursoId, acao } of comMarca) {
-      const chave = `${recursoId}:${acao}`;
-      if (ids.has(chave)) continue;
-      const permissao = await prisma.permissao.upsert({
-        where: { modulo_acao: { modulo: recursoId, acao } },
-        update: {},
-        create: {
-          modulo: recursoId,
-          acao,
-          descricao: `${acao} em ${RECURSOS_POR_ID.get(recursoId)?.rotulo ?? recursoId}`,
-        },
-        select: { id: true },
-      });
-      ids.set(chave, permissao.id);
-    }
+    /*
+     * Garante o catálogo das combinações usadas antes de vincular.
+     *
+     * Em **duas** consultas, e não uma por combinação: a matriz tem ~30
+     * recursos × até 4 ações, então o laço de `upsert` fazia até 120 idas ao
+     * banco em sequência para salvar uma tela — e o tempo disso é o que o
+     * usuário sente ao clicar em Salvar.
+     *
+     * `createMany` com `skipDuplicates` se apoia no `@@unique([modulo, acao])`:
+     * o que já existe é ignorado sem erro, e o que falta nasce. Depois um
+     * `findMany` traz os ids de todas de uma vez. O resultado é o mesmo do
+     * `upsert`, inclusive na primeira execução com o catálogo vazio.
+     */
+    const combinacoes = [...new Map(comMarca.map((c) => [`${c.recursoId}:${c.acao}`, c])).values()];
+
+    await prisma.permissao.createMany({
+      data: combinacoes.map(({ recursoId, acao }) => ({
+        modulo: recursoId,
+        acao,
+        descricao: `${acao} em ${RECURSOS_POR_ID.get(recursoId)?.rotulo ?? recursoId}`,
+      })),
+      skipDuplicates: true,
+    });
+
+    const existentes = await prisma.permissao.findMany({
+      where: { OR: combinacoes.map(({ recursoId, acao }) => ({ modulo: recursoId, acao })) },
+      select: { id: true, modulo: true, acao: true },
+    });
+
+    const ids = new Map(existentes.map((p) => [`${p.modulo}:${p.acao}`, p.id]));
 
     // Apagar e recriar dentro de uma transação: a matriz é substituída inteira,
     // e uma falha no meio deixaria o grupo com acesso parcial — pior que

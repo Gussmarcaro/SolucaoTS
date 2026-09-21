@@ -1676,6 +1676,14 @@ model Pagamento {
 
   @@index([documentoFiscalId])
   @@index([prestacaoId])
+  // Pagamento era a **única raiz de tenant sem índice por `clienteId`** — e é a
+  // tabela mais lida do Financeiro. Toda consulta da tela passa pelo recorte de
+  // órgão que a extension acrescenta, e sem isto varria a tabela inteira.
+  // O par com a data serve à mesma consulta, que ordena por ela.
+  @@index([clienteId, dataPagamento])
+  // `listarCandidatos` filtra por ajuste (ou sem ajuste) ao montar a prestação.
+  // É o espelho do índice que `Receita` já tinha para a mesma pergunta.
+  @@index([ajusteId])
 }
 
 model Disponibilidade {
@@ -2263,4 +2271,8 @@ model AjusteContaBancaria {
   // já acontece em `Disponibilidade`, que segue o schema oficial.
   @@unique([ajusteId, banco, agencia, conta, contaTipo])
   @@index([ajusteId])
+  // `emUso` pergunta por aqui antes de deixar excluir uma conta do cadastro.
+  // É a única consulta que parte do lado do cadastro, e sem índice ela varria
+  // todas as contas de todos os ajustes para responder "alguém usa esta?".
+  @@index([contaBancariaId])
 }
