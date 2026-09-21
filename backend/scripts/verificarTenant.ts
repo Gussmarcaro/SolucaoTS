@@ -376,5 +376,52 @@ console.log('\nIsolamento multi-tenant\n');
   );
 }
 
+// --- o aperto: o órgão é obrigatório, e a duplicidade é por órgão ----------
+// Duas invariantes que a extension não consegue garantir sozinha, porque vivem
+// no schema. As duas falham em silêncio: o sistema continua funcionando, e é
+// justamente esse o problema.
+{
+  const raizes = Prisma.dmmf.datamodel.models.filter((m) =>
+    m.fields.some((f) => f.name === 'clienteId'),
+  );
+
+  conferir('há raízes de tenant a conferir', raizes.length > 0, `${raizes.length} models`);
+
+  // 1. Nenhuma raiz aceita gravação sem dono.
+  //
+  // Enquanto `clienteId` era opcional, um registro criado fora do contexto
+  // nascia órfão: nem o filtro o alcançava (`clienteId = X` nunca casa com
+  // nulo), nem ninguém notava. Exceção única e documentada no schema:
+  // `RegistroAuditoria`, que é gravada fora da requisição por seeds e scripts
+  // — ali um nulo perde a linha, e perder trilha é pior que escondê-la.
+  const EXCECOES = new Set(['RegistroAuditoria']);
+  for (const m of raizes) {
+    if (EXCECOES.has(m.name)) continue;
+    const campo = m.fields.find((f) => f.name === 'clienteId');
+    conferir(`${m.name}.clienteId é obrigatório`, campo?.isRequired === true);
+  }
+
+  // 2. Chave de cadastro não é única no sistema inteiro.
+  //
+  // Duas prefeituras contratam o mesmo fornecedor, firmam parceria com a mesma
+  // OSC e numeram o contrato "001/2025" do mesmo jeito. Uma trava global aqui
+  // não protege nada — protege o `@@unique([clienteId, …])` — e impede o
+  // segundo órgão de cadastrar, com um erro de duplicidade sobre um registro
+  // que ele nem enxerga.
+  for (const m of raizes) {
+    for (const composta of m.uniqueFields) {
+      if (composta[0] !== 'clienteId') continue;
+      for (const nome of composta.slice(1)) {
+        const campo = m.fields.find((f) => f.name === nome);
+        conferir(
+          `${m.name}.${nome} é único por órgão, não globalmente`,
+          campo?.isUnique !== true,
+          'o @unique global convive com o composto e trava o segundo cliente',
+        );
+      }
+    }
+  }
+}
+
 console.log(falhas.length ? `\n${falhas.length} falha(s).\n` : '\nTudo ok.\n');
 process.exit(falhas.length ? 1 : 0);

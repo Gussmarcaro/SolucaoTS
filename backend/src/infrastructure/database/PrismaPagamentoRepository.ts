@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
+import { tenantObrigatorio } from '@/shared/contexto';
 import type { IPagamentoRepository } from '@/application/pagamento/IPagamentoRepository';
 import type { DadosPagamento } from '@/application/pagamento/dtos';
 import type { Pagamento, MeioPagamento } from '@/core/pagamento/Pagamento';
@@ -85,7 +86,10 @@ export class PrismaPagamentoRepository implements IPagamentoRepository {
 
   /** Nasce sem prestação: quem se apropria dele decide isso depois. */
   async criarNoOrgao(dados: Parameters<typeof this.atualizar>[1]) {
-    const row = await prisma.pagamento.create({ data: { ...dados }, select: selecao });
+    const row = await prisma.pagamento.create({
+      data: { ...dados, clienteId: tenantObrigatorio('Pagamento') },
+      select: selecao,
+    });
     return toDomain(row);
   }
 
@@ -142,7 +146,10 @@ export class PrismaPagamentoRepository implements IPagamentoRepository {
   }
 
   async criar(prestacaoId: string, dados: DadosPagamento): Promise<Pagamento> {
-    const row = await prisma.pagamento.create({ data: { prestacaoId, ...dados }, select: selecao });
+    const row = await prisma.pagamento.create({
+      data: { prestacaoId, ...dados, clienteId: tenantObrigatorio('Pagamento') },
+      select: selecao,
+    });
     return toDomain(row);
   }
 

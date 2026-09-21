@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
+import { tenantObrigatorio } from '@/shared/contexto';
 import type { ICompromissoRepository } from '@/application/compromisso/ICompromissoRepository';
 import type { DadosCompromisso, ListarCompromissosParams } from '@/application/compromisso/dtos';
 import type { Compromisso, ResumoAgenda } from '@/core/compromisso/Compromisso';
@@ -161,6 +162,7 @@ export class PrismaCompromissoRepository implements ICompromissoRepository {
     const row = await prisma.compromisso.create({
       data: {
         ...dadosDoCompromisso(d),
+        clienteId: tenantObrigatorio('Compromisso'),
         participantes: { create: d.participantes.map((usuarioId) => ({ usuarioId })) },
         grupos: { create: d.grupos.map((grupoId) => ({ grupoId })) },
         alertas: { create: d.alertas },

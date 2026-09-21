@@ -9,6 +9,7 @@ import type {
 import type { Fornecedor } from '@/core/fornecedor/Fornecedor';
 import { apenasDigitos } from '@/shared/validators/documento';
 import { normalizarTexto } from '@/shared/normalizar';
+import { tenantObrigatorio } from '@/shared/contexto';
 import { buscaFornecedor } from './buscaTexto';
 
 const selecao = {
@@ -44,8 +45,17 @@ export class PrismaFornecedorRepository implements IFornecedorRepository {
     return row ? toDomain(row) : null;
   }
 
+  /**
+   * A checagem de duplicidade — e ela é **por órgão**.
+   *
+   * `findFirst`, e não `findUnique`: o documento deixou de ser único no
+   * sistema inteiro (duas prefeituras contratam legitimamente o mesmo
+   * fornecedor) e passou a sê-lo dentro do órgão, no `@@unique` composto. Quem
+   * acrescenta o recorte é a extension de tenant, por `AND` — então o que volta
+   * daqui é sempre o fornecedor do órgão de quem perguntou.
+   */
   async buscarPorDocumento(documento: string): Promise<Fornecedor | null> {
-    const row = await prisma.fornecedor.findUnique({
+    const row = await prisma.fornecedor.findFirst({
       where: { documento: apenasDigitos(documento) },
       select: selecao,
     });
@@ -54,7 +64,15 @@ export class PrismaFornecedorRepository implements IFornecedorRepository {
 
   async criar(dados: DadosFornecedor): Promise<Fornecedor> {
     const row = await prisma.fornecedor.create({
-      data: { ...dados, buscaTexto: buscaFornecedor(dados) },
+      // O órgão vem do contexto da requisição, como o `criadoPor`. A extension
+      // de auditoria também o carimbaria, mas informá-lo aqui é o que faz o
+      // compilador cobrar: raiz nova que esqueça o dono não compila, em vez de
+      // gravar um registro que ninguém — nem quem o criou — volta a enxergar.
+      data: {
+        ...dados,
+        clienteId: tenantObrigatorio('Fornecedor'),
+        buscaTexto: buscaFornecedor(dados),
+      },
       select: selecao,
     });
     return toDomain(row);

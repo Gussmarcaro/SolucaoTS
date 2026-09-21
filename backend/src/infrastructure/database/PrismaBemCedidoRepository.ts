@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
+import { tenantObrigatorio } from '@/shared/contexto';
 import type { IBemCedidoRepository } from '@/application/bemCedido/IBemCedidoRepository';
 import type { DadosBemCedido, ListarBensCedidosParams, Paginado } from '@/application/bemCedido/dtos';
 import type { BemCedido } from '@/core/bemCedido/BemCedido';
@@ -46,7 +47,9 @@ export class PrismaBemCedidoRepository implements IBemCedidoRepository {
   }
 
   async buscarPorIdentificador(identificador: string): Promise<BemCedido | null> {
-    const row = await prisma.bemCedido.findUnique({
+    // `findFirst`: o identificador é único **por órgão** (`@@unique`
+    // composto), e o recorte entra pela extension de tenant.
+    const row = await prisma.bemCedido.findFirst({
       where: { identificador },
       select: selecao,
     });
@@ -55,7 +58,11 @@ export class PrismaBemCedidoRepository implements IBemCedidoRepository {
 
   async criar(dados: DadosBemCedido): Promise<BemCedido> {
     const row = await prisma.bemCedido.create({
-      data: { ...dados, buscaTexto: buscaBemCedido(dados) },
+      data: {
+        ...dados,
+        clienteId: tenantObrigatorio('BemCedido'),
+        buscaTexto: buscaBemCedido(dados),
+      },
       select: selecao,
     });
     return toDomain(row);

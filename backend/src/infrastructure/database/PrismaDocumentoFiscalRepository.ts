@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
+import { tenantObrigatorio } from '@/shared/contexto';
 import type { IDocumentoFiscalRepository } from '@/application/documentoFiscal/IDocumentoFiscalRepository';
 import type { DadosDocumentoFiscal } from '@/application/documentoFiscal/dtos';
 import type { ArquivoPdf } from '@/core/entidade/complementos';
@@ -217,7 +218,11 @@ export class PrismaDocumentoFiscalRepository implements IDocumentoFiscalReposito
   async criarNoOrgao(dados: DadosDocumentoFiscal): Promise<DocumentoFiscal> {
     const { escalares, retencoes } = separar(dados);
     const row = await prisma.documentoFiscal.create({
-      data: { ...escalares, retencoes: { create: retencoes } },
+      data: {
+        ...escalares,
+        clienteId: tenantObrigatorio('DocumentoFiscal'),
+        retencoes: { create: retencoes },
+      },
       select: selecao,
     });
     return toDomain(row);
@@ -246,7 +251,12 @@ export class PrismaDocumentoFiscalRepository implements IDocumentoFiscalReposito
   async criar(prestacaoId: string, dados: DadosDocumentoFiscal): Promise<DocumentoFiscal> {
     const { escalares, retencoes } = separar(dados);
     const row = await prisma.documentoFiscal.create({
-      data: { prestacaoId, ...escalares, retencoes: { create: retencoes } },
+      data: {
+        prestacaoId,
+        ...escalares,
+        clienteId: tenantObrigatorio('DocumentoFiscal'),
+        retencoes: { create: retencoes },
+      },
       select: selecao,
     });
     return toDomain(row);

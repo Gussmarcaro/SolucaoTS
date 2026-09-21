@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
+import { tenantObrigatorio } from '@/shared/contexto';
 import type { IReceitaRepository } from '@/application/receita/IReceitaRepository';
 import type { DadosReceita } from '@/application/receita/dtos';
 import type { Receita } from '@/core/receita/Receita';
@@ -68,7 +69,10 @@ export class PrismaReceitaRepository implements IReceitaRepository {
 
   /** Nasce sem prestação: quem se apropria dele decide isso depois. */
   async criarNoOrgao(dados: Parameters<typeof this.atualizar>[1]) {
-    const row = await prisma.receita.create({ data: { ...dados }, select: selecao });
+    const row = await prisma.receita.create({
+      data: { ...dados, clienteId: tenantObrigatorio('Receita') },
+      select: selecao,
+    });
     return toDomain(row);
   }
 
@@ -117,7 +121,10 @@ export class PrismaReceitaRepository implements IReceitaRepository {
   }
 
   async criar(prestacaoId: string, dados: DadosReceita): Promise<Receita> {
-    const row = await prisma.receita.create({ data: { prestacaoId, ...dados }, select: selecao });
+    const row = await prisma.receita.create({
+      data: { prestacaoId, ...dados, clienteId: tenantObrigatorio('Receita') },
+      select: selecao,
+    });
     return toDomain(row);
   }
 

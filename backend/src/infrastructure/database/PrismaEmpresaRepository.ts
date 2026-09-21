@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
+import { tenantObrigatorio } from '@/shared/contexto';
 import type { IEmpresaRepository } from '@/application/empresa/IEmpresaRepository';
 import type {
   AtualizarEmpresaDTO,
@@ -18,11 +19,19 @@ export class PrismaEmpresaRepository implements IEmpresaRepository {
   }
 
   buscarPorCnpj(cnpj: string): Promise<Empresa | null> {
-    return prisma.empresa.findUnique({ where: { cnpj: apenasDigitos(cnpj) } });
+    // `findFirst`: o CNPJ é único **por órgão** (`@@unique` composto), e o
+    // recorte entra pela extension de tenant.
+    return prisma.empresa.findFirst({ where: { cnpj: apenasDigitos(cnpj) } });
   }
 
   criar(dados: CriarEmpresaDTO): Promise<Empresa> {
-    return prisma.empresa.create({ data: { ...dados, buscaTexto: buscaEmpresa(dados) } });
+    return prisma.empresa.create({
+      data: {
+        ...dados,
+        clienteId: tenantObrigatorio('Empresa'),
+        buscaTexto: buscaEmpresa(dados),
+      },
+    });
   }
 
   atualizar(id: string, dados: AtualizarEmpresaDTO): Promise<Empresa> {

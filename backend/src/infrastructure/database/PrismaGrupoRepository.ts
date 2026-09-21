@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
+import { tenantObrigatorio } from '@/shared/contexto';
 import type { IGrupoRepository } from '@/application/grupo/IGrupoRepository';
 import type { DadosGrupo, ListarGruposParams, Paginado } from '@/application/grupo/dtos';
 import type { Grupo, GrupoResumo } from '@/core/grupo/Grupo';
@@ -50,7 +51,11 @@ export class PrismaGrupoRepository implements IGrupoRepository {
 
   async criar(dados: DadosGrupo): Promise<Grupo> {
     const row = await prisma.grupoUsuario.create({
-      data: { ...dados, buscaTexto: buscaGrupo(dados) },
+      data: {
+        ...dados,
+        clienteId: tenantObrigatorio('GrupoUsuario'),
+        buscaTexto: buscaGrupo(dados),
+      },
       select: selecao,
     });
     return toDomain(row);

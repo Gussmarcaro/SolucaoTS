@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
+import { tenantObrigatorio } from '@/shared/contexto';
 import type { IServidorCedidoRepository } from '@/application/servidorCedido/IServidorCedidoRepository';
 import type {
   DadosServidorCedido,
@@ -55,7 +56,9 @@ export class PrismaServidorCedidoRepository implements IServidorCedidoRepository
   }
 
   async buscarPorCpf(cpf: string): Promise<ServidorCedido | null> {
-    const row = await prisma.servidorCedidoCadastro.findUnique({
+    // `findFirst`: o CPF é único **por órgão** (`@@unique` composto), e o
+    // recorte entra pela extension de tenant.
+    const row = await prisma.servidorCedidoCadastro.findFirst({
       where: { cpf: apenasDigitos(cpf) },
       select: selecao,
     });
@@ -64,7 +67,11 @@ export class PrismaServidorCedidoRepository implements IServidorCedidoRepository
 
   async criar(dados: DadosServidorCedido): Promise<ServidorCedido> {
     const row = await prisma.servidorCedidoCadastro.create({
-      data: { ...dados, buscaTexto: buscaServidorCedido(dados) },
+      data: {
+        ...dados,
+        clienteId: tenantObrigatorio('ServidorCedidoCadastro'),
+        buscaTexto: buscaServidorCedido(dados),
+      },
       select: selecao,
     });
     return toDomain(row);

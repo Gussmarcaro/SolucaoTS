@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
+import { tenantObrigatorio } from '@/shared/contexto';
 import type { IUsuarioRepository } from '@/application/usuario/IUsuarioRepository';
 import type {
   ListarUsuariosParams,
@@ -54,7 +55,10 @@ export class PrismaUsuarioRepository implements IUsuarioRepository {
   }
 
   async buscarPorDocumento(documento: string): Promise<Usuario | null> {
-    const row = await prisma.usuario.findUnique({
+    // `findFirst`: o CPF é único **por órgão** — a mesma pessoa pode ser
+    // usuária de dois clientes. O e-mail, esse sim, continua único no sistema
+    // inteiro, porque é por ele que se entra, antes de haver órgão.
+    const row = await prisma.usuario.findFirst({
       where: { documento: apenasDigitos(documento) },
       select: selecao,
     });
@@ -72,6 +76,7 @@ export class PrismaUsuarioRepository implements IUsuarioRepository {
   async criar(dados: NovoUsuarioDTO): Promise<Usuario> {
     const row = await prisma.usuario.create({
       data: {
+        clienteId: tenantObrigatorio('Usuario'),
         nome: dados.nome,
         documento: dados.documento,
         grupoUsuarioId: dados.grupoUsuarioId,

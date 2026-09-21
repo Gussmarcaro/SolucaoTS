@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
+import { tenantObrigatorio } from '@/shared/contexto';
 import type { IConciliacaoRepository } from '@/application/conciliacao/IConciliacaoRepository';
 import type { ConciliarDTO, LinhaExtrato } from '@/application/conciliacao/dtos';
 import type { LancamentoOfx, TipoLancamentoExtrato } from '@/infrastructure/parsers/parseOfx';
@@ -54,8 +55,10 @@ export class PrismaConciliacaoRepository implements IConciliacaoRepository {
    * extrato de 300 transações é operação comum, e conferir uma a uma custaria
    * 300 idas para não gravar nada.
    *
-   * O `clienteId` não vai no payload — a extension de auditoria o carimba,
-   * como em todo `create` do sistema.
+   * O `clienteId` vai **explícito** em cada linha. A extension de auditoria
+   * também o carimba, mas quem obriga é o tipo: sem o campo isto não compila,
+   * e era justamente aqui que o carimbo automático não chegava — o hook de
+   * `createMany` só preenchia o autor, e o extrato inteiro entrava sem órgão.
    */
   async importar(
     conta: { banco: number | null; agencia: string | null; conta: string | null },
@@ -63,6 +66,7 @@ export class PrismaConciliacaoRepository implements IConciliacaoRepository {
   ): Promise<{ novas: number; repetidas: number }> {
     const { count } = await prisma.lancamentoExtrato.createMany({
       data: lancamentos.map((l) => ({
+        clienteId: tenantObrigatorio('LancamentoExtrato'),
         banco: conta.banco,
         agencia: conta.agencia,
         conta: conta.conta,

@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
+import { tenantObrigatorio } from '@/shared/contexto';
 import type { IAjusteRepository } from '@/application/ajuste/IAjusteRepository';
 import type {
   ArquivoAjuste,
@@ -151,9 +152,21 @@ function filhos(dados: DadosAjuste) {
   };
 }
 
+/**
+ * **`clienteId` não sai daqui, de propósito.**
+ *
+ * Ele vinha do payload — e `toData` é usado tanto na criação quanto na
+ * alteração. Na criação, mandar um órgão alheio no corpo gravava o ajuste
+ * dentro dele (o carimbo da extension é `??=`, e só preenche o que vem vazio);
+ * na alteração, dava para **mover** o próprio ajuste para outro órgão e vê-lo
+ * sumir. Nenhum dos dois era alcançável pela tela, que só lista o órgão de
+ * quem está logado, mas a rota aceitava.
+ *
+ * Agora o órgão vem do token, na criação, e na alteração simplesmente não se
+ * toca: ajuste não muda de dono.
+ */
 function toData(dados: DadosAjuste) {
   return {
-    clienteId: dados.clienteId,
     entidadeBeneficiariaId: dados.entidadeBeneficiariaId,
     tipoAjuste: dados.tipoAjuste,
     descricaoResumida: dados.descricaoResumida,
@@ -222,7 +235,9 @@ export class PrismaAjusteRepository implements IAjusteRepository {
   }
 
   async buscarPorCodigo(codigoAjuste: string): Promise<Ajuste | null> {
-    const row = await prisma.ajuste.findUnique({ where: { codigoAjuste }, select: selecao });
+    // `findFirst`: o código do ajuste é único **por órgão** (`@@unique`
+    // composto), e o recorte entra pela extension de tenant.
+    const row = await prisma.ajuste.findFirst({ where: { codigoAjuste }, select: selecao });
     return row ? toDomain(row) : null;
   }
 
@@ -241,7 +256,7 @@ export class PrismaAjusteRepository implements IAjusteRepository {
 
   async criar(dados: DadosAjuste): Promise<Ajuste> {
     const row = await prisma.ajuste.create({
-      data: { ...toData(dados), ...filhos(dados) },
+      data: { ...toData(dados), ...filhos(dados), clienteId: tenantObrigatorio('Ajuste') },
       select: selecao,
     });
     return toDomain(row);

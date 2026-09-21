@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
+import { tenantObrigatorio } from '@/shared/contexto';
 import type { ITarefaRepository } from '@/application/tarefa/ITarefaRepository';
 import type { DadosTarefa, ListarTarefasParams, Paginado } from '@/application/tarefa/dtos';
 import type { ResumoTarefas, Tarefa } from '@/core/tarefa/Tarefa';
@@ -80,7 +81,10 @@ export class PrismaTarefaRepository implements ITarefaRepository {
   }
 
   async criar(dados: DadosTarefa): Promise<Tarefa> {
-    const row = await prisma.tarefa.create({ data: dados, select: selecao });
+    const row = await prisma.tarefa.create({
+      data: { ...dados, clienteId: tenantObrigatorio('Tarefa') },
+      select: selecao,
+    });
     return toDomain(row);
   }
 

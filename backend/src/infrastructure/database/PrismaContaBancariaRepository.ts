@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
+import { tenantObrigatorio } from '@/shared/contexto';
 import type { IContaBancariaRepository } from '@/application/contaBancaria/IContaBancariaRepository';
 import type { DadosContaBancaria } from '@/application/contaBancaria/dtos';
 import type { ContaBancaria } from '@/core/contaBancaria/ContaBancaria';
@@ -54,7 +55,10 @@ export class PrismaContaBancariaRepository implements IContaBancariaRepository {
   }
 
   async criar(dados: DadosContaBancaria): Promise<ContaBancaria> {
-    const row = await prisma.contaBancaria.create({ data: { ...dados }, select: selecao });
+    const row = await prisma.contaBancaria.create({
+      data: { ...dados, clienteId: tenantObrigatorio('ContaBancaria') },
+      select: selecao,
+    });
     return toDomain(row);
   }
 

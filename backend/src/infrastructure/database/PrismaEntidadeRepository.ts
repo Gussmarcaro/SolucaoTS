@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
+import { tenantObrigatorio } from '@/shared/contexto';
 import type { IEntidadeRepository } from '@/application/entidade/IEntidadeRepository';
 import type {
   ArquivoEstatuto,
@@ -49,7 +50,9 @@ export class PrismaEntidadeRepository implements IEntidadeRepository {
   }
 
   buscarPorCnpj(cnpj: string): Promise<EntidadeBeneficiaria | null> {
-    return prisma.entidadeBeneficiaria.findUnique({
+    // `findFirst`: o CNPJ é único **por órgão** (`@@unique` composto) — a mesma
+    // OSC firma parceria com várias prefeituras. O recorte entra pela extension.
+    return prisma.entidadeBeneficiaria.findFirst({
       where: { cnpj: apenasDigitos(cnpj) },
       select: selecao,
     });
@@ -57,7 +60,11 @@ export class PrismaEntidadeRepository implements IEntidadeRepository {
 
   criar(dados: DadosEntidade): Promise<EntidadeBeneficiaria> {
     return prisma.entidadeBeneficiaria.create({
-      data: { ...dados, buscaTexto: buscaEntidade(dados) },
+      data: {
+        ...dados,
+        clienteId: tenantObrigatorio('EntidadeBeneficiaria'),
+        buscaTexto: buscaEntidade(dados),
+      },
       select: selecao,
     });
   }

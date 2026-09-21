@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
+import { tenantObrigatorio } from '@/shared/contexto';
 import type { IGuiaRecolhimentoRepository } from '@/application/guiaRecolhimento/IGuiaRecolhimentoRepository';
 import type { DadosGuia } from '@/application/guiaRecolhimento/dtos';
 import type { GuiaRecolhimento, RetencaoApurada } from '@/core/guiaRecolhimento/GuiaRecolhimento';
@@ -137,7 +138,10 @@ export class PrismaGuiaRecolhimentoRepository implements IGuiaRecolhimentoReposi
   }
 
   async criar(dados: DadosGuia): Promise<GuiaRecolhimento> {
-    const row = await prisma.guiaRecolhimento.create({ data: { ...dados }, select: selecao });
+    const row = await prisma.guiaRecolhimento.create({
+      data: { ...dados, clienteId: tenantObrigatorio('GuiaRecolhimento') },
+      select: selecao,
+    });
     return toDomain(row);
   }
 

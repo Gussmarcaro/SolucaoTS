@@ -373,35 +373,42 @@ Grade + formulário no padrão dos cadastros, com quatro recortes (Em aberto / A
 - **`npm run verificar:workflow`** (sem banco) cobre validação, o carimbo da conclusão, a idempotência, a imutabilidade da origem e a própria lista de silenciáveis — acrescentar `CERTIDAO` a ela é o erro mais caro do módulo. O comportamento do silêncio é provado em `verificar:alertas`.
 - Recurso `FISCALIZACAO`. Excluir exige faixa **Total**; para encerrar sem apagar histórico, o caminho é o status **Cancelada**.
 
-## Isolamento multi-tenant (em migração)
+## Isolamento multi-tenant
 
 Cada órgão só enxerga os próprios dados. O filtro vive numa **extension do Prisma** (`extensaoTenant.ts`), como a auditoria, e pelo mesmo motivo: vale para todo caminho que consulte, inclusive código futuro. Repositório novo sem a cláusula funcionaria perfeitamente para quem o escreveu — e para os outros órgãos também.
 
-- **Só as raízes são filtradas.** `MODELS_COM_CLIENTE` sai do schema (14 models com `clienteId`, incluindo a trilha de auditoria) mais o `Cliente`, recortado pelo próprio `id`. Os outros 44 alcançam o órgão pelo pai — bloco da prestação → prestação → ajuste —, então filtrar a raiz fecha o caminho. Denormalizar `clienteId` nas 44 tabelas responderia com uma coluna o que a relação já responde.
+- **Só as raízes são filtradas.** `MODELS_COM_CLIENTE` sai do schema (os models com `clienteId`, incluindo a trilha de auditoria) mais o `Cliente`, recortado pelo próprio `id`. Os demais alcançam o órgão pelo pai — bloco da prestação → prestação → ajuste —, então filtrar a raiz fecha o caminho. Denormalizar `clienteId` nas 44 tabelas responderia com uma coluna o que a relação já responde.
 - **Alguns filhos são filtrados por relação** (`POR_RELACAO`), porque há consultas que os alcançam **sem passar pelo pai** — e para esses "o pai já foi filtrado" é falso. São: `PrestacaoContas` (via `ajuste`), `TermoAditivo`, `DocumentoRegularidade`, `MembroDiretoria`, `MembroConselho`, `AtaDiretoriaArquivo` (via `entidade`) e `RelacaoEmpregado`, `ServidorCedido`, `EmpenhoPrestacao`, `DocumentoFiscal` (dois saltos, via `prestacao.ajuste`).
 
   Recortar **`PrestacaoContas`** fecha a subárvore inteira de ~28 blocos de uma vez, sem tocar em nenhum deles: todo caso de uso de bloco começa por `garantirPrestacao(id)`, então uma prestação de outro órgão simplesmente "não existe". Os demais entraram porque o sino (`PrismaAlertaRepository`) e o relatório do titular da LGPD (`PrismaTitularRepository`) os varrem direto — este último **por CPF**, o que sem recorte encontraria a mesma pessoa nos dados de todos os clientes.
 
 - **Limite que resta:** filho alcançado pelo id do pai, fora dessa lista, continua confiando em que o pai foi validado antes. São UUID v4, que não se adivinha, mas isso não é isolamento — rota nova que consulte um filho por id precisa conferir o dono pela raiz, ou entrar em `POR_RELACAO`.
 - Operação de chave única (`findUnique`, `update`, `delete`, `upsert`) recebe o filtro **ao lado** da chave (o Prisma exige uma no topo); as demais recebem por **`AND`**, para um filtro do chamador com a mesma chave não sobrescrever o do tenant.
-- **Contexto sem órgão = sem filtro.** É o caso de seeds, scripts e startup — que precisam enxergar tudo — e, transitoriamente, de tokens antigos e usuários ainda sem órgão. O token leva o órgão no claim `cli`, lido no login; trocar um usuário de órgão só vale no próximo login.
-- **`create` não é filtrado, é carimbado** — a extension de auditoria preenche `clienteId` junto do `criadoPor`, senão o backfill consertaria o passado enquanto o presente seguisse gerando órfãos.
-- **`npm run verificar:tenant`** exercita a regra como função pura, sem banco.
+- **Contexto sem órgão = sem filtro, mas não sem dono.** Ler sem recorte continua legítimo: é o caso de seeds, scripts e startup, que precisam enxergar tudo. **Gravar** sem órgão deixou de ser — `clienteId` é obrigatório nas raízes, e quem cobra é `tenantObrigatorio()` (`shared/contexto.ts`). O token leva o órgão no claim `cli`, lido no login; trocar um usuário de órgão só vale no próximo login.
+- **`create` é carimbado *e* exigido.** A extension de auditoria preenche `clienteId` junto do `criadoPor` — vale para todo caminho que grave, inclusive código futuro. Desde o aperto, o repositório também o informa explicitamente: é o que faz o **compilador** cobrar, e raiz nova que esqueça o dono não compila. O carimbo passou a valer também no **`createMany`**, onde faltava: a importação de extrato OFX gravava as linhas sem órgão e elas nasciam invisíveis para todos, sem erro nenhum a investigar.
+- **O órgão nunca vem do payload.** `CriarAjusteDTO.clienteId` chegava do corpo da requisição e era gravado: dava para criar um ajuste dentro de outro órgão, e para **mover** o próprio ajuste para fora do seu, vendo-o sumir. Nenhum dos dois era alcançável pela tela — que só lista o órgão de quem está logado —, mas a rota aceitava. Hoje `toData` não emite o campo e a criação lê do token.
+- **`npm run verificar:tenant`** exercita a regra como função pura, sem banco, e cobra as duas invariantes do aperto: toda raiz com `clienteId` obrigatório (exceto `RegistroAuditoria`, ver abaixo) e nenhuma chave de cadastro com `@unique` global ao lado do composto.
 
 **Ordem obrigatória do backfill (fase 4).** `Usuario.clienteId` só pode ser preenchido **junto** com o das demais raízes, nunca antes. Motivo: `permissoesCache` resolve o grupo por nome e passa pelo filtro; grupo não encontrado vira "nenhuma permissão configurada", que **libera tudo**. Um usuário com órgão cujo grupo ainda esteja sem órgão ganharia acesso total — não ficaria trancado.
 
 ### A migração, em ordem
 
-As chaves de duplicidade dos cadastros (`Fornecedor.documento`, `Colaborador.cpf`, `BemCedido.identificador`, `ServidorCedidoCadastro.cpf`, `EntidadeBeneficiaria.cnpj`, `Empresa.cnpj`, `Ajuste.codigoAjuste`) ganharam o par `@@unique([clienteId, …])` **sem perder o `@unique` global**. Os dois convivem de propósito: enquanto `clienteId` é nulo em todo lugar, o composto não trava nada (no Postgres, `NULL` nunca conflita com `NULL`) e é o global que segura a duplicidade. Trocar os dois de uma vez abriria uma janela sem trava nenhuma.
+As chaves de duplicidade dos cadastros ganharam o par `@@unique([clienteId, …])`, e durante a migração conviveram com o `@unique` global — o composto não travava nada enquanto `clienteId` era nulo (no Postgres, `NULL` nunca conflita com `NULL`), então era o global que segurava a duplicidade. Trocar os dois de uma vez abriria uma janela sem trava nenhuma.
 
-Ordem obrigatória em produção:
+Ordem em produção — **os quatro passos já rodaram**:
 
 1. **`db:push`** — cria as colunas e os índices compostos. Nada muda de comportamento.
 2. **`npm run tenant:backfill`** — atribui um órgão a todos os registros sem dono, **numa transação só**. Com mais de um órgão cadastrado ele para e pede o id, em vez de adivinhar: adivinhar aqui é entregar os dados de um cliente a outro.
 3. **Todos relogam** — o token só leva o órgão a partir do próximo login.
-4. **O aperto** (ainda por fazer): remover os 8 `@unique` globais e tornar `clienteId` obrigatório nas 13 raízes. É o passo que consuma a migração, e só é seguro depois do backfill.
+4. **O aperto** — os `@unique` globais saíram e `clienteId` virou obrigatório. O passo que consuma a migração, e que só era seguro depois do backfill.
 
-Enquanto o passo 2 não roda, **ninguém pode ter `clienteId` atribuído à mão** — cai na armadilha do RBAC descrita acima.
+**O que o aperto conserta, e que não era visível antes:** com a trava global, o segundo órgão não conseguia cadastrar um fornecedor que o primeiro já tivesse — recebia erro de duplicidade sobre um registro que nem enxerga. Valia para `Fornecedor.documento`, `Colaborador.cpf`, `BemCedido.identificador`, `ServidorCedidoCadastro.cpf`, `EntidadeBeneficiaria.cnpj`, `Empresa.cnpj`, `Ajuste.codigoAjuste`, `Usuario.documento` e o composto global `ContratoFirmado[numero, credorDocumento]` — este último o menos óbvio: o contrato "001/2025" com o mesmo fornecedor existe legitimamente em duas prefeituras.
+
+**O e-mail do usuário continua único no sistema inteiro**, e é a exceção certa: é por ele que se entra, antes de haver órgão. O CPF passou a ser único **por órgão** — a mesma contadora atende duas prefeituras e precisa de um usuário em cada.
+
+**`RegistroAuditoria.clienteId` é a única raiz que continua opcional**, e de propósito: `registrar()` grava fora do contexto de requisição, e script ou seed não tem órgão a carimbar. Um nulo ali já é uma linha que ninguém enxerga (o filtro compara `clienteId = X`); exigir a coluna a transformaria em linha **perdida**, já que falha ao auditar não derruba a operação de negócio. Dos dois modos de errar, o silencioso é o pior.
+
+Uma consequência de leitura: quem buscava por chave de cadastro (`buscarPorDocumento`, `buscarPorCpf`, `buscarPorCodigo`…) passou de `findUnique` para **`findFirst`** — a chave não é mais única no sistema, e o recorte por órgão entra pela extension, por `AND`.
 
 ### Suporte — a equipe do fornecedor
 

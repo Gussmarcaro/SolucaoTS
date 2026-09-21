@@ -343,11 +343,22 @@ export const extensaoAuditoria = Prisma.defineExtension({
         return resultado;
       },
 
-      /** Mesma regra do `create`: só preenche `criadoPor`, não registra. */
+      /**
+       * Mesma regra do `create`: carimba autor e órgão, não registra.
+       *
+       * O órgão faltava aqui. Enquanto `clienteId` era opcional, uma
+       * importação em lote — o extrato OFX é o caso — gravava as linhas sem
+       * dono, e elas nasciam invisíveis para todos: o filtro compara
+       * `clienteId = X` e nulo nunca casa. Não havia erro nenhum a investigar,
+       * só um extrato que "não importou".
+       */
       async createMany({ model, args, query }) {
         const ctx = contextoAtual();
-        if (ctx && MODELS_COM_CRIADO_POR.has(model) && Array.isArray(args.data)) {
-          for (const d of args.data as Registro[]) d.criadoPor ??= ctx.usuarioId;
+        if (ctx && Array.isArray(args.data)) {
+          for (const d of args.data as Registro[]) {
+            if (MODELS_COM_CRIADO_POR.has(model)) d.criadoPor ??= ctx.usuarioId;
+            if (ctx.clienteId && MODELS_COM_CLIENTE.has(model)) d.clienteId ??= ctx.clienteId;
+          }
         }
         return query(args);
       },

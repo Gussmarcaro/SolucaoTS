@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
+import { tenantObrigatorio } from '@/shared/contexto';
 import type { IColaboradorRepository } from '@/application/colaborador/IColaboradorRepository';
 import type {
   DadosColaborador,
@@ -53,7 +54,9 @@ export class PrismaColaboradorRepository implements IColaboradorRepository {
   }
 
   async buscarPorCpf(cpf: string): Promise<Colaborador | null> {
-    const row = await prisma.colaborador.findUnique({
+    // `findFirst`: o CPF é único **por órgão** (`@@unique` composto), e o
+    // recorte entra pela extension de tenant.
+    const row = await prisma.colaborador.findFirst({
       where: { cpf: apenasDigitos(cpf) },
       select: selecao,
     });
@@ -62,7 +65,11 @@ export class PrismaColaboradorRepository implements IColaboradorRepository {
 
   async criar(dados: DadosColaborador): Promise<Colaborador> {
     const row = await prisma.colaborador.create({
-      data: { ...dados, buscaTexto: buscaColaborador(dados) },
+      data: {
+        ...dados,
+        clienteId: tenantObrigatorio('Colaborador'),
+        buscaTexto: buscaColaborador(dados),
+      },
       select: selecao,
     });
     return toDomain(row);

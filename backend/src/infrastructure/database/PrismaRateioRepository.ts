@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
+import { tenantObrigatorio } from '@/shared/contexto';
 import { buscaRateio } from './buscaTexto';
 import type {
   IRateioRepository,
@@ -117,6 +118,7 @@ export class PrismaRateioRepository implements IRateioRepository {
     const row = await prisma.rateio.create({
       data: {
         ...camposDoRateio(d),
+        clienteId: tenantObrigatorio('Rateio'),
         participantes: { create: d.participantes },
       },
       select: selecao,

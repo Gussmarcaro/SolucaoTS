@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
+import { tenantObrigatorio } from '@/shared/contexto';
 import type { IContratoRepository } from '@/application/contrato/IContratoRepository';
 import type { DadosContrato, ListarContratosParams, Paginado } from '@/application/contrato/dtos';
 import type { Contrato } from '@/core/contrato/Contrato';
@@ -56,10 +57,11 @@ export class PrismaContratoRepository implements IContratoRepository {
     numero: string,
     credorDocumento: string,
   ): Promise<Contrato | null> {
-    const row = await prisma.contratoFirmado.findUnique({
-      where: {
-        numero_credorDocumento: { numero, credorDocumento: apenasDigitos(credorDocumento) },
-      },
+    // `findFirst`: número + credor é único **por órgão** (`@@unique` composto),
+    // e o recorte entra pela extension de tenant. O contrato "001/2025" com o
+    // mesmo fornecedor existe legitimamente em duas prefeituras.
+    const row = await prisma.contratoFirmado.findFirst({
+      where: { numero, credorDocumento: apenasDigitos(credorDocumento) },
       select: selecao,
     });
     return row ? toDomain(row) : null;
@@ -67,7 +69,11 @@ export class PrismaContratoRepository implements IContratoRepository {
 
   async criar(dados: DadosContrato): Promise<Contrato> {
     const row = await prisma.contratoFirmado.create({
-      data: { ...dados, buscaTexto: buscaContrato(dados) },
+      data: {
+        ...dados,
+        clienteId: tenantObrigatorio('ContratoFirmado'),
+        buscaTexto: buscaContrato(dados),
+      },
       select: selecao,
     });
     return toDomain(row);
