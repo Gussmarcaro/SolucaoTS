@@ -276,7 +276,6 @@ model Usuario {
 
   cliente      Cliente                   @relation(fields: [clienteId], references: [id])
   grupoUsuario GrupoUsuario?             @relation(fields: [grupoUsuarioId], references: [id])
-  grupos       UsuarioGrupo[]
   tarefas      Tarefa[]
   compromissos Compromisso[]
   convites     CompromissoParticipante[]
@@ -486,21 +485,11 @@ model GrupoUsuario {
 
   cliente      Cliente                 @relation(fields: [clienteId], references: [id])
   membros      Usuario[] // usuários vinculados (1 grupo por usuário)
-  usuarios     UsuarioGrupo[] // legado RBAC N:N (não usado ainda)
   permissoes   GrupoUsuarioPermissao[]
   compromissos CompromissoGrupo[]
 
   @@unique([clienteId, nome])
   @@index([ativo])
-}
-
-model UsuarioGrupo {
-  usuarioId String       @db.Uuid
-  grupoId   String       @db.Uuid
-  usuario   Usuario      @relation(fields: [usuarioId], references: [id])
-  grupo     GrupoUsuario @relation(fields: [grupoId], references: [id])
-
-  @@id([usuarioId, grupoId])
 }
 
 model Permissao {
