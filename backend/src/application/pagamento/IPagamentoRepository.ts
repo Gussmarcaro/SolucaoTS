@@ -34,6 +34,15 @@ export interface IPagamentoRepository {
   /** Cria no escopo do órgão; `clienteId` é carimbado pela extension. */
   criarNoOrgao(dados: DadosPagamento): Promise<Pagamento>;
   buscarPorId(id: string): Promise<Pagamento | null>;
+  /**
+   * Quanto a nota já tem pago, somando todos os lançamentos dela.
+   *
+   * A nota pode ser paga em parcelas, então o teto é sobre a **soma**, não
+   * sobre cada pagamento. `ignorarId` existe para a edição: sem ele, alterar
+   * um pagamento contaria o valor antigo e o novo ao mesmo tempo, e uma
+   * correção de centavos seria recusada.
+   */
+  somaPagaDaNota(documentoFiscalId: string, ignorarId?: string): Promise<number>;
   docPertenceAPrestacao(prestacaoId: string, documentoFiscalId: string): Promise<boolean>;
   criar(prestacaoId: string, dados: DadosPagamento): Promise<Pagamento>;
   atualizar(id: string, dados: DadosPagamento): Promise<Pagamento>;

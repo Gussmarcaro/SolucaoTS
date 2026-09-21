@@ -66,6 +66,23 @@ export class PrismaPagamentoRepository implements IPagamentoRepository {
     return rows.map(toDomain);
   }
 
+  /**
+   * Quanto a nota já tem pago.
+   *
+   * Agrega no banco em vez de trazer os pagamentos e somar aqui: a pergunta é
+   * um número, e a nota parcelada em doze traria doze linhas para respondê-la.
+   *
+   * O recorte por órgão vem da própria nota: `documentoFiscalId` só chega aqui
+   * depois de o caso de uso confirmar que aquela nota é do órgão.
+   */
+  async somaPagaDaNota(documentoFiscalId: string, ignorarId?: string): Promise<number> {
+    const r = await prisma.pagamento.aggregate({
+      where: { documentoFiscalId, ...(ignorarId ? { id: { not: ignorarId } } : {}) },
+      _sum: { valor: true },
+    });
+    return Number(r._sum.valor ?? 0);
+  }
+
   /** Nasce sem prestação: quem se apropria dele decide isso depois. */
   async criarNoOrgao(dados: Parameters<typeof this.atualizar>[1]) {
     const row = await prisma.pagamento.create({ data: { ...dados }, select: selecao });

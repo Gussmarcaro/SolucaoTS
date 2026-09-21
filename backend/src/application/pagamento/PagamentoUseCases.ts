@@ -18,6 +18,11 @@ function num(v: unknown): number | null {
 /** Centavos: o dinheiro nunca carrega a sujeira do ponto flutuante. */
 const arredondarCentavos = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
+/** So para a mensagem de erro falar a lingua de quem le. */
+const moedaBr = (v: number) =>
+  v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const formatarBr = (iso: string) => iso.split('-').reverse().join('/');
+
 function validar(input: PagamentoDTO): DadosPagamento {
   let dataPagamento: Date;
   try {
@@ -98,8 +103,55 @@ export class PagamentoUseCases {
     return this.repo.listarDoOrgao();
   }
 
+  /**
+   * O pagamento cabe na nota que ele quita?
+   *
+   * Duas perguntas que ninguém faz à mão e que só aparecem na análise do
+   * Tribunal, um ano depois:
+   *
+   * - **não se paga antes de a despesa existir.** Pagamento anterior à emissão
+   *   é quase sempre data digitada errada (o ano anterior, no começo de
+   *   janeiro), e o erro fica escondido no meio de centenas de lançamentos;
+   * - **não se paga mais do que a nota.** O teto é sobre a **soma** dos
+   *   pagamentos dela, porque a nota pode ser parcelada — conferir cada
+   *   parcela isoladamente deixaria passar três de R$ 400,00 numa nota de
+   *   R$ 1.000,00.
+   *
+   * Vale só quando há nota: a folha (nº 9999) não tem emissão nem valor de
+   * documento a respeitar.
+   *
+   * A tolerância de um centavo não é frouxidão — é a diferença entre `Decimal`
+   * no banco e ponto flutuante aqui, e sem ela a última parcela de uma nota
+   * dividida em três seria recusada por R$ 0,01.
+   */
+  private async conferirContraNota(dados: DadosPagamento, ignorarId?: string) {
+    if (!dados.documentoFiscalId || !this.documentos) return;
+
+    const doc = await this.documentos.garantirDoOrgao(dados.documentoFiscalId);
+
+    const emissao = doc.dataEmissao.slice(0, 10);
+    const pagamento = dados.dataPagamento.toISOString().slice(0, 10);
+    if (pagamento < emissao)
+      throw new BusinessError(
+        `O pagamento não pode ser anterior à emissão do documento (${formatarBr(emissao)}).`,
+      );
+
+    const jaPago = await this.repo.somaPagaDaNota(dados.documentoFiscalId, ignorarId);
+    const total = arredondarCentavos(jaPago + dados.valor);
+    if (total > arredondarCentavos(doc.valorBruto) + 0.005) {
+      const resta = arredondarCentavos(doc.valorBruto - jaPago);
+      throw new BusinessError(
+        jaPago > 0
+          ? `A nota é de ${moedaBr(doc.valorBruto)} e já tem ${moedaBr(jaPago)} pago — resta ${moedaBr(Math.max(resta, 0))}.`
+          : `O pagamento não pode passar do valor da nota (${moedaBr(doc.valorBruto)}).`,
+      );
+    }
+  }
+
   async criarNoOrgao(input: PagamentoDTO): Promise<Pagamento> {
-    return this.repo.criarNoOrgao(validar(input));
+    const dados = validar(input);
+    await this.conferirContraNota(dados);
+    return this.repo.criarNoOrgao(dados);
   }
 
   /**
@@ -156,12 +208,18 @@ export class PagamentoUseCases {
     for (const parcela of parcelas) {
       criados.push(
         await this.repo.criarNoOrgao(
-          validar({
-            ...input,
-            ajusteId: parcela.ajusteId,
-            documentoFiscalId,
-            valor: parcela.valor,
-          }),
+          await (async () => {
+            const dados = validar({
+              ...input,
+              ajusteId: parcela.ajusteId,
+              documentoFiscalId,
+              valor: parcela.valor,
+            });
+            // As parcelas somam o liquido, que cabe no bruto — mas a nota
+            // pode ja ter pagamento lancado, e ai nao cabe.
+            await this.conferirContraNota(dados);
+            return dados;
+          })(),
         ),
       );
     }
@@ -170,7 +228,11 @@ export class PagamentoUseCases {
 
   async atualizarNoOrgao(id: string, input: PagamentoDTO): Promise<Pagamento> {
     await this.garantirDoOrgao(id);
-    return this.repo.atualizar(id, validar(input));
+    const dados = validar(input);
+    // Ignora o proprio na soma: sem isso, corrigir um centavo contaria o
+    // valor antigo e o novo, e a correcao seria recusada.
+    await this.conferirContraNota(dados, id);
+    return this.repo.atualizar(id, dados);
   }
 
   async excluirDoOrgao(id: string): Promise<void> {

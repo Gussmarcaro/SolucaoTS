@@ -188,6 +188,7 @@ export function PagamentosOrgao() {
           <PagamentoOrgaoForm
             item={modal.item}
             docs={docs}
+            pagamentos={lista}
             onSuccess={recarregar}
             onCancel={() => setModal({ tipo: 'fechado' })}
           />
@@ -236,11 +237,14 @@ export function PagamentosOrgao() {
 function PagamentoOrgaoForm({
   item,
   docs,
+  pagamentos,
   onSuccess,
   onCancel,
 }: {
   item: Pagamento | null;
   docs: DocumentoFiscal[];
+  /** Para saber quanto a nota escolhida ja tem pago. */
+  pagamentos: Pagamento[];
   onSuccess: () => void;
   onCancel: () => void;
 }) {
@@ -298,8 +302,23 @@ function PagamentoOrgaoForm({
     })),
   ];
 
-  /** Quanto a nota escolhida já tem pago — para não quitar duas vezes. */
   const docEscolhido = docs.find((d) => d.id === vinculo) ?? null;
+
+  /*
+   * Quanto a nota escolhida já tem pago — para não quitar duas vezes.
+   *
+   * A nota pode ser parcelada, então o teto é sobre a **soma**. O próprio
+   * lançamento sai da conta quando se está editando: sem isso, corrigir um
+   * centavo contaria o valor antigo e o novo, e a correção seria recusada.
+   */
+  const jaPago = docEscolhido
+    ? pagamentos
+        .filter((p) => p.documentoFiscalId === docEscolhido.id && p.id !== item?.id)
+        .reduce((s, p) => s + p.valor, 0)
+    : 0;
+  const restaPagar = docEscolhido
+    ? Math.round((docEscolhido.valorBruto - jaPago) * 100) / 100
+    : 0;
 
   async function submeter(e: React.FormEvent) {
     e.preventDefault();
@@ -308,6 +327,26 @@ function PagamentoOrgaoForm({
     const v = moedaParaNumero(valor);
     if (v <= 0) return setErro('Valor inválido.');
     if (!fonte.trim()) return setErro('Informe a fonte de recurso.');
+
+    /*
+     * As duas regras da nota — avisadas aqui, recusadas no servidor.
+     *
+     * Aqui é para a pessoa saber antes de enviar; lá é o que de fato protege,
+     * porque a tela pode ser contornada e a soma pode ter mudado enquanto o
+     * formulário estava aberto.
+     */
+    if (docEscolhido) {
+      if (dataPagamento < docEscolhido.dataEmissao)
+        return setErro(
+          `O pagamento não pode ser anterior à emissão do documento (${dataBr(docEscolhido.dataEmissao)}).`,
+        );
+      if (v > restaPagar + 0.005)
+        return setErro(
+          jaPago > 0
+            ? `A nota é de ${formatarMoeda(docEscolhido.valorBruto)} e já tem ${formatarMoeda(jaPago)} pago — resta ${formatarMoeda(Math.max(restaPagar, 0))}.`
+            : `O pagamento não pode passar do valor da nota (${formatarMoeda(docEscolhido.valorBruto)}).`,
+        );
+    }
 
     const payload: PagamentoPayload = {
       documentoFiscalId: vinculo === FOLHA ? null : vinculo,
@@ -353,10 +392,23 @@ function PagamentoOrgaoForm({
       />
       {docEscolhido && (
         <p className="-mt-2 text-xs text-ink-400">
-          Nota de {formatarMoeda(docEscolhido.valorBruto)}
+          Emitida em {dataBr(docEscolhido.dataEmissao)} · nota de{' '}
+          {formatarMoeda(docEscolhido.valorBruto)}
           {docEscolhido.valorEncargos > 0 && ` · retenções ${formatarMoeda(docEscolhido.valorEncargos)}`}
           {docEscolhido.valorEncargos > 0 &&
             ` · líquido ${formatarMoeda(docEscolhido.valorBruto - docEscolhido.valorEncargos)}`}
+          {/* O que resta só aparece quando a nota já tem pagamento: num
+              lançamento comum o "resta" seria o valor da nota repetido. */}
+          {jaPago > 0 && (
+            <>
+              {' · '}
+              <strong className={restaPagar <= 0 ? 'text-red-600 dark:text-red-400' : undefined}>
+                {restaPagar > 0
+                  ? `já pago ${formatarMoeda(jaPago)}, resta ${formatarMoeda(restaPagar)}`
+                  : `já quitada (${formatarMoeda(jaPago)} pago)`}
+              </strong>
+            </>
+          )}
         </p>
       )}
 
@@ -373,8 +425,27 @@ function PagamentoOrgaoForm({
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Input label="Data do pagamento *" name="dataPagamento" type="date" value={dataPagamento} onChange={(e) => setDataPagamento(e.target.value)} />
-        <Input label="Valor (R$) *" name="valor" value={valor} onChange={(e) => setValor(mascaraMoeda(e.target.value))} placeholder="0,00" inputMode="numeric" />
+        {/* `min` impede a escolha no próprio calendário — o aviso depois de
+            digitar chega tarde, e a data errada costuma ser o ano anterior
+            escolhido sem querer no começo de janeiro. */}
+        <Input
+          label="Data do pagamento *"
+          name="dataPagamento"
+          type="date"
+          value={dataPagamento}
+          min={docEscolhido?.dataEmissao}
+          onChange={(e) => setDataPagamento(e.target.value)}
+          hint={docEscolhido ? `Não pode ser anterior a ${dataBr(docEscolhido.dataEmissao)}.` : undefined}
+        />
+        <Input
+          label="Valor (R$) *"
+          name="valor"
+          value={valor}
+          onChange={(e) => setValor(mascaraMoeda(e.target.value))}
+          placeholder="0,00"
+          inputMode="numeric"
+          hint={docEscolhido ? `Até ${formatarMoeda(Math.max(restaPagar, 0))}.` : undefined}
+        />
         <SelectDominio label="Fonte de Recurso *" name="fonte" value={apenasDigitos(fonte)} onChange={setFonte} options={FONTE_RECURSO} />
         <Select
           label="Meio de pagamento *"
