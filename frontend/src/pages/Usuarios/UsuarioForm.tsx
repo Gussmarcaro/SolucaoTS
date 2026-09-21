@@ -13,7 +13,13 @@ import { apenasDigitos, mascaraCelular, mascaraCep, mascaraCpf } from '@/lib/mas
 import { isCpfValido, isEmailValido, isSenhaForte } from '@/lib/validators';
 import { capitalizarNome } from '@/lib/nomeProprio';
 import { consultarCep } from '@/services/viacep.service';
-import { atualizarUsuario, criarUsuario } from '@/services/usuarios.service';
+import {
+  atualizarUsuario,
+  criarUsuario,
+  enviarFotoUsuario,
+  removerFotoUsuario,
+} from '@/services/usuarios.service';
+import { FotoUsuario } from '@/components/ui/FotoUsuario';
 import { extrairCodigoErro, extrairMensagemErro } from '@/services/http';
 import type { AtualizarUsuarioPayload, CriarUsuarioPayload, Usuario } from '@/types/usuario';
 
@@ -67,6 +73,23 @@ export function UsuarioForm({ usuario, onSuccess, onCancel }: UsuarioFormProps) 
   const [buscandoCep, setBuscandoCep] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [grupos, setGrupos] = useState<OpcaoCombo[]>([]);
+
+  /*
+   * A foto, em três pedaços, porque ela se comporta de dois jeitos.
+   *
+   * Na **edição** sobe na hora e `fotoVersao` acompanha o que o servidor
+   * devolveu. No **cadastro novo** não há id, então o arquivo fica em `foto` e
+   * a `previa` mostra o que foi escolhido — o envio acontece depois da
+   * gravação, no `handleSubmit`.
+   *
+   * `fotoRemovida` existe porque `null` em `fotoVersao` é ambíguo: significa
+   * tanto "ainda não carregou" quanto "acabei de apagar". Sem a marca, apagar
+   * a foto deixaria o botão dizendo "Trocar foto" até recarregar a tela.
+   */
+  const [foto, setFoto] = useState<File | null>(null);
+  const [previa, setPrevia] = useState<string | null>(null);
+  const [fotoVersao, setFotoVersao] = useState<string | null>(usuario?.fotoVersao ?? null);
+  const [fotoRemovida, setFotoRemovida] = useState(false);
 
   useEffect(() => {
     let vivo = true;
@@ -165,13 +188,35 @@ export function UsuarioForm({ usuario, onSuccess, onCancel }: UsuarioFormProps) 
           payload.confirmarSenha = form.confirmarSenha;
         }
         await atualizarUsuario(usuario!.id, payload);
+        if (foto) await enviarFotoUsuario(usuario!.id, foto);
       } else {
         const payload: CriarUsuarioPayload = {
           ...base,
           senha: form.senha,
           confirmarSenha: form.confirmarSenha,
         };
-        await criarUsuario(payload);
+        const criado = await criarUsuario(payload);
+        /*
+         * A foto sobe **depois** de salvar, como os PDFs do Ajuste: a rota
+         * precisa do id do usuário, e num cadastro novo ele só existe depois
+         * da gravação. Por isso o arquivo fica aqui, em estado, em vez de
+         * dentro do componente da foto.
+         *
+         * Se o envio da imagem falhar, o usuário **já está criado** — e é o
+         * resultado certo: perder o cadastro inteiro porque a foto não subiu
+         * seria trocar um problema pequeno por um grande. O aviso diz onde
+         * concluir.
+         */
+        if (foto) {
+          try {
+            await enviarFotoUsuario(criado.id, foto);
+          } catch {
+            setAlerta(
+              'O usuário foi criado, mas a foto não pôde ser enviada. ' +
+                'Edite o cadastro para tentar de novo.',
+            );
+          }
+        }
       }
       onSuccess();
     } catch (error) {
@@ -344,6 +389,47 @@ export function UsuarioForm({ usuario, onSuccess, onCancel }: UsuarioFormProps) 
                   ? 'Definido no cadastro do usuário. Não é alterável por aqui.'
                   : 'O usuário nasce no mesmo órgão de quem o cadastra.'
               }
+            />
+          </div>
+
+          <div className="sm:col-span-12">
+            <p className="mb-2 text-sm font-medium text-ink-700 dark:text-ink-200">
+              Foto <span className="font-normal text-ink-400">(opcional)</span>
+            </p>
+            <FotoUsuario
+              nome={form.nome || 'Novo usuário'}
+              usuarioId={usuario?.id}
+              fotoVersao={fotoRemovida ? null : (fotoVersao ?? usuario?.fotoVersao)}
+              previaUrl={previa}
+              onEnviar={async (arquivo) => {
+                /*
+                 * Na edição sobe na hora; no cadastro novo só fica guardada.
+                 *
+                 * A diferença não é preferência: a rota da foto precisa do id
+                 * do usuário, e num cadastro novo ele ainda não existe. O
+                 * envio acontece no `handleSubmit`, depois da gravação.
+                 */
+                if (editando) {
+                  const atualizado = await enviarFotoUsuario(usuario!.id, arquivo);
+                  setFotoVersao(atualizado.fotoVersao);
+                  setFotoRemovida(false);
+                  setFoto(null);
+                  setPrevia(null);
+                } else {
+                  setFoto(arquivo);
+                  setPrevia(URL.createObjectURL(arquivo));
+                }
+              }}
+              onRemover={async () => {
+                if (editando && !previa) {
+                  await removerFotoUsuario(usuario!.id);
+                  setFotoVersao(null);
+                  setFotoRemovida(true);
+                } else {
+                  setFoto(null);
+                  setPrevia(null);
+                }
+              }}
             />
           </div>
         </div>

@@ -57,6 +57,15 @@ export interface FotoUsuarioProps {
   onEnviar: (arquivo: File) => Promise<void>;
   onRemover: () => Promise<void>;
   desabilitado?: boolean;
+  /**
+   * Prévia local, para o cadastro **novo**.
+   *
+   * Ali ainda não existe id de usuário, então não há foto a buscar no servidor
+   * — e sem isto a pessoa escolheria a imagem e continuaria vendo as iniciais,
+   * sem saber se o arquivo foi aceito. Quando vem preenchida, substitui o
+   * avatar.
+   */
+  previaUrl?: string | null;
 }
 
 export function FotoUsuario({
@@ -66,6 +75,7 @@ export function FotoUsuario({
   onEnviar,
   onRemover,
   desabilitado = false,
+  previaUrl = null,
 }: FotoUsuarioProps) {
   const entrada = useRef<HTMLInputElement>(null);
   const [ocupado, setOcupado] = useState(false);
@@ -102,7 +112,15 @@ export function FotoUsuario({
 
   return (
     <div className="flex items-center gap-4">
-      <Avatar nome={nome} usuarioId={usuarioId} fotoVersao={fotoVersao} tamanho="xl" />
+      {previaUrl ? (
+        <img
+          src={previaUrl}
+          alt={nome}
+          className="inline-flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-ink-200 object-cover dark:bg-ink-700"
+        />
+      ) : (
+        <Avatar nome={nome} usuarioId={usuarioId} fotoVersao={fotoVersao} tamanho="xl" />
+      )}
 
       <div className="flex flex-col gap-2">
         <input
@@ -121,10 +139,10 @@ export function FotoUsuario({
             className="focus-ring inline-flex items-center gap-2 rounded-xl border border-ink-200 px-3 py-1.5 text-sm font-medium text-ink-700 transition-colors hover:bg-ink-50 disabled:opacity-50 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-800"
           >
             {ocupado ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
-            {fotoVersao ? 'Trocar foto' : 'Escolher foto'}
+            {fotoVersao || previaUrl ? 'Trocar foto' : 'Escolher foto'}
           </button>
 
-          {fotoVersao && (
+          {(fotoVersao || previaUrl) && (
             <button
               type="button"
               onClick={() => void remover()}
