@@ -3,6 +3,7 @@ export interface ContaBancariaDTO {
   agencia?: string | number;
   conta?: string;
   contaTipo?: number | string | null;
+  fonteRecursoTipo?: number | string | null;
   apelido?: string | null;
   observacao?: string | null;
 }
@@ -13,6 +14,7 @@ export interface DadosContaBancaria {
   agencia: string;
   conta: string;
   contaTipo: number | null;
+  fonteRecursoTipo: number | null;
   apelido: string | null;
   observacao: string | null;
 }

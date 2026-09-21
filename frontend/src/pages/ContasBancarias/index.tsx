@@ -13,7 +13,7 @@ import { usePermissoes } from '@/contexts/PermissoesContext';
 import { contasApi } from '@/services/contasBancarias.service';
 import { extrairMensagemErro } from '@/services/http';
 import { apenasDigitos } from '@/lib/masks';
-import { BANCO, CONTA_TIPO } from '@/lib/dominiosFaseV';
+import { BANCO, CONTA_TIPO, FONTE_RECURSO } from '@/lib/dominiosFaseV';
 import { rotuloConta, type ContaBancaria } from '@/types/contaBancaria';
 
 type ModalState =
@@ -275,6 +275,7 @@ function ContaForm({
   const [agencia, setAgencia] = useState(conta?.agencia ?? '');
   const [numero, setNumero] = useState(conta?.conta ?? '');
   const [tipo, setTipo] = useState(conta?.contaTipo != null ? String(conta.contaTipo) : '');
+  const [fonte, setFonte] = useState(conta?.fonteRecursoTipo != null ? String(conta.fonteRecursoTipo) : '');
   const [apelido, setApelido] = useState(conta?.apelido ?? '');
   const [observacao, setObservacao] = useState(conta?.observacao ?? '');
   const [erro, setErro] = useState<string | null>(null);
@@ -286,12 +287,14 @@ function ContaForm({
     if (!banco) return setErro('Selecione o banco.');
     if (!agencia.trim()) return setErro('Informe a agência.');
     if (!numero.trim()) return setErro('Informe o número da conta.');
+    if (!fonte) return setErro('Selecione a fonte de recurso que entra nesta conta.');
 
     const payload = {
       banco: Number(apenasDigitos(banco)),
       agencia: agencia.trim(),
       conta: numero.trim(),
       contaTipo: tipo ? Number(apenasDigitos(tipo)) : null,
+      fonteRecursoTipo: Number(apenasDigitos(fonte)),
       apelido: apelido.trim() || null,
       observacao: observacao.trim() || null,
     };
@@ -343,6 +346,16 @@ function ContaForm({
           <SelectDominio label="Tipo" name="contaTipo" value={apenasDigitos(tipo)} onChange={setTipo} options={CONTA_TIPO} />
         </div>
         <div className="sm:col-span-6">
+          <SelectDominio
+            label="Fonte de Recurso *"
+            name="fonteRecursoTipo"
+            value={apenasDigitos(fonte)}
+            onChange={setFonte}
+            options={FONTE_RECURSO}
+            hint="O pagamento feito por esta conta herda esta fonte."
+          />
+        </div>
+        <div className="sm:col-span-12">
           <Input label="Observação" name="observacao" value={observacao} onChange={(e) => setObservacao(e.target.value)} />
         </div>
       </div>

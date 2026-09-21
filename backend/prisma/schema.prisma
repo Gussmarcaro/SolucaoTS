@@ -1421,20 +1421,26 @@ model DocumentoFiscal {
 /// O `apelido` é o que resolve a leitura: "Repasse Saúde 2026" diz numa olhada
 /// o que três números não dizem.
 model ContaBancaria {
-  id         String  @id @default(uuid()) @db.Uuid
-  clienteId  String? @db.Uuid
-  banco      Int
-  agencia    String
-  conta      String
+  id               String  @id @default(uuid()) @db.Uuid
+  clienteId        String? @db.Uuid
+  banco            Int
+  agencia          String
+  conta            String
   /// 1 = Conta Corrente, 2 = Investimento (tabela oficial `conta_tipo`).
   ///
   /// Faz parte da identidade: corrente e aplicação da mesma conta compartilham
   /// número, e é o par conta+tipo que as distingue — como já vale no Ajuste e
   /// em `Disponibilidade`.
-  contaTipo  Int?
-  apelido    String?
-  observacao String?
-  ativo      Boolean @default(true)
+  contaTipo        Int?
+  // A fonte de recurso que entra nesta conta.
+  //
+  // Opcional no banco, exigida no cadastro: as contas gravadas antes desta
+  // regra nao tem, e recusa-las na leitura esconderia conta que hoje aparece.
+  // Quem cobra e o caso de uso, na primeira edicao.
+  fonteRecursoTipo Int?
+  apelido          String?
+  observacao       String?
+  ativo            Boolean @default(true)
 
   criadoPor    String?  @db.Uuid
   criadoEm     DateTime @default(now())

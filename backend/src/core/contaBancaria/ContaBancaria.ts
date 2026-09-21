@@ -6,6 +6,8 @@ export interface ContaBancaria {
   agencia: string;
   conta: string;
   contaTipo: number | null;
+  /** A fonte de recurso que entra nesta conta; null nas cadastradas antes da regra. */
+  fonteRecursoTipo: number | null;
   apelido: string | null;
   observacao: string | null;
   ativo: boolean;

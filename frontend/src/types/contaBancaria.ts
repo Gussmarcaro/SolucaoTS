@@ -11,6 +11,8 @@ export interface ContaBancaria {
   agencia: string;
   conta: string;
   contaTipo: number | null;
+  /** A fonte de recurso que entra nesta conta — o pagamento a herda. */
+  fonteRecursoTipo: number | null;
   apelido: string | null;
   observacao: string | null;
   ativo: boolean;
@@ -21,6 +23,7 @@ export interface ContaBancariaPayload {
   agencia: string;
   conta: string;
   contaTipo?: number | null;
+  fonteRecursoTipo: number;
   apelido?: string | null;
   observacao?: string | null;
 }

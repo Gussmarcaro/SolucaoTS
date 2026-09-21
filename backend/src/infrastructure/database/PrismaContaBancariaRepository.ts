@@ -11,6 +11,7 @@ const selecao = {
   agencia: true,
   conta: true,
   contaTipo: true,
+  fonteRecursoTipo: true,
   apelido: true,
   observacao: true,
   ativo: true,

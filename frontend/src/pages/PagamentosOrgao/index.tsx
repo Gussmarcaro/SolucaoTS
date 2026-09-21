@@ -17,6 +17,8 @@ import { usePermissoes } from '@/contexts/PermissoesContext';
 import { enterComoTab } from '@/lib/enterComoTab';
 import { pagamentosOrgaoApi } from '@/services/pagamentosOrgao.service';
 import { despesasApi } from '@/services/despesas.service';
+import { contasApi } from '@/services/contasBancarias.service';
+import type { ContaBancaria } from '@/types/contaBancaria';
 import { extrairMensagemErro } from '@/services/http';
 import { apenasDigitos, dataBr, formatarMoeda, mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
 import { BANCO, FONTE_RECURSO } from '@/lib/dominiosFaseV';
@@ -37,6 +39,9 @@ const COLUNAS: ColunaDef[] = [
 ];
 
 const FOLHA = 'folha';
+
+const rotuloBancoConta = (codigo: number) =>
+  BANCO.find((b) => b.value === String(codigo))?.label ?? String(codigo);
 
 const rotuloFonte = (codigo: number) =>
   FONTE_RECURSO.find((f) => f.value === String(codigo))?.label ?? String(codigo);
@@ -261,6 +266,60 @@ function PagamentoOrgaoForm({
   const [salvando, setSalvando] = useState(false);
   const [rateando, setRateando] = useState(false);
 
+  /*
+   * A conta que pagou — e que traz a fonte e o meio consigo.
+   *
+   * Fonte de recurso e meio de pagamento são exigidos no envio (manual Audesp,
+   * §23) e já constam do cadastro da conta. Pedi-los de novo a cada pagamento
+   * é pedir que o operador lembre — e fonte errada **não é recusada no envio**,
+   * porque o código existe na tabela: o erro só apareceria na análise.
+   *
+   * O vínculo não é gravado no pagamento: o que se grava continua sendo fonte,
+   * meio, banco, agência e conta, que é o que o TCESP recebe. A conta aqui é o
+   * **atalho** que os preenche, e por isso não precisa de coluna nova.
+   */
+  const [contas, setContas] = useState<ContaBancaria[]>([]);
+  const [contaBancariaId, setContaBancariaId] = useState('');
+
+  useEffect(() => {
+    let vivo = true;
+    contasApi
+      .listar(true)
+      .then((r) => vivo && setContas(r))
+      .catch(() => undefined);
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
+  const contaEscolhida = contas.find((c) => c.id === contaBancariaId) ?? null;
+
+  const opcoesConta = contas.map((c) => ({
+    value: c.id,
+    label: c.apelido || `${c.conta} — ${rotuloBancoConta(c.banco)}`,
+    sub: `Ag. ${c.agencia} · c/ ${c.conta}${c.contaTipo === 2 ? ' (investimento)' : ''}`,
+  }));
+
+  /**
+   * Escolher a conta preenche fonte, meio e os dados bancários.
+   *
+   * O meio sai do **tipo da conta**, pela regra do Audesp que o órgão segue:
+   * conta corrente paga como Banco; conta de investimento, como Fundo fixo.
+   * Limpar a conta devolve os campos ao operador — há pagamento que não sai de
+   * conta cadastrada, e travar isso faria alguém cadastrar uma conta falsa.
+   */
+  function escolherConta(id: string) {
+    setContaBancariaId(id);
+    const c = contas.find((x) => x.id === id);
+    if (!c) return;
+    if (c.fonteRecursoTipo != null) setFonte(String(c.fonteRecursoTipo));
+    const meioDaConta: MeioPagamento = c.contaTipo === 2 ? 'FUNDO_FIXO' : 'BANCO';
+    setMeio(meioDaConta);
+    setBanco(String(c.banco));
+    setAgencia(apenasDigitos(c.agencia));
+    setConta(c.conta);
+  }
+
   /**
    * Lança os pagamentos da nota rateada — um por ajuste.
    *
@@ -446,12 +505,39 @@ function PagamentoOrgaoForm({
           inputMode="numeric"
           hint={docEscolhido ? `Até ${formatarMoeda(Math.max(restaPagar, 0))}.` : undefined}
         />
-        <SelectDominio label="Fonte de Recurso *" name="fonte" value={apenasDigitos(fonte)} onChange={setFonte} options={FONTE_RECURSO} />
+        {/* A conta paga, e ela já sabe o resto.
+            A fonte de recurso e o meio de pagamento constam do cadastro da
+            conta: escolher a conta preenche os dois, em vez de pedir ao
+            operador que lembre a fonte a cada lançamento — e fonte errada não
+            é recusada no envio, o código existe na tabela. */}
+        <Combobox
+          label="Conta que pagou"
+          name="contaBancariaId"
+          value={contaBancariaId}
+          onChange={escolherConta}
+          options={opcoesConta}
+          placeholder="Selecione a conta..."
+          hint={
+            contas.length
+              ? 'Vem de Execução → Financeiro → Contas Bancárias. Traz a fonte e o meio.'
+              : 'Nenhuma conta cadastrada — informe a fonte e o meio manualmente.'
+          }
+        />
+        <SelectDominio
+          label="Fonte de Recurso *"
+          name="fonte"
+          value={apenasDigitos(fonte)}
+          onChange={setFonte}
+          options={FONTE_RECURSO}
+          disabled={!!contaEscolhida}
+          hint={contaEscolhida ? 'Vem da conta escolhida.' : undefined}
+        />
         <Select
           label="Meio de pagamento *"
           name="meio"
           value={meio}
           onChange={(e) => setMeio(e.target.value as MeioPagamento)}
+          disabled={!!contaEscolhida}
           options={[
             { value: 'BANCO', label: 'Banco' },
             { value: 'FUNDO_FIXO', label: 'Fundo fixo' },
@@ -459,18 +545,28 @@ function PagamentoOrgaoForm({
         />
       </div>
 
+      {contaEscolhida && (
+        <p className="-mt-2 text-xs text-ink-400">
+          Regra Audesp: <strong>conta corrente</strong> paga como <strong>Banco</strong>;{' '}
+          <strong>conta de investimento</strong>, como <strong>Fundo fixo</strong>. Para lançar
+          diferente, limpe a conta acima.
+        </p>
+      )}
+
       {/* Só no banco: fundo fixo não tem conta de onde sair, e campos que não
-          se aplicam pedem dado que ninguém tem. */}
+          se aplicam pedem dado que ninguém tem. Com a conta escolhida, os três
+          vêm dela — digitá-los de novo é a terceira digitação do mesmo número,
+          que é exatamente o que o cadastro veio eliminar. */}
       {meio === 'BANCO' && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-12">
           <div className="sm:col-span-5">
-            <SelectDominio label="Banco" name="banco" value={apenasDigitos(banco)} onChange={setBanco} options={BANCO} />
+            <SelectDominio label="Banco" name="banco" value={apenasDigitos(banco)} onChange={setBanco} options={BANCO} disabled={!!contaEscolhida} />
           </div>
           <div className="sm:col-span-3">
-            <Input label="Agência" name="agencia" value={apenasDigitos(agencia)} onChange={(e) => setAgencia(e.target.value)} inputMode="numeric" />
+            <Input label="Agência" name="agencia" value={apenasDigitos(agencia)} onChange={(e) => setAgencia(e.target.value)} inputMode="numeric" disabled={!!contaEscolhida} />
           </div>
           <div className="sm:col-span-4">
-            <Input label="Conta Corrente" name="conta" value={conta} onChange={(e) => setConta(e.target.value)} />
+            <Input label="Conta Corrente" name="conta" value={conta} onChange={(e) => setConta(e.target.value)} disabled={!!contaEscolhida} />
           </div>
         </div>
       )}

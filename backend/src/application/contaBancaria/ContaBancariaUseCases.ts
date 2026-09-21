@@ -2,7 +2,7 @@ import type { ContaBancaria } from '@/core/contaBancaria/ContaBancaria';
 import type { IContaBancariaRepository } from './IContaBancariaRepository';
 import type { ContaBancariaDTO, DadosContaBancaria } from './dtos';
 import { BusinessError, ConflictError, NotFoundError } from '@/shared/errors';
-import { BANCO_CODIGOS } from '@/core/dominio/tabelasFaseV';
+import { BANCO_CODIGOS, FONTE_RECURSO_CODIGOS } from '@/core/dominio/tabelasFaseV';
 
 function validar(input: ContaBancariaDTO): DadosContaBancaria {
   const banco = Number(String(input.banco ?? '').replace(/\D/g, ''));
@@ -32,11 +32,34 @@ function validar(input: ContaBancariaDTO): DadosContaBancaria {
   if (tipo !== null && (!Number.isInteger(tipo) || tipo <= 0))
     throw new BusinessError('Tipo de conta inválido.');
 
+  /*
+   * A fonte de recurso que entra na conta — **obrigatória**.
+   *
+   * É ela que o pagamento herda ao escolher a conta, e é campo exigido no
+   * envio ao Audesp. Sem ela aqui, o operador teria de lembrar a fonte a cada
+   * pagamento — e a fonte errada não é recusada no envio (o código existe na
+   * tabela), então o erro só apareceria na análise do Tribunal.
+   *
+   * Exigida também nas contas antigas, na primeira edição: é a mesma decisão
+   * tomada na fonte das contas do ajuste — não conviver com cadastro meio
+   * preenchido, que ninguém volta para terminar.
+   */
+  const fonte =
+    input.fonteRecursoTipo === undefined ||
+    input.fonteRecursoTipo === null ||
+    input.fonteRecursoTipo === ''
+      ? null
+      : Number(input.fonteRecursoTipo);
+  if (fonte === null) throw new BusinessError('Informe a fonte de recurso que entra nesta conta.');
+  if (!Number.isInteger(fonte) || !FONTE_RECURSO_CODIGOS.has(fonte))
+    throw new BusinessError(`Fonte de recurso inexistente na tabela: ${input.fonteRecursoTipo}.`);
+
   return {
     banco,
     agencia,
     conta,
     contaTipo: tipo,
+    fonteRecursoTipo: fonte,
     apelido: input.apelido?.trim() || null,
     observacao: input.observacao?.trim() || null,
   };
