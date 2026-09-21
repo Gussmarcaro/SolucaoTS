@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { UsuarioController } from '@/presentation/controllers/UsuarioController';
 import { usuarioRoutes } from './usuario.routes';
 import { empresaRoutes } from './empresa.routes';
 import { entidadeRoutes } from './entidade.routes';
@@ -34,7 +35,7 @@ import { PagamentoOrgaoController } from '@/presentation/controllers/PagamentoOr
 import { GuiaRecolhimentoController } from '@/presentation/controllers/GuiaRecolhimentoController';
 import { ConciliacaoController } from '@/presentation/controllers/ConciliacaoController';
 import { ContaBancariaController } from '@/presentation/controllers/ContaBancariaController';
-import { uploadAnexo, uploadOfx } from '@/infrastructure/upload/upload';
+import { uploadAnexo, uploadFoto, uploadOfx } from '@/infrastructure/upload/upload';
 import { autenticar } from '@/presentation/middlewares/autenticar';
 import { exigirGrupo } from '@/presentation/middlewares/exigirGrupo';
 import { exigirPermissao } from '@/presentation/middlewares/exigirPermissao';
@@ -58,6 +59,24 @@ routes.use(autenticar);
  * reprova o que ficar de fora, para o erro aparecer no desenvolvimento e não
  * como acesso indevido em produção.
  */
+/*
+ * A foto do usuário, **antes** do gate de `/usuarios` — e de propósito.
+ *
+ * O avatar aparece na barra superior, na lista de participantes da agenda e na
+ * grade de usuários. Se a leitura ficasse sob `CONFIG_USUARIOS`, só quem
+ * administra usuários veria rosto algum: todo mundo mais receberia um 403 por
+ * imagem, em toda tela.
+ *
+ * Liberar a leitura não abre nada: `Usuario` é raiz de tenant, então a busca
+ * já sai recortada pelo órgão de quem pergunta, e um id de outro cliente
+ * simplesmente não existe. O que se vê é o rosto de um colega — que o sistema
+ * já mostra pelo nome em dezenas de lugares.
+ *
+ * Gravar e apagar continuam sob o gate, dentro de `usuarioRoutes`.
+ */
+const usuarios = new UsuarioController();
+routes.get('/usuarios/:id/foto', (req, res, next) => usuarios.baixarFoto(req, res, next));
+
 routes.use('/usuarios', exigirPermissao('CONFIG_USUARIOS'), usuarioRoutes);
 routes.use('/empresas', exigirPermissao('CADASTRO_EMPRESAS'), empresaRoutes);
 routes.use('/entidades', exigirPermissao('CADASTRO_ENTIDADES'), entidadeRoutes);
@@ -183,6 +202,12 @@ routes.put('/permissoes/:grupoId', exigirPermissao('CONFIG_GRUPOS'), (req, res, 
 const perfil = new PerfilController();
 routes.get('/perfil', (req, res, next) => perfil.meu(req, res, next));
 routes.put('/perfil', (req, res, next) => perfil.atualizar(req, res, next));
+
+// A própria foto — mesmo raciocínio do cadastro acima: trocar o próprio rosto
+// não é administrar usuários. O id sai do token, nunca da entrada, então
+// ninguém alcança a foto de outra pessoa por aqui.
+routes.post('/perfil/foto', uploadFoto, (req, res, next) => perfil.enviarFoto(req, res, next));
+routes.delete('/perfil/foto', (req, res, next) => perfil.removerFoto(req, res, next));
 
 // O que o usuário logado pode fazer — alimenta o menu e os botões da interface.
 routes.get('/permissoes/eu/resumo', (req, res, next) => permissoes.minhas(req, res, next));

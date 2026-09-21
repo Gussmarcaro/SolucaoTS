@@ -31,7 +31,21 @@ export class PrismaTitularRepository implements ITitularRepository {
     ] = await Promise.all([
       prisma.usuario.findMany({
         where: { documento: cpf },
-        select: { id: true, nome: true, email: true, celular: true, cidade: true, uf: true, ativo: true },
+        // `fotoAtualizadaEm` entra aqui porque **fotografia é dado pessoal**, e
+        // o relatório do titular tem de declarar o que o sistema guarda dele.
+        // Vai como carimbo, nunca como imagem: o relatório diz *que existe uma
+        // foto*, não a devolve — um relatório de acesso que carrega o rosto da
+        // pessoa vira o vazamento que ele deveria prevenir.
+        select: {
+          id: true,
+          nome: true,
+          email: true,
+          celular: true,
+          cidade: true,
+          uf: true,
+          fotoAtualizadaEm: true,
+          ativo: true,
+        },
       }),
       prisma.fornecedor.findMany({
         where: { documento: cpf, documentoTipo: 'CPF' },

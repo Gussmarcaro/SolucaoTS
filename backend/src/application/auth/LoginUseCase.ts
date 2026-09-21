@@ -58,6 +58,10 @@ export class LoginUseCase {
         grupo: usuario.grupoNome,
         clienteId: usuario.clienteId,
         suporte: usuario.suporte,
+        // Vai na sessão, não no token: o token não se reemite quando a pessoa
+        // troca a foto, e o avatar ficaria velho até o próximo login — o mesmo
+        // motivo pelo qual as permissões também não entram nele.
+        fotoVersao: usuario.fotoVersao,
       },
     };
   }

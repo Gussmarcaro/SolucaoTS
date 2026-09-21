@@ -15,6 +15,8 @@ export interface LoginResultado {
     clienteId: string | null;
     /** Equipe do fornecedor — habilita provisionar e trocar de órgão. */
     suporte: boolean;
+    /** Carimbo da última troca de foto; null quando não há foto. */
+    fotoVersao: string | null;
   };
 }
 

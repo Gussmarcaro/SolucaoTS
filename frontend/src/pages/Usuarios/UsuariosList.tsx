@@ -1,3 +1,4 @@
+import { Avatar } from '@/components/ui/Avatar';
 import { AcoesGrade, IconBtn } from '@/components/ui/AcoesGrade';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
@@ -130,7 +131,17 @@ export function UsuariosList({ refreshKey, onVisualizar, onEditar, onAlternarSta
           </AcoesGrade>
         );
       case 'nome':
-        return <span className={`${txt} font-medium text-ink-800 dark:text-ink-100`} title={u.nome}>{u.nome}</span>;
+        // O rosto ao lado do nome, não no lugar dele: numa grade se procura
+        // por nome, e a foto serve para reconhecer de relance quem já se
+        // conhece — as duas coisas juntas, nenhuma substituindo a outra.
+        return (
+          <span className="flex min-w-0 items-center gap-2">
+            <Avatar nome={u.nome} usuarioId={u.id} fotoVersao={u.fotoVersao} tamanho="sm" />
+            <span className={`${txt} font-medium text-ink-800 dark:text-ink-100`} title={u.nome}>
+              {u.nome}
+            </span>
+          </span>
+        );
       case 'documento':
         return (
           <span className={`${txt} font-mono text-xs text-ink-600 dark:text-ink-300`}>

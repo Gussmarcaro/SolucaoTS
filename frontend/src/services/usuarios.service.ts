@@ -45,3 +45,34 @@ export async function listarUsuarios(params: {
   });
   return data;
 }
+
+/**
+ * A foto do usuário.
+ *
+ * Duas famílias de rota, e a diferença importa: `/perfil/foto` é a própria
+ * foto e não exige permissão nenhuma — o id sai do token. `/usuarios/:id/foto`
+ * é a foto de outra pessoa, e passa pelo gate de CONFIG_USUARIOS.
+ */
+export async function enviarMinhaFoto(arquivo: File): Promise<Usuario> {
+  const dados = new FormData();
+  dados.append('arquivo', arquivo);
+  const { data } = await http.post<Usuario>('/perfil/foto', dados);
+  return data;
+}
+
+export async function removerMinhaFoto(): Promise<Usuario> {
+  const { data } = await http.delete<Usuario>('/perfil/foto');
+  return data;
+}
+
+export async function enviarFotoUsuario(id: string, arquivo: File): Promise<Usuario> {
+  const dados = new FormData();
+  dados.append('arquivo', arquivo);
+  const { data } = await http.post<Usuario>(`/usuarios/${id}/foto`, dados);
+  return data;
+}
+
+export async function removerFotoUsuario(id: string): Promise<Usuario> {
+  const { data } = await http.delete<Usuario>(`/usuarios/${id}/foto`);
+  return data;
+}

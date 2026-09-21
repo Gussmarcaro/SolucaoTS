@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AlertCircle, CheckCircle2, Loader2, Search, ShieldCheck } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { Avatar } from '@/components/ui/Avatar';
 import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
@@ -14,6 +15,8 @@ import { isEmailValido, isSenhaForte } from '@/lib/validators';
 import { capitalizarNome } from '@/lib/nomeProprio';
 import { consultarCep } from '@/services/viacep.service';
 import { atualizarMeuPerfil, meuPerfil } from '@/services/perfil.service';
+import { enviarMinhaFoto, removerMinhaFoto } from '@/services/usuarios.service';
+import { FotoUsuario } from '@/components/ui/FotoUsuario';
 import { extrairMensagemErro } from '@/services/http';
 import type { Usuario } from '@/types/usuario';
 
@@ -48,11 +51,6 @@ const VAZIO: Campos = {
   novaSenha: '',
   confirmarSenha: '',
 };
-
-function iniciais(nome: string): string {
-  const partes = nome.trim().split(/\s+/);
-  return ((partes[0]?.[0] ?? '') + (partes[partes.length - 1]?.[0] ?? '')).toUpperCase() || 'US';
-}
 
 /**
  * Meu Perfil — o usuário editando o próprio cadastro.
@@ -249,9 +247,13 @@ export function Perfil() {
         <Card>
           <CardBody>
             <div className="flex flex-wrap items-center gap-4">
-              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-lg font-bold text-white">
-                {iniciais(form.nome || sessao?.nome || '')}
-              </span>
+              <Avatar
+                nome={form.nome || sessao?.nome || 'Usuário'}
+                usuarioId={registro?.id}
+                fotoVersao={registro?.fotoVersao}
+                tamanho="lg"
+                className="h-14 w-14 rounded-2xl text-lg"
+              />
               <div className="min-w-0">
                 <p className="truncate text-base font-semibold text-ink-900 dark:text-ink-50">
                   {form.nome || sessao?.nome}
@@ -291,6 +293,34 @@ export function Perfil() {
                   name="orgao"
                   value={registro?.orgaoNome ?? 'Sem órgão'}
                   readOnly
+                />
+              </div>
+
+              {/*
+                A foto fica aqui, junto de grupo e órgão, e não no bloco de
+                dados pessoais: ela grava sozinha, na hora, enquanto o resto do
+                formulário só vai ao servidor no Salvar. Misturá-la com campos
+                que ainda não foram salvos faria parecer que ela também espera
+                o botão.
+              */}
+              <div className="sm:col-span-12">
+                <p className="mb-2 text-sm font-medium text-ink-700 dark:text-ink-200">Foto</p>
+                <FotoUsuario
+                  nome={registro?.nome ?? sessao?.nome ?? 'Usuário'}
+                  usuarioId={registro?.id}
+                  fotoVersao={registro?.fotoVersao}
+                  onEnviar={async (arquivo) => {
+                    const atualizado = await enviarMinhaFoto(arquivo);
+                    setRegistro(atualizado);
+                    // A barra superior lê da sessão, não deste registro — sem
+                    // isto a foto nova só apareceria lá no próximo login.
+                    atualizarSessao({ fotoVersao: atualizado.fotoVersao });
+                  }}
+                  onRemover={async () => {
+                    const atualizado = await removerMinhaFoto();
+                    setRegistro(atualizado);
+                    atualizarSessao({ fotoVersao: null });
+                  }}
                 />
               </div>
             </div>

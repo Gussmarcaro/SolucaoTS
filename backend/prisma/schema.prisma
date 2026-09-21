@@ -241,25 +241,39 @@ model Cliente {
 }
 
 model Usuario {
-  id                  String    @id @default(uuid()) @db.Uuid
-  clienteId           String    @db.Uuid // órgão dono do registro
-  grupoUsuarioId      String?   @db.Uuid // grupo de acesso (1 grupo por usuário)
-  nome                String // Nome completo (usuário do sistema é sempre pessoa física)
+  id             String  @id @default(uuid()) @db.Uuid
+  clienteId      String  @db.Uuid // órgão dono do registro
+  grupoUsuarioId String? @db.Uuid // grupo de acesso (1 grupo por usuário)
+  nome           String // Nome completo (usuário do sistema é sempre pessoa física)
   // CPF — só dígitos (11). Duplicidade **por órgão** (no `@@unique` abaixo), e
   // não global: a mesma contadora atende duas prefeituras e precisa de um
   // usuário em cada. Quem identifica o login continua sendo o e-mail, esse sim
   // único no sistema inteiro — é por ele que se entra, antes de haver órgão.
-  documento           String    @db.VarChar(14)
-  cep                 String    @db.VarChar(8)
-  logradouro          String
-  numero              String?   @db.VarChar(20)
-  complemento         String?
-  bairro              String
-  cidade              String
-  uf                  String    @db.VarChar(2)
-  email               String    @unique
-  celular             String    @db.VarChar(11)
-  buscaTexto          String    @default("") // texto normalizado (sem acento/caixa) para busca global
+  documento      String  @db.VarChar(14)
+  cep            String  @db.VarChar(8)
+  logradouro     String
+  numero         String? @db.VarChar(20)
+  complemento    String?
+  bairro         String
+  cidade         String
+  uf             String  @db.VarChar(2)
+  email          String  @unique
+  celular        String  @db.VarChar(11)
+  buscaTexto     String  @default("") // texto normalizado (sem acento/caixa) para busca global
+
+  // Foto do usuário — colunas próprias, como o estatuto da Entidade e os PDFs
+  // do Ajuste. `fotoArquivo` NUNCA entra no select padrão nem na trilha de
+  // auditoria: a barra superior carrega a foto em toda tela, e trazê-la junto
+  // de cada listagem de usuários mandaria megabytes por consulta.
+  //
+  // `fotoAtualizadaEm` existe para o ETag: sem ela, trocar a foto não mudaria
+  // nada que o navegador observe, e ele continuaria exibindo a antiga do cache
+  // até alguém limpá-lo.
+  fotoArquivo        Bytes?
+  fotoArquivoTipo    String?   @db.VarChar(40) // MIME, para devolver no download
+  fotoArquivoTamanho Int? // bytes, para exibir sem carregar o conteúdo
+  fotoAtualizadaEm   DateTime?
+
   senhaHash           String? // hash bcrypt da senha de login
   resetTokenHash      String?   @db.VarChar(64) // SHA-256 do token de recuperação (nunca o token puro)
   resetTokenExpiresAt DateTime? // validade do token de recuperação

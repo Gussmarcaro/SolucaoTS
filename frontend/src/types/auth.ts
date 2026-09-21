@@ -10,6 +10,14 @@ export interface UsuarioAutenticado {
   orgaoNome?: string | null;
   /** Equipe do fornecedor: provisiona órgãos e escolhe qual atender. */
   suporte?: boolean;
+  /**
+   * Carimbo da última troca de foto; null quando não há foto.
+   *
+   * Fica na sessão e **não** no token: o token não se reemite quando a pessoa
+   * troca a foto, e o avatar da barra ficaria velho até o próximo login. Quem
+   * o atualiza é `atualizarSessao`, na tela do perfil.
+   */
+  fotoVersao?: string | null;
 }
 
 export interface LoginPayload {

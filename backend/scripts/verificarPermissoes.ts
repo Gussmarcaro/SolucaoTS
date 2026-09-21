@@ -42,6 +42,8 @@ const LIBERADAS: Record<string, string> = {
   '/lgpd/acesso-dados': 'cada usuário grava o registro do próprio acesso',
   '/permissoes/eu/resumo': 'o usuário lendo as próprias permissões',
   '/perfil': 'o usuário lendo e editando o próprio cadastro — o id sai do token, não da entrada',
+  '/perfil/foto': 'a própria foto — o id sai do token, não da entrada',
+  '/usuarios/:id/foto': 'o avatar do colega: aparece na barra e na agenda de todo usuário, e o recorte por órgão já vem da raiz Usuario. Gravar e apagar continuam sob CONFIG_USUARIOS',
   '/suporte/orgaos': 'equipe do fornecedor — autorizada pela marca Usuario.suporte, não pela matriz',
   '/suporte/atender': 'equipe do fornecedor — troca o órgão do próprio token',
   '/suporte/provisionar': 'equipe do fornecedor — cria órgão novo, antes de existir matriz',

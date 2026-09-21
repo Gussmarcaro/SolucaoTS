@@ -58,6 +58,7 @@ const CAMPOS_OMITIDOS = new Set([
   // Conteúdo binário de PDF anexado: logá-lo gravaria megabytes por evento na
   // trilha. O nome e o tamanho do arquivo continuam sendo auditados.
   'estatutoArquivo',
+  'fotoArquivo',
   'termoCienciaArquivo',
   'conteudo',
   'ajusteAssinadoArquivo',
@@ -151,6 +152,7 @@ async function registrar(params: {
  */
 const CAMPOS_PESADOS = new Set([
   'estatutoArquivo',
+  'fotoArquivo',
   'termoCienciaArquivo',
   'conteudo',
   'ajusteAssinadoArquivo',

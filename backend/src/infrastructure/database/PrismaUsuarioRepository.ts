@@ -30,6 +30,11 @@ const selecao = {
   uf: true,
   email: true,
   celular: true,
+  // Só o carimbo, nunca os bytes: diz se **há** foto e serve de versão para a
+  // URL. `fotoArquivo` fica de fora daqui de propósito — a barra superior
+  // carrega a foto em toda tela, e trazê-la em cada listagem mandaria
+  // megabytes por consulta.
+  fotoAtualizadaEm: true,
   ativo: true,
   criadoEm: true,
   atualizadoEm: true,
@@ -40,9 +45,10 @@ const selecao = {
 type UsuarioRow = Prisma.UsuarioGetPayload<{ select: typeof selecao }>;
 
 function toDomain(row: UsuarioRow): Usuario {
-  const { grupoUsuario, cliente, ...rest } = row;
+  const { grupoUsuario, cliente, fotoAtualizadaEm, ...rest } = row;
   return {
     ...rest,
+    fotoVersao: fotoAtualizadaEm ? String(fotoAtualizadaEm.getTime()) : null,
     orgaoNome: cliente?.nome ?? null,
     grupoNome: grupoUsuario?.nome ?? null,
   };
@@ -137,10 +143,17 @@ export class PrismaUsuarioRepository implements IUsuarioRepository {
         ativo: true,
         clienteId: true,
         suporte: true,
+        fotoAtualizadaEm: true,
         grupoUsuario: { select: { nome: true } },
       },
     });
-    return row ? { ...row, grupoNome: row.grupoUsuario?.nome ?? null } : null;
+    return row
+      ? {
+          ...row,
+          grupoNome: row.grupoUsuario?.nome ?? null,
+          fotoVersao: row.fotoAtualizadaEm ? String(row.fotoAtualizadaEm.getTime()) : null,
+        }
+      : null;
   }
 
   async definirResetToken(id: string, tokenHash: string, expiresAt: Date): Promise<void> {
@@ -216,5 +229,54 @@ export class PrismaUsuarioRepository implements IUsuarioRepository {
       pageSize,
       totalPages: Math.max(1, Math.ceil(total / pageSize)),
     };
+  }
+
+  // ---- Foto ----
+
+  async salvarFoto(id: string, foto: { conteudo: Buffer; tipo: string }): Promise<void> {
+    await prisma.usuario.update({
+      where: { id },
+      data: {
+        fotoArquivo: foto.conteudo,
+        fotoArquivoTipo: foto.tipo,
+        fotoArquivoTamanho: foto.conteudo.length,
+        fotoAtualizadaEm: new Date(),
+      },
+      select: { id: true },
+    });
+  }
+
+  /**
+   * A única leitura que carrega os bytes.
+   *
+   * `versao` é o carimbo de quando a foto mudou, e vira o ETag da resposta. Sem
+   * ele o navegador guardaria a imagem em cache e continuaria mostrando a
+   * antiga depois da troca — que é exatamente o momento em que o usuário está
+   * olhando para a tela esperando ver a nova.
+   */
+  async obterFoto(id: string): Promise<{ conteudo: Buffer; tipo: string; versao: string } | null> {
+    const row = await prisma.usuario.findUnique({
+      where: { id },
+      select: { fotoArquivo: true, fotoArquivoTipo: true, fotoAtualizadaEm: true },
+    });
+    if (!row?.fotoArquivo) return null;
+    return {
+      conteudo: Buffer.from(row.fotoArquivo),
+      tipo: row.fotoArquivoTipo ?? 'image/jpeg',
+      versao: String(row.fotoAtualizadaEm?.getTime() ?? 0),
+    };
+  }
+
+  async removerFoto(id: string): Promise<void> {
+    await prisma.usuario.update({
+      where: { id },
+      data: {
+        fotoArquivo: null,
+        fotoArquivoTipo: null,
+        fotoArquivoTamanho: null,
+        fotoAtualizadaEm: null,
+      },
+      select: { id: true },
+    });
   }
 }

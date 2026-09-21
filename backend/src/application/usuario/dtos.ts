@@ -87,6 +87,9 @@ export interface UsuarioAuth {
   grupoNome: string | null;
   /** Órgão do usuário — vai para o token e isola os dados que ele alcança. */
   clienteId: string | null;
+  /** Carimbo da última troca de foto; null quando não há foto. Vai para a
+   *  sessão, para a barra superior mostrar o avatar sem uma consulta extra. */
+  fotoVersao: string | null;
   /** Equipe do fornecedor — pode provisionar órgãos e trocar de contexto. */
   suporte: boolean;
 }

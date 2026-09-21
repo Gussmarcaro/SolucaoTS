@@ -35,4 +35,15 @@ export interface IUsuarioRepository {
   ): Promise<{ id: string; resetTokenExpiresAt: Date | null } | null>;
   /** Atualiza a senha e limpa o token de recuperação. */
   atualizarSenhaELimparReset(id: string, senhaHash: string): Promise<void>;
+
+  // ---- Foto ----
+  /** Grava (ou substitui) a foto. Carimba `fotoAtualizadaEm`, que serve de ETag. */
+  salvarFoto(id: string, foto: { conteudo: Buffer; tipo: string }): Promise<void>;
+  /**
+   * Lê a foto. É a **única** consulta que carrega os bytes — em todo o resto
+   * eles ficam fora do select, senão cada listagem de usuários traria as fotos.
+   */
+  obterFoto(id: string): Promise<{ conteudo: Buffer; tipo: string; versao: string } | null>;
+  /** Remove a foto. */
+  removerFoto(id: string): Promise<void>;
 }

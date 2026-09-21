@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, Search, Bell, Info, LogOut, Sparkles } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { Avatar } from '@/components/ui/Avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/cn';
 import { http } from '@/services/http';
@@ -18,12 +19,6 @@ interface TopbarProps {
    * de 76px não cabe, e a marca sumir de vez deixa a tela sem identidade.
    */
   collapsed?: boolean;
-}
-
-function iniciais(nome?: string): string {
-  if (!nome) return 'US';
-  const partes = nome.trim().split(/\s+/);
-  return ((partes[0]?.[0] ?? '') + (partes[partes.length - 1]?.[0] ?? '')).toUpperCase();
 }
 
 export function Topbar({ onOpenSidebar, collapsed = false }: TopbarProps) {
@@ -232,9 +227,11 @@ export function Topbar({ onOpenSidebar, collapsed = false }: TopbarProps) {
           aria-label="Meu perfil"
           className="focus-ring flex items-center gap-2 rounded-xl py-1 pl-1 pr-1 transition-colors hover:bg-ink-100 dark:hover:bg-ink-800 sm:pr-2"
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-xs font-bold text-white">
-            {iniciais(usuario?.nome)}
-          </span>
+          <Avatar
+            nome={usuario?.nome ?? 'Usuário'}
+            usuarioId={usuario?.id}
+            fotoVersao={usuario?.fotoVersao}
+          />
           <span className="hidden text-left leading-tight sm:block">
             <span className="block max-w-[160px] truncate text-sm font-semibold text-ink-800 dark:text-ink-100">
               {usuario?.nome ?? 'Usuário'}

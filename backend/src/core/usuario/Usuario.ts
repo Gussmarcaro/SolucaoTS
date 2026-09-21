@@ -16,6 +16,15 @@ export interface Usuario {
   uf: string;
   email: string;
   celular: string;
+  /**
+   * Quando a foto mudou pela última vez; `null` quando não há foto.
+   *
+   * Não é o nome de um arquivo nem o conteúdo: é o que a tela precisa para
+   * decidir entre mostrar a foto ou as iniciais **sem** pedir a imagem, e o
+   * que faz a URL mudar quando a foto é trocada — sem isso o navegador
+   * continuaria exibindo a antiga, do cache.
+   */
+  fotoVersao: string | null;
   ativo: boolean;
   criadoEm: Date;
   atualizadoEm: Date;

@@ -62,6 +62,29 @@ export const uploadAnexo = multer({
   },
 }).single('arquivo');
 
+/**
+ * Upload da foto do usuário (campo "arquivo"), até 1 MB.
+ *
+ * O teto aqui é **maior** que o da regra de negócio (512 KB), e de propósito:
+ * o multer corta a requisição com um erro genérico quando estoura, enquanto o
+ * caso de uso recusa dizendo o tamanho e o que fazer. Este limite é a barreira
+ * bruta contra upload absurdo; a mensagem útil vem do outro.
+ *
+ * Sem HEIC: é o formato padrão do iPhone, mas o Chrome não o desenha — aceitá-lo
+ * gravaria uma foto que boa parte dos usuários veria como imagem quebrada. A
+ * tela converte para JPEG no recorte, antes de enviar.
+ */
+export const uploadFoto = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (!/^image\/(jpeg|png|webp)$/i.test(file.mimetype)) {
+      return cb(new BusinessError('Envie uma imagem JPG, PNG ou WebP.'));
+    }
+    cb(null, true);
+  },
+}).single('arquivo');
+
 export const uploadOfx = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },

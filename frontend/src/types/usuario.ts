@@ -16,6 +16,13 @@ export interface Usuario {
   uf: string;
   email: string;
   celular: string;
+  /**
+   * Quando a foto mudou pela última vez; `null` quando não há foto.
+   *
+   * É o que permite mostrar o avatar certo **sem** pedir a imagem — e o que
+   * invalida o cache quando a foto é trocada.
+   */
+  fotoVersao: string | null;
   ativo: boolean;
   criadoEm: string;
   atualizadoEm: string;

@@ -92,4 +92,59 @@ export class UsuarioController {
       return next(error);
     }
   }
+
+  // ---- Foto ----
+
+  /** Grava (ou substitui) a foto. Multipart, campo "arquivo". */
+  async enviarFoto(req: Request, res: Response, next: NextFunction) {
+    try {
+      const file = req.file;
+      if (!file) throw new BusinessError('Selecione a imagem.');
+      return res.json(
+        await gerenciarUsuario.salvarFoto(req.params.id, {
+          conteudo: file.buffer,
+          tipo: file.mimetype,
+        }),
+      );
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  /**
+   * Devolve a imagem.
+   *
+   * É a rota mais chamada do sistema depois que o avatar aparece na barra: ela
+   * é pedida em toda navegação. Por isso o cache é parte da funcionalidade, e
+   * não um refinamento.
+   *
+   * `ETag` é o carimbo de quando a foto mudou. O navegador devolve o valor em
+   * `If-None-Match` e recebe **304 sem corpo** enquanto a foto for a mesma —
+   * alguns bytes em vez de dezenas de KB. `private` no `Cache-Control` impede
+   * que um proxy compartilhado guarde a foto de uma pessoa e a sirva a outra.
+   */
+  async baixarFoto(req: Request, res: Response, next: NextFunction) {
+    try {
+      const foto = await gerenciarUsuario.obterFoto(req.params.id);
+      const etag = `"${foto.versao}"`;
+
+      res.setHeader('ETag', etag);
+      res.setHeader('Cache-Control', 'private, max-age=0, must-revalidate');
+      if (req.headers['if-none-match'] === etag) return res.status(304).end();
+
+      res.setHeader('Content-Type', foto.tipo);
+      res.setHeader('Content-Length', foto.conteudo.length);
+      return res.end(foto.conteudo);
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  async removerFoto(req: Request, res: Response, next: NextFunction) {
+    try {
+      return res.json(await gerenciarUsuario.removerFoto(req.params.id));
+    } catch (error) {
+      return next(error);
+    }
+  }
 }
