@@ -5,6 +5,7 @@ import { filtrarPorGrupo, filtrarPorPermissao, navigation, type NavNode } from '
 import { usePermissoes } from '@/contexts/PermissoesContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/cn';
+import { DicaTrilho } from './DicaTrilho';
 
 interface Props {
   collapsed: boolean;
@@ -133,39 +134,96 @@ export function NavMenu({ collapsed, onNavigate, onExpandSidebar }: Props) {
 
   // ---- Modo recolhido (desktop): só o topo, em ícones ----
   if (collapsed) {
+    /**
+     * O que o balão mostra.
+     *
+     * Para item de tela, o rótulo — é o que o `title` já fazia, só que na hora
+     * e com o tema da aplicação.
+     *
+     * Para item de **grupo**, o submenu inteiro, navegável. É o ganho de
+     * verdade: no trilho recolhido, "Cadastro" não levava a lugar nenhum —
+     * clicar nele só reabria o menu, e a pessoa ainda tinha de procurar o item
+     * lá dentro. Agora o caminho é apontar e clicar.
+     */
+    const conteudo = (node: NavNode) => (
+      <>
+        <p
+          className={cn(
+            'px-2 py-1 text-[13px] font-semibold text-ink-800 dark:text-ink-100',
+            node.children && 'border-b border-ink-100 pb-1.5 dark:border-ink-700',
+          )}
+        >
+          {node.label}
+        </p>
+        {node.children && (
+          <ul className="mt-1 space-y-0.5">
+            {node.children.map((filho) => (
+              <li key={filho.label}>
+                {filho.to ? (
+                  <NavLink
+                    to={filho.to}
+                    onClick={onNavigate}
+                    className={({ isActive }) =>
+                      cn(
+                        'block truncate rounded-lg px-2 py-1.5 text-[13px] transition-colors',
+                        isActive
+                          ? 'bg-brand-50 font-medium text-brand-700 dark:bg-brand-500/15 dark:text-brand-300'
+                          : 'text-ink-600 hover:bg-ink-100 dark:text-ink-300 dark:hover:bg-ink-700/60',
+                      )
+                    }
+                  >
+                    {filho.label}
+                  </NavLink>
+                ) : (
+                  // Neto (submenu de submenu): vira só um título. Aninhar mais
+                  // um nível dentro do balão o transformaria num menu inteiro
+                  // flutuando — e aí o certo é expandir a barra.
+                  <p className="px-2 pt-1.5 text-[11px] uppercase tracking-wide text-ink-400">
+                    {filho.label}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </>
+    );
+
     return (
       <ul className="hidden space-y-1 lg:block">
         {menu.map((node) => (
           <li key={node.label}>
-            {node.to ? (
-              <NavLink
-                to={node.to}
-                end={node.to === '/'}
-                onClick={onNavigate}
-                title={node.label}
-                className={({ isActive }) =>
-                  cn(linhaBase, 'justify-center py-2.5', isActive ? ativo : inativo)
-                }
-              >
-                <Marcador node={node} />
-              </NavLink>
-            ) : (
-              <button
-                type="button"
-                title={node.label}
-                onClick={() => {
-                  onExpandSidebar();
-                  setAbertos((prev) => new Set([...prev, node.label]));
-                }}
-                className={cn(
-                  linhaBase,
-                  'justify-center py-2.5',
-                  grupoContémAtivo(node, pathname) ? ativo : inativo,
-                )}
-              >
-                <Marcador node={node} />
-              </button>
-            )}
+            <DicaTrilho conteudo={conteudo(node)}>
+              {node.to ? (
+                <NavLink
+                  to={node.to}
+                  end={node.to === '/'}
+                  onClick={onNavigate}
+                  aria-label={node.label}
+                  className={({ isActive }) =>
+                    cn(linhaBase, 'justify-center py-2.5', isActive ? ativo : inativo)
+                  }
+                >
+                  <Marcador node={node} />
+                </NavLink>
+              ) : (
+                <button
+                  type="button"
+                  aria-label={node.label}
+                  onClick={() => {
+                    onExpandSidebar();
+                    setAbertos((prev) => new Set([...prev, node.label]));
+                  }}
+                  className={cn(
+                    linhaBase,
+                    'w-full justify-center py-2.5',
+                    grupoContémAtivo(node, pathname) ? ativo : inativo,
+                  )}
+                >
+                  <Marcador node={node} />
+                </button>
+              )}
+            </DicaTrilho>
           </li>
         ))}
       </ul>
