@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BarChart3, CalendarClock, ClipboardList, Wallet } from 'lucide-react';
+import { BarChart3, CalendarClock, ClipboardList, Users, Wallet } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Select } from '@/components/ui/Select';
 import { Input } from '@/components/ui/Input';
@@ -10,14 +10,22 @@ import {
   relatorioExecucao,
   relatorioRepasses,
   relatorioSituacao,
+  relatorioFornecedores,
   type FiltroRelatorio,
 } from '@/services/relatorios.service';
 import { extrairMensagemErro } from '@/services/http';
-import { dataBr, formatarMoeda } from '@/lib/masks';
+import { dataBr, formatarMoeda, mascaraCpf, mascaraCpfCnpj } from '@/lib/masks';
 import { STATUS_PRESTACAO_LABEL, type StatusPrestacao } from '@/types/prestacao';
-import { ATRASO_RELEVANTE_DIAS, type LinhaExecucao, type LinhaRepasse, type ResumoSituacao } from './tipos';
+import {
+  ATRASO_RELEVANTE_DIAS,
+  type LinhaExecucao,
+  type LinhaFornecedor,
+  type LinhaRepasse,
+  type ResumoFornecedores,
+  type ResumoSituacao,
+} from './tipos';
 
-type Aba = 'execucao' | 'repasses' | 'situacao';
+type Aba = 'execucao' | 'repasses' | 'situacao' | 'fornecedores';
 
 const ABAS: { id: Aba; rotulo: string; icone: typeof Wallet; descricao: string }[] = [
   {
@@ -37,6 +45,12 @@ const ABAS: { id: Aba; rotulo: string; icone: typeof Wallet; descricao: string }
     rotulo: 'Prestações por situação',
     icone: ClipboardList,
     descricao: 'Panorama por exercício — e os ajustes que ainda não prestaram contas.',
+  },
+  {
+    id: 'fornecedores',
+    rotulo: 'Concentração de fornecedores',
+    icone: Users,
+    descricao: 'Para quem a entidade compra — e quanto do gasto vai para poucos credores.',
   },
 ];
 
@@ -59,6 +73,7 @@ export function Relatorios() {
   const [execucao, setExecucao] = useState<LinhaExecucao[] | null>(null);
   const [repasses, setRepasses] = useState<LinhaRepasse[] | null>(null);
   const [situacao, setSituacao] = useState<ResumoSituacao | null>(null);
+  const [fornecedores, setFornecedores] = useState<ResumoFornecedores | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
   const filtro = useMemo<FiltroRelatorio>(
@@ -82,13 +97,16 @@ export function Relatorios() {
     setExecucao(null);
     setRepasses(null);
     setSituacao(null);
+    setFornecedores(null);
 
     const carregar =
       aba === 'execucao'
         ? relatorioExecucao(filtro).then((d) => vivo && setExecucao(d))
         : aba === 'repasses'
           ? relatorioRepasses(filtro).then((d) => vivo && setRepasses(d))
-          : relatorioSituacao(filtro).then((d) => vivo && setSituacao(d));
+          : aba === 'fornecedores'
+            ? relatorioFornecedores(filtro).then((d) => vivo && setFornecedores(d))
+            : relatorioSituacao(filtro).then((d) => vivo && setSituacao(d));
 
     carregar.catch((e) => vivo && setErro(extrairMensagemErro(e, 'Não foi possível montar o relatório.')));
     return () => {
@@ -184,6 +202,79 @@ export function Relatorios() {
       alinhar: 'right',
       celula: (l) => pct(l.execucao),
       texto: (l) => pct(l.execucao),
+    },
+  ];
+
+  const colunasFornecedores: ColunaRel<LinhaFornecedor>[] = [
+    {
+      chave: 'credor',
+      rotulo: 'Credor',
+      celula: (l) => (
+        <>
+          <span className="block font-medium text-ink-800 dark:text-ink-100">
+            {l.credorNome ?? '(sem nome informado)'}
+          </span>
+          <span className="block font-mono text-[11px] text-ink-400">
+            {l.credorTipoDoc} {documentoBr(l.credorTipoDoc, l.credorNumeroDoc)}
+          </span>
+        </>
+      ),
+      texto: (l) => `${l.credorNome ?? ''} (${l.credorTipoDoc} ${l.credorNumeroDoc})`,
+      rodape: (ls) => `${ls.length} credor(es)`,
+    },
+    {
+      chave: 'notas',
+      rotulo: 'Notas',
+      alinhar: 'center',
+      celula: (l) => l.notas,
+      texto: (l) => String(l.notas),
+      rodape: (ls) => soma(ls, (l) => l.notas),
+    },
+    {
+      chave: 'valor',
+      rotulo: 'Valor',
+      alinhar: 'right',
+      celula: (l) => formatarMoeda(l.valor),
+      texto: (l) => String(l.valor),
+      rodape: (ls) => formatarMoeda(soma(ls, (l) => l.valor)),
+    },
+    {
+      chave: 'fatia',
+      rotulo: 'Fatia',
+      alinhar: 'right',
+      /*
+       * A barra é o gráfico — e é o suficiente.
+       *
+       * Concentração se lê por comparação entre linhas vizinhas, e uma barra na
+       * própria célula faz isso sem eixo, sem legenda e sem uma biblioteca de
+       * gráficos no bundle. O número fica ao lado porque a barra dá a ordem de
+       * grandeza e o número dá o valor.
+       */
+      celula: (l) => (
+        <span className="flex items-center justify-end gap-2">
+          <span className="hidden h-1.5 w-16 overflow-hidden rounded-full bg-ink-100 dark:bg-ink-800 sm:block">
+            <span
+              className="block h-full rounded-full bg-brand-500"
+              style={{ width: `${Math.min(100, l.percentual)}%` }}
+            />
+          </span>
+          <span className="tabular-nums">{l.percentual.toFixed(1)}%</span>
+        </span>
+      ),
+      texto: (l) => `${l.percentual.toFixed(1)}%`,
+    },
+    {
+      chave: 'acumulado',
+      rotulo: 'Acumulado',
+      alinhar: 'right',
+      // Cinza depois dos 80%: dali para baixo estão os credores que, somados,
+      // representam a cauda. É a leitura de Pareto sem precisar explicá-la.
+      celula: (l) => (
+        <span className={l.acumulado > 80 ? 'tabular-nums text-ink-400' : 'tabular-nums font-medium'}>
+          {l.acumulado.toFixed(1)}%
+        </span>
+      ),
+      texto: (l) => `${l.acumulado.toFixed(1)}%`,
     },
   ];
 
@@ -321,6 +412,52 @@ export function Relatorios() {
         <SituacaoView resumo={situacao} erro={erro} filtros={filtros} titulo={rotulo.rotulo} />
       )}
 
+      {aba === 'fornecedores' && (
+        <>
+          {fornecedores && fornecedores.linhas.length > 0 && (
+            <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <Numero
+                rotulo="Maior fornecedor"
+                valor={`${(fornecedores.maiorFatia ?? 0).toFixed(1)}%`}
+                nota={fornecedores.linhas[0].credorNome ?? fornecedores.linhas[0].credorNumeroDoc}
+              />
+              <Numero
+                rotulo="Credores para 80% da despesa"
+                valor={
+                  fornecedores.credoresPara80 === null
+                    ? '—'
+                    : `${fornecedores.credoresPara80} de ${fornecedores.credores}`
+                }
+                nota="Quanto menor, mais concentrada é a compra."
+              />
+              <Numero
+                rotulo="Despesa no recorte"
+                valor={formatarMoeda(fornecedores.total)}
+                nota={`${fornecedores.credores} credor(es) distinto(s)`}
+              />
+            </div>
+          )}
+
+          <QuadroRelatorio
+            titulo={rotulo.rotulo}
+            arquivo="concentracao-fornecedores"
+            colunas={colunasFornecedores}
+            linhas={fornecedores?.linhas ?? null}
+            erro={erro}
+            vazio="Nenhum documento fiscal apropriado às prestações deste recorte."
+          >
+            {filtros}
+          </QuadroRelatorio>
+
+          <p className="mt-4 text-xs text-ink-400 print:hidden">
+            <strong>Concentração não é irregularidade.</strong> Pode ser o aluguel do imóvel ou a
+            folha terceirizada — o relatório põe o número diante dos olhos, não acusa ninguém. O que
+            ele evita é a pergunta da fiscalização chegar antes da sua explicação. Nota rateada entra
+            pela fatia do ajuste, não pelo valor cheio.
+          </p>
+        </>
+      )}
+
       <p className="mt-4 text-xs text-ink-400 print:hidden">
         Os valores vêm dos blocos das prestações de contas cadastradas. Ajuste sem prestação aparece
         com execução zerada — que é o que se quer enxergar.
@@ -406,6 +543,29 @@ function SituacaoView({
           </ul>
         </div>
       )}
+    </div>
+  );
+}
+
+/** Documento do credor com a máscara do próprio tipo. */
+function documentoBr(tipo: string, numero: string): string {
+  return tipo === 'CPF' ? mascaraCpf(numero) : mascaraCpfCnpj(numero);
+}
+
+/**
+ * Um número em destaque, acima do quadro.
+ *
+ * Existe só na aba de fornecedores, e por um motivo: a tabela responde "quanto
+ * cada um levou", mas a pergunta que se faz é "está concentrado?" — e essa se
+ * responde com três números, não com quarenta linhas. Quem quiser a linha
+ * desce os olhos.
+ */
+function Numero({ rotulo, valor, nota }: { rotulo: string; valor: string; nota?: string }) {
+  return (
+    <div className="rounded-2xl border border-ink-200/70 bg-white px-4 py-3 shadow-card dark:border-ink-800/70 dark:bg-ink-900">
+      <p className="text-[11px] uppercase tracking-wide text-ink-400">{rotulo}</p>
+      <p className="mt-0.5 text-xl font-semibold tabular-nums text-ink-900 dark:text-ink-50">{valor}</p>
+      {nota && <p className="mt-0.5 truncate text-[11px] text-ink-400" title={nota}>{nota}</p>}
     </div>
   );
 }

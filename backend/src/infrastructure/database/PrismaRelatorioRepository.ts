@@ -218,4 +218,71 @@ export class PrismaRelatorioRepository implements IRelatorioRepository {
         })),
     };
   }
+
+  /**
+   * Despesa somada por credor.
+   *
+   * Parte das **prestações** e restringe as notas às ligações delas, como o
+   * resto deste arquivo — e aqui há um motivo a mais. `DocumentoFiscal` é raiz
+   * de tenant e a extension o filtraria sozinha, mas a nota é **do órgão**:
+   * ela existe antes de ser apropriada a qualquer prestação. Somar direto
+   * traria despesa que ainda não pertence a parceria nenhuma, e o filtro por
+   * ajuste simplesmente não teria por onde ser aplicado.
+   *
+   * O somatório é feito em memória, e não por `groupBy`, porque a chave é o
+   * par tipo+número do credor e o caminho até o ajuste passa por duas
+   * relações. O volume é o de um exercício de um órgão — centenas de linhas,
+   * não milhões.
+   */
+  async fornecedores(filtro: FiltroRelatorio) {
+    const prestacoes = await this.prestacoesDoContexto(filtro);
+    const ids = prestacoes.map((p) => p.id);
+    if (!ids.length) return [];
+
+    const ligacoes = await prisma.prestacaoDocumentoFiscal.findMany({
+      where: { prestacaoId: { in: ids } },
+      select: {
+        // O percentual do rateio é da **ligação**, não da nota: a mesma nota
+        // alimenta várias prestações com fatias diferentes. Somar o valor
+        // cheio em todas contaria a despesa mais de uma vez.
+        percentual: true,
+        documentoFiscal: {
+          select: {
+            credorTipoDoc: true,
+            credorNumeroDoc: true,
+            credorNome: true,
+            valorBruto: true,
+          },
+        },
+      },
+    });
+
+    const mapa = new Map<
+      string,
+      { credorTipoDoc: string; credorNumeroDoc: string; credorNome: string | null; notas: number; valor: number }
+    >();
+
+    for (const l of ligacoes) {
+      const f = l.documentoFiscal;
+      if (!f) continue;
+      const chave = `${f.credorTipoDoc}|${f.credorNumeroDoc}`;
+      const atual = mapa.get(chave) ?? {
+        credorTipoDoc: String(f.credorTipoDoc),
+        credorNumeroDoc: f.credorNumeroDoc,
+        credorNome: f.credorNome,
+        notas: 0,
+        valor: 0,
+      };
+      // `percentual` é 100 na nota comum e a fatia do ajuste na rateada.
+      const fatia = num(l.percentual) || 100;
+      atual.notas += 1;
+      atual.valor += (num(f.valorBruto) * fatia) / 100;
+      // O nome pode faltar numa nota e existir noutra do mesmo credor —
+      // preferir o que existe evita a linha "(sem nome)" para quem tem nome.
+      atual.credorNome = atual.credorNome ?? f.credorNome;
+      mapa.set(chave, atual);
+    }
+
+    return [...mapa.values()];
+  }
 }

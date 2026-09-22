@@ -47,3 +47,22 @@ export interface ResumoSituacao {
 
 /** Atraso a partir do qual a linha ganha destaque — espelha o backend. */
 export const ATRASO_RELEVANTE_DIAS = 5;
+
+export interface LinhaFornecedor {
+  credorTipoDoc: string;
+  credorNumeroDoc: string;
+  credorNome: string | null;
+  notas: number;
+  valor: number;
+  percentual: number;
+  /** Soma das fatias até esta linha — é o que mede concentração. */
+  acumulado: number;
+}
+
+export interface ResumoFornecedores {
+  linhas: LinhaFornecedor[];
+  total: number;
+  credores: number;
+  maiorFatia: number | null;
+  credoresPara80: number | null;
+}

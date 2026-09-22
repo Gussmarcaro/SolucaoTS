@@ -34,4 +34,12 @@ export class RelatorioController {
       return next(e);
     }
   }
+
+  async fornecedores(req: Request, res: Response, next: NextFunction) {
+    try {
+      return res.json(await casos.fornecedores(filtroDe(req)));
+    } catch (e) {
+      return next(e);
+    }
+  }
 }

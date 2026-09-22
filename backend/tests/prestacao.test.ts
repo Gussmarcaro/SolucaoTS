@@ -275,6 +275,55 @@ describe.skipIf(!TEM_BANCO)('a prestação, do cadastro ao documento JSON', () =
     expect(titulos).toMatch(/nenhum pagamento/i);
   });
 
+  /*
+   * A concentração de fornecedores, com a conta conferida.
+   *
+   * A aritmética é o que o relatório vende: se o percentual ou o acumulado
+   * saírem errados, a tela continua bonita e a frase "três credores somam 80%"
+   * passa a ser mentira — sem nada quebrar. Por isso os valores são escolhidos
+   * para dar números redondos: 45,44 + 4,56 = 50,00, ou seja 90,88% e 9,12%.
+   */
+  it('soma a despesa por credor e calcula a concentração', async () => {
+    const maior = await criado('/api/despesas', {
+      numero: '000999',
+      credorTipoDoc: 'CNPJ',
+      credorNumeroDoc: '44555666000181',
+      credorNome: 'CONSTRUTORA HORIZONTE LTDA',
+      descricao: 'Reforma da sede',
+      dataEmissao: '2025-05-20',
+      valorBruto: 45.44,
+      categoriaDespesaTipo: NOTA.categoriaDespesaTipo,
+    });
+    const ap = await post(
+      `/api/prestacoes/${prestacaoId}/documentos-fiscais/${maior.id}/apropriar`,
+      {},
+    );
+    expect(ap.status, `apropriar: ${JSON.stringify(ap.body)}`).toBeLessThan(300);
+
+    const r = await get(`/api/relatorios/fornecedores?ajusteId=${ajusteId}`);
+    expect(r.status, JSON.stringify(r.body)).toBe(200);
+
+    const { linhas, total, credores, maiorFatia, credoresPara80 } = r.body;
+    expect(credores).toBe(2);
+    expect(total).toBeCloseTo(50, 2);
+
+    // Maior primeiro — é o que a concentração significa.
+    expect(linhas[0].credorNumeroDoc).toBe('44555666000181');
+    expect(linhas[0].valor).toBeCloseTo(45.44, 2);
+    expect(linhas[0].percentual).toBeCloseTo(90.88, 2);
+    expect(linhas[1].credorNumeroDoc).toBe(NOTA.credorNumeroDoc);
+    expect(linhas[1].percentual).toBeCloseTo(9.12, 2);
+
+    // O acumulado é o que transforma o ranking em análise: a última linha
+    // fecha em 100% por construção, e é onde um erro de soma aparece.
+    expect(linhas[0].acumulado).toBeCloseTo(90.88, 2);
+    expect(linhas[1].acumulado).toBeCloseTo(100, 2);
+
+    expect(maiorFatia).toBeCloseTo(90.88, 2);
+    // Um credor sozinho já passa de 80%.
+    expect(credoresPara80).toBe(1);
+  });
+
   it('recusa a prestação repetida do mesmo ajuste e exercício', async () => {
     // A prestação é anual e consolidada. Uma segunda do mesmo ano não é um
     // detalhe de unicidade: seriam dois documentos disputando o mesmo

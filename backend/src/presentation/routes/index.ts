@@ -251,6 +251,11 @@ routes.get('/relatorios/repasses', exigirPermissao('RELATORIOS'), (req, res, nex
 routes.get('/relatorios/situacao', exigirPermissao('RELATORIOS'), (req, res, next) =>
   relatorios.situacao(req, res, next),
 );
+// Concentração de fornecedores: para quem a entidade compra. Mesmo recurso —
+// é leitura gerencial do mesmo conjunto de dados.
+routes.get('/relatorios/fornecedores', exigirPermissao('RELATORIOS'), (req, res, next) =>
+  relatorios.fornecedores(req, res, next),
+);
 
 // Alertas do sino — prazos legais e pendências, calculados a cada consulta.
 const alertas = new AlertaController();

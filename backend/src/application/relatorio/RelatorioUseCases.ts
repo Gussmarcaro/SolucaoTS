@@ -58,6 +58,42 @@ export interface ResumoSituacao {
   ajustesSemPrestacao: { ajusteId: string; codigoAjuste: string; entidadeNome: string; dataAssinatura: string }[];
 }
 
+/** Uma linha de "concentração de fornecedores". */
+export interface LinhaFornecedor {
+  credorTipoDoc: string;
+  credorNumeroDoc: string;
+  credorNome: string | null;
+  /** Quantas notas desse credor entraram no recorte. */
+  notas: number;
+  valor: number;
+  /** Fatia deste credor no total. */
+  percentual: number;
+  /**
+   * Soma das fatias até esta linha.
+   *
+   * **É o que transforma um ranking em análise de concentração.** "O maior
+   * fornecedor tem 40%" diz pouco sozinho; "três fornecedores somam 80%" é a
+   * frase que a fiscalização usa.
+   */
+  acumulado: number;
+}
+
+export interface ResumoFornecedores {
+  linhas: LinhaFornecedor[];
+  total: number;
+  /** Quantos credores distintos no recorte. */
+  credores: number;
+  /** Fatia do maior credor. `null` quando não há despesa. */
+  maiorFatia: number | null;
+  /**
+   * Quantos credores bastam para somar 80% da despesa.
+   *
+   * O número que responde à pergunta de uma vez: 1 em 40 é concentração; 30
+   * em 40 é pulverização. `null` quando não há despesa.
+   */
+  credoresPara80: number | null;
+}
+
 export interface FiltroRelatorio {
   ajusteId?: string;
   ano?: number;
@@ -67,6 +103,10 @@ export interface IRelatorioRepository {
   execucao(filtro: FiltroRelatorio): Promise<LinhaExecucao[]>;
   repasses(filtro: FiltroRelatorio): Promise<LinhaRepasse[]>;
   situacao(filtro: FiltroRelatorio): Promise<ResumoSituacao>;
+  /** Despesa por credor, já somada. A ordenação e os percentuais são do caso de uso. */
+  fornecedores(filtro: FiltroRelatorio): Promise<
+    Omit<LinhaFornecedor, 'percentual' | 'acumulado'>[]
+  >;
 }
 
 /** Atraso a partir do qual a linha merece destaque na tela. */
@@ -114,5 +154,62 @@ export class RelatorioUseCases {
   /** Panorama das prestações por exercício e situação. */
   situacao(filtro: FiltroRelatorio = {}): Promise<ResumoSituacao> {
     return this.repo.situacao(this.normalizar(filtro));
+  }
+
+  /**
+   * Concentração de fornecedores — para quem a entidade compra.
+   *
+   * É o achado que a fiscalização procura e que o sistema tinha como responder
+   * desde sempre: `DocumentoFiscal` guarda o credor em toda nota, e ninguém
+   * somava por ele. Até aqui, descobrir que 70% da despesa foi para um único
+   * fornecedor exigia exportar tudo e montar tabela dinâmica.
+   *
+   * **Concentração não é irregularidade.** Pode ser o aluguel do imóvel, ou a
+   * folha terceirizada. O relatório não acusa ninguém — ele põe diante dos
+   * olhos um número que ninguém calcula à mão, e cuja explicação o gestor
+   * precisa ter pronta antes de o Tribunal perguntar.
+   *
+   * A aritmética fica aqui, e não no banco, de propósito: percentual e
+   * acumulado dependem da **ordem**, e ordenação dentro de agregação é o tipo
+   * de coisa que muda de resultado entre bancos.
+   */
+  async fornecedores(filtro: FiltroRelatorio = {}): Promise<ResumoFornecedores> {
+    const brutas = await this.repo.fornecedores(this.normalizar(filtro));
+
+    // Maior primeiro — é o que a concentração significa, e o que faz o
+    // acumulado subir depressa quando há concentração de verdade.
+    const ordenadas = [...brutas].sort((a, b) => b.valor - a.valor);
+    const total = ordenadas.reduce((s, l) => s + l.valor, 0);
+
+    let soma = 0;
+    const linhas: LinhaFornecedor[] = ordenadas.map((l) => {
+      soma += l.valor;
+      return {
+        ...l,
+        // Divisão por zero acontece de verdade: prestação só com nota de valor
+        // zero, ou recorte sem despesa. `0` em vez de `NaN` porque a tela
+        // formata o número, e `NaN%` é pior que `0%`.
+        percentual: total > 0 ? (l.valor / total) * 100 : 0,
+        acumulado: total > 0 ? (soma / total) * 100 : 0,
+      };
+    });
+
+    /*
+     * Quantos credores somam 80%.
+     *
+     * O corte em 80 é a leitura de Pareto, e é convenção — não regra do
+     * TCESP. Serve para dar uma frase à tela ("3 de 40 credores concentram
+     * 80% da despesa"), não para reprovar nada. Por isso o número aparece e
+     * nada é pintado de vermelho por causa dele.
+     */
+    const indice = linhas.findIndex((l) => l.acumulado >= 80);
+
+    return {
+      linhas,
+      total,
+      credores: linhas.length,
+      maiorFatia: linhas.length ? linhas[0].percentual : null,
+      credoresPara80: total > 0 && indice >= 0 ? indice + 1 : null,
+    };
   }
 }

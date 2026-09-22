@@ -1,5 +1,10 @@
 import { http } from './http';
-import type { LinhaExecucao, LinhaRepasse, ResumoSituacao } from '@/pages/Relatorios/tipos';
+import type {
+  LinhaExecucao,
+  LinhaRepasse,
+  ResumoFornecedores,
+  ResumoSituacao,
+} from '@/pages/Relatorios/tipos';
 
 export interface FiltroRelatorio {
   ajusteId?: string;
@@ -23,5 +28,12 @@ export async function relatorioRepasses(f: FiltroRelatorio = {}): Promise<LinhaR
 
 export async function relatorioSituacao(f: FiltroRelatorio = {}): Promise<ResumoSituacao> {
   const { data } = await http.get<ResumoSituacao>('/relatorios/situacao', { params: params(f) });
+  return data;
+}
+
+export async function relatorioFornecedores(f: FiltroRelatorio = {}): Promise<ResumoFornecedores> {
+  const { data } = await http.get<ResumoFornecedores>('/relatorios/fornecedores', {
+    params: params(f),
+  });
   return data;
 }
