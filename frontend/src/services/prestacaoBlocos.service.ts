@@ -2,76 +2,24 @@ import { http } from './http';
 import type {
   DocumentoFiscal,
   DocumentoFiscalApropriado,
-  DocumentoFiscalPayload,
   Pagamento,
   PagamentoPayload,
 } from '@/types/prestacaoBlocos';
 
-// ---- Documentos Fiscais ----
+/*
+ * Só a leitura sobreviveu aqui, e tem dois consumidores: as abas de Glosas e
+ * de Pagamentos, que listam as notas da prestação para ligar-se a elas.
+ *
+ * Criar, alterar e excluir a nota é em **Execução → Despesas**; ela chega à
+ * prestação por `apropriarDocumento`. As funções que gravavam por esta rota
+ * saíram junto com a tela que as usava: a nota criada por aqui não ganhava a
+ * ligação de que o montador lê, e não chegava ao Tribunal.
+ */
 export async function listarDocumentosFiscais(prestacaoId: string): Promise<DocumentoFiscal[]> {
   const { data } = await http.get<DocumentoFiscal[]>(`/prestacoes/${prestacaoId}/documentos-fiscais`);
   return data;
 }
 
-export async function criarDocumentoFiscal(prestacaoId: string, payload: DocumentoFiscalPayload): Promise<DocumentoFiscal> {
-  const { data } = await http.post<DocumentoFiscal>(`/prestacoes/${prestacaoId}/documentos-fiscais`, payload);
-  return data;
-}
-
-export async function atualizarDocumentoFiscal(prestacaoId: string, id: string, payload: DocumentoFiscalPayload): Promise<DocumentoFiscal> {
-  const { data } = await http.put<DocumentoFiscal>(`/prestacoes/${prestacaoId}/documentos-fiscais/${id}`, payload);
-  return data;
-}
-
-export async function excluirDocumentoFiscal(prestacaoId: string, id: string): Promise<void> {
-  await http.delete(`/prestacoes/${prestacaoId}/documentos-fiscais/${id}`);
-}
-
-/** Anexa a digitalização da nota. Reenviar substitui a anterior. */
-export async function enviarArquivoDocumentoFiscal(
-  prestacaoId: string,
-  id: string,
-  file: File,
-): Promise<DocumentoFiscal> {
-  const fd = new FormData();
-  fd.append('arquivo', file);
-  const { data } = await http.post<DocumentoFiscal>(
-    `/prestacoes/${prestacaoId}/documentos-fiscais/${id}/arquivo`,
-    fd,
-  );
-  return data;
-}
-
-export async function removerArquivoDocumentoFiscal(
-  prestacaoId: string,
-  id: string,
-): Promise<DocumentoFiscal> {
-  const { data } = await http.delete<DocumentoFiscal>(
-    `/prestacoes/${prestacaoId}/documentos-fiscais/${id}/arquivo`,
-  );
-  return data;
-}
-
-/**
- * Abre a nota numa aba.
- *
- * Busca por `http` em vez de apontar um `<a href>` para a rota: o download
- * precisa do cabeçalho de autenticação, que um link simples não leva — e a
- * resposta seria um 401 em vez do PDF.
- */
-export async function baixarArquivoDocumentoFiscal(
-  prestacaoId: string,
-  id: string,
-): Promise<void> {
-  const { data } = await http.get<Blob>(
-    `/prestacoes/${prestacaoId}/documentos-fiscais/${id}/arquivo`,
-    { responseType: 'blob' },
-  );
-  const url = URL.createObjectURL(data);
-  window.open(url, '_blank', 'noopener');
-  // Solta o objeto depois de a aba abrir; revogar na hora cancelaria a leitura.
-  setTimeout(() => URL.revokeObjectURL(url), 60_000);
-}
 
 // ---- Pagamentos ----
 export async function listarPagamentos(prestacaoId: string): Promise<Pagamento[]> {

@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import { uploadPdf } from '@/infrastructure/upload/upload';
 import { PrestacaoController } from '@/presentation/controllers/PrestacaoController';
 import { DocumentoFiscalController } from '@/presentation/controllers/DocumentoFiscalController';
 import { PagamentoController } from '@/presentation/controllers/PagamentoController';
@@ -68,14 +67,26 @@ prestacaoRoutes.get('/:prestacaoId/documentos-fiscais/apropriados', (req, res, n
 prestacaoRoutes.get('/:prestacaoId/documentos-fiscais/candidatos', (req, res, next) => docs.listarCandidatos(req, res, next));
 prestacaoRoutes.post('/:prestacaoId/documentos-fiscais/:id/apropriar', (req, res, next) => docs.apropriar(req, res, next));
 prestacaoRoutes.delete('/:prestacaoId/documentos-fiscais/:id/apropriar', (req, res, next) => docs.desapropriar(req, res, next));
+/*
+ * Só a **leitura** sobrevive aqui, e ela tem dois consumidores vivos: as abas
+ * de Glosas e de Pagamentos, que precisam listar as notas da prestação para
+ * ligar-se a elas.
+ *
+ * As rotas de **gravação** saíram. A nota é do órgão — nasce em
+ * `POST /despesas` e chega à prestação por `apropriar`, que cria a ligação
+ * `PrestacaoDocumentoFiscal`. É dessa ligação que o montador lê.
+ *
+ * Criar a nota por aqui gravava `prestacaoId` (o vínculo antigo) e **nenhuma
+ * ligação** — a nota aparecia na listagem, somava nos totais da tela, e não
+ * chegava ao documento transmitido ao Tribunal. Ninguém acusava: o schema
+ * aceita a lista de notas vazia, e o erro voltaria como inconformidade meses
+ * depois.
+ *
+ * As três rotas de `arquivo` foram junto: o PDF da nota passou a morar em
+ * `Anexo` (ver `/despesas/:id/anexos`), que aceita imagem além de PDF e vale
+ * também para o comprovante do pagamento.
+ */
 prestacaoRoutes.get('/:prestacaoId/documentos-fiscais', (req, res, next) => docs.listar(req, res, next));
-prestacaoRoutes.post('/:prestacaoId/documentos-fiscais', (req, res, next) => docs.criar(req, res, next));
-prestacaoRoutes.put('/:prestacaoId/documentos-fiscais/:id', (req, res, next) => docs.atualizar(req, res, next));
-prestacaoRoutes.delete('/:prestacaoId/documentos-fiscais/:id', (req, res, next) => docs.excluir(req, res, next));
-// Digitalização da nota — é o acesso da Comissão de Fiscalização ao documento.
-prestacaoRoutes.post('/:prestacaoId/documentos-fiscais/:id/arquivo', uploadPdf, (req, res, next) => docs.enviarArquivo(req, res, next));
-prestacaoRoutes.get('/:prestacaoId/documentos-fiscais/:id/arquivo', (req, res, next) => docs.baixarArquivo(req, res, next));
-prestacaoRoutes.delete('/:prestacaoId/documentos-fiscais/:id/arquivo', (req, res, next) => docs.removerArquivo(req, res, next));
 
 // --- Pagamentos (bloco) ---
 prestacaoRoutes.get('/:prestacaoId/pagamentos/candidatos', (req, res, next) => pagamentos.listarCandidatos(req, res, next));
