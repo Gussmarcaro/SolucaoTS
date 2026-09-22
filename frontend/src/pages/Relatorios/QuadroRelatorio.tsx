@@ -20,7 +20,10 @@ interface Props<T> {
   colunas: ColunaRel<T>[];
   linhas: T[] | null;
   erro?: string | null;
-  vazio?: string;
+  /** Mensagem de lista vazia. Aceita nó para poder levar o usuário ao caminho
+   *  que resolve — lista vazia que só diz "vazio" devolve a pergunta a quem
+   *  perguntou. */
+  vazio?: ReactNode;
   /** Nome base do arquivo exportado, sem extensão. */
   arquivo: string;
   /** Destaque opcional por linha (atraso, pendência…). */

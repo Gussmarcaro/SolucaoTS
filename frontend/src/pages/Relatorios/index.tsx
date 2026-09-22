@@ -444,7 +444,24 @@ export function Relatorios() {
             colunas={colunasFornecedores}
             linhas={fornecedores?.linhas ?? null}
             erro={erro}
-            vazio="Nenhum documento fiscal apropriado às prestações deste recorte."
+            /*
+              O vazio diz **por que** está vazio, e não só que está.
+
+              O caso comum não é "não há despesa" — é "há despesa lançada e
+              ninguém a apropriou ainda". Quem chega aqui no meio do exercício
+              vê a tabela vazia e conclui que o relatório não funciona, quando
+              falta um passo que ele daria em dez segundos se soubesse qual.
+            */
+            vazio={
+              <>
+                <p>Nenhum documento fiscal apropriado às prestações deste recorte.</p>
+                <p className="mx-auto mt-2 max-w-md text-xs">
+                  O relatório conta as notas <strong>apropriadas à prestação</strong>. Se há despesa
+                  lançada em Execução → Despesas e ainda não apropriada, ela não aparece aqui — a
+                  apropriação é feita na aba Documentos Fiscais da prestação.
+                </p>
+              </>
+            }
           >
             {filtros}
           </QuadroRelatorio>
@@ -458,10 +475,20 @@ export function Relatorios() {
         </>
       )}
 
-      <p className="mt-4 text-xs text-ink-400 print:hidden">
-        Os valores vêm dos blocos das prestações de contas cadastradas. Ajuste sem prestação aparece
-        com execução zerada — que é o que se quer enxergar.
-      </p>
+      {/*
+        A nota de rodapé é **de cada aba**, não da tela.
+
+        Esta fala de execução zerada, que só faz sentido onde há coluna de
+        execução. Solta aqui embaixo, ela aparecia também na concentração de
+        fornecedores, embaixo do texto próprio daquela aba — dois rodapés, o
+        segundo explicando outra coisa.
+      */}
+      {aba !== 'fornecedores' && (
+        <p className="mt-4 text-xs text-ink-400 print:hidden">
+          Os valores vêm dos blocos das prestações de contas cadastradas. Ajuste sem prestação
+          aparece com execução zerada — que é o que se quer enxergar.
+        </p>
+      )}
     </>
   );
 }
