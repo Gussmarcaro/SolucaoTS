@@ -39,17 +39,27 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse }: SidebarP
             collapsed && 'lg:justify-center lg:px-2',
           )}
         >
-          {/* Logo (oculta no desktop quando recolhido) */}
+          {/*
+            Logo (oculta no desktop quando recolhido).
+
+            **Uma imagem só, e não o par claro/escuro dos outros lugares.** A
+            barra lateral é escura nos dois temas — azul da marca no claro,
+            `ink-900` no escuro —, então a mesma arte de texto branco serve
+            para ambos. Os dois arquivos `logo-menu*` sempre foram idênticos em
+            cor (ver `public/LOGOS.md`); trocar de um por tema só fazia o
+            navegador baixar duas vezes o mesmo desenho.
+
+            O tamanho é limitado pelos **dois** lados. A altura é o que decide
+            na prática, mas o teto de largura é a rede: a barra tem 264px, o
+            cabeçalho gasta 32px de recuo e o botão de recolher divide o resto
+            — arte com proporção mais larga que a de hoje passaria por cima
+            dele sem que nada acusasse.
+          */}
           <div className={cn('flex items-center', collapsed && 'lg:hidden')}>
             <img
               src="/logo-menu.png"
               alt="Solução TS"
-              className="h-16 w-auto object-contain dark:hidden"
-            />
-            <img
-              src="/logo-menu-dark.png"
-              alt="Solução TS"
-              className="hidden h-16 w-auto object-contain dark:block"
+              className="max-h-14 w-auto max-w-[176px] object-contain"
             />
           </div>
 

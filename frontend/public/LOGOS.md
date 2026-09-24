@@ -27,16 +27,27 @@ continua parecendo um logo, só que errado, que é como isso passa despercebido.
 |---|---|---|---|---|
 | `logo.png` / `logo-dark.png` | 244×78 | empilhado | escuro / claro | Sobre o sistema |
 | `logo-deitada.png` / `-dark.png` | 301×82 | deitado | escuro / claro | barra superior (menu recolhido) |
-| `logo-menu.png` / `logo-menu-dark.png` | 350×124 | deitado | **branco** | barra lateral |
+| `logo-menu.png` / `logo-menu-dark.png` | 800×260 | deitado | **branco** | barra lateral |
 | `logo-vertical.png` / `-dark.png` | 600×587 | vertical | escuro / claro | telas de entrada |
 
 ### Cuidado com `logo-menu`
 
-Os dois arquivos `logo-menu*` são **iguais em cor**: texto branco puro e símbolo
-azul-marinho `rgb(4,72,144)`. Servem só onde o fundo é escuro por conta própria
-— o azul da barra lateral no tema claro, o `ink-900` no tema escuro. **Sobre
-fundo branco some o texto e sobra o símbolo.** Foi exatamente esse o bug que deu
-origem à família `logo-deitada`.
+Os dois arquivos `logo-menu*` são **iguais em cor**: texto branco e símbolo
+azul. Servem só onde o fundo é escuro por conta própria — o azul da barra
+lateral no tema claro, o `ink-900` no tema escuro. **Sobre fundo branco some o
+texto e sobra o símbolo.** Foi exatamente esse o bug que deu origem à família
+`logo-deitada`.
+
+Por serem iguais, a barra lateral usa **um `<img>` só**, sem o par
+`dark:hidden`/`dark:block` dos outros lugares: trocar de arquivo por tema faria
+o navegador baixar duas vezes o mesmo desenho. Os dois nomes continuam
+existindo porque a convenção vale para a pasta inteira, e um dia a arte pode
+divergir — aí o segundo `<img>` volta.
+
+Desde 24/09/2026 a arte é **800×260** (antes 350×124): mesma composição, mais
+que o dobro da resolução, o que a deixa nítida em tela de alta densidade. A
+proporção passou de 2,82:1 para 3,08:1 — por isso o tamanho em CSS é limitado
+pelos dois lados (`max-h-14 max-w-[176px]`), e não só pela altura.
 
 ### De onde veio `logo-deitada`
 
