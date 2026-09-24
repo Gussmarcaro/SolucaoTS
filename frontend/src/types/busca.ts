@@ -7,6 +7,11 @@ export type TipoResultado =
   | 'CONTRATO'
   | 'BEM_CEDIDO'
   | 'SERVIDOR_CEDIDO'
+  // Lançamentos, depois dos cadastros: quem digita na barra procura uma coisa
+  // (a entidade, o ajuste) muito mais do que um lançamento.
+  | 'DESPESA'
+  | 'CONTA_BANCARIA'
+  | 'GUIA_RECOLHIMENTO'
   | 'ORGAO';
 
 export interface ResultadoBusca {
@@ -25,6 +30,9 @@ export const TIPO_BUSCA_LABEL: Record<TipoResultado, string> = {
   CONTRATO: 'Contratos',
   BEM_CEDIDO: 'Bens Cedidos',
   SERVIDOR_CEDIDO: 'Servidores Cedidos',
+  DESPESA: 'Despesas / Notas Fiscais',
+  CONTA_BANCARIA: 'Contas Bancárias',
+  GUIA_RECOLHIMENTO: 'Guias de Recolhimento',
   ORGAO: 'Órgãos Concessores',
 };
 
@@ -51,6 +59,12 @@ export function rotaDoResultado(r: ResultadoBusca): string {
       return '/cadastro/bens-cedidos';
     case 'SERVIDOR_CEDIDO':
       return '/cadastro/servidores-cedidos';
+    case 'DESPESA':
+      return '/execucao/financeiro/despesas';
+    case 'CONTA_BANCARIA':
+      return '/execucao/financeiro/contas-bancarias';
+    case 'GUIA_RECOLHIMENTO':
+      return '/execucao/financeiro/guias';
     case 'ORGAO':
       return '/orgaos';
   }

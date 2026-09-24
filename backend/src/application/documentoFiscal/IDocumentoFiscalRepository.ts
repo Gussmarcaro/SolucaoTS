@@ -62,6 +62,8 @@ export interface IDocumentoFiscalRepository {
   excluir(id: string): Promise<void>;
   /** Grava a digitalização da nota. `null` remove o anexo. */
   salvarArquivo(id: string, arquivo: ArquivoPdf | null): Promise<DocumentoFiscal>;
+  /** Busca da barra superior — poucas, já recortadas pelo órgão. */
+  buscarGlobal(termo: string, limite: number): Promise<DocumentoFiscal[]>;
   /** Conteúdo do anexo — só quando alguém baixa, nunca na listagem. */
   obterArquivo(id: string): Promise<ArquivoPdf | null>;
 }

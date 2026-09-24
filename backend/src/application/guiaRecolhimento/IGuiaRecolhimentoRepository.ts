@@ -15,5 +15,7 @@ export interface IGuiaRecolhimentoRepository {
   buscarPorCompetencia(tipo: TipoRetencao, ano: number, mes: number): Promise<GuiaRecolhimento | null>;
   criar(dados: DadosGuia): Promise<GuiaRecolhimento>;
   atualizar(id: string, dados: DadosGuia): Promise<GuiaRecolhimento>;
+  /** Busca da barra superior — poucas, já recortadas pelo órgão. */
+  buscarGlobal(termo: string, limite: number): Promise<GuiaRecolhimento[]>;
   excluir(id: string): Promise<void>;
 }

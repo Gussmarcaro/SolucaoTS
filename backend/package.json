@@ -39,6 +39,7 @@
     "verificar:rateio": "tsx scripts/verificarRateio.ts",
     "verificar:ofx": "tsx scripts/verificarOfx.ts",
     "financeiro:backfill": "tsx prisma/seeds/backfillFinanceiro.ts",
+    "busca:backfill": "tsx prisma/seeds/backfillBusca.ts",
     "verificar:conferencia": "tsx scripts/verificarConferencia.ts",
     "typecheck:scripts": "tsc -p tsconfig.scripts.json --noEmit"
   },

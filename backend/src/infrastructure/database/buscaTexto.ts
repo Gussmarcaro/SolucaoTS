@@ -181,3 +181,45 @@ export function buscaEmpresa(e: {
 export function buscaRateio(r: { titulo: string; descricaoMetodo?: string | null }): string {
   return normalizarTexto([r.titulo, r.descricaoMetodo].filter(Boolean).join(' '));
 }
+
+/**
+ * Campos pesquisáveis de um Documento Fiscal (despesa).
+ *
+ * Só o que é **texto**: nome do credor e descrição. O número da nota e o
+ * documento do credor são dígitos e a consulta os procura direto nas colunas —
+ * misturá-los aqui faria `123` casar com qualquer descrição que contivesse 123,
+ * e a busca por número de nota é justamente a que precisa ser precisa.
+ */
+export function buscaDocumentoFiscal(d: {
+  credorNome?: string | null;
+  descricao: string;
+}): string {
+  return normalizarTexto([d.credorNome, d.descricao].filter(Boolean).join(' '));
+}
+
+/**
+ * Campos pesquisáveis de uma Conta Bancária.
+ *
+ * O apelido é o que se digita — "Repasse Saúde 2026" diz numa olhada o que
+ * "001 / 1234 / 56789-0" não diz. Banco, agência e conta são dígitos e vão
+ * pela consulta direta.
+ */
+export function buscaContaBancaria(c: {
+  apelido?: string | null;
+  observacao?: string | null;
+}): string {
+  return normalizarTexto([c.apelido, c.observacao].filter(Boolean).join(' '));
+}
+
+/**
+ * Campos pesquisáveis de uma Guia de Recolhimento.
+ *
+ * Inclui o **tipo** (INSS, IRRF, ISS…), que é como a guia é chamada na
+ * conversa: ninguém diz "a retenção do código 1", diz "a guia do INSS".
+ */
+export function buscaGuiaRecolhimento(g: {
+  tipo: string;
+  observacao?: string | null;
+}): string {
+  return normalizarTexto([g.tipo, g.observacao].filter(Boolean).join(' '));
+}

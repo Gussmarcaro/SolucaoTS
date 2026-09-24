@@ -1,6 +1,9 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
+import { normalizarTexto } from '@/shared/normalizar';
+import { apenasDigitos } from '@/shared/validators/documento';
 import { tenantObrigatorio } from '@/shared/contexto';
+import { buscaContaBancaria } from './buscaTexto';
 import type { IContaBancariaRepository } from '@/application/contaBancaria/IContaBancariaRepository';
 import type { DadosContaBancaria } from '@/application/contaBancaria/dtos';
 import type { ContaBancaria } from '@/core/contaBancaria/ContaBancaria';
@@ -56,20 +59,55 @@ export class PrismaContaBancariaRepository implements IContaBancariaRepository {
 
   async criar(dados: DadosContaBancaria): Promise<ContaBancaria> {
     const row = await prisma.contaBancaria.create({
-      data: { ...dados, clienteId: tenantObrigatorio('ContaBancaria') },
+      data: { ...dados, buscaTexto: buscaContaBancaria(dados), clienteId: tenantObrigatorio('ContaBancaria') },
       select: selecao,
     });
     return toDomain(row);
   }
 
   async atualizar(id: string, dados: DadosContaBancaria): Promise<ContaBancaria> {
-    const row = await prisma.contaBancaria.update({ where: { id }, data: { ...dados }, select: selecao });
+    const row = await prisma.contaBancaria.update({
+      where: { id },
+      data: { ...dados, buscaTexto: buscaContaBancaria(dados) },
+      select: selecao,
+    });
     return toDomain(row);
   }
 
   async definirAtivo(id: string, ativo: boolean): Promise<ContaBancaria> {
     const row = await prisma.contaBancaria.update({ where: { id }, data: { ativo }, select: selecao });
     return toDomain(row);
+  }
+
+  /**
+   * Busca da barra superior.
+   *
+   * Texto no apelido; dígitos na agência e na conta. O **banco** também casa
+   * por número — digitar `341` acha as contas do Itaú, que é como alguém que
+   * conhece os códigos procura.
+   *
+   * Contas inativas ficam de fora: quem digita na barra quer chegar a algo que
+   * usa, e a inativa já tem a tela própria para ser encontrada.
+   */
+  async buscarGlobal(termo: string, limite: number): Promise<ContaBancaria[]> {
+    const t = normalizarTexto(termo);
+    const d = apenasDigitos(termo);
+    const ors: Prisma.ContaBancariaWhereInput[] = [];
+    if (t) ors.push({ buscaTexto: { contains: t } });
+    if (d) {
+      ors.push({ agencia: { contains: d } }, { conta: { contains: d } });
+      const n = Number(d);
+      if (Number.isSafeInteger(n)) ors.push({ banco: n });
+    }
+    if (!ors.length) return [];
+
+    const rows = await prisma.contaBancaria.findMany({
+      where: { ativo: true, OR: ors },
+      select: selecao,
+      orderBy: [{ apelido: 'asc' }, { banco: 'asc' }],
+      take: limite,
+    });
+    return rows.map(toDomain);
   }
 
   /** Uma consulta de existência, não a lista: só interessa se há alguma. */

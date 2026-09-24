@@ -1384,6 +1384,12 @@ model DocumentoFiscal {
   rateioProveniente Boolean   @default(false)
   rateioPercentual  Decimal?  @db.Decimal(5, 2)
 
+  // Texto normalizado para a busca global: nome do credor e descrição. O
+  // **número** da nota e o documento do credor ficam de fora daqui e são
+  // procurados direto nas colunas — são dígitos, e normalizá-los junto do
+  // texto faria "123" casar com qualquer descrição que contivesse 123.
+  buscaTexto String @default("")
+
   criadoPor       String?                    @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   cliente         Cliente                    @relation(fields: [clienteId], references: [id])
   prestacao       PrestacaoContas?           @relation(fields: [prestacaoId], references: [id])
@@ -1406,6 +1412,7 @@ model DocumentoFiscal {
   @@unique([clienteId, numero, credorTipoDoc, credorNumeroDoc])
   @@unique([prestacaoId, numero, credorTipoDoc, credorNumeroDoc])
   @@index([clienteId, dataEmissao])
+  @@index([clienteId, buscaTexto])
 }
 
 /// Quanto de uma nota fiscal entra numa prestação de contas.
@@ -1450,6 +1457,9 @@ model ContaBancaria {
   fonteRecursoTipo Int?
   apelido          String?
   observacao       String?
+  // Texto normalizado (sem acento/caixa) para a busca global — o apelido é o
+  // que se digita: "Repasse Saúde" diz numa olhada o que três números não dizem.
+  buscaTexto       String  @default("")
   ativo            Boolean @default(true)
 
   criadoPor    String?  @db.Uuid
@@ -1461,6 +1471,7 @@ model ContaBancaria {
 
   @@unique([clienteId, banco, agencia, conta, contaTipo])
   @@index([clienteId])
+  @@index([clienteId, buscaTexto])
 }
 
 enum TipoLancamentoExtrato {
@@ -1550,12 +1561,17 @@ model GuiaRecolhimento {
   dataPagamento   DateTime?    @db.Date
   numeroDocumento String?      @db.VarChar(60)
   observacao      String?
+  // Texto normalizado para a busca global. Inclui o **tipo** (INSS, IRRF…),
+  // que é como a guia é chamada na conversa — ninguém diz "a retenção do
+  // código 1", diz "a guia do INSS de março".
+  buscaTexto      String       @default("")
 
   criadoPor String? @db.Uuid
   cliente   Cliente @relation(fields: [clienteId], references: [id])
 
   @@unique([clienteId, tipo, ano, mes])
   @@index([clienteId, ano, mes])
+  @@index([clienteId, buscaTexto])
 }
 
 /// Que papel o anexo cumpre. Enumerado porque a tela agrupa por ele e porque

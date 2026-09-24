@@ -11,6 +11,17 @@ export type TipoResultado =
   | 'CONTRATO'
   | 'BEM_CEDIDO'
   | 'SERVIDOR_CEDIDO'
+  // Lançamentos. Vêm depois dos cadastros de propósito: quem digita na barra
+  // procura uma **coisa** (a entidade, o ajuste, o fornecedor) com muito mais
+  // frequência do que um lançamento. Pôr a nota fiscal no topo empurraria a
+  // parceria para baixo da dobra.
+  //
+  // Só entraram os três que têm identificador próprio — algo que alguém tem na
+  // mão e digita. Pagamento e Receita ficaram de fora: eles se encontram *pela*
+  // nota ou *pelo* ajuste, e na busca global só somariam linhas.
+  | 'DESPESA'
+  | 'CONTA_BANCARIA'
+  | 'GUIA_RECOLHIMENTO'
   | 'ORGAO';
 
 /**

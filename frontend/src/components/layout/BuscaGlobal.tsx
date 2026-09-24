@@ -4,14 +4,17 @@ import {
   Boxes,
   Building2,
   ClipboardCheck,
+  Coins,
   FileText,
   FolderOpen,
   Landmark,
   Loader2,
   Search,
+  Receipt,
   Truck,
   UserCog,
   UserRound,
+  Wallet,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
@@ -37,6 +40,9 @@ const ICONES: Record<TipoResultado, LucideIcon> = {
   CONTRATO: FileText,
   BEM_CEDIDO: Boxes,
   SERVIDOR_CEDIDO: UserCog,
+  DESPESA: Receipt,
+  CONTA_BANCARIA: Wallet,
+  GUIA_RECOLHIMENTO: Coins,
   ORGAO: Landmark,
 };
 
@@ -48,9 +54,10 @@ interface Props {
 /**
  * Busca global da barra superior.
  *
- * Uma consulta só, para todos os cadastros: o backend percorre ajustes,
- * prestações, entidades, fornecedores, colaboradores, contratos, bens,
- * servidores e órgãos, e a lista agrupa o resultado por tipo.
+ * Uma consulta só: o backend percorre os cadastros (ajustes, prestações,
+ * entidades, fornecedores, colaboradores, contratos, bens, servidores, órgãos)
+ * e os três lançamentos que têm identificador próprio — nota fiscal, conta
+ * bancária e guia de recolhimento. A lista agrupa o resultado por tipo.
  */
 export function BuscaGlobal({ aberta, onFechar }: Props) {
   const navigate = useNavigate();
@@ -163,7 +170,7 @@ export function BuscaGlobal({ aberta, onFechar }: Props) {
         // O clique num resultado passa pelo blur; o `mousedown` do painel o
         // impede, então aqui só chega o clique fora de verdade.
         onBlur={onFechar}
-        placeholder="Buscar ajustes, entidades, contratos..."
+        placeholder="Buscar ajustes, entidades, notas, contas..."
         className="focus-ring h-10 w-full rounded-xl border border-ink-200 bg-ink-50 pl-10 pr-9 text-sm text-ink-800 placeholder:text-ink-400 transition-colors dark:border-ink-800 dark:bg-ink-900 dark:text-ink-100"
       />
       {carregando && (

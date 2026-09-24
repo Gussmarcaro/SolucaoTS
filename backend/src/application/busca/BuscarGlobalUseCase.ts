@@ -8,6 +8,9 @@ import type { IContratoRepository } from '@/application/contrato/IContratoReposi
 import type { IBemCedidoRepository } from '@/application/bemCedido/IBemCedidoRepository';
 import type { IServidorCedidoRepository } from '@/application/servidorCedido/IServidorCedidoRepository';
 import type { IClienteRepository } from '@/application/cliente/IClienteRepository';
+import type { IDocumentoFiscalRepository } from '@/application/documentoFiscal/IDocumentoFiscalRepository';
+import type { IContaBancariaRepository } from '@/application/contaBancaria/IContaBancariaRepository';
+import type { IGuiaRecolhimentoRepository } from '@/application/guiaRecolhimento/IGuiaRecolhimentoRepository';
 
 /** Abaixo disso a busca devolve ruído: "a" casaria com quase tudo. */
 export const MINIMO_CARACTERES = 2;
@@ -25,6 +28,9 @@ interface Repositorios {
   bens: IBemCedidoRepository;
   servidores: IServidorCedidoRepository;
   orgaos: IClienteRepository;
+  despesas: IDocumentoFiscalRepository;
+  contas: IContaBancariaRepository;
+  guias: IGuiaRecolhimentoRepository;
 }
 
 const so = (valor: string | null | undefined) => valor?.trim() || null;
@@ -32,10 +38,22 @@ const so = (valor: string | null | undefined) => valor?.trim() || null;
 /**
  * Busca global da barra superior.
  *
- * Não tem consulta própria: chama o `listar` de cada cadastro com o termo, que é
- * a mesma busca já usada nas grades — normalizada, sem acento e com dígitos
- * tratados. Assim o que a barra encontra é exatamente o que a grade encontraria,
- * e uma melhoria na busca de um cadastro vale aqui de graça.
+ * **Cadastros** não têm consulta própria: a busca chama o `listar` de cada um
+ * com o termo, que é a mesma busca já usada nas grades — normalizada, sem
+ * acento e com dígitos tratados. Assim o que a barra encontra é exatamente o
+ * que a grade encontraria, e uma melhoria na busca de um cadastro vale aqui de
+ * graça.
+ *
+ * **Lançamentos** entraram por método próprio (`buscarGlobal`), porque os três
+ * têm `listar` de formatos diferentes e nenhum aceita termo — torcer os três
+ * para caber na assinatura dos cadastros daria uma interface que tela nenhuma
+ * usa.
+ *
+ * Só entraram os lançamentos com **identificador próprio**: nota fiscal (número
+ * e credor), conta bancária (apelido) e guia (número do documento). Pagamento e
+ * Receita ficaram de fora de propósito — encontram-se *pela* nota ou *pelo*
+ * ajuste, e aqui só somariam linhas. Uma busca que devolve o que ninguém
+ * procurava ensina a não usá-la, e aí perde-se também o que ela fazia bem.
  *
  * As consultas correm em paralelo com `allSettled`: um cadastro fora do ar
  * derruba só a própria seção, não a busca inteira.
@@ -50,7 +68,10 @@ export class BuscarGlobalUseCase {
     const pagina = { busca, page: 1, pageSize: POR_TIPO };
     const r = this.repos;
 
-    const [ajustes, prestacoes, entidades, fornecedores, colaboradores, contratos, bens, servidores, orgaos] =
+    // A ordem dos nomes segue a das consultas abaixo, uma a uma. É posicional:
+    // trocar a ordem de uma sem trocar a outra liga o resultado errado ao tipo
+    // errado — foi o que o typecheck pegou na primeira versão disto.
+    const [ajustes, prestacoes, entidades, fornecedores, colaboradores, contratos, bens, servidores, despesas, contas, guias, orgaos] =
       await Promise.allSettled([
         r.ajustes.listar({ ...pagina, filtros: {} }),
         r.prestacoes.listar({ ...pagina, filtros: {} }),
@@ -60,11 +81,24 @@ export class BuscarGlobalUseCase {
         r.contratos.listar({ ...pagina, filtros: {} }),
         r.bens.listar({ ...pagina, filtros: {} }),
         r.servidores.listar({ ...pagina, filtros: {} }),
+        // Os lançamentos têm método próprio: os três têm `listar` de formatos
+        // diferentes, e torcer os três para caber na assinatura dos cadastros
+        // daria uma interface que nenhuma tela usa.
+        r.despesas.buscarGlobal(busca, POR_TIPO),
+        r.contas.buscarGlobal(busca, POR_TIPO),
+        r.guias.buscarGlobal(busca, POR_TIPO),
         r.orgaos.listar({ ...pagina, filtros: {} }),
       ]);
 
     const itens = <T>(res: PromiseSettledResult<{ data: T[] }>): T[] =>
       res.status === 'fulfilled' ? res.value.data : [];
+
+    // Os lançamentos devolvem a lista direta; os cadastros, uma página com
+    // `data`. Dois auxiliares em vez de um formato só: embrulhar o retorno dos
+    // lançamentos num objeto de paginação fingiria uma paginação que eles não
+    // têm — a busca pede as cinco primeiras e pronto.
+    const lista = <T>(res: PromiseSettledResult<T[]>): T[] =>
+      res.status === 'fulfilled' ? res.value : [];
 
     return [
       ...itens(ajustes).map((a): ResultadoBusca => ({
@@ -114,6 +148,28 @@ export class BuscarGlobalUseCase {
         id: s.id,
         titulo: s.nome,
         subtitulo: s.cargoPublico,
+      })),
+      // O título é o **número da nota**, porque é por ele que se procura: quem
+      // tem o papel na mão quer confirmar se ele já foi lançado.
+      ...lista(despesas).map((d): ResultadoBusca => ({
+        tipo: 'DESPESA',
+        id: d.id,
+        titulo: `Nota ${d.numero}`,
+        subtitulo: so(d.credorNome) ?? d.credorNumeroDoc,
+      })),
+      // O apelido primeiro, e os números como apoio: a conta é reconhecida por
+      // "Repasse Saúde", não por "001 / 1234 / 56789-0".
+      ...lista(contas).map((c): ResultadoBusca => ({
+        tipo: 'CONTA_BANCARIA',
+        id: c.id,
+        titulo: so(c.apelido) ?? `Conta ${c.conta}`,
+        subtitulo: `${c.banco} · ag. ${c.agencia} · c/ ${c.conta}`,
+      })),
+      ...lista(guias).map((g): ResultadoBusca => ({
+        tipo: 'GUIA_RECOLHIMENTO',
+        id: g.id,
+        titulo: `${g.tipo} · ${String(g.mes).padStart(2, '0')}/${g.ano}`,
+        subtitulo: so(g.numeroDocumento) ?? 'Sem número de documento',
       })),
       ...itens(orgaos).map((o): ResultadoBusca => ({
         tipo: 'ORGAO',

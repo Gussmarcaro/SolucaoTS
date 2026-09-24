@@ -1,5 +1,8 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
+import { buscaDocumentoFiscal } from './buscaTexto';
+import { normalizarTexto } from '@/shared/normalizar';
+import { apenasDigitos } from '@/shared/validators/documento';
 import { tenantObrigatorio } from '@/shared/contexto';
 import type { IDocumentoFiscalRepository } from '@/application/documentoFiscal/IDocumentoFiscalRepository';
 import type { DadosDocumentoFiscal } from '@/application/documentoFiscal/dtos';
@@ -84,7 +87,9 @@ function toDomain(row: Row): DocumentoFiscal {
  */
 function separar(dados: DadosDocumentoFiscal) {
   const { retencoes, ...escalares } = dados;
-  return { escalares, retencoes };
+  // O texto de busca é derivado, não informado: calculá-lo aqui garante que
+  // toda gravação o atualize — inclusive um caminho novo que ninguém lembrou.
+  return { escalares: { ...escalares, buscaTexto: buscaDocumentoFiscal(escalares) }, retencoes };
 }
 
 export class PrismaDocumentoFiscalRepository implements IDocumentoFiscalRepository {
@@ -308,5 +313,33 @@ export class PrismaDocumentoFiscalRepository implements IDocumentoFiscalReposito
       tamanho: row.arquivoTamanho ?? row.arquivo.length,
       conteudo: Buffer.from(row.arquivo),
     };
+  }
+
+  /**
+   * Busca da barra superior.
+   *
+   * Duas frentes, e a separação é o que a torna útil: o **texto** (credor,
+   * descrição) casa no `buscaTexto` normalizado; os **dígitos** vão direto ao
+   * número da nota e ao documento do credor. Jogar tudo no texto faria `123`
+   * casar com qualquer descrição que contivesse 123 — e procurar nota pelo
+   * número é justamente a busca que precisa ser precisa.
+   *
+   * Sem `where` de órgão: quem recorta é a extension de tenant.
+   */
+  async buscarGlobal(termo: string, limite: number): Promise<DocumentoFiscal[]> {
+    const t = normalizarTexto(termo);
+    const d = apenasDigitos(termo);
+    const ors: Prisma.DocumentoFiscalWhereInput[] = [];
+    if (t) ors.push({ buscaTexto: { contains: t } });
+    if (d) ors.push({ numero: { contains: d } }, { credorNumeroDoc: { contains: d } });
+    if (!ors.length) return [];
+
+    const rows = await prisma.documentoFiscal.findMany({
+      where: { OR: ors },
+      select: selecao,
+      orderBy: [{ dataEmissao: 'desc' }],
+      take: limite,
+    });
+    return rows.map(toDomain);
   }
 }

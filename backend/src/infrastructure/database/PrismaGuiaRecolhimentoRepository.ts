@@ -1,6 +1,9 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
+import { normalizarTexto } from '@/shared/normalizar';
+import { apenasDigitos } from '@/shared/validators/documento';
 import { tenantObrigatorio } from '@/shared/contexto';
+import { buscaGuiaRecolhimento } from './buscaTexto';
 import type { IGuiaRecolhimentoRepository } from '@/application/guiaRecolhimento/IGuiaRecolhimentoRepository';
 import type { DadosGuia } from '@/application/guiaRecolhimento/dtos';
 import type { GuiaRecolhimento, RetencaoApurada } from '@/core/guiaRecolhimento/GuiaRecolhimento';
@@ -139,7 +142,7 @@ export class PrismaGuiaRecolhimentoRepository implements IGuiaRecolhimentoReposi
 
   async criar(dados: DadosGuia): Promise<GuiaRecolhimento> {
     const row = await prisma.guiaRecolhimento.create({
-      data: { ...dados, clienteId: tenantObrigatorio('GuiaRecolhimento') },
+      data: { ...dados, buscaTexto: buscaGuiaRecolhimento(dados), clienteId: tenantObrigatorio('GuiaRecolhimento') },
       select: selecao,
     });
     return toDomain(row);
@@ -148,7 +151,7 @@ export class PrismaGuiaRecolhimentoRepository implements IGuiaRecolhimentoReposi
   async atualizar(id: string, dados: DadosGuia): Promise<GuiaRecolhimento> {
     const row = await prisma.guiaRecolhimento.update({
       where: { id },
-      data: { ...dados },
+      data: { ...dados, buscaTexto: buscaGuiaRecolhimento(dados) },
       select: selecao,
     });
     return toDomain(row);
@@ -156,5 +159,35 @@ export class PrismaGuiaRecolhimentoRepository implements IGuiaRecolhimentoReposi
 
   async excluir(id: string): Promise<void> {
     await prisma.guiaRecolhimento.delete({ where: { id } });
+  }
+
+  /**
+   * Busca da barra superior.
+   *
+   * O texto cobre o tipo (INSS, IRRF…) e a observação; os dígitos vão ao
+   * número do documento — que é o que se tem na mão quando se procura uma guia
+   * já paga.
+   *
+   * O **ano** também casa por número: digitar `2026` traz as guias do
+   * exercício, que é como se procura quando não se lembra do número.
+   */
+  async buscarGlobal(termo: string, limite: number): Promise<GuiaRecolhimento[]> {
+    const t = normalizarTexto(termo);
+    const d = apenasDigitos(termo);
+    const ors: Prisma.GuiaRecolhimentoWhereInput[] = [];
+    if (t) ors.push({ buscaTexto: { contains: t } });
+    if (d) {
+      ors.push({ numeroDocumento: { contains: d } });
+      if (d.length === 4) ors.push({ ano: Number(d) });
+    }
+    if (!ors.length) return [];
+
+    const rows = await prisma.guiaRecolhimento.findMany({
+      where: { OR: ors },
+      select: selecao,
+      orderBy: [{ ano: 'desc' }, { mes: 'desc' }],
+      take: limite,
+    });
+    return rows.map(toDomain);
   }
 }

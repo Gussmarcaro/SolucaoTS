@@ -9,6 +9,9 @@ import { PrismaContratoRepository } from '@/infrastructure/database/PrismaContra
 import { PrismaBemCedidoRepository } from '@/infrastructure/database/PrismaBemCedidoRepository';
 import { PrismaServidorCedidoRepository } from '@/infrastructure/database/PrismaServidorCedidoRepository';
 import { PrismaClienteRepository } from '@/infrastructure/database/PrismaClienteRepository';
+import { PrismaDocumentoFiscalRepository } from '@/infrastructure/database/PrismaDocumentoFiscalRepository';
+import { PrismaContaBancariaRepository } from '@/infrastructure/database/PrismaContaBancariaRepository';
+import { PrismaGuiaRecolhimentoRepository } from '@/infrastructure/database/PrismaGuiaRecolhimentoRepository';
 
 const buscar = new BuscarGlobalUseCase({
   ajustes: new PrismaAjusteRepository(),
@@ -20,6 +23,9 @@ const buscar = new BuscarGlobalUseCase({
   bens: new PrismaBemCedidoRepository(),
   servidores: new PrismaServidorCedidoRepository(),
   orgaos: new PrismaClienteRepository(),
+  despesas: new PrismaDocumentoFiscalRepository(),
+  contas: new PrismaContaBancariaRepository(),
+  guias: new PrismaGuiaRecolhimentoRepository(),
 });
 
 export class BuscaController {

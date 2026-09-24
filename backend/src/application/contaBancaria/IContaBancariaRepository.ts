@@ -16,6 +16,15 @@ export interface IContaBancariaRepository {
    * pode sumir — o vínculo apontaria para o nada, e o histórico deixaria de se
    * explicar.
    */
+  /**
+   * Busca da barra superior. Devolve poucas, já recortadas pelo órgão.
+   *
+   * Método próprio, e não o `listar` das grades como fazem os cadastros: os
+   * três lançamentos que entraram na busca global têm `listar` de formatos
+   * diferentes, e torcer os três para caber num só daria uma assinatura que
+   * nenhuma tela usa.
+   */
+  buscarGlobal(termo: string, limite: number): Promise<ContaBancaria[]>;
   emUso(id: string): Promise<boolean>;
   excluir(id: string): Promise<void>;
 }

@@ -324,6 +324,39 @@ describe.skipIf(!TEM_BANCO)('a prestação, do cadastro ao documento JSON', () =
     expect(credoresPara80).toBe(1);
   });
 
+  /*
+   * A busca global alcança a nota — pelo número e pelo credor.
+   *
+   * É o que separa "a coluna foi criada" de "a busca funciona": `buscaTexto` é
+   * preenchida na gravação, e se algum caminho de escrita esquecer de
+   * recalculá-la a nota existe, aparece na grade, e some da barra superior. O
+   * erro não quebra tela nenhuma — só faz a busca responder "nada encontrado"
+   * sobre algo que está lá.
+   */
+  it('encontra a nota pela busca global, por número e por credor', async () => {
+    const porNumero = await get(`/api/busca?q=${NOTA.numero}`);
+    expect(porNumero.status, JSON.stringify(porNumero.body)).toBe(200);
+
+    const despesas = (porNumero.body as Array<{ tipo: string; titulo: string }>).filter(
+      (r) => r.tipo === 'DESPESA',
+    );
+    expect(despesas.some((d) => d.titulo.includes(NOTA.numero))).toBe(true);
+
+    // Pelo nome do credor — o caminho que passa pelo `buscaTexto` normalizado.
+    const porCredor = await get('/api/busca?q=PAPELARIA');
+    const achadas = (porCredor.body as Array<{ tipo: string; subtitulo: string | null }>).filter(
+      (r) => r.tipo === 'DESPESA',
+    );
+    expect(achadas.some((d) => d.subtitulo === NOTA.credorNome)).toBe(true);
+
+    // Sem acento e em caixa baixa tem de achar o mesmo: é para isso que o
+    // texto é normalizado antes de gravar.
+    const semAcento = await get('/api/busca?q=papelaria');
+    expect(
+      (semAcento.body as Array<{ tipo: string }>).filter((r) => r.tipo === 'DESPESA').length,
+    ).toBeGreaterThan(0);
+  });
+
   it('recusa a prestação repetida do mesmo ajuste e exercício', async () => {
     // A prestação é anual e consolidada. Uma segunda do mesmo ano não é um
     // detalhe de unicidade: seriam dois documentos disputando o mesmo
