@@ -49,17 +49,20 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse }: SidebarP
             cor (ver `public/LOGOS.md`); trocar de um por tema só fazia o
             navegador baixar duas vezes o mesmo desenho.
 
-            O tamanho é limitado pelos **dois** lados. A altura é o que decide
-            na prática, mas o teto de largura é a rede: a barra tem 264px, o
-            cabeçalho gasta 32px de recuo e o botão de recolher divide o resto
-            — arte com proporção mais larga que a de hoje passaria por cima
-            dele sem que nada acusasse.
+            O tamanho é limitado pelos **dois** lados, e hoje quem decide é a
+            largura: a barra tem 264px, o cabeçalho gasta 32 de recuo e o botão
+            de recolher 36 — sobram 196, e 184 deixa a folga. O teto de altura
+            é a rede para o caso inverso, arte mais alta que a de agora.
+
+            Valeu a pena ter os dois: a arte já mudou de proporção uma vez
+            (3,08:1 → 4,17:1) e o limite que passou a valer foi o outro. Com um
+            só, ela teria atravessado o botão sem nada acusar.
           */}
           <div className={cn('flex items-center', collapsed && 'lg:hidden')}>
             <img
               src="/logo-menu.png"
               alt="Solução TS"
-              className="max-h-14 w-auto max-w-[176px] object-contain"
+              className="max-h-12 w-auto max-w-[184px] object-contain"
             />
           </div>
 

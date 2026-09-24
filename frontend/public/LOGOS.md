@@ -27,7 +27,7 @@ continua parecendo um logo, só que errado, que é como isso passa despercebido.
 |---|---|---|---|---|
 | `logo.png` / `logo-dark.png` | 244×78 | empilhado | escuro / claro | Sobre o sistema |
 | `logo-deitada.png` / `-dark.png` | 301×82 | deitado | escuro / claro | barra superior (menu recolhido) |
-| `logo-menu.png` / `logo-menu-dark.png` | 800×260 | deitado | **branco** | barra lateral |
+| `logo-menu.png` / `logo-menu-dark.png` | 800×192 | deitado | **branco** | barra lateral |
 | `logo-vertical.png` / `-dark.png` | 600×587 | vertical | escuro / claro | telas de entrada |
 
 ### Cuidado com `logo-menu`
@@ -44,10 +44,19 @@ o navegador baixar duas vezes o mesmo desenho. Os dois nomes continuam
 existindo porque a convenção vale para a pasta inteira, e um dia a arte pode
 divergir — aí o segundo `<img>` volta.
 
-Desde 24/09/2026 a arte é **800×260** (antes 350×124): mesma composição, mais
-que o dobro da resolução, o que a deixa nítida em tela de alta densidade. A
-proporção passou de 2,82:1 para 3,08:1 — por isso o tamanho em CSS é limitado
-pelos dois lados (`max-h-14 max-w-[176px]`), e não só pela altura.
+Desde 24/09/2026 a arte é **800×192** (antes 350×124): mais que o dobro da
+resolução, o que a deixa nítida em tela de alta densidade, e **aparada na caixa
+útil** — sem a moldura transparente que a versão antiga tinha. Por isso a mesma
+altura em CSS rende um logo maior: o número pedido é o que se vê, como já
+acontecia com `logo-deitada`.
+
+O tamanho em CSS é limitado **pelos dois lados** (`max-h-12 max-w-[184px]`), e
+isso já se provou necessário: a proporção mudou duas vezes num dia (2,82:1 →
+3,08:1 → 4,17:1), e a cada vez o limite que passou a valer foi outro. Com só um
+dos dois, a arte teria atravessado o botão de recolher sem que nada acusasse.
+
+A conta do espaço: a barra tem 264px, o cabeçalho gasta 32 de recuo (`px-4`) e
+o botão de recolher 36 (`p-2` + ícone de 20). Sobram 196; 184 deixa a folga.
 
 ### De onde veio `logo-deitada`
 
