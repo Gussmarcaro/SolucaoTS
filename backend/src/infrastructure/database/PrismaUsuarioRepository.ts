@@ -143,6 +143,8 @@ export class PrismaUsuarioRepository implements IUsuarioRepository {
         ativo: true,
         clienteId: true,
         suporte: true,
+        cidade: true,
+        uf: true,
         fotoAtualizadaEm: true,
         grupoUsuario: { select: { nome: true } },
       },

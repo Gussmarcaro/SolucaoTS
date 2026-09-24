@@ -11,6 +11,9 @@ export interface LoginResultado {
     nome: string;
     email: string;
     grupo: string | null;
+    /** Cidade e UF do usuário — o clima da barra superior sai daqui. */
+    cidade: string;
+    uf: string;
     /** Órgão do usuário; null enquanto o backfill do multi-tenant não rodou. */
     clienteId: string | null;
     /** Equipe do fornecedor — habilita provisionar e trocar de órgão. */

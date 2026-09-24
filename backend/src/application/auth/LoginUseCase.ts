@@ -62,6 +62,8 @@ export class LoginUseCase {
         // troca a foto, e o avatar ficaria velho até o próximo login — o mesmo
         // motivo pelo qual as permissões também não entram nele.
         fotoVersao: usuario.fotoVersao,
+        cidade: usuario.cidade,
+        uf: usuario.uf,
       },
     };
   }

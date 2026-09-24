@@ -199,7 +199,14 @@ export function Perfil() {
       setRegistro(atualizado);
       // A barra superior mostra nome e e-mail: sem isto ela continuaria com os
       // antigos até o próximo login, e o usuário concluiria que não salvou.
-      atualizarSessao({ nome: atualizado.nome, email: atualizado.email });
+      // Cidade e UF acompanham: quem se muda de cidade veria o clima da antiga
+      // na barra até o próximo login.
+      atualizarSessao({
+        nome: atualizado.nome,
+        email: atualizado.email,
+        cidade: atualizado.cidade,
+        uf: atualizado.uf,
+      });
       setForm((prev) => ({ ...prev, senhaAtual: '', novaSenha: '', confirmarSenha: '' }));
       setSucesso(
         trocaSenha

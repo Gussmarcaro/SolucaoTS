@@ -90,6 +90,9 @@ export interface UsuarioAuth {
   /** Carimbo da última troca de foto; null quando não há foto. Vai para a
    *  sessão, para a barra superior mostrar o avatar sem uma consulta extra. */
   fotoVersao: string | null;
+  /** Cidade e UF do cadastro — é delas que sai o clima da barra superior. */
+  cidade: string;
+  uf: string;
   /** Equipe do fornecedor — pode provisionar órgãos e trocar de contexto. */
   suporte: boolean;
 }

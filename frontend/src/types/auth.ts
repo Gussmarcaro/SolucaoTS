@@ -10,6 +10,9 @@ export interface UsuarioAutenticado {
   orgaoNome?: string | null;
   /** Equipe do fornecedor: provisiona órgãos e escolhe qual atender. */
   suporte?: boolean;
+  /** Cidade e UF do cadastro — alimentam o indicador de clima da barra. */
+  cidade?: string | null;
+  uf?: string | null;
   /**
    * Carimbo da última troca de foto; null quando não há foto.
    *

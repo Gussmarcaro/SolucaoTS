@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/cn';
 import { http } from '@/services/http';
 import { Alertas } from './Alertas';
+import { Clima } from './Clima';
 import { Assistente } from './Assistente';
 import { BuscaGlobal } from './BuscaGlobal';
 import { SeletorOrgao } from './SeletorOrgao';
@@ -131,6 +132,11 @@ export function Topbar({ onOpenSidebar, collapsed = false }: TopbarProps) {
       <BuscaGlobal aberta={buscaAberta} onFechar={() => setBuscaAberta(false)} />
 
       <div className="flex flex-1 items-center justify-end gap-1.5 sm:flex-none">
+        {/* O tempo na cidade do usuário. Antes do seletor de órgão porque é o
+            item menos acionável da barra — some sozinho se a consulta falhar,
+            e some no celular, onde o espaço é do essencial. */}
+        <Clima cidade={usuario?.cidade} uf={usuario?.uf} />
+
         {/* Órgão em atendimento — só aparece para a equipe do fornecedor, e
             fica antes das ações porque é o contexto de tudo o que vem depois. */}
         <SeletorOrgao />
