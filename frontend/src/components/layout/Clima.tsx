@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { http } from '@/services/http';
 import {
   Cloud,
   CloudDrizzle,
@@ -144,17 +145,41 @@ async function previsao(lugar: Lugar, sinal: AbortSignal): Promise<Tempo | null>
 
 export function Clima({ cidade, uf }: { cidade?: string | null; uf?: string | null }) {
   const [tempo, setTempo] = useState<Tempo | null>(null);
+  const [lugarNome, setLugarNome] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!cidade?.trim() || !uf?.trim()) return;
     const controlador = new AbortController();
 
     (async () => {
       try {
-        const lugar = await coordenadas(cidade.trim(), uf.trim(), controlador.signal);
+        /*
+         * A cidade vem da sessão — **quando ela tem**.
+         *
+         * Cidade e UF passaram a viajar na resposta do login, então quem já
+         * estava logado quando isto subiu tem uma sessão sem elas. Exigir que
+         * a pessoa saia e entre para ver um indicador de clima seria cobrar um
+         * preço alto por algo pequeno; `/perfil` responde a mesma coisa e
+         * custa uma requisição, uma vez, só para essas sessões.
+         */
+        let c = cidade?.trim() || '';
+        let u = uf?.trim() || '';
+
+        if (!c || !u) {
+          const { data } = await http.get<{ cidade: string; uf: string }>('/perfil', {
+            signal: controlador.signal,
+          });
+          c = data.cidade?.trim() ?? '';
+          u = data.uf?.trim() ?? '';
+        }
+        if (!c || !u) return;
+
+        const lugar = await coordenadas(c, u, controlador.signal);
         if (!lugar) return;
         const t = await previsao(lugar, controlador.signal);
-        if (t) setTempo(t);
+        if (t) {
+          setLugarNome(c);
+          setTempo(t);
+        }
       } catch {
         // Inclui o `abort` da desmontagem. Silêncio é o comportamento certo:
         // ver a barra sem o clima é melhor que vê-la com um erro.
@@ -172,13 +197,13 @@ export function Clima({ cidade, uf }: { cidade?: string | null; uf?: string | nu
     // Some abaixo de `md`: no celular a barra disputa espaço com o essencial —
     // busca, sino e perfil —, e o clima é o primeiro a poder sair.
     <span
-      title={`${texto} em ${cidade} · ${tempo.emC}°C`}
+      title={`${texto} em ${lugarNome} · ${tempo.emC}°C`}
       className="hidden items-center gap-1.5 rounded-xl px-2 py-1 text-ink-500 dark:text-ink-400 md:inline-flex"
     >
       <Icone className="h-[18px] w-[18px]" />
       <span className="text-[13px] font-medium tabular-nums">{tempo.emC}°</span>
       <span className="hidden max-w-[110px] truncate text-[11px] text-ink-400 lg:inline">
-        {cidade}
+        {lugarNome}
       </span>
     </span>
   );
