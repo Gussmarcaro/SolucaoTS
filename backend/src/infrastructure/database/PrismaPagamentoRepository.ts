@@ -161,4 +161,36 @@ export class PrismaPagamentoRepository implements IPagamentoRepository {
   async excluir(id: string): Promise<void> {
     await prisma.pagamento.delete({ where: { id } });
   }
+
+  /**
+   * Busca da barra superior, pelo **número da transação**.
+   *
+   * É o único dos quatro lançamentos que **não** ganhou `buscaTexto`, e o
+   * motivo é que ele não tem texto livre nenhum: o que se procura num
+   * pagamento é o número do TED/DOC/PIX, que já é coluna própria. Criar uma
+   * coluna derivada para copiar outra seria manutenção sem ganho.
+   *
+   * `mode: 'insensitive'` porque o número nem sempre é só dígito — comprovante
+   * de PIX traz letras, e quem copia do extrato copia como está lá.
+   *
+   * A conta corrente entra junto: quem olha o extrato de uma conta e quer ver
+   * o que saiu dela tem o número da conta à mão, não o da transação.
+   */
+  async buscarGlobal(termo: string, limite: number): Promise<Pagamento[]> {
+    const t = termo.trim();
+    if (!t) return [];
+
+    const rows = await prisma.pagamento.findMany({
+      where: {
+        OR: [
+          { numeroTransacao: { contains: t, mode: 'insensitive' } },
+          { contaCorrente: { contains: t, mode: 'insensitive' } },
+        ],
+      },
+      select: selecao,
+      orderBy: { dataPagamento: 'desc' },
+      take: limite,
+    });
+    return rows.map(toDomain);
+  }
 }

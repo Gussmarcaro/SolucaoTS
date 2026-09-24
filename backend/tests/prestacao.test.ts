@@ -333,6 +333,48 @@ describe.skipIf(!TEM_BANCO)('a prestação, do cadastro ao documento JSON', () =
    * erro não quebra tela nenhuma — só faz a busca responder "nada encontrado"
    * sobre algo que está lá.
    */
+  /*
+   * O pagamento, pelo número da transação.
+   *
+   * É o caso que quase ficou de fora por engano meu: eu afirmara que pagamento
+   * não tem identificador próprio, e tem — `numeroTransacao`, o número do
+   * TED/DOC/PIX que aparece no extrato. É justamente o que se tem na mão
+   * quando se pergunta "que pagamento foi este aqui?".
+   */
+  it('encontra o pagamento pelo número da transação', async () => {
+    const TED = 'TED998877';
+    const pago = await criado('/api/pagamentos', {
+      documentoFiscalId: null,
+      dataPagamento: '2025-04-10',
+      valor: 1234.56,
+      fonteRecursoTipo: 1,
+      meioPagamento: 'BANCO',
+      banco: 341,
+      agencia: 1234,
+      contaCorrente: '56789-0',
+      numeroTransacao: TED,
+    });
+    expect(pago.id).toBeTruthy();
+
+    const r = await get(`/api/busca?q=${TED}`);
+    expect(r.status, JSON.stringify(r.body)).toBe(200);
+
+    const achados = (r.body as Array<{ tipo: string; titulo: string }>).filter(
+      (x) => x.tipo === 'PAGAMENTO',
+    );
+    expect(achados.length).toBeGreaterThan(0);
+    // O título mostra **valor e data**, não o número: quem digitou o número já
+    // o conhece; o que ele quer saber é quanto saiu e quando.
+    expect(achados[0].titulo).toContain('1.234,56');
+
+    // Caixa baixa acha o mesmo — comprovante de PIX traz letras, e quem copia
+    // do extrato copia como está lá.
+    const minusculo = await get('/api/busca?q=ted998877');
+    expect(
+      (minusculo.body as Array<{ tipo: string }>).filter((x) => x.tipo === 'PAGAMENTO').length,
+    ).toBeGreaterThan(0);
+  });
+
   it('encontra a nota pela busca global, por número e por credor', async () => {
     const porNumero = await get(`/api/busca?q=${NOTA.numero}`);
     expect(porNumero.status, JSON.stringify(porNumero.body)).toBe(200);

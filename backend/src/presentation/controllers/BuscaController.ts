@@ -10,6 +10,7 @@ import { PrismaBemCedidoRepository } from '@/infrastructure/database/PrismaBemCe
 import { PrismaServidorCedidoRepository } from '@/infrastructure/database/PrismaServidorCedidoRepository';
 import { PrismaClienteRepository } from '@/infrastructure/database/PrismaClienteRepository';
 import { PrismaDocumentoFiscalRepository } from '@/infrastructure/database/PrismaDocumentoFiscalRepository';
+import { PrismaPagamentoRepository } from '@/infrastructure/database/PrismaPagamentoRepository';
 import { PrismaContaBancariaRepository } from '@/infrastructure/database/PrismaContaBancariaRepository';
 import { PrismaGuiaRecolhimentoRepository } from '@/infrastructure/database/PrismaGuiaRecolhimentoRepository';
 
@@ -24,6 +25,7 @@ const buscar = new BuscarGlobalUseCase({
   servidores: new PrismaServidorCedidoRepository(),
   orgaos: new PrismaClienteRepository(),
   despesas: new PrismaDocumentoFiscalRepository(),
+  pagamentos: new PrismaPagamentoRepository(),
   contas: new PrismaContaBancariaRepository(),
   guias: new PrismaGuiaRecolhimentoRepository(),
 });

@@ -16,10 +16,16 @@ export type TipoResultado =
   // frequência do que um lançamento. Pôr a nota fiscal no topo empurraria a
   // parceria para baixo da dobra.
   //
-  // Só entraram os três que têm identificador próprio — algo que alguém tem na
-  // mão e digita. Pagamento e Receita ficaram de fora: eles se encontram *pela*
-  // nota ou *pelo* ajuste, e na busca global só somariam linhas.
+  // O critério para entrar é ter **identificador próprio** — algo que alguém
+  // tem na mão e digita: o número da nota, o apelido da conta, o número da
+  // guia, o número da transação do pagamento.
+  //
+  // `Receita` continua de fora por não ter nenhum: ela é tipo + valor, e se
+  // encontra pelo ajuste. E a conciliação bancária também, por outro motivo —
+  // é a maior tabela do sistema, o texto dela vem do banco ("TED RECEBIDA"), e
+  // o trajeto real até uma linha de extrato começa na tela de Conciliação.
   | 'DESPESA'
+  | 'PAGAMENTO'
   | 'CONTA_BANCARIA'
   | 'GUIA_RECOLHIMENTO'
   | 'ORGAO';

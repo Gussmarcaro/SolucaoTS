@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
+  Banknote,
   Boxes,
   Building2,
   ClipboardCheck,
@@ -41,6 +42,7 @@ const ICONES: Record<TipoResultado, LucideIcon> = {
   BEM_CEDIDO: Boxes,
   SERVIDOR_CEDIDO: UserCog,
   DESPESA: Receipt,
+  PAGAMENTO: Banknote,
   CONTA_BANCARIA: Wallet,
   GUIA_RECOLHIMENTO: Coins,
   ORGAO: Landmark,

@@ -46,5 +46,13 @@ export interface IPagamentoRepository {
   docPertenceAPrestacao(prestacaoId: string, documentoFiscalId: string): Promise<boolean>;
   criar(prestacaoId: string, dados: DadosPagamento): Promise<Pagamento>;
   atualizar(id: string, dados: DadosPagamento): Promise<Pagamento>;
+  /**
+   * Busca da barra superior — poucos, já recortados pelo órgão.
+   *
+   * Diferente dos outros três, **não precisa de `buscaTexto`**: o pagamento
+   * não tem texto livre. O que se procura nele é o número da transação, que já
+   * é uma coluna própria.
+   */
+  buscarGlobal(termo: string, limite: number): Promise<Pagamento[]>;
   excluir(id: string): Promise<void>;
 }

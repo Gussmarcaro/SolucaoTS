@@ -8,8 +8,11 @@ export type TipoResultado =
   | 'BEM_CEDIDO'
   | 'SERVIDOR_CEDIDO'
   // Lançamentos, depois dos cadastros: quem digita na barra procura uma coisa
-  // (a entidade, o ajuste) muito mais do que um lançamento.
+  // (a entidade, o ajuste) muito mais do que um lançamento. Entram os que têm
+  // identificador próprio — número da nota, da transação, da guia, apelido da
+  // conta. Espelha `core/busca/ResultadoBusca.ts` no backend.
   | 'DESPESA'
+  | 'PAGAMENTO'
   | 'CONTA_BANCARIA'
   | 'GUIA_RECOLHIMENTO'
   | 'ORGAO';
@@ -31,6 +34,7 @@ export const TIPO_BUSCA_LABEL: Record<TipoResultado, string> = {
   BEM_CEDIDO: 'Bens Cedidos',
   SERVIDOR_CEDIDO: 'Servidores Cedidos',
   DESPESA: 'Despesas / Notas Fiscais',
+  PAGAMENTO: 'Pagamentos',
   CONTA_BANCARIA: 'Contas Bancárias',
   GUIA_RECOLHIMENTO: 'Guias de Recolhimento',
   ORGAO: 'Órgãos Concessores',
@@ -61,6 +65,8 @@ export function rotaDoResultado(r: ResultadoBusca): string {
       return '/cadastro/servidores-cedidos';
     case 'DESPESA':
       return '/execucao/financeiro/despesas';
+    case 'PAGAMENTO':
+      return '/execucao/financeiro/pagamentos';
     case 'CONTA_BANCARIA':
       return '/execucao/financeiro/contas-bancarias';
     case 'GUIA_RECOLHIMENTO':

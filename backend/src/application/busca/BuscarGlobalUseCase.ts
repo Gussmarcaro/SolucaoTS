@@ -9,6 +9,7 @@ import type { IBemCedidoRepository } from '@/application/bemCedido/IBemCedidoRep
 import type { IServidorCedidoRepository } from '@/application/servidorCedido/IServidorCedidoRepository';
 import type { IClienteRepository } from '@/application/cliente/IClienteRepository';
 import type { IDocumentoFiscalRepository } from '@/application/documentoFiscal/IDocumentoFiscalRepository';
+import type { IPagamentoRepository } from '@/application/pagamento/IPagamentoRepository';
 import type { IContaBancariaRepository } from '@/application/contaBancaria/IContaBancariaRepository';
 import type { IGuiaRecolhimentoRepository } from '@/application/guiaRecolhimento/IGuiaRecolhimentoRepository';
 
@@ -29,6 +30,7 @@ interface Repositorios {
   servidores: IServidorCedidoRepository;
   orgaos: IClienteRepository;
   despesas: IDocumentoFiscalRepository;
+  pagamentos: IPagamentoRepository;
   contas: IContaBancariaRepository;
   guias: IGuiaRecolhimentoRepository;
 }
@@ -44,16 +46,21 @@ const so = (valor: string | null | undefined) => valor?.trim() || null;
  * que a grade encontraria, e uma melhoria na busca de um cadastro vale aqui de
  * graça.
  *
- * **Lançamentos** entraram por método próprio (`buscarGlobal`), porque os três
- * têm `listar` de formatos diferentes e nenhum aceita termo — torcer os três
+ * **Lançamentos** entraram por método próprio (`buscarGlobal`), porque cada um
+ * tem `listar` de formato diferente e nenhum aceita termo — torcer os quatro
  * para caber na assinatura dos cadastros daria uma interface que tela nenhuma
  * usa.
  *
- * Só entraram os lançamentos com **identificador próprio**: nota fiscal (número
- * e credor), conta bancária (apelido) e guia (número do documento). Pagamento e
- * Receita ficaram de fora de propósito — encontram-se *pela* nota ou *pelo*
- * ajuste, e aqui só somariam linhas. Uma busca que devolve o que ninguém
- * procurava ensina a não usá-la, e aí perde-se também o que ela fazia bem.
+ * O critério para entrar é ter **identificador próprio**, algo que alguém tem
+ * na mão e digita: número da nota, apelido da conta, número da guia, número da
+ * transação do pagamento.
+ *
+ * `Receita` continua fora por não ter nenhum — é tipo + valor, e se encontra
+ * pelo ajuste. A conciliação bancária também, por outro motivo: é a maior
+ * tabela do sistema, o texto dela vem do banco ("TED RECEBIDA"), e o trajeto
+ * real até uma linha de extrato começa na tela de Conciliação. Uma busca que
+ * devolve o que ninguém procurava ensina a não usá-la, e aí perde-se também o
+ * que ela fazia bem.
  *
  * As consultas correm em paralelo com `allSettled`: um cadastro fora do ar
  * derruba só a própria seção, não a busca inteira.
@@ -71,7 +78,7 @@ export class BuscarGlobalUseCase {
     // A ordem dos nomes segue a das consultas abaixo, uma a uma. É posicional:
     // trocar a ordem de uma sem trocar a outra liga o resultado errado ao tipo
     // errado — foi o que o typecheck pegou na primeira versão disto.
-    const [ajustes, prestacoes, entidades, fornecedores, colaboradores, contratos, bens, servidores, despesas, contas, guias, orgaos] =
+    const [ajustes, prestacoes, entidades, fornecedores, colaboradores, contratos, bens, servidores, despesas, pagamentos, contas, guias, orgaos] =
       await Promise.allSettled([
         r.ajustes.listar({ ...pagina, filtros: {} }),
         r.prestacoes.listar({ ...pagina, filtros: {} }),
@@ -85,6 +92,7 @@ export class BuscarGlobalUseCase {
         // diferentes, e torcer os três para caber na assinatura dos cadastros
         // daria uma interface que nenhuma tela usa.
         r.despesas.buscarGlobal(busca, POR_TIPO),
+        r.pagamentos.buscarGlobal(busca, POR_TIPO),
         r.contas.buscarGlobal(busca, POR_TIPO),
         r.guias.buscarGlobal(busca, POR_TIPO),
         r.orgaos.listar({ ...pagina, filtros: {} }),
@@ -156,6 +164,18 @@ export class BuscarGlobalUseCase {
         id: d.id,
         titulo: `Nota ${d.numero}`,
         subtitulo: so(d.credorNome) ?? d.credorNumeroDoc,
+      })),
+      /*
+       * O pagamento se identifica pelo **valor e pela data**, não pelo número
+       * da transação — esse é a chave de busca, não o rótulo. Quem digitou o
+       * número do TED já o conhece; o que ele quer ver é quanto saiu, quando, e
+       * de qual nota.
+       */
+      ...lista(pagamentos).map((p): ResultadoBusca => ({
+        tipo: 'PAGAMENTO',
+        id: p.id,
+        titulo: `${p.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} · ${p.dataPagamento.split('-').reverse().join('/')}`,
+        subtitulo: p.documentoNumero ? `Nota ${p.documentoNumero}` : 'Folha ordinária',
       })),
       // O apelido primeiro, e os números como apoio: a conta é reconhecida por
       // "Repasse Saúde", não por "001 / 1234 / 56789-0".
