@@ -26,7 +26,7 @@ continua parecendo um logo, só que errado, que é como isso passa despercebido.
 | Arquivo | Tam. | Arranjo | Texto | Onde |
 |---|---|---|---|---|
 | `logo.png` / `logo-dark.png` | 244×78 | empilhado | escuro / claro | Sobre o sistema |
-| `logo-deitada.png` / `-dark.png` | 301×82 | deitado | escuro / claro | barra superior (menu recolhido) |
+| `logo-deitada.png` / `-dark.png` | 800×192 | deitado | escuro / claro | barra superior (menu recolhido) |
 | `logo-menu.png` / `logo-menu-dark.png` | 800×192 | deitado | **branco** | barra lateral |
 | `logo-vertical.png` / `-dark.png` | 600×587 | vertical | escuro / claro | telas de entrada |
 
@@ -57,6 +57,23 @@ dos dois, a arte teria atravessado o botão de recolher sem que nada acusasse.
 
 A conta do espaço: a barra tem 264px, o cabeçalho gasta 32 de recuo (`px-4`) e
 o botão de recolher 36 (`p-2` + ícone de 20). Sobram 196; 184 deixa a folga.
+
+### `logo-deitada` — onde o par por tema **é** necessário
+
+A barra superior é o caso inverso da lateral: o fundo dela acompanha o tema —
+branco no claro, `ink-950` no escuro. Uma arte só deixaria o texto invisível em
+metade das vezes, e foi exatamente esse o bug que deu origem a esta família.
+
+Desde 24/09/2026 as duas também são **800×192**, aparadas na caixa útil:
+
+- **`logo-deitada.png`** — texto escuro, para o fundo branco do tema claro.
+- **`logo-deitada-dark.png`** — texto branco. Hoje é **byte a byte igual** a
+  `logo-menu.png`: texto branco serve tanto ao azul da barra lateral quanto ao
+  grafite da superior. Ainda assim são arquivos separados, porque as duas
+  famílias respondem a fundos diferentes e podem divergir sem aviso.
+
+Tamanho em CSS: `max-h-11 max-w-[200px]`. A altura decide; a largura é a rede,
+para que arte mais larga não empurre a busca global para a direita.
 
 ### De onde veio `logo-deitada`
 

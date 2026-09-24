@@ -93,15 +93,20 @@ export function Topbar({ onOpenSidebar, collapsed = false }: TopbarProps) {
        * Só no desktop (`lg`): abaixo disso o menu é uma gaveta sobreposta, que
        * leva a logo junto e não deixa trilho nenhum na tela.
        *
-       * É a arte **deitada**, a mesma do menu, e entra do mesmo jeito: o par de
-       * imagens trocado por tema, sem placa nem fundo. O que muda é o arquivo —
-       * `logo-menu` tem o texto branco, feito para o azul da barra lateral, e
-       * sobre o branco daqui sobraria só o ícone. `logo-deitada` é a mesma arte
-       * com a palette de fundo claro/escuro (ver `public/LOGOS.md`).
+       * **Aqui o par por tema é necessário**, ao contrário da barra lateral.
+       * Lá o fundo é escuro nos dois temas, então uma arte só serve; aqui o
+       * fundo acompanha o tema — branco no claro, `ink-950` no escuro —, e é
+       * justamente o caso em que uma arte só deixaria o texto invisível
+       * (`public/LOGOS.md` conta o bug que originou esta família).
        *
-       * `h-11` aqui é **maior** que o `h-12` de antes: a arte foi aparada na
-       * caixa útil, então a altura pedida virou a altura que se vê, sem folga
-       * transparente por dentro.
+       * `logo-deitada-dark` é, hoje, byte a byte a mesma de `logo-menu`: texto
+       * branco serve tanto ao azul da barra lateral quanto ao grafite daqui.
+       * Ainda assim são arquivos separados — as duas famílias respondem a
+       * fundos diferentes e podem divergir sem aviso.
+       *
+       * O tamanho é limitado pelos dois lados, como na barra lateral. A altura
+       * decide (a arte é aparada na caixa útil, então o número pedido é o que
+       * se vê); a largura é a rede, para arte mais larga não empurrar a busca.
        *
        * Duas imagens em vez de uma porque `display:none` tira a que não vale da
        * árvore de acessibilidade — o leitor de tela anuncia a marca uma vez só.
@@ -111,12 +116,12 @@ export function Topbar({ onOpenSidebar, collapsed = false }: TopbarProps) {
           <img
             src="/logo-deitada.png"
             alt="Solução TS"
-            className="h-11 w-auto object-contain dark:hidden"
+            className="max-h-11 w-auto max-w-[200px] object-contain dark:hidden"
           />
           <img
             src="/logo-deitada-dark.png"
             alt="Solução TS"
-            className="hidden h-11 w-auto object-contain dark:block"
+            className="hidden max-h-11 w-auto max-w-[200px] object-contain dark:block"
           />
         </div>
       )}
