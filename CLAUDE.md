@@ -211,6 +211,7 @@ No `backend/`:
 - `npm run verificar:rateio` — conferir a aritmética dos percentuais e as regras do Cadastro do Rateio (sem banco).
 - `npm run verificar:ofx` — conferir o leitor de extrato OFX e as regras de sugestão da conciliação (sem banco).
 - `npm run verificar:conferencia` — conferir o critério do painel "esta prestação está pronta?" (sem banco).
+- `npm run verificar:metas` — conferir a geração dos períodos do Plano de Metas e a validação da meta (sem banco).
 - `npm run verificar:tenant` — conferir o isolamento multi-tenant (sem banco).
 - `npm run tenant:backfill` — atribuir um órgão aos registros anteriores ao multi-tenant (roda **uma vez**).
 - `npm run financeiro:backfill` — ligar os lançamentos financeiros antigos ao novo modelo (roda **uma vez**, e simula por padrão; use `-- --executar`). **Depois do `tenant:backfill`**, e **antes** de usar as abas de seleção da prestação.
@@ -219,7 +220,7 @@ No `backend/`:
 
 No `frontend/`: `npm run dev` (Vite em :5173) e `npm run build`.
 
-**A CI roda tudo isso a cada push e pull request** (`.github/workflows/ci.yml`): typecheck dos dois projetos, os onze `verificar:*`, o `npm test` e o build do frontend. O job do backend sobe um **Postgres de serviço** e aponta `DATABASE_URL_TEST` para ele — é lá que os testes de integração efetivamente rodam, já que a máquina de desenvolvimento pode não ter banco.
+**A CI roda tudo isso a cada push e pull request** (`.github/workflows/ci.yml`): typecheck dos dois projetos, os doze `verificar:*`, o `npm test` e o build do frontend. O job do backend sobe um **Postgres de serviço** e aponta `DATABASE_URL_TEST` para ele — é lá que os testes de integração efetivamente rodam, já que a máquina de desenvolvimento pode não ter banco.
 
 ### Divisão do bundle
 
@@ -233,11 +234,11 @@ Cada tela é um pedaço próprio (`lazy` + `Suspense` em `App.tsx`), baixado qua
 
 Duas camadas de checagem automatizada:
 
-- **`verificar:*`** (montador, auditoria, alertas, permissões, assistente, workflow, tenant, agenda, rateio, ofx, conferência) — regras puras, **sem banco**. Rodam em qualquer lugar e são a rede do dia a dia.
+- **`verificar:*`** (montador, auditoria, alertas, permissões, assistente, workflow, tenant, agenda, rateio, ofx, conferência, metas) — regras puras, **sem banco**. Rodam em qualquer lugar e são a rede do dia a dia.
 - **`npm test`** (vitest + supertest) — integração de verdade, **com Postgres**. Cobre duas coisas, e as duas são ligações que nenhum teste puro alcança:
 
   - **O isolamento multi-tenant** (`tests/isolamento.test.ts`), de ponta a ponta: dois órgãos provisionados, e cada cenário provando que um **não** alcança o outro (listagem, busca por id, alteração, busca global, contagem, usuários, `/orgaos`).
-  - **O caminho da prestação** (`tests/prestacao.test.ts`), do cadastro ao `documentoJSON`. `verificar:montador` já valida o montador contra o JSON Schema oficial, mas parte de um `DadosMontagem` **sintético**: ninguém provava que o que sai do banco chega naquele formato. Entre a nota digitada e o documento há um repositório com trinta `select`, um `toDomain` por bloco e o montador — um campo que pare de ser carregado atravessa os onze `verificar:*` sem acusar nada, e o documento sai válido, é aceito, e volta como inconformidade meses depois. O teste digita de um lado e confere **campo a campo** do outro. As asserções nunca são sobre a existência do bloco: `documentos_fiscais` com um item vazio passaria num teste que só conta o tamanho da lista.
+  - **O caminho da prestação** (`tests/prestacao.test.ts`), do cadastro ao `documentoJSON`. `verificar:montador` já valida o montador contra o JSON Schema oficial, mas parte de um `DadosMontagem` **sintético**: ninguém provava que o que sai do banco chega naquele formato. Entre a nota digitada e o documento há um repositório com trinta `select`, um `toDomain` por bloco e o montador — um campo que pare de ser carregado atravessa os doze `verificar:*` sem acusar nada, e o documento sai válido, é aceito, e volta como inconformidade meses depois. O teste digita de um lado e confere **campo a campo** do outro. As asserções nunca são sobre a existência do bloco: `documentos_fiscais` com um item vazio passaria num teste que só conta o tamanho da lista.
 
   Sem `DATABASE_URL_TEST` a suíte **pula** em vez de falhar — quem clonou para mexer no frontend não deve ver vermelho por não ter Postgres. Para rodar de fato:
 
@@ -252,6 +253,8 @@ Duas camadas de checagem automatizada:
 No `frontend/`, **`npm test`** (vitest) cobre a lógica pura que erra em silêncio: dígitos verificadores de CPF/CNPJ, a ida-e-volta da máscara de moeda (é ela que transforma o que o usuário digitou no valor da prestação), `dataBr` sem deslocamento de fuso e as regras da agenda espelhadas do backend (`deslocar`, `podeArrastar`, `podeExcluir`).
 
 **A regra de prazo das tarefas está escrita duas vezes** — `core/tarefa/Tarefa.ts` no backend e `types/tarefa.ts` no front. Podem divergir sem nada quebrar: a grade diria "em dia" e o servidor consideraria atrasada. `src/types/tarefa.test.ts` fixa os mesmos limiares dos dois lados (inclusive o `≤ 7 dias` inclusivo) e é onde a divergência aparece.
+
+**Os períodos da meta também** — `core/meta/periodos.ts` e `types/meta.ts`. O formulário precisa desenhar o quadro *enquanto* se escolhe a periodicidade e a vigência, muito antes de enviar. Divergindo, a tela oferece períodos que o servidor recusa, numa mensagem sobre um período que o usuário não digitou — ele o recebeu pronto. `src/types/meta.test.ts` trava os mesmos casos de `verificar:metas`, com os mesmos números.
 
 ## Assistente da Fase V
 
@@ -357,6 +360,23 @@ Endpoint próprio, `PATCH /compromissos/:id/horario`, que muda **só** o horári
 
 - Notificar o convidado na criação/alteração (§8).
 - Recurso `AGENDA`. Coberto por `npm run verificar:agenda` (38 checagens) e pelos lembretes em `verificar:alertas`.
+
+## Plano de Metas
+
+Aba **Programas e Metas** no dossiê do Ajuste. O cadastro do plano é feito na **tela do TCESP** — não transmitimos nada daqui; o que a Fase V transmite é só o **realizado**, no Relatório de Atividades da prestação (§19). Esta tela guarda o **previsto**, que é o que faltava para a aferição ter contra o que ser comparada.
+
+**Por que isso merece cuidado:** a aferição é confrontada pelo Tribunal com o plano cadastrado lá, em **código, nome, período e periodicidade**. Divergir num período não quebra nada aqui — quebra lá, meses depois.
+
+- **Três tipos, e o tipo decide quais campos existem** (`core/meta/Meta.ts`). A **qualitativa não quantificável** não tem unidade de medida nem quadro de períodos: na tela do TCESP essas opções desaparecem ao escolhê-la. A periodicidade dela é **forçada** a `UNICA` em vez de recusada — o formulário esconde o campo, e barrar o que a tela não mostra seria um erro sem conserto pela interface.
+- **`quantificavel` deixou de ser coluna.** Era gravado ao lado de `tipo`, e duas fontes para o mesmo fato divergem: dava para ter `QUALITATIVA_NAO_QUANTIFICAVEL` com `quantificavel = true`, e ninguém notava até a aferição pedir um número que a meta não tem. Hoje é derivado (`ehQuantificavel`), no `toDomain`.
+- **`MetaPeriodicidade` substituiu a `quantidadePrevista` única.** A aferição é por período; um número só não tinha contra o que ser comparado. O quadro é **substituído por inteiro** na edição, numa transação — como os vínculos da agenda.
+- **Os períodos não são digitados: saem da vigência.** É a regra central, e a que erra em silêncio. `gerarPeriodos` os deriva da periodicidade e da vigência **da meta** (que não é a do ajuste), e o servidor recusa quadro que não bata com ela — nem sobrando nem faltando. Faltar período é erro, não omissão tolerada: a aferição do período em branco não teria referência, e ninguém saberia se foi esquecimento.
+- **O primeiro e o último período podem ser parciais**, e a numeração é **ancorada no ano civil**. O exemplo do manual: vigência de 01/06, quadrimestral → o primeiro período tem 3 meses (jun–ago) e o último, 1 (maio). O erro da implementação ingênua é contar de 4 em 4 meses a partir do início — nov/dez é o 6º bimestre de 2025, não o 1º de nada. A tela marca o parcial, porque é o que surpreende.
+- **"Igual em todos" reparte proporcional aos meses.** Havendo período parcial, repetir o mesmo número não seria "igual" coisa nenhuma: exigiria de um quadrimestre de 3 meses o mesmo que de um de 4. Método do maior resto, como o rateio — as parcelas somam exatamente o total.
+- **Mexer na vigência não apaga o que já foi digitado.** Cada período é reencontrado por ano+período; só os que deixaram de existir somem. É a diferença entre corrigir uma data e refazer o cadastro.
+- **O período da aferição é uma lista, não um campo livre.** Era `Período (1–15)` — o intervalo do JSON Schema, não o da meta: numa meta quadrimestral só existem 1, 2 e 3, e digitar 7 passava por aqui, passava pelo schema e era rejeitado pelo Tribunal. A lista é recortada pelo **exercício da prestação**, porque a aferição guarda só o número do período, sem o ano: uma meta que atravessa dois exercícios tem um "1º quadrimestre" em cada, indistinguíveis depois de salvos.
+- **O qualificador muda a leitura do atingimento.** `> 4 reuniões` com 5 realizadas é meta **cumprida**; ignorá-lo pediria justificativa de quem fez mais que o pactuado. São dois hoje (`IGUAL_A`, `MAIOR_QUE`) e acrescentar um terceiro custa uma entrada no catálogo e um valor no enum — **este bloco não é transmitido**, então nenhum schema do TCESP precisa aceitá-lo.
+- **`npm run verificar:metas`** (66 checagens, sem banco) cobre a geração dos períodos e a validação. O espelho do front é travado por `src/types/meta.test.ts`.
 
 ## Cadastro do Rateio
 

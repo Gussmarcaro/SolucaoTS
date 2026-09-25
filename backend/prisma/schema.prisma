@@ -190,6 +190,49 @@ enum ResultadoMeta {
   CUMPRIDA_PARCIALMENTE // 3
 }
 
+/// Tipo da meta, conforme o manual da Fase V.
+///
+/// O manual descreve "meta qualitativa" como a **família**, e as duas formas
+/// selecionáveis dela são quantificável e não quantificável — por isso três
+/// valores, e não quatro.
+///
+/// A diferença não é rótulo: ela governa dois campos. A não quantificável
+/// **não tem unidade de medida** e sua periodicidade é obrigatoriamente
+/// `UNICA`, sem detalhamento por período.
+enum TipoMeta {
+  QUANTITATIVA
+  QUALITATIVA_QUANTIFICAVEL
+  QUALITATIVA_NAO_QUANTIFICAVEL
+}
+
+/// Com que frequência a meta é aferida — e, portanto, quantos períodos ela tem.
+///
+/// `EXERCICIO` é o "no exercício" do manual: um período que cobre a vigência
+/// inteira. `UNICA` é o valor reservado à meta qualitativa não quantificável,
+/// que não se afere período a período.
+enum PeriodicidadeMeta {
+  MENSAL // 12
+  BIMESTRAL // 6
+  TRIMESTRAL // 4
+  QUADRIMESTRAL // 3
+  SEMESTRAL // 2
+  EXERCICIO // 1
+  UNICA // 1 — só para a qualitativa não quantificável
+}
+
+/// Como ler a quantidade pactuada no período.
+///
+/// Do manual: uma meta de "100 atendimentos" tem qualificador *igual a*; "mais
+/// de 100 atendimentos" tem *maior que*. É o que separa cumprir de superar.
+///
+/// **Enum interno.** Este bloco não é transmitido — o TCESP recebe só o
+/// realizado, e o pactuado já está no portal dele. Por isso acrescentar um
+/// valor aqui é seguro: não há documento a rejeitar.
+enum QualificadorMeta {
+  IGUAL_A
+  MAIOR_QUE
+}
+
 // ============================================================================
 // DOMÍNIO: CADASTROS E SEGURANÇA
 // ============================================================================
@@ -886,28 +929,71 @@ model Programa {
 }
 
 model Meta {
-  id                 String   @id @default(uuid()) @db.Uuid
-  programaId         String   @db.Uuid
-  codigoMeta         String
-  descricao          String?
-  quantificavel      Boolean  @default(true) // define se usa quantidade_realizada ou resultado_meta
-  /// Quanto se pretende realizar, e em quê. **Controle interno** — o schema
-  /// oficial transmite só o realizado (`quantidade_realizada`), porque a meta
-  /// pactuada já está no Plano de Metas do módulo Ajuste, no portal do TCESP.
-  ///
-  /// Sem estes dois campos a marca `quantificavel` não levava a lugar nenhum:
-  /// dizia-se que a meta era quantificável e não havia onde dizer **quanto**.
-  /// E a aferição da prestação ficava sem referência para comparar o realizado.
-  ///
-  /// A unidade não é enfeite: "5000" sozinho não diz se são consultas, horas ou
-  /// toneladas. Decimal, e não inteiro, porque nem toda meta se conta em peças.
-  quantidadePrevista Decimal? @db.Decimal(15, 2)
-  unidadeMedida      String?
+  id         String @id @default(uuid()) @db.Uuid
+  programaId String @db.Uuid
+  codigoMeta String
 
-  criadoPor String?  @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
-  programa  Programa @relation(fields: [programaId], references: [id])
+  /// O enunciado curto — "COMISSÃO IMPLANTADA E REUNIÕES MENSAIS REALIZADAS".
+  /// É o campo "Meta" da tela do TCESP, e é ele que aparece nas listas; a
+  /// `descricao` é o detalhamento, que só se lê ao abrir.
+  nome      String  @default("")
+  descricao String?
+
+  tipo TipoMeta @default(QUANTITATIVA)
+
+  /// Unidade de medida — "RELATÓRIO MENSAL COM INDICADOR DA CCIH".
+  ///
+  /// Nula na **qualitativa não quantificável**, que por definição não tem o que
+  /// medir. Não é campo opcional por preguiça: o manual diz que a opção nem
+  /// aparece quando esse tipo é escolhido.
+  unidadeMedida String?
+
+  periodicidade PeriodicidadeMeta @default(MENSAL)
+
+  /// Vigência da meta, que **não** é a do ajuste.
+  ///
+  /// Ela decide quantos períodos existem e quais são parciais: vigência que
+  /// começa em 01/06 com periodicidade quadrimestral tem o primeiro período de
+  /// três meses (jun–ago) e o último de um (maio). Ver `gerarPeriodos`, no
+  /// core, e `verificar:metas`.
+  vigenciaInicio DateTime? @db.Date
+  vigenciaFim    DateTime? @db.Date
+
+  criadoPor      String?             @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
+  programa       Programa            @relation(fields: [programaId], references: [id])
+  periodicidades MetaPeriodicidade[]
 
   @@unique([programaId, codigoMeta])
+}
+
+/// Quanto se pretende realizar em **cada período** da meta.
+///
+/// Substitui a `quantidadePrevista` única que havia antes, e a diferença é o
+/// ponto: a aferição da prestação é por período (`RelatorioAtividadeMeta.periodo`),
+/// então um número só não tinha contra o que ser comparado. Com esta tabela, o
+/// relatório de atividades passa a ter previsto × realizado.
+///
+/// **Controle interno, não transmitido.** O TCESP recebe apenas o realizado; o
+/// pactuado já foi digitado no portal dele, no Plano de Metas do ajuste.
+model MetaPeriodicidade {
+  id     String @id @default(uuid()) @db.Uuid
+  metaId String @db.Uuid
+
+  ano     Int
+  /// 1..12 conforme a periodicidade — 12 na mensal, 3 na quadrimestral, 1 no
+  /// exercício. Quem os gera é `gerarPeriodos`, a partir da vigência.
+  periodo Int
+
+  qualificador QualificadorMeta @default(IGUAL_A)
+  /// Decimal, e não inteiro, porque nem toda meta se conta em peças — há as que
+  /// se medem em horas, toneladas ou percentual.
+  quantidade   Decimal          @db.Decimal(15, 2)
+
+  criadoPor String? @db.Uuid
+  meta      Meta    @relation(fields: [metaId], references: [id], onDelete: Cascade)
+
+  @@unique([metaId, ano, periodo])
+  @@index([metaId])
 }
 
 // Importado via CSV (PlanoAplicacaoExemplo.csv)

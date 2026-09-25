@@ -81,6 +81,7 @@ export const ENTIDADE_LABEL: Record<string, string> = {
   TermoAditivo: 'Termo aditivo',
   Programa: 'Programa',
   Meta: 'Meta',
+  MetaPeriodicidade: 'Quantidade prevista da meta',
   PlanoAplicacaoItem: 'Plano de aplicação',
   Rateio: 'Rateio administrativo',
   AjusteFonteRecurso: 'Fonte de recurso do ajuste',

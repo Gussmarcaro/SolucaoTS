@@ -373,7 +373,7 @@ export function PrestacaoDetalhe() {
           ) : blocoAtivo === 'servidoresCedidos' ? (
             <ServidoresCedidosTab prestacaoId={prestacao.id} />
           ) : blocoAtivo === 'atividades' ? (
-            <RelatorioAtividadesTab prestacaoId={prestacao.id} ajusteId={prestacao.ajusteId} />
+            <RelatorioAtividadesTab prestacaoId={prestacao.id} ajusteId={prestacao.ajusteId} exercicio={prestacao.ano} />
           ) : blocoAtivo === 'dadosGerais' ? (
             <DadosGeraisTab prestacaoId={prestacao.id} ajusteTipo={prestacao.ajusteTipo} />
           ) : blocoAtivo === 'responsaveis' ? (

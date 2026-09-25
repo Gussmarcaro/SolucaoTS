@@ -13,6 +13,13 @@ import { extrairMensagemErro } from '@/services/http';
 import { afericoesApi } from '@/services/prestacaoBlocos2.service';
 import { listarProgramas } from '@/services/programas.service';
 import type { Programa } from '@/types/programa';
+import {
+  QUALIFICADORES_META,
+  gerarPeriodos,
+  intervaloPeriodo,
+  rotuloPeriodo,
+  type QualificadorMeta,
+} from '@/types/meta';
 import { RESULTADO_META_LABEL, type AfericaoMeta, type AfericaoMetaPayload, type ResultadoMeta } from '@/types/prestacaoBlocos6';
 import { ConfirmarExclusao } from '@/pages/Ajustes/tabs/TermosAditivosTab';
 import { AlertaErro, IconBtn } from './_ui';
@@ -31,7 +38,23 @@ const COLUNAS: ColunaDef[] = [
 
 const RESULTADOS: { value: ResultadoMeta; label: string }[] = (Object.keys(RESULTADO_META_LABEL) as ResultadoMeta[]).map((r) => ({ value: r, label: RESULTADO_META_LABEL[r] }));
 
-export function RelatorioAtividadesTab({ prestacaoId, ajusteId }: { prestacaoId: string; ajusteId: string }) {
+export function RelatorioAtividadesTab({
+  prestacaoId,
+  ajusteId,
+  exercicio,
+}: {
+  prestacaoId: string;
+  ajusteId: string;
+  /**
+   * O ano da prestação — é ele que recorta os períodos oferecidos.
+   *
+   * A aferição guarda só o número do período (1..15), sem o ano: a prestação é
+   * anual, então o ano é o dela. Uma meta cuja vigência atravessa dois
+   * exercícios tem um "1º quadrimestre" em cada, e sem este recorte a lista
+   * ofereceria os dois — indistinguíveis depois de salvos.
+   */
+  exercicio: number;
+}) {
   const [lista, setLista] = useState<AfericaoMeta[]>([]);
   const [programas, setProgramas] = useState<Programa[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -51,6 +74,18 @@ export function RelatorioAtividadesTab({ prestacaoId, ajusteId }: { prestacaoId:
 
   const recarregar = () => { setModal({ tipo: 'fechado' }); setRefreshKey((k) => k + 1); };
   const semProgramas = !carregando && programas.length === 0;
+
+  /** "2º quadrimestre" em vez de "2" — a periodicidade vem da meta do ajuste. */
+  const rotuloDoPeriodo = (a: AfericaoMeta): string => {
+    const m = programas
+      .find((p) => p.nome === a.nomePrograma)
+      ?.metas.find((x) => x.codigoMeta === a.codigoMeta);
+    if (!m) return String(a.periodo);
+    const p = gerarPeriodos(m.periodicidade, m.vigenciaInicio, m.vigenciaFim).find(
+      (x) => x.ano === exercicio && x.periodo === a.periodo,
+    );
+    return p ? rotuloPeriodo(m.periodicidade, p) : String(a.periodo);
+  };
 
   return (
     <div className="space-y-4">
@@ -96,7 +131,14 @@ export function RelatorioAtividadesTab({ prestacaoId, ajusteId }: { prestacaoId:
             case 'meta':
               return <span className="block truncate font-mono text-xs text-ink-600 dark:text-ink-300">{a.codigoMeta}</span>;
             case 'periodo':
-              return <span className="text-ink-600 dark:text-ink-300">{a.periodo}</span>;
+              // "2" não diz nada; "2º quadrimestre" diz. A periodicidade vem da
+              // meta, e o número cru fica como recurso quando ela não é achada
+              // (aferição de uma meta que saiu do ajuste depois).
+              return (
+                <span className="block truncate text-ink-600 dark:text-ink-300" title={rotuloDoPeriodo(a)}>
+                  {rotuloDoPeriodo(a)}
+                </span>
+              );
             case 'realizado':
               return (
                 <span className="block truncate text-ink-600 dark:text-ink-300">
@@ -116,7 +158,7 @@ export function RelatorioAtividadesTab({ prestacaoId, ajusteId }: { prestacaoId:
       />
 
       <Modal open={modal.tipo === 'form'} onClose={() => setModal({ tipo: 'fechado' })} title={modal.tipo === 'form' && modal.item ? 'Editar Aferição' : 'Nova Aferição de Meta'} size="lg">
-        {modal.tipo === 'form' && <AfericaoForm prestacaoId={prestacaoId} programas={programas} item={modal.item} onSuccess={recarregar} onCancel={() => setModal({ tipo: 'fechado' })} />}
+        {modal.tipo === 'form' && <AfericaoForm prestacaoId={prestacaoId} programas={programas} exercicio={exercicio} item={modal.item} onSuccess={recarregar} onCancel={() => setModal({ tipo: 'fechado' })} />}
       </Modal>
       <ConfirmarExclusao
         aberto={modal.tipo === 'excluir'}
@@ -143,27 +185,38 @@ export function RelatorioAtividadesTab({ prestacaoId, ajusteId }: { prestacaoId:
  */
 function ComparativoMeta({
   prevista,
+  qualificador,
   unidade,
   realizado,
 }: {
   prevista: number;
+  /**
+   * `MAIOR_QUE` muda a leitura do atingimento.
+   *
+   * "no mínimo 4 reuniões" com 5 realizadas é meta **cumprida**, não 125% de
+   * divergência a justificar. Ignorar o qualificador pediria justificativa de
+   * quem fez mais do que o pactuado.
+   */
+  qualificador: QualificadorMeta;
   unidade: string | null;
   realizado: string;
 }) {
   const num = Number(realizado.replace(',', '.'));
   const temRealizado = realizado.trim() !== '' && Number.isFinite(num);
   const pct = temRealizado && prevista > 0 ? (num / prevista) * 100 : null;
+  const atingiu = temRealizado && (qualificador === 'MAIOR_QUE' ? num > prevista : num >= prevista);
 
   const br = (v: number) => v.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
   const sufixo = unidade ? ` ${unidade}` : '';
+  const simbolo = QUALIFICADORES_META.find((q) => q.id === qualificador)?.simbolo ?? '=';
 
   return (
     <div className="rounded-xl border border-ink-200/70 bg-ink-50/50 px-3 py-2 text-sm dark:border-ink-800/70 dark:bg-ink-800/30">
       <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
         <span className="text-ink-500 dark:text-ink-400">
-          Meta estipulada:{' '}
+          Meta estipulada no período:{' '}
           <strong className="tabular-nums text-ink-800 dark:text-ink-100">
-            {br(prevista)}
+            {simbolo} {br(prevista)}
             {sufixo}
           </strong>
         </span>
@@ -178,13 +231,13 @@ function ComparativoMeta({
             </span>
             <span
               className={
-                pct != null && pct >= 100
+                atingiu
                   ? 'font-semibold text-emerald-600 dark:text-emerald-400'
                   : 'font-semibold text-amber-600 dark:text-amber-400'
               }
             >
               {pct != null ? `${br(pct)}% da meta` : ''}
-              {pct != null && pct < 100 && ` · faltam ${br(prevista - num)}${sufixo}`}
+              {!atingiu && pct != null && ` · faltam ${br(prevista - num)}${sufixo}`}
             </span>
           </>
         )}
@@ -196,7 +249,7 @@ function ComparativoMeta({
   );
 }
 
-function AfericaoForm({ prestacaoId, programas, item, onSuccess, onCancel }: { prestacaoId: string; programas: Programa[]; item: AfericaoMeta | null; onSuccess: () => void; onCancel: () => void }) {
+function AfericaoForm({ prestacaoId, programas, exercicio, item, onSuccess, onCancel }: { prestacaoId: string; programas: Programa[]; exercicio: number; item: AfericaoMeta | null; onSuccess: () => void; onCancel: () => void }) {
   const [nomePrograma, setNomePrograma] = useState(item?.nomePrograma ?? programas[0]?.nome ?? '');
   const [codigoMeta, setCodigoMeta] = useState(item?.codigoMeta ?? '');
   const [periodo, setPeriodo] = useState(item ? String(item.periodo) : '1');
@@ -214,6 +267,45 @@ function AfericaoForm({ prestacaoId, programas, item, onSuccess, onCancel }: { p
   // Se a meta não estiver mais no ajuste (editando registro antigo), infere pelo dado salvo.
   const quantificavel = meta ? meta.quantificavel : item ? item.quantidadeRealizada != null : true;
 
+  /*
+   * Os períodos que **esta meta** tem neste exercício.
+   *
+   * Era um campo livre "Período (1–15)", e o intervalo é o do JSON Schema, não
+   * o da meta: numa meta quadrimestral só existem 1, 2 e 3, e digitar 7 passava
+   * por aqui, passava pelo schema e era rejeitado pelo Tribunal — que confere a
+   * aferição contra o cadastro do Plano de Metas. Oferecer a lista é a mesma
+   * decisão das tabelas de domínio: o que não existe não se digita.
+   */
+  const periodosDaMeta = useMemo(
+    () =>
+      meta
+        ? gerarPeriodos(meta.periodicidade, meta.vigenciaInicio, meta.vigenciaFim).filter(
+            (p) => p.ano === exercicio,
+          )
+        : [],
+    [meta, exercicio],
+  );
+
+  /** A quantidade pactuada para o período escolhido — o "previsto" do comparativo. */
+  const previstoDoPeriodo = useMemo(
+    () =>
+      meta?.periodicidades.find((p) => p.ano === exercicio && p.periodo === Number(periodo)) ?? null,
+    [meta, exercicio, periodo],
+  );
+
+  /*
+   * Trocar de meta reposiciona o período no primeiro que ela tem.
+   *
+   * Sem isto, escolher uma meta mensal depois de uma quadrimestral deixaria o
+   * período em 7 — um valor que a meta nova não tem e que o campo, agora uma
+   * lista, mostraria em branco.
+   */
+  useEffect(() => {
+    if (!periodosDaMeta.length) return;
+    if (!periodosDaMeta.some((p) => p.periodo === Number(periodo)))
+      setPeriodo(String(periodosDaMeta[0].periodo));
+  }, [periodosDaMeta, periodo]);
+
   async function submeter(e: React.FormEvent) {
     e.preventDefault();
     setErro(null);
@@ -221,6 +313,15 @@ function AfericaoForm({ prestacaoId, programas, item, onSuccess, onCancel }: { p
     if (!codigoMeta) return setErro('Selecione a meta.');
     const per = Number(apenasDigitos(periodo));
     if (!per || per < 1 || per > 15) return setErro('Período inválido (1 a 15).');
+    /*
+     * 1–15 é o limite do JSON Schema; o limite que importa é o da meta.
+     *
+     * A lista já só oferece os períodos dela, mas a conferência fica: o estado
+     * pode ter sobrado de uma meta anterior, e aqui o erro é barato. No
+     * Tribunal, não — ele confronta a aferição com o Plano de Metas cadastrado.
+     */
+    if (periodosDaMeta.length && !periodosDaMeta.some((p) => p.periodo === per))
+      return setErro('Escolha um dos períodos da meta neste exercício.');
     if (quantificavel && quantidade.trim() === '') return setErro('Informe a quantidade realizada.');
     if (!metaAtendida && !justMeta.trim()) return setErro('Justifique quando a meta não for atendida.');
 
@@ -267,14 +368,36 @@ function AfericaoForm({ prestacaoId, programas, item, onSuccess, onCancel }: { p
           options={metas.map((m) => ({
             value: m.codigoMeta,
             label:
-              `${m.codigoMeta}${m.descricao ? ` — ${m.descricao}` : ''}` +
-              (m.quantidadePrevista != null
-                ? ` (${m.quantidadePrevista.toLocaleString('pt-BR')}${m.unidadeMedida ? ` ${m.unidadeMedida}` : ''})`
-                : ''),
+              `${m.codigoMeta} — ${m.nome || m.descricao || ''}`.trim() +
+              (m.quantificavel && m.unidadeMedida ? ` (${m.unidadeMedida})` : ''),
           }))}
           placeholder="Selecione a meta"
         />
-        <Input label="Período (1–15) *" name="periodo" value={apenasDigitos(periodo).slice(0, 2)} onChange={(e) => setPeriodo(e.target.value)} inputMode="numeric" hint="Conforme a periodicidade da meta." />
+        {/*
+          Período: lista, não digitação. Ver `periodosDaMeta`.
+
+          Enquanto não houver meta escolhida a lista é vazia — e um campo
+          desabilitado diz isso melhor que uma lista em branco que aceita foco.
+        */}
+        <div>
+          <Select
+            label="Período *"
+            name="periodo"
+            value={periodo}
+            disabled={!meta || periodosDaMeta.length === 0}
+            onChange={(e) => setPeriodo(e.target.value)}
+            options={periodosDaMeta.map((p) => ({
+              value: String(p.periodo),
+              label: `${rotuloPeriodo(meta!.periodicidade, p)} · ${intervaloPeriodo(p)}${p.parcial ? ' (parcial)' : ''}`,
+            }))}
+            placeholder={meta ? undefined : 'Selecione a meta primeiro'}
+          />
+          {meta && periodosDaMeta.length === 0 && (
+            <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+              A vigência desta meta não alcança {exercicio}. Confira o cadastro do Ajuste.
+            </p>
+          )}
+        </div>
         {quantificavel ? (
           <Input label="Quantidade Realizada *" name="quantidade" value={quantidade} onChange={(e) => setQuantidade(e.target.value.replace(/[^\d.,]/g, ''))} inputMode="decimal" />
         ) : (
@@ -289,11 +412,12 @@ function AfericaoForm({ prestacaoId, programas, item, onSuccess, onCancel }: { p
           cadastro do Ajuste, é só leitura, e não é transmitida: o schema oficial
           manda apenas o realizado.
         */}
-        {quantificavel && meta?.quantidadePrevista != null && (
+        {quantificavel && previstoDoPeriodo && (
           <div className="sm:col-span-2">
             <ComparativoMeta
-              prevista={meta.quantidadePrevista}
-              unidade={meta.unidadeMedida}
+              prevista={previstoDoPeriodo.quantidade}
+              qualificador={previstoDoPeriodo.qualificador}
+              unidade={meta?.unidadeMedida ?? null}
               realizado={quantidade}
             />
           </div>

@@ -41,6 +41,7 @@
     "financeiro:backfill": "tsx prisma/seeds/backfillFinanceiro.ts",
     "busca:backfill": "tsx prisma/seeds/backfillBusca.ts",
     "verificar:conferencia": "tsx scripts/verificarConferencia.ts",
+    "verificar:metas": "tsx scripts/verificarMetas.ts",
     "typecheck:scripts": "tsc -p tsconfig.scripts.json --noEmit"
   },
   "dependencies": {
