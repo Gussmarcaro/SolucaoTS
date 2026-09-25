@@ -29,18 +29,27 @@ export type TipoMeta =
   | 'QUALITATIVA_NAO_QUANTIFICAVEL';
 
 /**
- * O qualificador da quantidade prevista.
+ * O qualificador da quantidade prevista — os **sete** do cadastro do AUDESP.
  *
- * `IGUAL_A` é "realizar exatamente isto"; `MAIOR_QUE` é piso — "no mínimo
- * 4 reuniões". A diferença muda a leitura do atingimento: 5 de 4 é meta
- * cumprida no segundo caso e divergente no primeiro.
+ * Ele muda a leitura do atingimento, e é por isso que não é enfeite: `> 4
+ * reuniões` com 5 realizadas é meta **cumprida**; `= 4` com 5 é divergência a
+ * justificar. Ler os dois do mesmo jeito pediria justificativa de quem fez mais
+ * que o pactuado, ou daria por cumprida uma meta que não foi.
  *
- * A lista é curta porque o manual só exibe estes dois. Acrescentar um terceiro
- * (`MENOR_QUE`, para meta de redução — evasão, reinternação) custa uma entrada
- * aqui e um valor no enum: **este bloco não é transmitido**, então nenhum
- * schema do TCESP precisa aceitá-lo.
+ * **Os dois últimos são de outra natureza.** `REDUZIR_EM` e `AUMENTAR_EM` não
+ * comparam com um patamar: descrevem uma **variação** em relação a um ponto de
+ * partida — a taxa do exercício anterior, o índice de referência do programa.
+ * Esse ponto de partida não existe em lugar nenhum do nosso modelo, e por isso
+ * o sistema **não afirma** se foram atingidos (ver `avaliarMeta`).
  */
-export type QualificadorMeta = 'IGUAL_A' | 'MAIOR_QUE';
+export type QualificadorMeta =
+  | 'IGUAL_A'
+  | 'MAIOR_QUE'
+  | 'MAIOR_OU_IGUAL_A'
+  | 'MENOR_QUE'
+  | 'MENOR_OU_IGUAL_A'
+  | 'REDUZIR_EM'
+  | 'AUMENTAR_EM';
 
 export const TIPOS_META: { id: TipoMeta; rotulo: string; ajuda: string }[] = [
   {
@@ -70,10 +79,88 @@ export const PERIODICIDADES_META: { id: PeriodicidadeMeta; rotulo: string; perio
   { id: 'UNICA', rotulo: 'Única', periodos: 1 },
 ];
 
-export const QUALIFICADORES_META: { id: QualificadorMeta; rotulo: string; simbolo: string }[] = [
-  { id: 'IGUAL_A', rotulo: 'Igual a', simbolo: '=' },
-  { id: 'MAIOR_QUE', rotulo: 'Maior que', simbolo: '>' },
+/**
+ * `relativo` separa os dois grupos, e a distinção carrega peso: nos relativos a
+ * quantidade é um **delta**, não um alvo, e nenhuma comparação com o realizado
+ * responde se a meta foi cumprida.
+ */
+export const QUALIFICADORES_META: {
+  id: QualificadorMeta;
+  rotulo: string;
+  simbolo: string;
+  relativo: boolean;
+}[] = [
+  { id: 'IGUAL_A', rotulo: 'Igual a', simbolo: '=', relativo: false },
+  { id: 'MAIOR_QUE', rotulo: 'Maior que', simbolo: '>', relativo: false },
+  { id: 'MAIOR_OU_IGUAL_A', rotulo: 'Maior ou igual a', simbolo: '≥', relativo: false },
+  { id: 'MENOR_QUE', rotulo: 'Menor que', simbolo: '<', relativo: false },
+  { id: 'MENOR_OU_IGUAL_A', rotulo: 'Menor ou igual a', simbolo: '≤', relativo: false },
+  { id: 'REDUZIR_EM', rotulo: 'Reduzir em', simbolo: '↓', relativo: true },
+  { id: 'AUMENTAR_EM', rotulo: 'Aumentar em', simbolo: '↑', relativo: true },
 ];
+
+export const ehRelativo = (q: QualificadorMeta): boolean =>
+  QUALIFICADORES_META.find((x) => x.id === q)?.relativo ?? false;
+
+export const rotuloQualificador = (q: QualificadorMeta): string =>
+  QUALIFICADORES_META.find((x) => x.id === q)?.rotulo ?? q;
+
+export const simboloQualificador = (q: QualificadorMeta): string =>
+  QUALIFICADORES_META.find((x) => x.id === q)?.simbolo ?? '=';
+
+/** Tolerância de um centavo — a quantidade é `Decimal(15,2)`. */
+const EPS = 0.005;
+
+export interface AvaliacaoMeta {
+  /**
+   * `true` cumprida, `false` não cumprida, **`null` indeterminado**.
+   *
+   * O nulo não é ausência de resposta por preguiça: é a resposta certa para
+   * `REDUZIR_EM`/`AUMENTAR_EM`. Chutar um veredito ali pintaria de verde uma
+   * meta que ninguém conferiu — e um painel que afirma o que não sabe é pior
+   * que um que se cala.
+   */
+  atingiu: boolean | null;
+  /** Quanto falta (positivo) ou quanto excedeu (negativo). Zero nos relativos. */
+  diferenca: number;
+  /** `realizado ÷ previsto × 100`. Nulo quando não faz sentido. */
+  percentual: number | null;
+}
+
+/**
+ * Compara o realizado com o pactuado, **segundo o qualificador**.
+ *
+ * Erra em silêncio: um verde no lugar errado não quebra tela nenhuma, e a
+ * Comissão de Fiscalização assina confiando nele. Daí ser função pura, coberta
+ * por `verificar:metas` e espelhada no front.
+ */
+export function avaliarMeta(
+  qualificador: QualificadorMeta,
+  prevista: number,
+  realizado: number | null,
+): AvaliacaoMeta {
+  if (realizado === null || !Number.isFinite(realizado))
+    return { atingiu: null, diferenca: 0, percentual: null };
+
+  const percentual = prevista > 0 ? (realizado / prevista) * 100 : null;
+
+  if (ehRelativo(qualificador))
+    // Sem o ponto de partida, a conta não existe — nem o percentual, que
+    // compararia o realizado com um delta.
+    return { atingiu: null, diferenca: 0, percentual: null };
+
+  const atingiu = {
+    IGUAL_A: Math.abs(realizado - prevista) < EPS,
+    MAIOR_QUE: realizado > prevista + EPS,
+    MAIOR_OU_IGUAL_A: realizado >= prevista - EPS,
+    MENOR_QUE: realizado < prevista - EPS,
+    MENOR_OU_IGUAL_A: realizado <= prevista + EPS,
+    REDUZIR_EM: false,
+    AUMENTAR_EM: false,
+  }[qualificador];
+
+  return { atingiu, diferenca: prevista - realizado, percentual };
+}
 
 export const TIPOS_META_IDS = TIPOS_META.map((t) => t.id);
 export const PERIODICIDADES_META_IDS = PERIODICIDADES_META.map((p) => p.id);

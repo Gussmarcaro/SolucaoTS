@@ -22,7 +22,10 @@ import {
   PERIODICIDADES_META,
   QUALIFICADORES_META,
   TIPOS_META,
+  avaliarMeta,
   ehQuantificavel,
+  rotuloQualificador,
+  simboloQualificador,
   temDetalhePeriodico,
 } from '../src/core/meta/Meta';
 import { validarMeta } from '../src/application/programa/ProgramaUseCases';
@@ -194,8 +197,77 @@ console.log('\nPlano de Metas\n');
     'quem não tem número não tem quadro',
     TIPOS_META.every((t) => ehQuantificavel(t.id) === temDetalhePeriodico(t.id)),
   );
-  conferir('dois qualificadores, com símbolo', QUALIFICADORES_META.length === 2 &&
-    QUALIFICADORES_META.every((q) => q.simbolo.length === 1));
+  conferir(
+    'sete qualificadores, como o cadastro do AUDESP',
+    QUALIFICADORES_META.length === 7 && QUALIFICADORES_META.every((q) => q.simbolo.length === 1),
+    QUALIFICADORES_META.map((q) => q.rotulo).join(', '),
+  );
+  conferir(
+    'só "reduzir em" e "aumentar em" são relativos',
+    QUALIFICADORES_META.filter((q) => q.relativo).map((q) => q.id).join() ===
+      'REDUZIR_EM,AUMENTAR_EM',
+  );
+}
+
+// --- atingimento por qualificador -------------------------------------------
+console.log('\nLeitura do atingimento\n');
+{
+  const a = (q: Parameters<typeof avaliarMeta>[0], prev: number, real: number | null) =>
+    avaliarMeta(q, prev, real);
+
+  // O caso que motivou a distinção: 5 de "> 4" é cumprida; 5 de "= 4" não.
+  conferir('= 4 com 4 realizadas: cumprida', a('IGUAL_A', 4, 4).atingiu === true);
+  conferir(
+    '= 4 com 5 realizadas: NÃO cumprida',
+    a('IGUAL_A', 4, 5).atingiu === false,
+    'em meta exata, exceder também é divergência a justificar',
+  );
+  conferir('= 4 com 3 realizadas: não cumprida', a('IGUAL_A', 4, 3).atingiu === false);
+
+  conferir('> 4 com 5: cumprida', a('MAIOR_QUE', 4, 5).atingiu === true);
+  conferir(
+    '> 4 com 4: NÃO cumprida',
+    a('MAIOR_QUE', 4, 4).atingiu === false,
+    '"maior que" não inclui o próprio número — é o que o separa de "maior ou igual"',
+  );
+
+  conferir('>= 4 com 4: cumprida', a('MAIOR_OU_IGUAL_A', 4, 4).atingiu === true);
+  conferir('>= 4 com 3,99: não cumprida', a('MAIOR_OU_IGUAL_A', 4, 3.99).atingiu === false);
+
+  // Meta de redução — evasão, reinternação, tempo de espera.
+  conferir('< 50 com 45: cumprida', a('MENOR_QUE', 50, 45).atingiu === true);
+  conferir('< 50 com 50: não cumprida', a('MENOR_QUE', 50, 50).atingiu === false);
+  conferir('<= 50 com 50: cumprida', a('MENOR_OU_IGUAL_A', 50, 50).atingiu === true);
+  conferir('<= 50 com 51: não cumprida', a('MENOR_OU_IGUAL_A', 50, 51).atingiu === false);
+
+  conferir(
+    'na meta de teto, o desvio é excesso e não falta',
+    a('MENOR_OU_IGUAL_A', 50, 60).diferenca === -10,
+    'o sinal é o que impede a tela de escrever "faltam 10" quando sobraram 10',
+  );
+  conferir('na meta de piso, o desvio é falta', a('MAIOR_OU_IGUAL_A', 50, 40).diferenca === 10);
+
+  conferir(
+    'reduzir em: indeterminado, não verde',
+    a('REDUZIR_EM', 15, 20).atingiu === null && a('REDUZIR_EM', 15, 20).percentual === null,
+    'a variação é sobre um ponto de partida que o sistema não guarda',
+  );
+  conferir('aumentar em: indeterminado', a('AUMENTAR_EM', 15, 20).atingiu === null);
+  conferir(
+    'sem realizado, indeterminado em qualquer qualificador',
+    QUALIFICADORES_META.every((q) => a(q.id, 10, null).atingiu === null),
+  );
+  conferir(
+    'centavo de folga na comparação',
+    a('IGUAL_A', 10.5, 10.5).atingiu === true && a('MAIOR_OU_IGUAL_A', 10.5, 10.5).atingiu === true,
+    'ponto flutuante não pode reprovar uma meta que foi cumprida',
+  );
+  conferir(
+    'todo qualificador tem rótulo e símbolo',
+    QUALIFICADORES_META.every(
+      (q) => rotuloQualificador(q.id).length > 0 && simboloQualificador(q.id).length === 1,
+    ),
+  );
 }
 
 // --- distribuição proporcional (o botão "mesma quantidade em todos") --------
@@ -285,7 +357,7 @@ recusa('qualificador inexistente', () =>
     base({
       periodicidades: periodosDe('QUADRIMESTRAL', '2025-01-01', '2025-12-31').map((p) => ({
         ...p,
-        qualificador: 'MENOR_QUE' as never,
+        qualificador: 'PROXIMO_DE' as never,
       })),
     }),
   ));

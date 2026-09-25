@@ -28,7 +28,21 @@ export type PeriodicidadeMeta =
   | 'EXERCICIO'
   | 'UNICA';
 
-export type QualificadorMeta = 'IGUAL_A' | 'MAIOR_QUE';
+/**
+ * Os sete qualificadores do cadastro do AUDESP.
+ *
+ * Os cinco primeiros comparam com um patamar; `REDUZIR_EM` e `AUMENTAR_EM`
+ * descrevem uma **variação** sobre um ponto de partida que não existe no nosso
+ * modelo — por isso `avaliarMeta` devolve indeterminado neles.
+ */
+export type QualificadorMeta =
+  | 'IGUAL_A'
+  | 'MAIOR_QUE'
+  | 'MAIOR_OU_IGUAL_A'
+  | 'MENOR_QUE'
+  | 'MENOR_OU_IGUAL_A'
+  | 'REDUZIR_EM'
+  | 'AUMENTAR_EM';
 
 const MESES_POR_PERIODO: Record<PeriodicidadeMeta, number> = {
   MENSAL: 1,
@@ -70,10 +84,72 @@ export const PERIODICIDADES_META: { id: PeriodicidadeMeta; rotulo: string }[] = 
   { id: 'UNICA', rotulo: 'Única' },
 ];
 
-export const QUALIFICADORES_META: { id: QualificadorMeta; rotulo: string; simbolo: string }[] = [
-  { id: 'IGUAL_A', rotulo: 'Igual a', simbolo: '=' },
-  { id: 'MAIOR_QUE', rotulo: 'Maior que', simbolo: '>' },
+export const QUALIFICADORES_META: {
+  id: QualificadorMeta;
+  rotulo: string;
+  simbolo: string;
+  /** Nos relativos a quantidade é um **delta**, não um alvo. */
+  relativo: boolean;
+}[] = [
+  { id: 'IGUAL_A', rotulo: 'Igual a', simbolo: '=', relativo: false },
+  { id: 'MAIOR_QUE', rotulo: 'Maior que', simbolo: '>', relativo: false },
+  { id: 'MAIOR_OU_IGUAL_A', rotulo: 'Maior ou igual a', simbolo: '≥', relativo: false },
+  { id: 'MENOR_QUE', rotulo: 'Menor que', simbolo: '<', relativo: false },
+  { id: 'MENOR_OU_IGUAL_A', rotulo: 'Menor ou igual a', simbolo: '≤', relativo: false },
+  { id: 'REDUZIR_EM', rotulo: 'Reduzir em', simbolo: '↓', relativo: true },
+  { id: 'AUMENTAR_EM', rotulo: 'Aumentar em', simbolo: '↑', relativo: true },
 ];
+
+export const ehRelativo = (q: QualificadorMeta): boolean =>
+  QUALIFICADORES_META.find((x) => x.id === q)?.relativo ?? false;
+
+export const rotuloQualificador = (q: QualificadorMeta): string =>
+  QUALIFICADORES_META.find((x) => x.id === q)?.rotulo ?? q;
+
+export const simboloQualificador = (q: QualificadorMeta): string =>
+  QUALIFICADORES_META.find((x) => x.id === q)?.simbolo ?? '=';
+
+const EPS = 0.005;
+
+export interface AvaliacaoMeta {
+  /** `true` cumprida, `false` não cumprida, **`null` indeterminado**. */
+  atingiu: boolean | null;
+  /** Quanto falta (positivo) ou quanto excedeu (negativo). */
+  diferenca: number;
+  percentual: number | null;
+}
+
+/**
+ * Compara o realizado com o pactuado, **segundo o qualificador** — espelho de
+ * `core/meta/Meta.ts`.
+ *
+ * Erra em silêncio: um verde no lugar errado não quebra tela nenhuma, e é a
+ * Comissão de Fiscalização que assina confiando nele.
+ */
+export function avaliarMeta(
+  qualificador: QualificadorMeta,
+  prevista: number,
+  realizado: number | null,
+): AvaliacaoMeta {
+  if (realizado === null || !Number.isFinite(realizado))
+    return { atingiu: null, diferenca: 0, percentual: null };
+
+  const percentual = prevista > 0 ? (realizado / prevista) * 100 : null;
+
+  if (ehRelativo(qualificador)) return { atingiu: null, diferenca: 0, percentual: null };
+
+  const atingiu = {
+    IGUAL_A: Math.abs(realizado - prevista) < EPS,
+    MAIOR_QUE: realizado > prevista + EPS,
+    MAIOR_OU_IGUAL_A: realizado >= prevista - EPS,
+    MENOR_QUE: realizado < prevista - EPS,
+    MENOR_OU_IGUAL_A: realizado <= prevista + EPS,
+    REDUZIR_EM: false,
+    AUMENTAR_EM: false,
+  }[qualificador];
+
+  return { atingiu, diferenca: prevista - realizado, percentual };
+}
 
 /** Derivado do tipo, nunca gravado — ver a nota em `core/meta/Meta.ts`. */
 export const ehQuantificavel = (t: TipoMeta): boolean => t !== 'QUALITATIVA_NAO_QUANTIFICAVEL';

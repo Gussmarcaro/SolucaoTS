@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   PERIODICIDADES_META,
+  QUALIFICADORES_META,
+  avaliarMeta,
   TIPOS_META,
   distribuirProporcional,
   ehQuantificavel,
@@ -115,6 +117,64 @@ describe('tipos de meta', () => {
     expect(periodosNoAno('MENSAL')).toBe(12);
     expect(periodosNoAno('QUADRIMESTRAL')).toBe(3);
     expect(periodosNoAno('EXERCICIO')).toBe(1);
+  });
+});
+
+describe('qualificadores', () => {
+  it('são os sete do cadastro do AUDESP', () => {
+    expect(QUALIFICADORES_META.map((q) => q.rotulo)).toEqual([
+      'Igual a',
+      'Maior que',
+      'Maior ou igual a',
+      'Menor que',
+      'Menor ou igual a',
+      'Reduzir em',
+      'Aumentar em',
+    ]);
+  });
+
+  it('separa comparação de variação', () => {
+    expect(QUALIFICADORES_META.filter((q) => q.relativo).map((q) => q.id)).toEqual([
+      'REDUZIR_EM',
+      'AUMENTAR_EM',
+    ]);
+  });
+});
+
+describe('avaliarMeta', () => {
+  // Os mesmos números de `verificar:metas`. Divergindo, um dos dois fica vermelho.
+  it('distingue "igual a" de "maior que" — o caso que motiva o campo', () => {
+    expect(avaliarMeta('IGUAL_A', 4, 5).atingiu).toBe(false);
+    expect(avaliarMeta('MAIOR_QUE', 4, 5).atingiu).toBe(true);
+    expect(avaliarMeta('MAIOR_QUE', 4, 4).atingiu).toBe(false);
+    expect(avaliarMeta('MAIOR_OU_IGUAL_A', 4, 4).atingiu).toBe(true);
+  });
+
+  it('lê as metas de teto ao contrário das de piso', () => {
+    expect(avaliarMeta('MENOR_QUE', 50, 45).atingiu).toBe(true);
+    expect(avaliarMeta('MENOR_QUE', 50, 50).atingiu).toBe(false);
+    expect(avaliarMeta('MENOR_OU_IGUAL_A', 50, 50).atingiu).toBe(true);
+  });
+
+  it('dá sinal ao desvio, para a tela não escrever "faltam" sobre um excesso', () => {
+    expect(avaliarMeta('MENOR_OU_IGUAL_A', 50, 60).diferenca).toBe(-10);
+    expect(avaliarMeta('MAIOR_OU_IGUAL_A', 50, 40).diferenca).toBe(10);
+  });
+
+  it('não afirma nada sobre metas de variação', () => {
+    // Sem o ponto de partida, um verde ali seria conferência inventada.
+    expect(avaliarMeta('REDUZIR_EM', 15, 20).atingiu).toBeNull();
+    expect(avaliarMeta('REDUZIR_EM', 15, 20).percentual).toBeNull();
+    expect(avaliarMeta('AUMENTAR_EM', 15, 20).atingiu).toBeNull();
+  });
+
+  it('sem realizado é indeterminado em qualquer qualificador', () => {
+    for (const q of QUALIFICADORES_META) expect(avaliarMeta(q.id, 10, null).atingiu).toBeNull();
+  });
+
+  it('dá um centavo de folga ao ponto flutuante', () => {
+    expect(avaliarMeta('IGUAL_A', 10.5, 10.5).atingiu).toBe(true);
+    expect(avaliarMeta('IGUAL_A', 0.1 + 0.2, 0.3).atingiu).toBe(true);
   });
 });
 

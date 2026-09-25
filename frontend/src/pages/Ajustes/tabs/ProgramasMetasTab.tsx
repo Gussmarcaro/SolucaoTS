@@ -14,6 +14,7 @@ import {
   TIPOS_META,
   distribuirProporcional,
   ehQuantificavel,
+  ehRelativo,
   gerarPeriodos,
   intervaloPeriodo,
   rotuloPeriodicidadeMeta,
@@ -608,9 +609,18 @@ function MetaForm({
                   {periodos.length} período(s)
                   {temParcial && ' · o primeiro e/ou o último são parciais'}
                 </span>
-                <span className="font-semibold tabular-nums text-ink-800 dark:text-ink-100">
-                  Total: {total.toLocaleString('pt-BR')} {unidade}
-                </span>
+                {/* Somar "reduzir em 10" com "reduzir em 8" não dá 18 de coisa
+                    nenhuma: são variações sobre pontos de partida diferentes.
+                    Sem total é melhor que com um número sem significado. */}
+                {quadro.some((l) => ehRelativo(l.qualificador)) ? (
+                  <span className="text-xs text-ink-400">
+                    Metas de variação não somam num total.
+                  </span>
+                ) : (
+                  <span className="font-semibold tabular-nums text-ink-800 dark:text-ink-100">
+                    Total: {total.toLocaleString('pt-BR')} {unidade}
+                  </span>
+                )}
               </div>
             </>
           )}

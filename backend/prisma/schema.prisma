@@ -228,9 +228,19 @@ enum PeriodicidadeMeta {
 /// **Enum interno.** Este bloco não é transmitido — o TCESP recebe só o
 /// realizado, e o pactuado já está no portal dele. Por isso acrescentar um
 /// valor aqui é seguro: não há documento a rejeitar.
+/// Os sete qualificadores do Plano de Metas, conforme o cadastro do AUDESP.
+///
+/// Os cinco primeiros comparam o realizado com um **patamar**; os dois últimos
+/// descrevem uma **variação** em relação a um ponto de partida que não está em
+/// lugar nenhum do nosso modelo — ver `avaliarMeta`, no core.
 enum QualificadorMeta {
   IGUAL_A
   MAIOR_QUE
+  MAIOR_OU_IGUAL_A
+  MENOR_QUE
+  MENOR_OU_IGUAL_A
+  REDUZIR_EM
+  AUMENTAR_EM
 }
 
 // ============================================================================

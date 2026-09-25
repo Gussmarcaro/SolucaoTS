@@ -14,7 +14,10 @@ import { afericoesApi } from '@/services/prestacaoBlocos2.service';
 import { listarProgramas } from '@/services/programas.service';
 import type { Programa } from '@/types/programa';
 import {
-  QUALIFICADORES_META,
+  avaliarMeta,
+  ehRelativo,
+  rotuloQualificador,
+  simboloQualificador,
   gerarPeriodos,
   intervaloPeriodo,
   rotuloPeriodo,
@@ -203,21 +206,37 @@ function ComparativoMeta({
 }) {
   const num = Number(realizado.replace(',', '.'));
   const temRealizado = realizado.trim() !== '' && Number.isFinite(num);
-  const pct = temRealizado && prevista > 0 ? (num / prevista) * 100 : null;
-  const atingiu = temRealizado && (qualificador === 'MAIOR_QUE' ? num > prevista : num >= prevista);
+  const { atingiu, diferenca, percentual } = avaliarMeta(
+    qualificador,
+    prevista,
+    temRealizado ? num : null,
+  );
 
   const br = (v: number) => v.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
   const sufixo = unidade ? ` ${unidade}` : '';
-  const simbolo = QUALIFICADORES_META.find((q) => q.id === qualificador)?.simbolo ?? '=';
+  const relativo = ehRelativo(qualificador);
+
+  /*
+   * "Faltam" só serve às metas de piso. Numa meta `≤ 50`, o que sobra não é
+   * falta — é excesso, e o texto invertido faria o usuário ler ao contrário
+   * exatamente no caso em que o número já está errado.
+   */
+  const complemento =
+    atingiu !== false
+      ? ''
+      : diferenca > 0
+        ? ` · faltam ${br(diferenca)}${sufixo}`
+        : ` · excedeu em ${br(-diferenca)}${sufixo}`;
 
   return (
     <div className="rounded-xl border border-ink-200/70 bg-ink-50/50 px-3 py-2 text-sm dark:border-ink-800/70 dark:bg-ink-800/30">
       <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
         <span className="text-ink-500 dark:text-ink-400">
-          Meta estipulada no período:{' '}
+          {relativo ? 'Meta do período' : 'Meta estipulada no período'}:{' '}
           <strong className="tabular-nums text-ink-800 dark:text-ink-100">
-            {simbolo} {br(prevista)}
-            {sufixo}
+            {relativo
+              ? `${rotuloQualificador(qualificador).toLowerCase()} ${br(prevista)}${sufixo}`
+              : `${simboloQualificador(qualificador)} ${br(prevista)}${sufixo}`}
           </strong>
         </span>
         {temRealizado && (
@@ -231,19 +250,29 @@ function ComparativoMeta({
             </span>
             <span
               className={
-                atingiu
-                  ? 'font-semibold text-emerald-600 dark:text-emerald-400'
-                  : 'font-semibold text-amber-600 dark:text-amber-400'
+                atingiu === null
+                  ? 'font-medium text-ink-500 dark:text-ink-400'
+                  : atingiu
+                    ? 'font-semibold text-emerald-600 dark:text-emerald-400'
+                    : 'font-semibold text-amber-600 dark:text-amber-400'
               }
             >
-              {pct != null ? `${br(pct)}% da meta` : ''}
-              {!atingiu && pct != null && ` · faltam ${br(prevista - num)}${sufixo}`}
+              {/*
+                Indeterminado tem texto próprio, e não um verde otimista: o
+                sistema não conhece o ponto de partida da variação, então
+                afirmar "cumprida" seria inventar a conferência.
+              */}
+              {atingiu === null
+                ? 'conferência manual'
+                : `${percentual != null ? `${br(percentual)}% da meta` : ''}${complemento}`}
             </span>
           </>
         )}
       </div>
       <p className="mt-1 text-xs text-ink-400">
         Vem do cadastro do Ajuste (Programas e Metas). Só o realizado é transmitido ao TCESP.
+        {relativo &&
+          ' “Reduzir em” e “Aumentar em” medem variação sobre um valor de referência que o sistema não guarda — o atingimento é conferido por quem assina.'}
       </p>
     </div>
   );
