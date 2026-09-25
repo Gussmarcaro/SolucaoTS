@@ -10,6 +10,7 @@
  */
 import { conferirPrestacao } from '../src/application/montador/conferirPrestacao';
 import type { ContextoConferencia, DadosMontagem } from '../src/application/montador/tipos';
+import type { ApuracaoMetas } from '../src/core/meta/apuracao';
 
 const falhas: string[] = [];
 const conferir = (descricao: string, ok: boolean, detalhe = '') => {
@@ -118,6 +119,7 @@ const ctxPadrao: ContextoConferencia = {
   notasSemAnexo: 0,
   pagamentosSemComprovante: 0,
   orgaoEmpenha: true,
+  apuracaoMetas: null,
 };
 
 const tem = (ps: ReturnType<typeof conferirPrestacao>, bloco: string | null, trecho: string) =>
@@ -288,6 +290,88 @@ console.log('\nConferência da prestação\n');
   );
 }
 
+// --- atingimento de metas × bloco Desconto ----------------------------------
+//
+// O TCESP define o Desconto como "a dedução aplicada ao valor de repasse em
+// razão do descumprimento parcial ou integral de metas". É o único par de
+// blocos do painel que se olha em conjunto, e por isso o único lugar onde uma
+// regra errada faria o painel cobrar penalidade que não existe.
+console.log('\n--- metas não atingidas e o Desconto ---');
+{
+  const ap = (over: Partial<ApuracaoMetas> = {}): ApuracaoMetas => ({
+    aferidas: 10,
+    atingidas: 8,
+    naoAtingidas: 2,
+    indeterminadas: 0,
+    naoAtingidasSemJustificativa: 0,
+    divergentes: 0,
+    percentualNaoAtingido: 20,
+    linhas: [],
+    ...over,
+  });
+  const com = (a: ApuracaoMetas | null, mexer?: (d: DadosMontagem) => void) => {
+    const d = completa();
+    mexer?.(d);
+    return conferirPrestacao(d, { ...ctxPadrao, apuracaoMetas: a });
+  };
+
+  // A regra que protege o painel de virar ruído.
+  const semNaoAtingida = com(ap({ atingidas: 10, naoAtingidas: 0, percentualNaoAtingido: 0 }));
+  conferir(
+    'metas todas atingidas: desconto vazio NÃO é pendência',
+    !tem(semNaoAtingida, 'descontos', 'desconto'),
+    'desconto é zero na parceria que correu bem — apontá-lo sempre ensinaria a ignorar a tela',
+  );
+  conferir(
+    'ajuste sem metas: nada sobre desconto',
+    !tem(com(null), 'descontos', 'desconto'),
+  );
+
+  const semDesconto = com(ap(), (d) => {
+    d.descontos = [];
+  });
+  conferir(
+    'com meta não atingida e desconto vazio, aponta',
+    tem(semDesconto, 'descontos', '2 de 10 aferição(ões) não atingiram a meta'),
+  );
+  conferir('e mostra o percentual', tem(semDesconto, 'descontos', '20%'));
+  conferir(
+    'mas NÃO impede a transmissão',
+    !semDesconto.some((x) => x.severidade === 'IMPEDE' && x.bloco === 'descontos'),
+    'a régua do ajuste pode isentar a faixa inicial, e o sistema não guarda régua nenhuma',
+  );
+  conferir(
+    'o texto não afirma que há desconto devido',
+    !semDesconto.some((x) => /lance o desconto|deve ser descontado/i.test(x.titulo)),
+    'afirmar penalidade sem conhecer o termo seria inventar consequência',
+  );
+
+  const comDesconto = com(ap(), (d) => {
+    d.descontos = [{ data: '2026-03-01', descricao: 'Metas não atingidas', valor: 1000 }];
+  });
+  conferir(
+    'com desconto lançado, a pendência some',
+    !tem(comDesconto, 'descontos', 'não atingiram a meta'),
+  );
+
+  const semJust = com(ap({ naoAtingidasSemJustificativa: 2 }));
+  conferir(
+    'acusa meta não atingida sem justificativa',
+    tem(semJust, 'atividades', '2 meta(s) não atingida(s) sem justificativa'),
+  );
+  conferir(
+    'justificativa faltando também não impede',
+    !semJust.some((x) => x.severidade === 'IMPEDE' && x.bloco === 'atividades'),
+    'o §19 não exige justificativa — é controle do órgão, não requisito do Tribunal',
+  );
+
+  const divergente = com(ap({ divergentes: 1 }));
+  conferir(
+    'acusa "atendida" com quantidade fora do pactuado',
+    tem(divergente, 'atividades', 'marcada(s) como atendida(s)'),
+    'é exatamente o ponto que a fiscalização questiona, e ninguém o veria sem apontar',
+  );
+}
 
 console.log(falhas.length ? `\n${falhas.length} falha(s).\n` : '\nTudo ok.\n');
 process.exit(falhas.length ? 1 : 0);

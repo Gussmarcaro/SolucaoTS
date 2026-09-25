@@ -28,6 +28,8 @@ import {
   simboloQualificador,
   temDetalhePeriodico,
 } from '../src/core/meta/Meta';
+import { apurarMetas } from '../src/core/meta/apuracao';
+import type { QualificadorMeta } from '../src/core/meta/Meta';
 import { validarMeta } from '../src/application/programa/ProgramaUseCases';
 import type { MetaDTO } from '../src/application/programa/dtos';
 
@@ -445,6 +447,195 @@ aceita('quadro gerado da vigência parcial é aceito', () =>
     'o qualificador padrão é "igual a"',
     dados.periodicidades.every((p) => p.qualificador === 'IGUAL_A'),
   );
+}
+
+// --- apuração do atingimento ------------------------------------------------
+//
+// O percentual daqui é o que decide a consequência no termo do ajuste ("até
+// 10%, comunicação; de 10% a 20%, desconto de 10% da parcela"). Errá-lo é caro
+// nos dois sentidos: a menos, o órgão deixa de descontar; a mais, desconta de
+// quem cumpriu.
+console.log('\nApuração do atingimento\n');
+{
+  const prev = (meta: string, periodo: number, q: QualificadorMeta, qtd: number) => ({
+    nomePrograma: 'Saúde',
+    codigoMeta: meta,
+    ano: 2026,
+    periodo,
+    qualificador: q,
+    quantidade: qtd,
+  });
+  const afer = (meta: string, periodo: number, realizada: number | null, extra = {}) => ({
+    nomePrograma: 'Saúde',
+    codigoMeta: meta,
+    periodo,
+    quantidadeRealizada: realizada,
+    resultadoMeta: null,
+    metaAtendida: null,
+    justificativa: null,
+    ...extra,
+  });
+
+  // Os dois exemplos do próprio usuário.
+  {
+    const previstos = [
+      // "Consultas realizadas — 250 (maior ou igual)": no mínimo 250 no mês.
+      prev('01', 1, 'MAIOR_OU_IGUAL_A', 250),
+      prev('01', 2, 'MAIOR_OU_IGUAL_A', 250),
+      // "Entregar prestação de contas — dia 20 (menor ou igual)": até o dia 20.
+      prev('02', 1, 'MENOR_OU_IGUAL_A', 20),
+      prev('02', 2, 'MENOR_OU_IGUAL_A', 20),
+    ];
+    const r = apurarMetas(
+      [
+        afer('01', 1, 260), // atingida
+        afer('01', 2, 240), // não atingida
+        afer('02', 1, 18), // entregou dia 18 — atingida
+        afer('02', 2, 25), // entregou dia 25 — não atingida
+      ],
+      previstos,
+      2026,
+    );
+    conferir('4 aferições apuradas', r.aferidas === 4);
+    conferir('2 atingidas, 2 não atingidas', r.atingidas === 2 && r.naoAtingidas === 2);
+    conferir('percentual de 50%', r.percentualNaoAtingido === 50, String(r.percentualNaoAtingido));
+    conferir(
+      'a meta de prazo é lida ao contrário da meta de volume',
+      // Entregar no dia 18 é **cumprir** um "até o dia 20"; 260 consultas é
+      // cumprir um "no mínimo 250". Ler as duas do mesmo jeito reprovaria uma
+      // das duas, e a entidade seria descontada por ter entregado adiantado.
+      r.linhas.find((l) => l.codigoMeta === '02' && l.periodo === 1)?.situacao === 'ATINGIDA',
+    );
+  }
+
+  // A apuração é por período: uma meta mensal pesa doze.
+  {
+    const previstos = Array.from({ length: 12 }, (_, i) =>
+      prev('01', i + 1, 'MAIOR_OU_IGUAL_A', 250),
+    );
+    const afericoes = Array.from({ length: 12 }, (_, i) => afer('01', i + 1, i === 2 ? 100 : 300));
+    const r = apurarMetas(afericoes, previstos, 2026);
+    conferir(
+      'um mês ruim em doze dá 8,33%, não 100%',
+      r.percentualNaoAtingido === 8.33,
+      `${r.percentualNaoAtingido}% — a meta é pactuada por período, e março não apaga abril`,
+    );
+  }
+
+  // O denominador.
+  {
+    const r = apurarMetas(
+      [afer('01', 1, 300), afer('01', 2, 100), afer('99', 1, 50)],
+      [prev('01', 1, 'MAIOR_OU_IGUAL_A', 250), prev('01', 2, 'MAIOR_OU_IGUAL_A', 250)],
+      2026,
+    );
+    conferir('meta sem previsto cadastrado fica indeterminada', r.indeterminadas === 1);
+    conferir(
+      'e fora do percentual',
+      r.percentualNaoAtingido === 50,
+      'jogá-la para um dos lados mexeria no número que decide o desconto',
+    );
+  }
+
+  // O exercício recorta.
+  {
+    const r = apurarMetas(
+      [afer('01', 1, 100)],
+      [prev('01', 1, 'MAIOR_OU_IGUAL_A', 250)], // ano 2026
+      2025,
+    );
+    conferir(
+      'previsto de outro exercício não serve',
+      r.indeterminadas === 1 && r.naoAtingidas === 0,
+      'a aferição guarda o período sem o ano; o ano é o da prestação',
+    );
+  }
+
+  // Qualitativas.
+  {
+    const q = (meta: string, resultado: string) =>
+      afer(meta, 1, null, { resultadoMeta: resultado });
+    const r = apurarMetas([q('01', 'CUMPRIDA'), q('02', 'NAO_CUMPRIDA'), q('03', 'CUMPRIDA_PARCIALMENTE')], [], 2026);
+    conferir('qualitativa cumprida conta como atingida', r.atingidas === 1);
+    conferir(
+      'cumprida PARCIALMENTE conta como não atingida',
+      r.naoAtingidas === 2,
+      'o TCESP fala em "descumprimento parcial ou integral" — o parcial é um dos casos que geram desconto',
+    );
+  }
+
+  // O julgamento humano vence a aritmética.
+  {
+    const r = apurarMetas(
+      [afer('01', 1, 300, { metaAtendida: false })],
+      [prev('01', 1, 'MAIOR_OU_IGUAL_A', 250)],
+      2026,
+    );
+    conferir(
+      '"não atendida" marcada à mão vence a conta',
+      r.naoAtingidas === 1,
+      'quem preencheu sabe de coisa que o número não mostra',
+    );
+  }
+
+  // A divergência ao contrário — e a justificativa.
+  {
+    const r = apurarMetas(
+      [
+        afer('01', 1, 100, { metaAtendida: true }),
+        afer('01', 2, 100, { justificativa: 'greve dos servidores' }),
+        afer('01', 3, 100),
+      ],
+      [1, 2, 3].map((p) => prev('01', p, 'MAIOR_OU_IGUAL_A', 250)),
+      2026,
+    );
+    conferir('as três não foram atingidas', r.naoAtingidas === 3);
+    conferir(
+      'a marcada como atendida vira divergência',
+      r.divergentes === 1,
+      'não é erro — mas é o que a fiscalização questiona',
+    );
+    conferir(
+      'duas sem justificativa',
+      r.naoAtingidasSemJustificativa === 2,
+      'a que tem explicação escrita não é cobrada de novo',
+    );
+  }
+
+  // Meta atingida não precisa de justificativa, e "reduzir em" não condena.
+  {
+    const r = apurarMetas(
+      [afer('01', 1, 300), afer('02', 1, 5)],
+      [prev('01', 1, 'MAIOR_OU_IGUAL_A', 250), prev('02', 1, 'REDUZIR_EM', 10)],
+      2026,
+    );
+    conferir('meta atingida nunca é cobrada por justificativa', r.naoAtingidasSemJustificativa === 0);
+    conferir(
+      '"reduzir em" fica indeterminada, não não-atingida',
+      r.indeterminadas === 1 && r.naoAtingidas === 0,
+      'um chute aqui viraria desconto indevido',
+    );
+  }
+
+  // Sem aferição nenhuma, percentual zero — e não divisão por zero.
+  {
+    const r = apurarMetas([], [prev('01', 1, 'IGUAL_A', 10)], 2026);
+    conferir('relatório vazio não quebra a conta', r.percentualNaoAtingido === 0 && r.aferidas === 0);
+  }
+
+  // O vínculo é por texto, e é onde o TCESP acumula milhares de erros.
+  {
+    const r = apurarMetas(
+      [{ ...afer('01', 1, 300), nomePrograma: '  saúde  ', codigoMeta: ' 01 ' }],
+      [prev('01', 1, 'MAIOR_OU_IGUAL_A', 250)],
+      2026,
+    );
+    conferir(
+      'espaço e caixa não desligam a aferição do previsto',
+      r.atingidas === 1,
+      'o vínculo é por texto — acento e espaço sobrando são a maior fonte de rejeição da Fase V',
+    );
+  }
 }
 
 console.log(

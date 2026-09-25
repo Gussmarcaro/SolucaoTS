@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   PERIODICIDADES_META,
   QUALIFICADORES_META,
+  apurarMetas,
   avaliarMeta,
   TIPOS_META,
   distribuirProporcional,
@@ -12,6 +13,7 @@ import {
   rotuloPeriodo,
   temDetalhePeriodico,
   type PeriodicidadeMeta,
+  type QualificadorMeta,
 } from './meta';
 
 /**
@@ -175,6 +177,135 @@ describe('avaliarMeta', () => {
   it('dá um centavo de folga ao ponto flutuante', () => {
     expect(avaliarMeta('IGUAL_A', 10.5, 10.5).atingiu).toBe(true);
     expect(avaliarMeta('IGUAL_A', 0.1 + 0.2, 0.3).atingiu).toBe(true);
+  });
+});
+
+describe('apurarMetas', () => {
+  /**
+   * Os mesmos números de `verificar:metas`, e com um motivo mais forte que o
+   * de costume: este percentual pode virar **desconto no repasse**. Se os dois
+   * lados divergirem, a aba mostra um número e o painel de pendências outro.
+   */
+  const prev = (meta: string, periodo: number, q: QualificadorMeta, qtd: number) => ({
+    nomePrograma: 'Saúde',
+    codigoMeta: meta,
+    ano: 2026,
+    periodo,
+    qualificador: q,
+    quantidade: qtd,
+  });
+  const afer = (meta: string, periodo: number, realizada: number | null, extra = {}) => ({
+    nomePrograma: 'Saúde',
+    codigoMeta: meta,
+    periodo,
+    quantidadeRealizada: realizada,
+    resultadoMeta: null,
+    metaAtendida: null,
+    justificativa: null,
+    ...extra,
+  });
+
+  it('lê a meta de prazo ao contrário da meta de volume', () => {
+    // "250 consultas (maior ou igual)" e "entregar até o dia 20 (menor ou
+    // igual)" — ler as duas do mesmo jeito descontaria de quem entregou antes.
+    const r = apurarMetas(
+      [afer('01', 1, 260), afer('01', 2, 240), afer('02', 1, 18), afer('02', 2, 25)],
+      [
+        prev('01', 1, 'MAIOR_OU_IGUAL_A', 250),
+        prev('01', 2, 'MAIOR_OU_IGUAL_A', 250),
+        prev('02', 1, 'MENOR_OU_IGUAL_A', 20),
+        prev('02', 2, 'MENOR_OU_IGUAL_A', 20),
+      ],
+      2026,
+    );
+    expect([r.atingidas, r.naoAtingidas, r.percentualNaoAtingido]).toEqual([2, 2, 50]);
+  });
+
+  it('apura por período: um mês ruim em doze dá 8,33%', () => {
+    const previstos = Array.from({ length: 12 }, (_, i) =>
+      prev('01', i + 1, 'MAIOR_OU_IGUAL_A', 250),
+    );
+    const afericoes = Array.from({ length: 12 }, (_, i) => afer('01', i + 1, i === 2 ? 100 : 300));
+    expect(apurarMetas(afericoes, previstos, 2026).percentualNaoAtingido).toBe(8.33);
+  });
+
+  it('deixa fora do percentual o que não sabe apurar', () => {
+    const r = apurarMetas(
+      [afer('01', 1, 300), afer('01', 2, 100), afer('99', 1, 50), afer('02', 1, 5)],
+      [
+        prev('01', 1, 'MAIOR_OU_IGUAL_A', 250),
+        prev('01', 2, 'MAIOR_OU_IGUAL_A', 250),
+        prev('02', 1, 'REDUZIR_EM', 10),
+      ],
+      2026,
+    );
+    // Meta sem previsto e meta de variação: nenhuma das duas vira desconto.
+    expect(r.indeterminadas).toBe(2);
+    expect(r.percentualNaoAtingido).toBe(50);
+  });
+
+  it('trata "cumprida parcialmente" como descumprimento', () => {
+    const q = (meta: string, resultadoMeta: string) => afer(meta, 1, null, { resultadoMeta });
+    const r = apurarMetas(
+      [q('01', 'CUMPRIDA'), q('02', 'NAO_CUMPRIDA'), q('03', 'CUMPRIDA_PARCIALMENTE')],
+      [],
+      2026,
+    );
+    // A definição do TCESP fala em "descumprimento parcial ou integral".
+    expect([r.atingidas, r.naoAtingidas]).toEqual([1, 2]);
+  });
+
+  it('deixa o julgamento humano vencer a aritmética', () => {
+    const r = apurarMetas(
+      [afer('01', 1, 300, { metaAtendida: false })],
+      [prev('01', 1, 'MAIOR_OU_IGUAL_A', 250)],
+      2026,
+    );
+    expect(r.naoAtingidas).toBe(1);
+  });
+
+  it('separa divergência de falta de justificativa', () => {
+    const r = apurarMetas(
+      [
+        afer('01', 1, 100, { metaAtendida: true }),
+        afer('01', 2, 100, { justificativa: 'greve dos servidores' }),
+        afer('01', 3, 100),
+      ],
+      [1, 2, 3].map((p) => prev('01', p, 'MAIOR_OU_IGUAL_A', 250)),
+      2026,
+    );
+    expect(r.naoAtingidas).toBe(3);
+    expect(r.divergentes).toBe(1);
+    expect(r.naoAtingidasSemJustificativa).toBe(2);
+  });
+
+  it('não cobra justificativa de meta atingida', () => {
+    const r = apurarMetas(
+      [afer('01', 1, 300)],
+      [prev('01', 1, 'MAIOR_OU_IGUAL_A', 250)],
+      2026,
+    );
+    expect(r.naoAtingidasSemJustificativa).toBe(0);
+  });
+
+  it('não liga aferição a previsto de outro exercício', () => {
+    const r = apurarMetas([afer('01', 1, 100)], [prev('01', 1, 'MAIOR_OU_IGUAL_A', 250)], 2025);
+    expect([r.indeterminadas, r.naoAtingidas]).toEqual([1, 0]);
+  });
+
+  it('não se perde por espaço ou caixa no nome', () => {
+    // O vínculo com o plano é por texto, e é a maior fonte de rejeição da Fase V.
+    const r = apurarMetas(
+      [{ ...afer('01', 1, 300), nomePrograma: '  saúde  ', codigoMeta: ' 01 ' }],
+      [prev('01', 1, 'MAIOR_OU_IGUAL_A', 250)],
+      2026,
+    );
+    expect(r.atingidas).toBe(1);
+  });
+
+  it('não divide por zero com o relatório vazio', () => {
+    const r = apurarMetas([], [prev('01', 1, 'IGUAL_A', 10)], 2026);
+    expect([r.aferidas, r.percentualNaoAtingido]).toEqual([0, 0]);
   });
 });
 

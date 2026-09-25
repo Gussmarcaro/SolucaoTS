@@ -276,3 +276,120 @@ export function distribuirProporcional(total: number, periodos: PeriodoMeta[]): 
   }
   return out.map((c) => c / 100);
 }
+
+// ---------------------------------------------------------------------------
+// Apuração do atingimento — espelho de `core/meta/apuracao.ts`.
+//
+// Está aqui, e não só no servidor, porque a aba do Relatório de Atividades
+// mostra o percentual enquanto se preenche. E o percentual **pode virar
+// desconto no repasse**: o TCESP define o bloco Desconto como "a dedução
+// aplicada ao valor de repasse em razão do descumprimento parcial ou integral
+// de metas". A tela mostrar um número e o painel de pendências outro seria o
+// pior dos mundos — daí `meta.test.ts` travar os mesmos casos de
+// `verificar:metas`.
+// ---------------------------------------------------------------------------
+
+export interface PrevistoDoPeriodo {
+  nomePrograma: string;
+  codigoMeta: string;
+  ano: number;
+  periodo: number;
+  qualificador: QualificadorMeta;
+  quantidade: number;
+}
+
+export interface AfericaoParaApurar {
+  nomePrograma: string;
+  codigoMeta: string;
+  periodo: number;
+  quantidadeRealizada: number | null;
+  resultadoMeta: 'CUMPRIDA' | 'NAO_CUMPRIDA' | 'CUMPRIDA_PARCIALMENTE' | null;
+  metaAtendida: boolean | null;
+  justificativa: string | null;
+}
+
+export type SituacaoAfericao = 'ATINGIDA' | 'NAO_ATINGIDA' | 'INDETERMINADA';
+
+export interface LinhaApuracao {
+  nomePrograma: string;
+  codigoMeta: string;
+  periodo: number;
+  situacao: SituacaoAfericao;
+  semJustificativa: boolean;
+  /** Marcada como atendida, com quantidade fora do pactuado. */
+  divergente: boolean;
+}
+
+export interface ApuracaoMetas {
+  aferidas: number;
+  atingidas: number;
+  naoAtingidas: number;
+  /** Sem previsto cadastrado, ou meta de variação — fora do percentual. */
+  indeterminadas: number;
+  naoAtingidasSemJustificativa: number;
+  divergentes: number;
+  percentualNaoAtingido: number;
+  linhas: LinhaApuracao[];
+}
+
+const chaveApuracao = (programa: string, meta: string, periodo: number) =>
+  `${programa.trim().toLowerCase()}\u0000${meta.trim().toLowerCase()}\u0000${periodo}`;
+
+/**
+ * A situação de uma aferição, em ordem de precedência: o julgamento humano
+ * vence a aritmética; a qualitativa responde por si (e "cumprida parcialmente"
+ * é descumprimento, como diz a definição do TCESP); a quantificável compara
+ * com o previsto daquele período, pelo qualificador.
+ */
+function situacaoDaAfericao(
+  a: AfericaoParaApurar,
+  previsto: PrevistoDoPeriodo | undefined,
+): SituacaoAfericao {
+  if (a.metaAtendida === false) return 'NAO_ATINGIDA';
+  if (a.resultadoMeta) return a.resultadoMeta === 'CUMPRIDA' ? 'ATINGIDA' : 'NAO_ATINGIDA';
+  if (a.quantidadeRealizada === null || !previsto) return 'INDETERMINADA';
+  const { atingiu } = avaliarMeta(previsto.qualificador, previsto.quantidade, a.quantidadeRealizada);
+  return atingiu === null ? 'INDETERMINADA' : atingiu ? 'ATINGIDA' : 'NAO_ATINGIDA';
+}
+
+export function apurarMetas(
+  afericoes: AfericaoParaApurar[],
+  previstos: PrevistoDoPeriodo[],
+  exercicio: number,
+): ApuracaoMetas {
+  const previsto = new Map<string, PrevistoDoPeriodo>();
+  for (const p of previstos)
+    if (p.ano === exercicio)
+      previsto.set(chaveApuracao(p.nomePrograma, p.codigoMeta, p.periodo), p);
+
+  const linhas: LinhaApuracao[] = afericoes.map((a) => {
+    const situacao = situacaoDaAfericao(
+      a,
+      previsto.get(chaveApuracao(a.nomePrograma, a.codigoMeta, a.periodo)),
+    );
+    return {
+      nomePrograma: a.nomePrograma,
+      codigoMeta: a.codigoMeta,
+      periodo: a.periodo,
+      situacao,
+      semJustificativa: situacao === 'NAO_ATINGIDA' && !a.justificativa?.trim(),
+      divergente: situacao === 'NAO_ATINGIDA' && a.metaAtendida === true,
+    };
+  });
+
+  const atingidas = linhas.filter((l) => l.situacao === 'ATINGIDA').length;
+  const naoAtingidas = linhas.filter((l) => l.situacao === 'NAO_ATINGIDA').length;
+  const comVeredito = atingidas + naoAtingidas;
+
+  return {
+    aferidas: linhas.length,
+    atingidas,
+    naoAtingidas,
+    indeterminadas: linhas.filter((l) => l.situacao === 'INDETERMINADA').length,
+    naoAtingidasSemJustificativa: linhas.filter((l) => l.semJustificativa).length,
+    divergentes: linhas.filter((l) => l.divergente).length,
+    percentualNaoAtingido:
+      comVeredito === 0 ? 0 : Math.round((naoAtingidas / comVeredito) * 10000) / 100,
+    linhas,
+  };
+}

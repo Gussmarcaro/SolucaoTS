@@ -379,7 +379,20 @@ Aba **Programas e Metas** no dossiê do Ajuste. O cadastro do plano é feito na 
   - **Os cinco primeiros comparam com um patamar; os dois últimos descrevem uma variação**, e a diferença não é de rótulo. Em `REDUZIR_EM`/`AUMENTAR_EM` a quantidade é um **delta** sobre um ponto de partida (a taxa do exercício anterior, o índice de referência) que **não existe no nosso modelo**. Por isso `avaliarMeta` devolve `atingiu: null` neles e a tela escreve "conferência manual": um painel que afirma o que não sabe é pior que um que se cala, e quem assina é a Comissão de Fiscalização.
   - **O desvio tem sinal**, e é o que impede a tela de escrever "faltam 10" quando na verdade sobraram 10 — inversão que apareceria justamente na meta de teto, onde o número já está errado.
   - **Este bloco não é transmitido**, então qualificador novo custa uma entrada no catálogo e um valor no enum; nenhum schema do TCESP precisa aceitá-lo.
-- **`npm run verificar:metas`** (85 checagens, sem banco) cobre a geração dos períodos, a validação e a leitura do atingimento. O espelho do front é travado por `src/types/meta.test.ts` — inclusive `avaliarMeta`, que existe dos dois lados.
+- **`npm run verificar:metas`** (103 checagens, sem banco) cobre a geração dos períodos, a validação, a leitura do atingimento e a apuração. O espelho do front é travado por `src/types/meta.test.ts` — inclusive `avaliarMeta` e `apurarMetas`, que existem dos dois lados.
+
+### Atingimento de metas → bloco Desconto
+
+O que liga uma coisa à outra é a definição do próprio TCESP: o **Desconto** é *"a dedução aplicada ao valor de repasse em razão do descumprimento parcial ou integral de metas estabelecidas no plano de trabalho"*. Meta não atingida, portanto, **não é só fato da execução** — é a origem de um bloco que nós transmitimos, e os termos costumam fixar faixas sobre o percentual ("até 10%, comunicação sem penalidade; de 10% a 20%, desconto de 10% da parcela").
+
+- **A apuração é por período, não por meta** (`core/meta/apuracao.ts`). É assim que a meta é pactuada: "250 consultas por mês" são doze julgamentos independentes, e quem falhou em março não deixou de cumprir abril. Uma meta mensal pesa doze na conta; uma quadrimestral, três. Apurar por meta transformaria um mês ruim em 100% de descumprimento.
+- **O qualificador é o que torna isso possível.** "250 consultas (≥)" e "entregar a prestação até o dia 20 (≤)" são metas de sentidos opostos; lê-las do mesmo jeito descontaria de quem entregou adiantado.
+- **Ordem de precedência na situação:** o `metaAtendida` marcado como **não** vence a aritmética (quem preencheu sabe de coisa que o número não mostra); depois a qualitativa responde por si — e **`CUMPRIDA_PARCIALMENTE` conta como não atingida**, porque a definição do Tribunal fala em descumprimento "parcial ou integral"; por fim a quantificável compara com o previsto do período.
+- **Indeterminado fica fora do percentual**, e o denominador é `atingidas + naoAtingidas`. Meta sem previsto cadastrado, e meta de variação (`REDUZIR_EM`/`AUMENTAR_EM`), não foram cumpridas nem descumpridas — jogá-las para qualquer um dos lados mexeria no número que decide o desconto.
+- **Nenhuma pendência daqui impede a transmissão**, e é decisão: o documento com meta não atingida é verdadeiro, o §19 não exige justificativa, e **a régua está no termo do ajuste, que o sistema não guarda**. O painel diz que há consequência a conferir; não afirma que há desconto devido — dizer "lance o desconto" seria inventar penalidade.
+- **Desconto vazio só vira pendência quando há meta não atingida.** É a condição que salva a regra do pior pecado do painel: desconto é zero na parceria que correu bem, e apontá-lo sempre ensinaria a ignorar a tela. É a única pendência que olha para **dois** blocos ao mesmo tempo.
+- **A tela distingue "não atingida" de "sem justificativa" de "divergente"** — esta última é a aferição marcada como atendida com quantidade fora do pactuado. Não é erro (pode haver explicação), mas é o ponto que a fiscalização levanta, e ninguém o veria sem apontar.
+- A justificativa passa a ser **exigida pela tela** quando a meta não foi atingida, e cobrada pelo painel de qualquer forma — exigi-la no servidor impediria salvar em duas etapas.
 
 ## Cadastro do Rateio
 
@@ -520,7 +533,7 @@ O Espelho já mostrava erros e avisos — mas só para quem o abre, e **quem abr
 - **Monta o documento e o descarta.** Mesmo custo da prévia do JSON, e é o preço de a conferência enxergar exatamente o que seria transmitido, em vez de uma segunda opinião que pode divergir. Por isso **carrega sob demanda**, no botão — não ao abrir o dossiê.
 - **Cada pendência leva à aba onde se resolve.** Painel que aponta problema sem dizer onde arrumá-lo devolve ao usuário a busca que ele veio evitar. Pendência do ajuste (não da prestação) não vira botão: não há aba para onde levar.
 - `pronta` exige as duas coisas — nenhum erro **e** nenhuma pendência `IMPEDE`. Atenção e aviso não travam: são para ler.
-- **`npm run verificar:conferencia`** (31 checagens, sem banco) cobre o critério, não a aritmética. Errar aqui é silencioso nos dois sentidos: uma pendência a mais e o painel vira ruído; uma a menos e ele afirma que está tudo certo numa prestação oca.
+- **`npm run verificar:conferencia`** (46 checagens, sem banco) cobre o critério, não a aritmética. Errar aqui é silencioso nos dois sentidos: uma pendência a mais e o painel vira ruído; uma a menos e ele afirma que está tudo certo numa prestação oca.
 
 ## Relatórios
 

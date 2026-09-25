@@ -106,6 +106,55 @@ export function conferirPrestacao(d: DadosMontagem, ctx: ContextoConferencia): P
   }
 
   /*
+   * 3b. As metas não atingidas foram tratadas?
+   *
+   * **Nenhuma destas impede a transmissão, e é decisão, não cautela.** Meta não
+   * atingida é fato da execução: o documento com ela é verdadeiro e o §19 não
+   * exige justificativa nenhuma. O que estas pendências dizem é que há
+   * *consequência* pendente de conferência — e quem decide qual é o termo do
+   * ajuste, que o sistema não conhece.
+   *
+   * O elo com o dinheiro é a definição do próprio TCESP: o bloco *Desconto* é
+   * "a dedução aplicada ao valor de repasse em razão do descumprimento parcial
+   * ou integral de metas estabelecidas no plano de trabalho". Daí a terceira
+   * regra abaixo ser a única do painel que olha para **dois** blocos ao mesmo
+   * tempo.
+   */
+  const ap = ctx.apuracaoMetas;
+  if (ap && ap.naoAtingidas > 0) {
+    if (ap.naoAtingidasSemJustificativa)
+      atencao(
+        'atividades',
+        `${ap.naoAtingidasSemJustificativa} meta(s) não atingida(s) sem justificativa.`,
+      );
+
+    if (ap.divergentes)
+      atencao(
+        'atividades',
+        `${ap.divergentes} meta(s) marcada(s) como atendida(s) com quantidade fora do pactuado.`,
+      );
+
+    /*
+     * Desconto vazio só vira pendência **quando há meta não atingida** — e é
+     * essa condição que salva a regra do maior pecado deste painel. Desconto é
+     * zero na parceria que correu bem, e apontá-lo sempre ensinaria a ignorar
+     * a tela. Aqui o contexto confirma que deveria haver algo a decidir.
+     *
+     * O texto não afirma que **há** desconto devido: a régua costuma isentar
+     * uma faixa inicial ("até 10%, comunicação sem penalidade"), e o sistema
+     * não guarda a régua de nenhum ajuste. Dizer "lance o desconto" seria
+     * inventar uma penalidade.
+     */
+    if (!d.descontos.length)
+      atencao(
+        'descontos',
+        `${ap.naoAtingidas} de ${ap.atingidas + ap.naoAtingidas} aferição(ões) não atingiram a meta ` +
+          `(${ap.percentualNaoAtingido.toLocaleString('pt-BR')}%) e nenhum desconto foi lançado — ` +
+          `confira a regra de desconto do termo.`,
+      );
+  }
+
+  /*
    * 4. Os documentos estão lá?
    *
    * O anexo **não vai no envio** — o TCESP recebe os dados, não os PDFs —, e

@@ -1,6 +1,7 @@
 import { prisma } from './prisma';
 import type { IMontadorRepository } from '@/application/montador/IMontadorRepository';
 import type { CodigosInexistentes, ContextoConferencia, DadosMontagem } from '@/application/montador/tipos';
+import { apurarMetas, type ApuracaoMetas } from '@/core/meta/apuracao';
 import { paraDataISO } from '@/shared/datas';
 
 const dISO = (d: Date | null) => (d ? paraDataISO(d) : null);
@@ -403,7 +404,11 @@ export class PrismaMontadorRepository implements IMontadorRepository {
       // `empenhaRepasse` é marca do **órgão**, não da prestação: é o concessor
       // que empenha (ou não) o repasse. O default ligado é deliberado — ver
       // `blocosAplicaveis`: esconder a aba faz o documento sair sem empenho.
-      select: { ajusteId: true, ajuste: { select: { cliente: { select: { empenhaRepasse: true } } } } },
+      select: {
+        ajusteId: true,
+        ano: true,
+        ajuste: { select: { cliente: { select: { empenhaRepasse: true } } } },
+      },
     });
     if (!prestacao) return null;
 
@@ -440,7 +445,77 @@ export class PrismaMontadorRepository implements IMontadorRepository {
       notasSemAnexo,
       pagamentosSemComprovante,
       orgaoEmpenha: prestacao.ajuste?.cliente?.empenhaRepasse ?? true,
+      apuracaoMetas: await this.apurarMetas(prestacaoId, prestacao.ajusteId, prestacao.ano),
     };
+  }
+
+  /**
+   * Cruza as aferições da prestação com o previsto do Plano de Metas.
+   *
+   * A consulta vive aqui, e a regra em `core/meta/apuracao.ts`: é o previsto
+   * que o repositório tem e a conferência não — `DadosMontagem` é o que vira
+   * documento, e o pactuado não é transmitido.
+   */
+  private async apurarMetas(
+    prestacaoId: string,
+    ajusteId: string,
+    exercicio: number,
+  ): Promise<ApuracaoMetas | null> {
+    const [afericoes, metas] = await Promise.all([
+      prisma.relatorioAtividadeMeta.findMany({
+        where: { prestacaoId },
+        select: {
+          nomePrograma: true,
+          codigoMeta: true,
+          periodo: true,
+          quantidadeRealizada: true,
+          resultadoMeta: true,
+          metaAtendida: true,
+          justificativaPeriodo: true,
+          justificativaMeta: true,
+        },
+      }),
+      prisma.meta.findMany({
+        where: { programa: { ajusteId } },
+        select: {
+          codigoMeta: true,
+          programa: { select: { nome: true } },
+          periodicidades: {
+            where: { ano: exercicio },
+            select: { ano: true, periodo: true, qualificador: true, quantidade: true },
+          },
+        },
+      }),
+    ]);
+
+    // Ajuste sem metas não tem o que apurar, e uma apuração de zeros faria o
+    // painel falar de um assunto que não existe naquela parceria.
+    if (!metas.length) return null;
+
+    return apurarMetas(
+      afericoes.map((a) => ({
+        nomePrograma: a.nomePrograma,
+        codigoMeta: a.codigoMeta,
+        periodo: a.periodo,
+        quantidadeRealizada: a.quantidadeRealizada == null ? null : Number(a.quantidadeRealizada),
+        resultadoMeta: a.resultadoMeta,
+        metaAtendida: a.metaAtendida,
+        // Qualquer das duas serve: o que se quer saber é se a pessoa escreveu
+        // alguma explicação para o que não foi cumprido.
+        justificativa: a.justificativaPeriodo || a.justificativaMeta,
+      })),
+      metas.flatMap((m) =>
+        m.periodicidades.map((p) => ({
+          nomePrograma: m.programa.nome,
+          codigoMeta: m.codigoMeta,
+          ano: p.ano,
+          periodo: p.periodo,
+          qualificador: p.qualificador,
+          quantidade: Number(p.quantidade),
+        })),
+      ),
+      exercicio,
+    );
   }
 
   async codigosInexistentes({

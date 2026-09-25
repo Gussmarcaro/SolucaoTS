@@ -21,6 +21,7 @@ import {
   gerarPeriodos,
   intervaloPeriodo,
   rotuloPeriodo,
+  apurarMetas,
   type QualificadorMeta,
 } from '@/types/meta';
 import { RESULTADO_META_LABEL, type AfericaoMeta, type AfericaoMetaPayload, type ResultadoMeta } from '@/types/prestacaoBlocos6';
@@ -90,6 +91,49 @@ export function RelatorioAtividadesTab({
     return p ? rotuloPeriodo(m.periodicidade, p) : String(a.periodo);
   };
 
+  /**
+   * A apuração do atingimento — a mesma conta do servidor, aqui para a tela.
+   *
+   * Reusa `apurarMetas`, espelho de `core/meta/apuracao.ts`, e é de propósito:
+   * este percentual pode virar desconto no repasse, e a tela mostrar um número
+   * e o painel de pendências outro seria o pior dos mundos.
+   */
+  const apuracao = useMemo(() => {
+    const previstos = programas.flatMap((p) =>
+      p.metas.flatMap((m) =>
+        m.periodicidades.map((x) => ({
+          nomePrograma: p.nome,
+          codigoMeta: m.codigoMeta,
+          ano: x.ano,
+          periodo: x.periodo,
+          qualificador: x.qualificador,
+          quantidade: x.quantidade,
+        })),
+      ),
+    );
+    if (!previstos.length) return null;
+    return apurarMetas(
+      lista.map((a) => ({
+        nomePrograma: a.nomePrograma,
+        codigoMeta: a.codigoMeta,
+        periodo: a.periodo,
+        quantidadeRealizada: a.quantidadeRealizada,
+        resultadoMeta: a.resultadoMeta,
+        metaAtendida: a.metaAtendida,
+        justificativa: a.justificativaPeriodo || a.justificativaMeta,
+      })),
+      previstos,
+      exercicio,
+    );
+  }, [programas, lista, exercicio]);
+
+  /** A situação apurada de uma linha da grade. */
+  const situacaoDaLinha = (a: AfericaoMeta) =>
+    apuracao?.linhas.find(
+      (l) =>
+        l.nomePrograma === a.nomePrograma && l.codigoMeta === a.codigoMeta && l.periodo === a.periodo,
+    );
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -101,6 +145,62 @@ export function RelatorioAtividadesTab({
         <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>Cadastre os Programas e Metas no ajuste (aba “Programas e Metas”) antes de preencher o relatório.</span>
+        </div>
+      )}
+
+      {/*
+        Apuração do atingimento.
+
+        Fica no topo, e não no rodapé, porque é o número que decide
+        consequência: o TCESP define o bloco Desconto como "a dedução aplicada
+        ao valor de repasse em razão do descumprimento parcial ou integral de
+        metas", e os termos costumam fixar faixas sobre este percentual.
+
+        O sistema **não** aplica a faixa: ela está no termo do ajuste, que o
+        sistema não guarda. Mostra o número e diz de onde ele veio.
+      */}
+      {apuracao && apuracao.aferidas > 0 && (
+        <div className="rounded-xl border border-ink-200/70 px-4 py-3 dark:border-ink-800/70">
+          <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1 text-sm">
+            <span className="font-semibold text-ink-700 dark:text-ink-200">
+              Atingimento das metas
+            </span>
+            <span className="text-emerald-600 dark:text-emerald-400">
+              <strong className="tabular-nums">{apuracao.atingidas}</strong> atingida(s)
+            </span>
+            <span
+              className={
+                apuracao.naoAtingidas
+                  ? 'text-amber-600 dark:text-amber-400'
+                  : 'text-ink-400 dark:text-ink-500'
+              }
+            >
+              <strong className="tabular-nums">{apuracao.naoAtingidas}</strong> não atingida(s)
+            </span>
+            {apuracao.naoAtingidas > 0 && (
+              <span className="font-semibold tabular-nums text-amber-600 dark:text-amber-400">
+                {apuracao.percentualNaoAtingido.toLocaleString('pt-BR')}% não atingido
+              </span>
+            )}
+            {apuracao.indeterminadas > 0 && (
+              <span className="text-ink-400" title="Sem previsto cadastrado, ou meta de variação — ficam fora do percentual.">
+                <strong className="tabular-nums">{apuracao.indeterminadas}</strong> sem apuração
+              </span>
+            )}
+          </div>
+          {(apuracao.naoAtingidasSemJustificativa > 0 || apuracao.divergentes > 0) && (
+            <p className="mt-1.5 text-xs text-amber-600 dark:text-amber-400">
+              {apuracao.naoAtingidasSemJustificativa > 0 &&
+                `${apuracao.naoAtingidasSemJustificativa} sem justificativa. `}
+              {apuracao.divergentes > 0 &&
+                `${apuracao.divergentes} marcada(s) como atendida(s) com quantidade fora do pactuado.`}
+            </p>
+          )}
+          <p className="mt-1 text-xs text-ink-400">
+            Apurado por período, contra o previsto do Plano de Metas. A consequência do não
+            atingimento (comunicação, desconto no repasse) está no termo do ajuste — o sistema não a
+            aplica sozinho.
+          </p>
         </div>
       )}
 
@@ -148,12 +248,42 @@ export function RelatorioAtividadesTab({
                   {a.quantidadeRealizada != null ? a.quantidadeRealizada : a.resultadoMeta ? RESULTADO_META_LABEL[a.resultadoMeta] : '—'}
                 </span>
               );
-            case 'atendida':
-              return a.metaAtendida == null ? (
-                <span className="text-ink-400">—</span>
-              ) : (
-                <Badge tone={a.metaAtendida ? 'success' : 'danger'}>{a.metaAtendida ? 'Sim' : 'Não'}</Badge>
+            case 'atendida': {
+              /*
+               * A coluna mostra o **apurado**, não o checkbox.
+               *
+               * São duas respostas diferentes: `metaAtendida` é o que a pessoa
+               * marcou, e a apuração é o que a conta diz. Quando discordam, é
+               * a divergência que interessa ver na grade — o checkbox sozinho
+               * esconderia exatamente o caso que a fiscalização levanta.
+               */
+              const s = situacaoDaLinha(a);
+              if (!s || s.situacao === 'INDETERMINADA')
+                return a.metaAtendida == null ? (
+                  <span className="text-ink-400">—</span>
+                ) : (
+                  <Badge tone={a.metaAtendida ? 'success' : 'danger'}>
+                    {a.metaAtendida ? 'Sim' : 'Não'}
+                  </Badge>
+                );
+              return (
+                <span className="inline-flex items-center gap-1">
+                  <Badge tone={s.situacao === 'ATINGIDA' ? 'success' : 'danger'}>
+                    {s.situacao === 'ATINGIDA' ? 'Atingida' : 'Não atingida'}
+                  </Badge>
+                  {s.divergente && (
+                    <span title="Marcada como atendida, com quantidade fora do pactuado.">
+                      <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                    </span>
+                  )}
+                  {s.semJustificativa && (
+                    <span title="Não atingida e sem justificativa.">
+                      <AlertTriangle className="h-3.5 w-3.5 text-ink-400" />
+                    </span>
+                  )}
+                </span>
               );
+            }
             default:
               return null;
           }
@@ -335,6 +465,34 @@ function AfericaoForm({ prestacaoId, programas, exercicio, item, onSuccess, onCa
       setPeriodo(String(periodosDaMeta[0].periodo));
   }, [periodosDaMeta, periodo]);
 
+  /*
+   * A meta foi atingida? — calculado, não perguntado.
+   *
+   * É o que decide se a justificativa é exigida. Antes o sistema só tinha o
+   * checkbox "meta atendida", que é opinião; agora tem o previsto do período e
+   * o qualificador, e a conta pode ser feita. `null` continua existindo: meta
+   * qualitativa, meta sem previsto cadastrado, e "reduzir em"/"aumentar em",
+   * onde o sistema não sabe e não finge saber.
+   */
+  const naoAtingida = useMemo(() => {
+    if (!quantificavel) return resultado !== 'CUMPRIDA';
+    if (!previstoDoPeriodo) return false;
+    const n = Number(quantidade.replace(',', '.'));
+    if (quantidade.trim() === '' || !Number.isFinite(n)) return false;
+    return (
+      avaliarMeta(previstoDoPeriodo.qualificador, previstoDoPeriodo.quantidade, n).atingiu === false
+    );
+  }, [quantificavel, resultado, previstoDoPeriodo, quantidade]);
+
+  /*
+   * Marcou "atendida" e a conta diz o contrário.
+   *
+   * Não bloqueia: pode haver explicação, e é para isso que serve a
+   * justificativa. Mas é exatamente o ponto que a fiscalização levanta, e sem
+   * o aviso ninguém o veria antes dela.
+   */
+  const divergente = naoAtingida && metaAtendida;
+
   async function submeter(e: React.FormEvent) {
     e.preventDefault();
     setErro(null);
@@ -353,6 +511,17 @@ function AfericaoForm({ prestacaoId, programas, exercicio, item, onSuccess, onCa
       return setErro('Escolha um dos períodos da meta neste exercício.');
     if (quantificavel && quantidade.trim() === '') return setErro('Informe a quantidade realizada.');
     if (!metaAtendida && !justMeta.trim()) return setErro('Justifique quando a meta não for atendida.');
+    /*
+     * Meta não atingida sem uma palavra de explicação.
+     *
+     * O §19 não exige a justificativa — quem exige é a fiscalização, e o termo
+     * do ajuste, que costuma ligar o não atingimento a desconto no repasse. Por
+     * isso é exigência **da tela** e pendência no painel, e não recusa do
+     * servidor: quem lança em duas etapas continua podendo salvar pelo caminho
+     * da API, e a conferência cobra depois.
+     */
+    if (naoAtingida && !justPeriodo.trim() && !justMeta.trim())
+      return setErro('A meta não foi atingida neste período. Informe a justificativa.');
 
     const payload: AfericaoMetaPayload = {
       nomePrograma,
@@ -452,8 +621,30 @@ function AfericaoForm({ prestacaoId, programas, exercicio, item, onSuccess, onCa
           </div>
         )}
 
+        {/*
+          A justificativa sobe de tom quando a meta não foi atingida: vira
+          obrigatória e ganha o aviso. É o "espaço para esclarecimento" que o
+          não atingimento pede — e que, pelo termo do ajuste, costuma ser o que
+          separa a comunicação sem penalidade do desconto no repasse.
+        */}
         <div className="sm:col-span-2">
-          <Input label="Justificativa do período" name="justPeriodo" value={justPeriodo} onChange={(e) => setJustPeriodo(e.target.value)} hint="Exigida se houver divergência (quantitativa) ou resultado não cumprido (qualitativa)." />
+          {naoAtingida && (
+            <div className="mb-2 flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>
+                {divergente
+                  ? 'A quantidade está fora do pactuado, mas a meta está marcada como atendida. Explique abaixo — é o ponto que a fiscalização costuma levantar.'
+                  : 'Meta não atingida neste período. Descreva o motivo: o termo do ajuste pode prever desconto no repasse por descumprimento de metas.'}
+              </span>
+            </div>
+          )}
+          <Input
+            label={naoAtingida ? 'Justificativa / esclarecimento *' : 'Justificativa do período'}
+            name="justPeriodo"
+            value={justPeriodo}
+            onChange={(e) => setJustPeriodo(e.target.value)}
+            hint="Exigida se houver divergência (quantitativa) ou resultado não cumprido (qualitativa)."
+          />
         </div>
       </div>
 

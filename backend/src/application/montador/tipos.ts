@@ -1,3 +1,5 @@
+import type { ApuracaoMetas } from '@/core/meta/apuracao';
+
 /** Dados normalizados de uma prestação para montagem do documento JSON. Datas em 'YYYY-MM-DD'. */
 export interface DadosMontagem {
   ano: number;
@@ -319,6 +321,14 @@ export interface ContextoConferencia {
   pagamentosSemComprovante: number;
   /** Se o órgão empenha o repasse — governa a cobrança do bloco de empenhos. */
   orgaoEmpenha: boolean;
+  /**
+   * O atingimento das metas, apurado período a período.
+   *
+   * Nulo quando não há o que apurar (ajuste sem metas). Vem do contexto, e não
+   * de `DadosMontagem`, pela razão de sempre: exige o **previsto** do Plano de
+   * Metas, que não é transmitido e portanto não pertence ao documento.
+   */
+  apuracaoMetas: ApuracaoMetas | null;
 }
 
 /** Resposta de `GET /prestacoes/:id/conferencia`. */
