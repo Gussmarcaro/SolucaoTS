@@ -30,7 +30,8 @@ export interface IReceitaRepository {
    * dados. Passá-lo aqui daria a impressão de que o recorte é escolha de quem
    * chama — e é justamente o contrário.
    */
-  listarDoOrgao(): Promise<Receita[]>;
+  /** Com `ajusteId`, só os daquela parceria. */
+  listarDoOrgao(ajusteId?: string): Promise<Receita[]>;
   /** Cria no escopo do órgão; `clienteId` é carimbado pela extension. */
   criarNoOrgao(dados: DadosReceita): Promise<Receita>;
   buscarPorId(id: string): Promise<Receita | null>;

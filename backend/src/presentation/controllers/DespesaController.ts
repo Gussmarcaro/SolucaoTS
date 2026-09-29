@@ -36,9 +36,13 @@ export class DespesaController {
     }
   }
 
-  async listar(_req: Request, res: Response, next: NextFunction) {
+  async listar(req: Request, res: Response, next: NextFunction) {
     try {
-      return res.json(await casos.listarDoOrgao());
+      // O ajuste vem por query: a Execução acontece dentro de um, e a tela o
+      // informa. Sem ele a resposta continua sendo a do órgão inteiro — é o
+      // que a busca global e os relatórios usam.
+      const ajusteId = typeof req.query.ajusteId === 'string' ? req.query.ajusteId : undefined;
+      return res.json(await casos.listarDoOrgao(ajusteId || undefined));
     } catch (e) {
       return next(e);
     }

@@ -126,6 +126,15 @@ function validar(input: DocumentoFiscalDTO): DadosDocumentoFiscal {
     throw new BusinessError('Percentual de rateio inválido (0–100).');
 
   return {
+    /*
+     * A parceria da despesa — e **nula quando ela é rateada**.
+     *
+     * A rateada é de vários ajustes ao mesmo tempo, e quem diz de quais é o
+     * quadro do rateio. Gravar um deles aqui escolheria arbitrariamente um dono
+     * para uma despesa que não tem dono único, e a listagem por ajuste passaria
+     * a mostrá-la só para o sorteado.
+     */
+    ajusteId: rateioProveniente ? null : input.ajusteId?.trim() || null,
     numero,
     credorTipoDoc: tipo,
     credorNumeroDoc,
@@ -297,8 +306,8 @@ export class DocumentoFiscalUseCases {
   // cinco ajustes com cinco percentuais, sem ser digitada cinco vezes.
   // ---------------------------------------------------------------------------
 
-  async listarDoOrgao(): Promise<DocumentoFiscal[]> {
-    return this.repo.listarDoOrgao();
+  async listarDoOrgao(ajusteId?: string): Promise<DocumentoFiscal[]> {
+    return this.repo.listarDoOrgao(ajusteId);
   }
 
   async criarNoOrgao(input: DocumentoFiscalDTO): Promise<DocumentoFiscal> {

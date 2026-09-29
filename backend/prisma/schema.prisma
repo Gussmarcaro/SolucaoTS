@@ -889,6 +889,7 @@ model Ajuste {
   compromissos     Compromisso[]
   pagamentos       Pagamento[]
   receitas         Receita[]
+  despesas         DocumentoFiscal[]
 
   @@unique([clienteId, codigoAjuste])
   @@index([entidadeBeneficiariaId])
@@ -1411,12 +1412,25 @@ model Contrato {
 /// segue aqui, opcional, até o backfill criar as linhas de ligação. Enquanto
 /// as duas formas convivem, nada quebra; a remoção é o último passo.
 model DocumentoFiscal {
-  id                   String               @id @default(uuid()) @db.Uuid
+  id          String  @id @default(uuid()) @db.Uuid
   /// Órgão dono da nota.
-  clienteId            String               @db.Uuid
+  clienteId   String  @db.Uuid
   /// @deprecated Vínculo antigo, substituído por `PrestacaoDocumentoFiscal`.
   /// Continua preenchido durante a migração e sai na fase final.
-  prestacaoId          String?              @db.Uuid
+  prestacaoId String? @db.Uuid
+
+  /// A parceria de que esta despesa é.
+  ///
+  /// A Execução passou a acontecer **dentro de um ajuste**: antes o lançamento
+  /// nascia solto e só ganhava dono quando alguma prestação o apropriava, o que
+  /// permitia a despesa de uma parceria entrar na prestação de outra.
+  ///
+  /// **Nulo na nota rateada**, e não por omissão: ela é de vários ajustes ao
+  /// mesmo tempo, e quem diz de quais é o quadro do rateio (`rateioId`). Uma
+  /// coluna só não comporta isso, e duplicar a nota por ajuste faria o mesmo
+  /// documento fiscal existir várias vezes — que é justamente o que o
+  /// `@@unique` de número+credor existe para impedir.
+  ajusteId             String?              @db.Uuid
   numero               String
   credorTipoDoc        TipoDocumento
   credorNumeroDoc      String
@@ -1489,6 +1503,7 @@ model DocumentoFiscal {
 
   criadoPor       String?                    @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
   cliente         Cliente                    @relation(fields: [clienteId], references: [id])
+  ajuste          Ajuste?                    @relation(fields: [ajusteId], references: [id])
   prestacao       PrestacaoContas?           @relation(fields: [prestacaoId], references: [id])
   contrato        Contrato?                  @relation(fields: [contratoId], references: [id])
   contratoFirmado ContratoFirmado?           @relation(fields: [contratoFirmadoId], references: [id])
@@ -1510,6 +1525,8 @@ model DocumentoFiscal {
   @@unique([prestacaoId, numero, credorTipoDoc, credorNumeroDoc])
   @@index([clienteId, dataEmissao])
   @@index([clienteId, buscaTexto])
+  /// A Execução lista a despesa por ajuste; sem isto varreria a tabela.
+  @@index([ajusteId])
 }
 
 /// Quanto de uma nota fiscal entra numa prestação de contas.

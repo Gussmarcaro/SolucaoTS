@@ -102,8 +102,8 @@ export class PagamentoUseCases {
   // A prestação depois **escolhe** quais pagamentos do período entram nela.
   // ---------------------------------------------------------------------------
 
-  async listarDoOrgao(): Promise<Pagamento[]> {
-    return this.repo.listarDoOrgao();
+  async listarDoOrgao(ajusteId?: string): Promise<Pagamento[]> {
+    return this.repo.listarDoOrgao(ajusteId);
   }
 
   /**

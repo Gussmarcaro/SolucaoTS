@@ -8,8 +8,11 @@ import type { Pagamento, PagamentoPayload } from '@/types/prestacaoBlocos';
  * apropriar dele. É a mesma entidade da aba da prestação, vista de cima.
  */
 export const pagamentosOrgaoApi = {
-  listar: async (): Promise<Pagamento[]> => {
-    const { data } = await http.get<Pagamento[]>('/pagamentos');
+  /** Com `ajusteId`, só os daquela parceria. */
+  listar: async (ajusteId?: string): Promise<Pagamento[]> => {
+    const { data } = await http.get<Pagamento[]>('/pagamentos', {
+      params: ajusteId ? { ajusteId } : undefined,
+    });
     return data;
   },
   criar: async (payload: PagamentoPayload): Promise<Pagamento> => {

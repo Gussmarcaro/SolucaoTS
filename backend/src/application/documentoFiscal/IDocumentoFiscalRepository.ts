@@ -41,7 +41,8 @@ export interface IDocumentoFiscalRepository {
    * port: a extension de tenant o aplica na camada de dados, para valer também
    * em qualquer consulta futura que alguém escreva.
    */
-  listarDoOrgao(): Promise<DocumentoFiscal[]>;
+  /** Com `ajusteId`, só as daquele ajuste — inclusive as rateadas que o incluem. */
+  listarDoOrgao(ajusteId?: string): Promise<DocumentoFiscal[]>;
   /** Duplicidade no órgão — a nota é única por número + credor no cliente. */
   buscarDuplicadoNoOrgao(
     numero: string,

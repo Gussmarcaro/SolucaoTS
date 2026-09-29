@@ -30,7 +30,8 @@ export interface IPagamentoRepository {
    * dados. Passá-lo aqui daria a impressão de que o recorte é escolha de quem
    * chama — e é justamente o contrário.
    */
-  listarDoOrgao(): Promise<Pagamento[]>;
+  /** Com `ajusteId`, só os daquela parceria. */
+  listarDoOrgao(ajusteId?: string): Promise<Pagamento[]>;
   /** Cria no escopo do órgão; `clienteId` é carimbado pela extension. */
   criarNoOrgao(dados: DadosPagamento): Promise<Pagamento>;
   buscarPorId(id: string): Promise<Pagamento | null>;

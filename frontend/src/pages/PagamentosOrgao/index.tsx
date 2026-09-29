@@ -14,6 +14,7 @@ import { SelectDominio } from '@/components/ui/SelectDominio';
 import { Combobox } from '@/components/ui/Combobox';
 import type { ColunaDef } from '@/hooks/useResizableColumns';
 import { usePermissoes } from '@/contexts/PermissoesContext';
+import { useAjusteExecucao } from '@/contexts/AjusteExecucaoContext';
 import { enterComoTab } from '@/lib/enterComoTab';
 import { pagamentosOrgaoApi } from '@/services/pagamentosOrgao.service';
 import { despesasApi } from '@/services/despesas.service';
@@ -66,11 +67,16 @@ export function PagamentosOrgao() {
   const [modal, setModal] = useState<ModalState>({ tipo: 'fechado' });
   const [refreshKey, setRefreshKey] = useState(0);
   const [processando, setProcessando] = useState(false);
+  // A Execução acontece dentro de um ajuste; o portão garante que ele existe.
+  const { ajusteId } = useAjusteExecucao();
 
   useEffect(() => {
     let vivo = true;
     setCarregando(true);
-    Promise.all([pagamentosOrgaoApi.listar(), despesasApi.listar().catch(() => [])])
+    Promise.all([
+      pagamentosOrgaoApi.listar(ajusteId ?? undefined),
+      despesasApi.listar(ajusteId ?? undefined).catch(() => []),
+    ])
       .then(([pgs, ds]) => {
         if (!vivo) return;
         setLista(pgs);
@@ -273,6 +279,8 @@ function PagamentoOrgaoForm({
    * como antes — perguntar ali seria uma etapa a mais sem nada em troca.
    */
   const [ajuste, setAjuste] = useState(item?.ajusteId ?? '');
+  /** A parceria do portão da Execução — o padrão para a nota não rateada. */
+  const { ajusteId: ajusteEmExecucao } = useAjusteExecucao();
   /*
    * O id do lançamento que **acabou de nascer** nesta sessão do formulário.
    *
@@ -495,9 +503,9 @@ function PagamentoOrgaoForm({
 
     const payload: PagamentoPayload = {
       documentoFiscalId: vinculo === FOLHA ? null : vinculo,
-      // Só vai quando a nota é rateada: fora daí o ajuste continua sendo
-      // definido pela apropriação da prestação, como sempre foi.
-      ajusteId: ehRateada ? ajuste : (item?.ajusteId ?? null),
+      // Na rateada, o ajuste é escolhido no formulário (a nota é de vários);
+      // fora dela, é o do portão da Execução.
+      ajusteId: ehRateada ? ajuste : (ajusteEmExecucao ?? item?.ajusteId ?? null),
       dataPagamento,
       valor: v,
       fonteRecursoTipo: Number(apenasDigitos(fonte)),

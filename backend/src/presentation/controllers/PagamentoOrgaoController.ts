@@ -35,9 +35,11 @@ export class PagamentoOrgaoController {
     }
   }
 
-  async listar(_req: Request, res: Response, next: NextFunction) {
+  async listar(req: Request, res: Response, next: NextFunction) {
     try {
-      return res.json(await casos.listarDoOrgao());
+      // A Execução acontece dentro de um ajuste; a tela informa qual.
+      const ajusteId = typeof req.query.ajusteId === 'string' ? req.query.ajusteId : undefined;
+      return res.json(await casos.listarDoOrgao(ajusteId || undefined));
     } catch (e) {
       return next(e);
     }

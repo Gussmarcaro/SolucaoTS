@@ -64,8 +64,12 @@ export class PrismaReceitaRepository implements IReceitaRepository {
    * sem recorte funciona perfeitamente para quem a escreveu, e para os outros
    * órgãos também.
    */
-  async listarDoOrgao() {
-    const rows = await prisma.receita.findMany({ select: selecao, orderBy: [{ dataRepasse: 'desc' }, { id: 'desc' }] });
+  async listarDoOrgao(ajusteId?: string) {
+    const rows = await prisma.receita.findMany({
+      where: ajusteId ? { ajusteId } : undefined,
+      select: selecao,
+      orderBy: [{ dataRepasse: 'desc' }, { id: 'desc' }],
+    });
     return rows.map(toDomain);
   }
 

@@ -394,6 +394,26 @@ O que liga uma coisa à outra é a definição do próprio TCESP: o **Desconto**
 - **A tela distingue "não atingida" de "sem justificativa" de "divergente"** — esta última é a aferição marcada como atendida com quantidade fora do pactuado. Não é erro (pode haver explicação), mas é o ponto que a fiscalização levanta, e ninguém o veria sem apontar.
 - A justificativa passa a ser **exigida pela tela** quando a meta não foi atingida, e cobrada pelo painel de qualquer forma — exigi-la no servidor impediria salvar em duas etapas.
 
+## Execução dentro do Ajuste
+
+`ExecucaoLayout` é um **portão**, não um filtro: sem parceria escolhida não há tela de Execução. Receita, despesa e pagamento nasciam soltos e só ganhavam ajuste quando alguma prestação os apropriava — o que deixava a despesa de uma parceria entrar na prestação de outra, sem que nada acusasse: os totais fecham.
+
+- **Portão, e não filtro em branco.** Um seletor opcional que começa mostrando tudo convidaria a lançar sem dono, que é o que se quer eliminar. A tela de entrada é a própria lista de parcerias, com busca por código, entidade e objeto.
+- **O ajuste fica à vista** (`FaixaAjuste`), pela mesma razão do seletor de órgão do suporte: lançamento no ajuste errado é indistinguível de lançamento certo até alguém conferir nota por nota. E a troca é um clique — dificultá-la empurraria a pessoa a lançar no ajuste que está aberto.
+- Guardado em `localStorage` **com o órgão na chave**, e revalidado contra a lista: o suporte troca de cliente, e o ajuste do anterior não existe no novo — sem isso a Execução abriria filtrando por um id órfão e mostrando tudo vazio sem explicar por quê.
+- **Rota de layout, não provider global:** quem nunca entra na Execução não paga a consulta dos ajustes, e o contexto não existe onde não significa nada.
+
+### A nota rateada é de vários ajustes
+
+`DocumentoFiscal.ajusteId` é **nulo quando a nota é rateada**, e isso não é omissão: ela pertence a todas as parcerias do quadro, e quem diz quais é o `rateioId`. Gravar uma delas escolheria um dono arbitrário para uma despesa que não tem dono único; duplicar a nota por ajuste faria o mesmo documento fiscal existir várias vezes — o que o `@@unique` de número+credor existe para impedir.
+
+Por isso a listagem por ajuste tem **dois braços**: a nota lançada *para* o ajuste, e a nota rateada cujo quadro *o inclui*. Sem o segundo, a despesa da sede sumiria de todo mundo.
+
+### O que ficou de fora, e por quê
+
+- **Guias de Recolhimento** não entrou no portão. A guia é **do órgão**: um DARF de IRRF de maio recolhe retenções de várias notas e de vários ajustes, e sua identidade no schema é `órgão + tipo + competência`. Recortá-la por parceria criaria uma guia que não existe.
+- **Conciliação Bancária** ainda não entrou. O extrato é de uma **conta**, e a ligação com o ajuste existe (`AjusteContaBancaria`) — é trabalho pequeno, mas mexe na importação de OFX e merece ser feito à parte.
+
 ## Anexos — escolher o arquivo antes de o registro existir
 
 `components/ui/Anexos.tsx`. O envio precisa do **id** do lançamento, que num cadastro novo só existe depois da gravação. Isso virava uma frase pedindo que a pessoa salvasse e voltasse — e na prática empurra o comprovante para "depois", que é justamente quando a fiscalização pergunta e ninguém acha o arquivo.

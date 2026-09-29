@@ -9,8 +9,11 @@ import type { DocumentoFiscal, DocumentoFiscalPayload } from '@/types/prestacaoB
  * prestação mostra, vista do escopo de cima.
  */
 export const despesasApi = {
-  listar: async (): Promise<DocumentoFiscal[]> => {
-    const { data } = await http.get<DocumentoFiscal[]>('/despesas');
+  /** Com `ajusteId`, as da parceria — inclusive as rateadas que a incluem. */
+  listar: async (ajusteId?: string): Promise<DocumentoFiscal[]> => {
+    const { data } = await http.get<DocumentoFiscal[]>('/despesas', {
+      params: ajusteId ? { ajusteId } : undefined,
+    });
     return data;
   },
   criar: async (payload: DocumentoFiscalPayload): Promise<DocumentoFiscal> => {

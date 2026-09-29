@@ -9,6 +9,7 @@ import { BANCO, FONTE_RECURSO } from '@/lib/dominiosFaseV';
 import { mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
 import { receitasOrgaoApi } from '@/services/receitasOrgao.service';
 import { contasApi } from '@/services/contasBancarias.service';
+import { useAjusteExecucao } from '@/contexts/AjusteExecucaoContext';
 import { extrairMensagemErro } from '@/services/http';
 import { rotuloConta, type ContaBancaria } from '@/types/contaBancaria';
 import {
@@ -64,6 +65,7 @@ export function ReceitaOrgaoForm({
   const [transacao, setTransacao] = useState(item?.numeroTransacao ?? '');
   const [contas, setContas] = useState<ContaBancaria[]>([]);
   const [carregandoContas, setCarregandoContas] = useState(true);
+  const { ajusteId } = useAjusteExecucao();
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
@@ -122,6 +124,10 @@ export function ReceitaOrgaoForm({
       );
 
     const payload: ReceitaPayload = {
+      // A parceria vem do portão da Execução, não de um campo: lançar receita
+      // sem dono foi o que permitiu o repasse de um ajuste entrar na prestação
+      // de outro.
+      ajusteId: ajusteId ?? null,
       tipo,
       descricao: descricao.trim() || null,
       dataPrevista: dataPrevista || null,

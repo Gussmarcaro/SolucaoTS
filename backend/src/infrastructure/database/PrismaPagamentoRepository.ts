@@ -62,8 +62,12 @@ export class PrismaPagamentoRepository implements IPagamentoRepository {
    * sem recorte funciona perfeitamente para quem a escreveu, e para os outros
    * órgãos também.
    */
-  async listarDoOrgao() {
-    const rows = await prisma.pagamento.findMany({ select: selecao, orderBy: [{ dataPagamento: 'desc' }, { id: 'desc' }] });
+  async listarDoOrgao(ajusteId?: string) {
+    const rows = await prisma.pagamento.findMany({
+      where: ajusteId ? { ajusteId } : undefined,
+      select: selecao,
+      orderBy: [{ dataPagamento: 'desc' }, { id: 'desc' }],
+    });
     return rows.map(toDomain);
   }
 

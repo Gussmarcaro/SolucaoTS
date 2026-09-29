@@ -177,8 +177,8 @@ export class ReceitaUseCases {
   // entram nela — seleção explícita, não automática.
   // ---------------------------------------------------------------------------
 
-  async listarDoOrgao(): Promise<Receita[]> {
-    return this.repo.listarDoOrgao();
+  async listarDoOrgao(ajusteId?: string): Promise<Receita[]> {
+    return this.repo.listarDoOrgao(ajusteId);
   }
 
   async criarNoOrgao(input: ReceitaDTO): Promise<Receita> {

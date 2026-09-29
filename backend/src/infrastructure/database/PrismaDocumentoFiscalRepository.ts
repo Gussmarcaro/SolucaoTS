@@ -38,6 +38,7 @@ const selecao = {
   arquivoTamanho: true,
   arquivoEnviadoEm: true,
   rateioProveniente: true,
+  ajusteId: true,
   rateioId: true,
   rateioPercentual: true,
 } satisfies Prisma.DocumentoFiscalSelect;
@@ -71,6 +72,7 @@ function toDomain(row: Row): DocumentoFiscal {
     arquivoTamanho: row.arquivoTamanho,
     arquivoEnviadoEm: row.arquivoEnviadoEm ? row.arquivoEnviadoEm.toISOString() : null,
     rateioProveniente: row.rateioProveniente,
+    ajusteId: row.ajusteId,
     rateioId: row.rateioId,
     rateioPercentual: row.rateioPercentual == null ? null : Number(row.rateioPercentual),
   };
@@ -191,8 +193,31 @@ export class PrismaDocumentoFiscalRepository implements IDocumentoFiscalReposito
    * contrário: consulta sem recorte é a falha que funciona perfeitamente para
    * quem a escreveu, e para os outros órgãos também.
    */
-  async listarDoOrgao(): Promise<DocumentoFiscal[]> {
+  /**
+   * As despesas do órgão — e, com `ajusteId`, as **daquele ajuste**.
+   *
+   * O filtro tem dois braços, e o segundo é o que não é óbvio:
+   *
+   * 1. a nota lançada **para** o ajuste (`ajusteId`);
+   * 2. a nota **rateada** cujo quadro inclui o ajuste. Ela é de vários ao mesmo
+   *    tempo — a despesa da sede acontece uma vez e é paga por todas as
+   *    parcerias —, então aparece em cada um deles, cada qual vendo a sua
+   *    parcela. Escondê-la faria a despesa sumir de todo mundo, porque ela não
+   *    tem um dono único a declarar.
+   */
+  async listarDoOrgao(ajusteId?: string): Promise<DocumentoFiscal[]> {
     const rows = await prisma.documentoFiscal.findMany({
+      where: ajusteId
+        ? {
+            OR: [
+              { ajusteId },
+              {
+                rateioProveniente: true,
+                rateio: { participantes: { some: { ajusteId } } },
+              },
+            ],
+          }
+        : undefined,
       select: selecao,
       orderBy: [{ dataEmissao: 'desc' }, { numero: 'desc' }],
     });

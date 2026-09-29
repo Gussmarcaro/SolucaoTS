@@ -8,6 +8,7 @@ import { GradeSimples } from '@/components/ui/GradeSimples';
 import { AcoesGrade, IconBtn } from '@/components/ui/AcoesGrade';
 import type { ColunaDef } from '@/hooks/useResizableColumns';
 import { usePermissoes } from '@/contexts/PermissoesContext';
+import { useAjusteExecucao } from '@/contexts/AjusteExecucaoContext';
 import { despesasApi } from '@/services/despesas.service';
 import { extrairMensagemErro } from '@/services/http';
 import { dataBr, formatarMoeda, mascaraCpfCnpj } from '@/lib/masks';
@@ -56,19 +57,21 @@ export function Despesas() {
   const [modal, setModal] = useState<ModalState>({ tipo: 'fechado' });
   const [refreshKey, setRefreshKey] = useState(0);
   const [processando, setProcessando] = useState(false);
+  // A Execução acontece dentro de um ajuste; o portão garante que ele existe.
+  const { ajusteId } = useAjusteExecucao();
 
   useEffect(() => {
     let vivo = true;
     setCarregando(true);
     despesasApi
-      .listar()
+      .listar(ajusteId ?? undefined)
       .then((r) => vivo && setLista(r))
       .catch((e) => vivo && setErro(extrairMensagemErro(e, 'Falha ao carregar as despesas.')))
       .finally(() => vivo && setCarregando(false));
     return () => {
       vivo = false;
     };
-  }, [refreshKey]);
+  }, [refreshKey, ajusteId]);
 
   const recarregar = () => {
     setModal({ tipo: 'fechado' });

@@ -2,6 +2,7 @@ import { Suspense, lazy, type ComponentType } from 'react';
 import { Navigate, Routes, Route } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { ExecucaoLayout } from '@/components/layout/ExecucaoLayout';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { RequerGrupo } from '@/components/auth/RequerGrupo';
 import { RequerPermissao } from '@/components/auth/RequerPermissao';
@@ -219,31 +220,40 @@ export default function App() {
             element={<Navigate to="/cadastro/financeiro/contas-bancarias" replace />}
           />
 
-          {/* Execução */}
-          <Route
-            path="/execucao/financeiro/receitas"
-            element={
-              <RequerPermissao recurso="EXECUCAO_RECEITAS">
-                <ReceitasOrgao />
-              </RequerPermissao>
-            }
-          />
-          <Route
-            path="/execucao/financeiro/despesas"
-            element={
-              <RequerPermissao recurso="EXECUCAO_DESPESAS">
-                <Despesas />
-              </RequerPermissao>
-            }
-          />
-          <Route
-            path="/execucao/financeiro/pagamentos"
-            element={
-              <RequerPermissao recurso="EXECUCAO_PAGAMENTOS">
-                <PagamentosOrgao />
-              </RequerPermissao>
-            }
-          />
+          {/* Execução — dentro de um ajuste.
+              O lançamento nascia solto e só ganhava parceria quando alguma
+              prestação o apropriava, o que deixava a despesa de um ajuste
+              entrar na prestação de outro. `ExecucaoLayout` é o portão. */}
+          <Route element={<ExecucaoLayout />}>
+            <Route
+              path="/execucao/financeiro/receitas"
+              element={
+                <RequerPermissao recurso="EXECUCAO_RECEITAS">
+                  <ReceitasOrgao />
+                </RequerPermissao>
+              }
+            />
+            <Route
+              path="/execucao/financeiro/despesas"
+              element={
+                <RequerPermissao recurso="EXECUCAO_DESPESAS">
+                  <Despesas />
+                </RequerPermissao>
+              }
+            />
+            <Route
+              path="/execucao/financeiro/pagamentos"
+              element={
+                <RequerPermissao recurso="EXECUCAO_PAGAMENTOS">
+                  <PagamentosOrgao />
+                </RequerPermissao>
+              }
+            />
+          </Route>
+          {/* Guias fica de fora do portão: a guia é **do órgão** — um DARF de
+              IRRF de maio recolhe retenções de várias notas e de vários
+              ajustes, e sua identidade é `órgão + tipo + competência`.
+              Recortá-la por parceria criaria uma guia que não existe. */}
           <Route
             path="/execucao/financeiro/guias"
             element={

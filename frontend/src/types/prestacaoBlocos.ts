@@ -84,12 +84,16 @@ export interface DocumentoFiscal {
   arquivoTamanho: number | null;
   arquivoEnviadoEm: string | null;
   rateioProveniente: boolean;
+  /** Parceria da despesa. Nula na rateada: ela é de várias. */
+  ajusteId: string | null;
   /** Método de rateio aplicado — um só, garantido pela chave estrangeira. */
   rateioId: string | null;
   rateioPercentual: number | null;
 }
 
 export interface DocumentoFiscalPayload {
+  /** Parceria da despesa; o servidor a descarta na nota rateada. */
+  ajusteId?: string | null;
   numero: string;
   credorTipoDoc: TipoDocumento;
   credorNumeroDoc: string;

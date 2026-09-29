@@ -1,3 +1,4 @@
+import { useAjusteExecucao } from '@/contexts/AjusteExecucaoContext';
 import { useEffect, useState } from 'react';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -102,6 +103,7 @@ export function DespesaForm({
   const [rateios, setRateios] = useState<Rateio[]>([]);
 
   const [erro, setErro] = useState<string | null>(null);
+  const { ajusteId } = useAjusteExecucao();
   const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
@@ -237,6 +239,9 @@ export function DespesaForm({
       return setErro('Selecione o credor (Fornecedor / Prestador).');
 
     const payload: DocumentoFiscalPayload = {
+      // A parceria vem do portão da Execução. Na nota rateada o servidor a
+      // descarta: ela é de vários ajustes, e quem diz de quais é o quadro.
+      ajusteId: ajusteId ?? null,
       numero: numero.trim(),
       credorTipoDoc: escolhido ? escolhido.documentoTipo : item!.credorTipoDoc,
       credorNumeroDoc: escolhido ? escolhido.documento : item!.credorNumeroDoc,

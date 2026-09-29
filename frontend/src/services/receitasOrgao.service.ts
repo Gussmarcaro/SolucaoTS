@@ -8,8 +8,11 @@ import type { Receita, ReceitaPayload } from '@/types/prestacaoBlocos2';
  * apropriar dele. É a mesma entidade da aba da prestação, vista de cima.
  */
 export const receitasOrgaoApi = {
-  listar: async (): Promise<Receita[]> => {
-    const { data } = await http.get<Receita[]>('/receitas');
+  /** Com `ajusteId`, só as daquela parceria — a Execução acontece dentro de uma. */
+  listar: async (ajusteId?: string): Promise<Receita[]> => {
+    const { data } = await http.get<Receita[]>('/receitas', {
+      params: ajusteId ? { ajusteId } : undefined,
+    });
     return data;
   },
   criar: async (payload: ReceitaPayload): Promise<Receita> => {
