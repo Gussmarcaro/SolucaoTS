@@ -414,6 +414,17 @@ Por isso a listagem por ajuste tem **dois braços**: a nota lançada *para* o aj
 - **Guias de Recolhimento** não entrou no portão. A guia é **do órgão**: um DARF de IRRF de maio recolhe retenções de várias notas e de vários ajustes, e sua identidade no schema é `órgão + tipo + competência`. Recortá-la por parceria criaria uma guia que não existe.
 - **Conciliação Bancária** ainda não entrou. O extrato é de uma **conta**, e a ligação com o ajuste existe (`AjusteContaBancaria`) — é trabalho pequeno, mas mexe na importação de OFX e merece ser feito à parte.
 
+## Conciliação — os dois lados
+
+A tela nasceu olhando **do banco para dentro**: "esta linha do extrato tem par?". É a metade que a importação do OFX responde — e, antes dela, a aba "A conciliar" abria vazia dizendo *"nenhum extrato importado"*, como se não houvesse nada a conciliar quando havia dez pagamentos esperando.
+
+A outra metade é **"o que lancei e o banco ainda não confirmou?"**, e ela vale desde antes de existir extrato. Um pagamento que nunca aparece no extrato é ou lançamento que não aconteceu, ou débito que não saiu — as duas coisas que a conciliação existe para descobrir.
+
+- **Sem consulta nova.** `candidatosPagamento` e `candidatosReceita` já respondiam "lançamentos sem conciliação no período", porque é disso que a sugestão precisa; passaram a servir também à tela, via `ConciliacaoUseCases.pendentes`.
+- **Janela própria, e enunciada.** O filtro da tela nasce vazio, e para o extrato isso significa "tudo" — comportamento que não muda, porque linha de três meses atrás ainda pendente precisa aparecer. Mas varrer todos os pagamentos do órgão desde sempre não responde a uma pergunta do mês corrente, então a seção usa os **últimos 90 dias** enquanto ninguém escolher, e diz isso no título: período implícito que não se enuncia vira número que ninguém sabe interpretar.
+- **Só na aba "A conciliar".** Nas outras o recorte é sobre linhas do extrato ("conciliados", "ignorados"), e uma lista de lançamentos ali não responderia ao filtro escolhido — viraria ruído fixo no rodapé de toda aba.
+- **A tabela não tem ação, e é deliberado.** Conciliar exige os dois lados; marcar dali seria afirmar que o banco confirmou algo que o extrato não mostra — exatamente a afirmação que a conciliação existe para não deixar ninguém fazer.
+
 ## Anexos — escolher o arquivo antes de o registro existir
 
 `components/ui/Anexos.tsx`. O envio precisa do **id** do lançamento, que num cadastro novo só existe depois da gravação. Isso virava uma frase pedindo que a pessoa salvasse e voltasse — e na prática empurra o comprovante para "depois", que é justamente quando a fiscalização pergunta e ninguém acha o arquivo.

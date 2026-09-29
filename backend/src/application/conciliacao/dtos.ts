@@ -43,3 +43,24 @@ export interface ConciliarDTO {
   ignorado?: boolean;
   observacao?: string | null;
 }
+
+/**
+ * Um lançamento do sistema que ainda não apareceu no extrato.
+ *
+ * É o **outro lado** da conciliação. A tela nasceu olhando só do banco para
+ * dentro — "esta linha do extrato tem par?" —, e essa pergunta só existe depois
+ * de importar o OFX: antes disso a aba ficava vazia dizendo "nenhum extrato
+ * importado", como se não houvesse nada a conciliar.
+ *
+ * Mas há, e é o que o operador quer ver primeiro: o que ele lançou e o banco
+ * ainda não confirmou. Um pagamento que nunca aparece no extrato é ou um
+ * lançamento que não aconteceu, ou um débito que não saiu — as duas coisas que
+ * a conciliação existe para descobrir.
+ */
+export interface LancamentoPendente {
+  id: string;
+  tipo: 'PAGAMENTO' | 'RECEITA';
+  descricao: string;
+  valor: number;
+  data: string;
+}

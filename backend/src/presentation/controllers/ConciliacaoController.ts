@@ -28,6 +28,25 @@ export class ConciliacaoController {
     }
   }
 
+  /**
+   * Os lançamentos que ainda não apareceram no extrato.
+   *
+   * Exige o período, e não o assume: sem `de`/`ate` a consulta varreria todos
+   * os pagamentos do órgão desde sempre para responder a uma pergunta que é do
+   * mês corrente. A tela já tem os dois campos.
+   */
+  async pendentes(req: Request, res: Response, next: NextFunction) {
+    try {
+      const de = req.query.de as string | undefined;
+      const ate = req.query.ate as string | undefined;
+      if (!de || !ate)
+        throw new BusinessError('Informe o período (de/até) para listar os lançamentos pendentes.');
+      return res.json(await casos.pendentes({ de, ate }));
+    } catch (e) {
+      return next(e);
+    }
+  }
+
   async conciliar(req: Request, res: Response, next: NextFunction) {
     try {
       return res.json(await casos.conciliar(req.params.id, req.body));

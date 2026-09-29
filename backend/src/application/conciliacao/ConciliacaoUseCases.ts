@@ -1,5 +1,5 @@
 import type { IConciliacaoRepository } from './IConciliacaoRepository';
-import type { ConciliarDTO, LinhaExtrato, ResultadoImportacaoOfx } from './dtos';
+import type { ConciliarDTO, LancamentoPendente, LinhaExtrato, ResultadoImportacaoOfx } from './dtos';
 import { parseOfx } from '@/infrastructure/parsers/parseOfx';
 import { sugerirConciliacao, JANELA_DIAS } from '@/core/conciliacao/sugerir';
 import { BusinessError, NotFoundError } from '@/shared/errors';
@@ -110,6 +110,47 @@ export class ConciliacaoUseCases {
         },
       };
     });
+  }
+
+  /**
+   * O que o sistema lançou e o banco ainda não confirmou.
+   *
+   * **O outro lado da conciliação.** A tela nasceu olhando do banco para dentro
+   * — "esta linha do extrato tem par?" —, pergunta que só existe depois de
+   * importar o OFX. Antes disso a aba ficava vazia, dizendo "nenhum extrato
+   * importado", como se não houvesse nada a conciliar. Mas há: o pagamento que
+   * nunca aparece no extrato é ou lançamento que não aconteceu, ou débito que
+   * não saiu — as duas coisas que a conciliação existe para descobrir.
+   *
+   * Não há consulta nova: `candidatosPagamento` e `candidatosReceita` já
+   * respondem exatamente "lançamentos sem conciliação no período", porque é
+   * disso que a sugestão precisa. Aqui elas passaram a servir também à tela.
+   */
+  async pendentes(filtros: { de: string; ate: string }): Promise<LancamentoPendente[]> {
+    const [pagamentos, receitas] = await Promise.all([
+      this.repo.candidatosPagamento(filtros.de, filtros.ate),
+      this.repo.candidatosReceita(filtros.de, filtros.ate),
+    ]);
+
+    const descricoes = await this.repo.descreverLancamentos({
+      pagamentos: pagamentos.map((p) => p.id),
+      receitas: receitas.map((r) => r.id),
+    });
+
+    const linha = (c: { id: string; valor: number; data: string }, tipo: 'PAGAMENTO' | 'RECEITA') => ({
+      id: c.id,
+      tipo,
+      descricao: descricoes.get(c.id)?.descricao ?? (tipo === 'PAGAMENTO' ? 'Pagamento' : 'Receita'),
+      valor: c.valor,
+      data: c.data,
+    });
+
+    return [
+      ...pagamentos.map((p) => linha(p, 'PAGAMENTO' as const)),
+      ...receitas.map((r) => linha(r, 'RECEITA' as const)),
+      // Do mais recente para o mais antigo, como o extrato: o que acabou de ser
+      // lançado é o que ainda pode não ter compensado.
+    ].sort((a, b) => b.data.localeCompare(a.data) || b.valor - a.valor);
   }
 
   /**

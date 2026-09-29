@@ -164,6 +164,7 @@ routes.delete('/guias-recolhimento/:id', exigirPermissao('EXECUCAO_GUIAS'), (req
 // necessariamente quem lança.
 const conciliacao = new ConciliacaoController();
 routes.get('/conciliacao', exigirPermissao('EXECUCAO_CONCILIACAO'), (req, res, next) => conciliacao.listar(req, res, next));
+routes.get('/conciliacao/pendentes', exigirPermissao('EXECUCAO_CONCILIACAO'), (req, res, next) => conciliacao.pendentes(req, res, next));
 routes.post('/conciliacao/importar', exigirPermissao('EXECUCAO_CONCILIACAO'), uploadOfx, (req, res, next) => conciliacao.importar(req, res, next));
 routes.put('/conciliacao/:id', exigirPermissao('EXECUCAO_CONCILIACAO'), (req, res, next) => conciliacao.conciliar(req, res, next));
 routes.use('/grupos', exigirPermissao('CONFIG_GRUPOS'), grupoRoutes);

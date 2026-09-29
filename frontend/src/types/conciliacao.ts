@@ -43,3 +43,19 @@ export interface ConciliarPayload {
   ignorado?: boolean;
   observacao?: string | null;
 }
+
+/**
+ * Um lançamento do sistema que ainda não apareceu no extrato.
+ *
+ * O outro lado da conciliação: a tela nasceu perguntando "esta linha do banco
+ * tem par?", que só faz sentido depois de importar o OFX. Esta pergunta — "o
+ * que lancei e o banco ainda não confirmou?" — vale desde antes, e é a que
+ * mostra pagamento que não saiu e repasse que não caiu.
+ */
+export interface LancamentoPendente {
+  id: string;
+  tipo: 'PAGAMENTO' | 'RECEITA';
+  descricao: string;
+  valor: number;
+  data: string;
+}

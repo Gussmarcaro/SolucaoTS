@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertCircle, Ban, Check, CheckCircle2, Loader2, RotateCcw, Upload } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
@@ -8,7 +8,7 @@ import { usePermissoes } from '@/contexts/PermissoesContext';
 import { conciliacaoApi } from '@/services/conciliacao.service';
 import { extrairMensagemErro } from '@/services/http';
 import { dataBr, formatarMoeda } from '@/lib/masks';
-import type { LinhaExtrato, ResultadoImportacaoOfx } from '@/types/conciliacao';
+import type { LancamentoPendente, LinhaExtrato, ResultadoImportacaoOfx } from '@/types/conciliacao';
 
 type Filtro = 'pendentes' | 'conciliados' | 'ignorados' | 'todos';
 
@@ -44,6 +44,29 @@ export function Conciliacao() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [de, setDe] = useState('');
   const [ate, setAte] = useState('');
+  const [lancamentos, setLancamentos] = useState<LancamentoPendente[]>([]);
+
+  /*
+   * A janela dos lançamentos pendentes.
+   *
+   * O filtro da tela nasce **vazio**, e para o extrato isso significa "tudo" —
+   * comportamento que não quero mudar, porque uma linha de três meses atrás que
+   * continua pendente precisa aparecer. Mas "tudo" não serve aqui: varrer todos
+   * os pagamentos do órgão desde sempre para responder a uma pergunta do mês
+   * corrente é caro e não é o que se quer ler.
+   *
+   * Então a seção tem janela própria — os últimos 90 dias enquanto ninguém
+   * escolher —, e o título diz qual é. Período implícito que não se enuncia
+   * vira número que ninguém sabe interpretar.
+   */
+  const janelaPendentes = useMemo(() => {
+    if (de && ate) return { de, ate, padrao: false };
+    const hoje = new Date();
+    const inicio = new Date(hoje);
+    inicio.setDate(inicio.getDate() - 90);
+    const iso = (d: Date) => d.toISOString().slice(0, 10);
+    return { de: de || iso(inicio), ate: ate || iso(hoje), padrao: !de || !ate };
+  }, [de, ate]);
   const [enviando, setEnviando] = useState(false);
   const [agindo, setAgindo] = useState<string | null>(null);
   const arquivo = useRef<HTMLInputElement>(null);
@@ -60,6 +83,28 @@ export function Conciliacao() {
       vivo = false;
     };
   }, [refreshKey, de, ate]);
+
+  /*
+   * O outro lado: o que o sistema lançou e o banco ainda não confirmou.
+   *
+   * Consulta separada, e não um recorte das linhas do extrato, porque a
+   * pergunta é a inversa — e vale **antes** de existir extrato. Sem ela, a aba
+   * "A conciliar" abria vazia dizendo "nenhum extrato importado", como se não
+   * houvesse nada a conciliar quando havia dez pagamentos esperando.
+   *
+   * Falha em silêncio: o extrato é o conteúdo principal da tela, e um erro
+   * nesta consulta não pode esconder aquele.
+   */
+  useEffect(() => {
+    let vivo = true;
+    conciliacaoApi
+      .pendentes(janelaPendentes)
+      .then((r) => vivo && setLancamentos(r))
+      .catch(() => vivo && setLancamentos([]));
+    return () => {
+      vivo = false;
+    };
+  }, [refreshKey, janelaPendentes.de, janelaPendentes.ate]);
 
   const recarregar = () => setRefreshKey((k) => k + 1);
 
@@ -192,7 +237,11 @@ export function Conciliacao() {
       ) : visiveis.length === 0 ? (
         <div className="rounded-xl border border-ink-200 px-4 py-10 text-center text-sm text-ink-400 dark:border-ink-700">
           {linhas.length === 0
-            ? 'Nenhum extrato importado. Baixe o OFX no internet banking e use o botão acima.'
+            ? lancamentos.length > 0
+              ? // Com lançamentos esperando, "nada a conciliar" seria falso: há
+                // o que conferir, falta o lado do banco.
+                'Extrato ainda não importado — os lançamentos abaixo estão esperando o confronto. Baixe o OFX no internet banking e use o botão acima.'
+              : 'Nenhum extrato importado. Baixe o OFX no internet banking e use o botão acima.'
             : filtro === 'pendentes'
               ? 'Nada a conciliar no período. Tudo conferido.'
               : 'Nenhuma linha neste filtro.'}
@@ -306,6 +355,88 @@ export function Conciliacao() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/*
+        O outro lado da conciliação, só na aba "A conciliar".
+
+        Nas outras o recorte é sobre linhas do extrato ("conciliados",
+        "ignorados"), e uma lista de lançamentos ali não responderia ao filtro
+        escolhido — apareceria como ruído fixo no rodapé de toda aba.
+      */}
+      {filtro === 'pendentes' && lancamentos.length > 0 && (
+        <div className="mt-6">
+          <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+            <h3 className="text-sm font-semibold text-ink-800 dark:text-ink-100">
+              Lançados no sistema, ainda sem correspondência no extrato
+              <span className="ml-2 font-normal text-ink-400">
+                {janelaPendentes.padrao
+                  ? '· últimos 90 dias'
+                  : `· ${dataBr(janelaPendentes.de)} a ${dataBr(janelaPendentes.ate)}`}
+              </span>
+            </h3>
+            <span className="text-sm text-ink-500 dark:text-ink-400">
+              {lancamentos.length} lançamento(s) · saldo{' '}
+              <strong className="text-ink-800 dark:text-ink-100">
+                {formatarMoeda(lancamentos.reduce((s, l) => s + Math.abs(l.valor), 0))}
+              </strong>
+            </span>
+          </div>
+
+          <div className="overflow-x-auto rounded-xl border border-ink-200 dark:border-ink-700">
+            <table className="w-full min-w-[620px] text-sm">
+              <thead className="bg-ink-50/70 text-left text-[11px] uppercase tracking-wide text-ink-400 dark:bg-ink-800/40">
+                <tr>
+                  <th className="w-28 px-3 py-2 font-medium">Data</th>
+                  <th className="w-28 px-3 py-2 font-medium">Tipo</th>
+                  <th className="px-3 py-2 font-medium">Lançamento</th>
+                  <th className="w-36 px-3 py-2 text-right font-medium">Valor</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
+                {lancamentos.map((l) => (
+                  <tr key={`${l.tipo}-${l.id}`} className="hover:bg-ink-50/50 dark:hover:bg-ink-800/20">
+                    <td className="px-3 py-2 tabular-nums text-ink-600 dark:text-ink-300">
+                      {dataBr(l.data)}
+                    </td>
+                    <td className="px-3 py-2">
+                      <Badge tone={l.tipo === 'RECEITA' ? 'success' : 'neutral'}>
+                        {l.tipo === 'RECEITA' ? 'Receita' : 'Pagamento'}
+                      </Badge>
+                    </td>
+                    <td className="max-w-0 px-3 py-2">
+                      <span
+                        className="block truncate text-ink-700 dark:text-ink-200"
+                        title={l.descricao}
+                      >
+                        {l.descricao}
+                      </span>
+                    </td>
+                    <td
+                      className={`px-3 py-2 text-right tabular-nums ${
+                        l.tipo === 'RECEITA'
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : 'text-ink-700 dark:text-ink-200'
+                      }`}
+                    >
+                      {formatarMoeda(Math.abs(l.valor))}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Não há ação nesta tabela, e é deliberado: conciliar exige os dois
+              lados. Marcar aqui seria dizer que o banco confirmou algo que o
+              extrato não mostra — exatamente a afirmação que a conciliação
+              existe para não deixar ninguém fazer. */}
+          <p className="mt-2 text-xs text-ink-400">
+            Estes lançamentos ainda não foram encontrados no extrato. Importe o OFX do período: os
+            que casarem aparecem acima com a sugestão de par. O que sobrar aqui depois disso é
+            pagamento que não saiu, repasse que não caiu, ou lançamento com valor ou data errados.
+          </p>
         </div>
       )}
 
