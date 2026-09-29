@@ -394,6 +394,17 @@ O que liga uma coisa à outra é a definição do próprio TCESP: o **Desconto**
 - **A tela distingue "não atingida" de "sem justificativa" de "divergente"** — esta última é a aferição marcada como atendida com quantidade fora do pactuado. Não é erro (pode haver explicação), mas é o ponto que a fiscalização levanta, e ninguém o veria sem apontar.
 - A justificativa passa a ser **exigida pela tela** quando a meta não foi atingida, e cobrada pelo painel de qualquer forma — exigi-la no servidor impediria salvar em duas etapas.
 
+## Anexos — escolher o arquivo antes de o registro existir
+
+`components/ui/Anexos.tsx`. O envio precisa do **id** do lançamento, que num cadastro novo só existe depois da gravação. Isso virava uma frase pedindo que a pessoa salvasse e voltasse — e na prática empurra o comprovante para "depois", que é justamente quando a fiscalização pergunta e ninguém acha o arquivo.
+
+- **O formulário opta.** Passando `onPendentes`, o componente deixa escolher o arquivo antes, guarda a seleção **na memória da tela** e o formulário a envia com `enviarPendentes` assim que o registro nasce. Quem não passa continua vendo a frase: mudar o comportamento de quem não pediu faria o arquivo ser escolhido e **descartado em silêncio**, que é pior que não poder escolher. Hoje só o **Pagamento** usa; a Despesa continua no modo antigo.
+- **Nada de rascunho no banco.** Guardar o arquivo antes do dono exigiria um registro órfão a cada formulário abandonado. O preço é que fechar sem salvar descarta a escolha — e a tela diz isso, com borda tracejada e um aviso que conta quantos arquivos vão subir.
+- **A conferência de tamanho e tipo passa a ser da tela.** No modo normal quem recusa é o servidor; aqui não há servidor no caminho, e sem isso o arquivo de 40 MB só seria recusado **depois** de o lançamento ter sido criado — o pior instante para descobrir. O limite espelha `TAMANHO_MAXIMO_ANEXO`.
+- **Falha no envio não desfaz o lançamento**, e a tela não diz que desfez. `enviarPendentes` **devolve** as falhas em vez de lançar: o registro está gravado, e uma exceção faria a tela parecer que nada foi salvo. O formulário fica aberto já **apontando para o registro criado** (`idSalvo`), com os anexos no modo normal para tentar de novo.
+- **`idSalvo` existe por causa de um caso estreito e caro:** sem ele, o segundo clique em Salvar depois de uma falha de upload criaria um pagamento **duplicado** — dois registros do mesmo dinheiro, que é o erro que ninguém percebe olhando. Pelo mesmo motivo o botão "Cancelar" vira **"Fechar"** e recarrega a grade: depois que o pagamento nasceu, cancelar já não cancela nada.
+- Os envios são **em série**, não em paralelo: um lote de dez anexos simultâneos é exatamente a rajada que o teto de 300 req/min existe para conter.
+
 ## Lançamento de Receita — a conta bancária traz a fonte
 
 `Execução → Financeiro → Receitas`. O formulário perguntava a **fonte de recurso** e, num grupo separado, **banco, agência e conta**. Os quatro campos saíram e deram lugar a um só: **Conta bancária**, escolhida do cadastro.

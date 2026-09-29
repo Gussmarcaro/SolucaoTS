@@ -4,7 +4,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
-import { Anexos } from '@/components/ui/Anexos';
+import { Anexos, enviarPendentes, type AnexoPendente } from '@/components/ui/Anexos';
 import { PainelRateio } from './PainelRateio';
 import { GradeSimples } from '@/components/ui/GradeSimples';
 import { AcoesGrade, IconBtn } from '@/components/ui/AcoesGrade';
@@ -264,6 +264,18 @@ function PagamentoOrgaoForm({
   const [transacao, setTransacao] = useState(item?.numeroTransacao ?? '');
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
+  const [pendentes, setPendentes] = useState<AnexoPendente[]>([]);
+  /*
+   * O id do lançamento que **acabou de nascer** nesta sessão do formulário.
+   *
+   * Existe por causa de um caso estreito e caro: o pagamento é criado, o
+   * comprovante falha ao subir, e a janela continua aberta. Sem isto, o
+   * segundo clique em Salvar criaria um pagamento duplicado — dois registros
+   * do mesmo dinheiro, que é o erro que ninguém percebe olhando. Com ele, o
+   * formulário passa a editar o registro que criou.
+   */
+  const [idSalvo, setIdSalvo] = useState<string | null>(null);
+  const alvo = item?.id ?? idSalvo;
   const [rateando, setRateando] = useState(false);
 
   /*
@@ -421,8 +433,36 @@ function PagamentoOrgaoForm({
 
     setSalvando(true);
     try {
-      if (item) await pagamentosOrgaoApi.atualizar(item.id, payload);
-      else await pagamentosOrgaoApi.criar(payload);
+      let id: string;
+      if (alvo) {
+        await pagamentosOrgaoApi.atualizar(alvo, payload);
+        id = alvo;
+      } else {
+        id = (await pagamentosOrgaoApi.criar(payload)).id;
+      }
+
+      /*
+       * Só agora os arquivos podem subir: o envio precisa do id, e é por isso
+       * que eles esperaram na memória da tela.
+       *
+       * Falha aqui **não** desfaz o pagamento — ele está gravado, e dizer o
+       * contrário seria mentir. O formulário fica aberto, já apontando para o
+       * registro criado, com os anexos no modo normal para a pessoa tentar de
+       * novo ou seguir sem o arquivo.
+       */
+      if (pendentes.length) {
+        const { enviados, falhas } = await enviarPendentes('PAGAMENTO', id, pendentes);
+        if (falhas.length) {
+          setIdSalvo(id);
+          setPendentes(pendentes.filter((p) => !enviados.includes(p)));
+          setErro(
+            `Pagamento salvo, mas ${falhas.length} arquivo(s) não subiram: ` +
+              `${falhas.map((f) => `${f.pendente.arquivo.name} (${f.motivo})`).join('; ')}. ` +
+              'Tente anexar novamente abaixo.',
+          );
+          return;
+        }
+      }
       onSuccess();
     } catch (e) {
       setErro(extrairMensagemErro(e, 'Não foi possível salvar o pagamento.'));
@@ -574,18 +614,33 @@ function PagamentoOrgaoForm({
       <Input label="Nº da transação (opcional)" name="transacao" value={transacao} onChange={(e) => setTransacao(e.target.value)} />
 
       {/* O comprovante — é o que a fiscalização pede quando pergunta se o
-          dinheiro de fato saiu. Depende do pagamento já existir: o envio
-          precisa do id, que num lançamento novo só há depois de salvar. */}
+          dinheiro de fato saiu. Num lançamento novo o arquivo é escolhido aqui
+          e sobe junto com a gravação: o envio precisa do id, mas o usuário não
+          tem por que saber disso, nem voltar à tela depois para anexar. */}
       <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700">
         <legend className="px-1 text-[13px] font-normal text-ink-600 dark:text-ink-300">
           Comprovante
         </legend>
-        <Anexos dono="PAGAMENTO" donoId={item?.id} tipos={['COMPROVANTE_PAGAMENTO']} />
+        <Anexos
+          dono="PAGAMENTO"
+          donoId={alvo ?? undefined}
+          tipos={['COMPROVANTE_PAGAMENTO']}
+          pendentes={pendentes}
+          onPendentes={setPendentes}
+        />
       </fieldset>
 
       <div className="flex items-center justify-end gap-2 pt-1">
-        <Button type="button" variant="secondary" onClick={onCancel} disabled={salvando}>
-          Cancelar
+        {/* Depois que o pagamento nasceu, "Cancelar" já não cancela nada — e
+            fechar sem recarregar deixaria a grade sem o registro que existe.
+            O botão muda de nome e passa a fechar recarregando. */}
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={idSalvo ? onSuccess : onCancel}
+          disabled={salvando}
+        >
+          {idSalvo ? 'Fechar' : 'Cancelar'}
         </Button>
         <Button type="submit" disabled={salvando}>
           {salvando && <Loader2 className="h-4 w-4 animate-spin" />}
