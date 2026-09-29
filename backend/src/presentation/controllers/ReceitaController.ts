@@ -2,8 +2,13 @@ import type { Request, Response, NextFunction } from 'express';
 import { ReceitaUseCases } from '@/application/receita/ReceitaUseCases';
 import { PrismaReceitaRepository } from '@/infrastructure/database/PrismaReceitaRepository';
 import { PrismaPrestacaoRepository } from '@/infrastructure/database/PrismaPrestacaoRepository';
+import { PrismaContaBancariaRepository } from '@/infrastructure/database/PrismaContaBancariaRepository';
 
-const casos = new ReceitaUseCases(new PrismaReceitaRepository(), new PrismaPrestacaoRepository());
+const casos = new ReceitaUseCases(
+  new PrismaReceitaRepository(),
+  new PrismaPrestacaoRepository(),
+  new PrismaContaBancariaRepository(),
+);
 
 export class ReceitaController {
   async listar(req: Request, res: Response, next: NextFunction) {

@@ -4,6 +4,7 @@ import type { IPrestacaoRepository } from '@/application/prestacao/IPrestacaoRep
 import type { DadosReceita, ReceitaDTO } from './dtos';
 import { BusinessError, NotFoundError } from '@/shared/errors';
 import { parseDataISO } from '@/shared/datas';
+import type { IContaBancariaRepository } from '@/application/contaBancaria/IContaBancariaRepository';
 
 /**
  * Tipos aceitos.
@@ -66,6 +67,7 @@ function validar(input: ReceitaDTO): DadosReceita {
 
   return {
     ajusteId: input.ajusteId?.trim() || null,
+    contaBancariaId: input.contaBancariaId?.trim() || null,
     tipo,
     descricao: input.descricao?.trim() || null,
     dataPrevista: dataOpcional(input.dataPrevista, 'Data prevista'),
@@ -83,7 +85,77 @@ export class ReceitaUseCases {
   constructor(
     private readonly repo: IReceitaRepository,
     private readonly prestacoes: IPrestacaoRepository,
+    private readonly contas: IContaBancariaRepository,
   ) {}
+
+  /**
+   * A conta bancária decide a fonte de recurso — e os dados bancários.
+   *
+   * **Por que isto deixou de ser digitado.** A conta do cadastro já sabe de
+   * qual fonte ela recebe (`ContaBancaria.fonteRecursoTipo`), então perguntar
+   * as duas coisas no mesmo formulário era pedir ao usuário que repetisse o que
+   * o sistema tinha — e abrir a chance de responder diferente. Escolhida a
+   * conta, a fonte vem junto.
+   *
+   * **E fecha um furo de rejeição.** `fonte_recurso_tipo` é **obrigatório** em
+   * `repasses_recebidos` no schema v1.14, e o `limpo()` do montador remove
+   * nulos: um repasse sem fonte simplesmente sumia do JSON e o documento voltava
+   * rejeitado. Nada acusava antes de transmitir.
+   *
+   * Os dados bancários são copiados como **fotografia**, não lidos pela relação:
+   * editar a conta amanhã não pode reescrever um lançamento já feito.
+   */
+  private async resolverConta(dados: DadosReceita, atual?: Receita): Promise<DadosReceita> {
+    if (!dados.contaBancariaId) {
+      /*
+       * Sem conta escolhida, **preserva** a fonte que o lançamento já tinha.
+       *
+       * O formulário não mostra mais o campo, então editar a descrição de um
+       * lançamento antigo enviaria fonte nula — e apagaria em silêncio um dado
+       * que o Tribunal exige. Edição não pode destruir o que ela não mostra.
+       */
+      return atual ? { ...dados, fonteRecursoTipo: dados.fonteRecursoTipo ?? atual.fonteRecursoTipo } : dados;
+    }
+
+    const conta = await this.contas.buscarPorId(dados.contaBancariaId);
+    // A extension de tenant já recortou: conta de outro órgão "não existe".
+    if (!conta) throw new NotFoundError('Conta bancária não encontrada.');
+    if (conta.fonteRecursoTipo == null)
+      throw new BusinessError(
+        'A conta bancária escolhida está sem fonte de recurso. Informe-a em Execução → Financeiro → Contas Bancárias.',
+      );
+
+    return {
+      ...dados,
+      fonteRecursoTipo: conta.fonteRecursoTipo,
+      banco: conta.banco,
+      // A agência é texto no cadastro (aceita zero à esquerda) e número aqui.
+      // A perda do zero não machuca: este campo é controle interno e não é
+      // transmitido — quem leva agência ao TCESP é o bloco `repasses`.
+      agencia: Number(conta.agencia.replace(/\D/g, '')) || null,
+      contaCorrente: conta.conta,
+    };
+  }
+
+  /**
+   * Repasse recebido **exige** fonte de recurso.
+   *
+   * É a regra que o schema oficial impõe e que ninguém via: sem ela o repasse
+   * some do documento. Vale só para `REPASSE_RECEBIDO` — nos outros tipos o
+   * bloco `receitas` transmite apenas descrição e valor, e exigir fonte ali
+   * barraria lançamento válido por um dado que o Tribunal nunca vê.
+   */
+  private exigirFonte(dados: DadosReceita) {
+    if (dados.tipo === 'REPASSE_RECEBIDO' && dados.fonteRecursoTipo == null)
+      throw new BusinessError(
+        'Informe a fonte de recurso do repasse — ela vem da conta bancária, e é obrigatória no envio ao TCESP.',
+      );
+    return dados;
+  }
+
+  private async preparar(input: ReceitaDTO, atual?: Receita): Promise<DadosReceita> {
+    return this.exigirFonte(await this.resolverConta(validar(input), atual));
+  }
 
   private async garantirPrestacao(prestacaoId: string) {
     if (!(await this.prestacoes.buscarPorId(prestacaoId)))
@@ -110,12 +182,12 @@ export class ReceitaUseCases {
   }
 
   async criarNoOrgao(input: ReceitaDTO): Promise<Receita> {
-    return this.repo.criarNoOrgao(validar(input));
+    return this.repo.criarNoOrgao(await this.preparar(input));
   }
 
   async atualizarNoOrgao(id: string, input: ReceitaDTO): Promise<Receita> {
-    await this.garantirDoOrgao(id);
-    return this.repo.atualizar(id, validar(input));
+    const atual = await this.garantirDoOrgao(id);
+    return this.repo.atualizar(id, await this.preparar(input, atual));
   }
 
   async excluirDoOrgao(id: string): Promise<void> {
@@ -183,12 +255,12 @@ export class ReceitaUseCases {
 
   async criar(prestacaoId: string, input: ReceitaDTO): Promise<Receita> {
     await this.garantirPrestacao(prestacaoId);
-    return this.repo.criar(prestacaoId, validar(input));
+    return this.repo.criar(prestacaoId, await this.preparar(input));
   }
 
   async atualizar(prestacaoId: string, id: string, input: ReceitaDTO): Promise<Receita> {
-    await this.garantirNaPrestacao(prestacaoId, id);
-    return this.repo.atualizar(id, validar(input));
+    const atual = await this.garantirNaPrestacao(prestacaoId, id);
+    return this.repo.atualizar(id, await this.preparar(input, atual));
   }
 
   async excluir(prestacaoId: string, id: string): Promise<void> {

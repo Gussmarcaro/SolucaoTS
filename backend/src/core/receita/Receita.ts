@@ -10,6 +10,11 @@ export interface Receita {
    * fez. A escolha é explícita, feita na aba da prestação.
    */
   prestacaoId: string | null;
+  /**
+   * A conta do cadastro em que o dinheiro entrou — de onde sai a fonte de
+   * recurso. Nula nos lançamentos anteriores a esta tela.
+   */
+  contaBancariaId: string | null;
   tipo: string; // REPASSE_RECEBIDO | APLIC_FINANCEIRA | OUTRA | RECURSO_PROPRIO
   descricao: string | null;
   dataPrevista: string | null;

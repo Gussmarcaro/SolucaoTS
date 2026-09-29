@@ -1564,6 +1564,7 @@ model ContaBancaria {
 
   cliente      Cliente               @relation(fields: [clienteId], references: [id])
   contasAjuste AjusteContaBancaria[]
+  receitas     Receita[]
 
   @@unique([clienteId, banco, agencia, conta, contaTipo])
   @@index([clienteId])
@@ -1850,11 +1851,26 @@ model Receita {
   fonteRecursoTipo Int?
   valor            Decimal   @db.Decimal(15, 2)
 
+  /// A conta do cadastro em que o dinheiro entrou.
+  ///
+  /// É ela que **carrega a fonte de recurso**: escolhida a conta, a fonte vem
+  /// junto, e o formulário deixou de perguntar as duas coisas. A fonte é
+  /// obrigatória em `repasses_recebidos` no schema oficial, e o `limpo()` do
+  /// montador remove nulos — receita sem fonte saía do JSON e era rejeitada.
+  ///
+  /// Opcional porque os lançamentos anteriores a esta tela não a têm.
+  contaBancariaId String? @db.Uuid
+
   // Identificação bancária — CONTROLE INTERNO, não transmitida.
   // O bloco "receitas" do schema v1.14 é um objeto de totais com
   // additionalProperties: false em todos os níveis: não há onde declarar banco.
   // Quem leva os dados bancários ao TCESP é o bloco "repasses", que os exige.
   // Estes campos existem para conciliação do órgão e o montador não os emite.
+  //
+  // Continuam preenchidos mesmo com `contaBancariaId`, e de propósito: são
+  // **fotografia**, como o percentual do rateio na nota. Editar a conta depois
+  // não pode reescrever um lançamento já feito — a prestação é registro
+  // histórico.
   banco           Int?
   agencia         Int?
   contaCorrente   String?
@@ -1864,6 +1880,7 @@ model Receita {
   cliente            Cliente             @relation(fields: [clienteId], references: [id])
   ajuste             Ajuste?             @relation(fields: [ajusteId], references: [id])
   prestacao          PrestacaoContas?    @relation(fields: [prestacaoId], references: [id])
+  contaBancaria      ContaBancaria?      @relation(fields: [contaBancariaId], references: [id])
   lancamentosExtrato LancamentoExtrato[]
 
   @@index([prestacaoId])

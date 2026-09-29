@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { ReceitaUseCases } from '@/application/receita/ReceitaUseCases';
 import { PrismaReceitaRepository } from '@/infrastructure/database/PrismaReceitaRepository';
 import { PrismaPrestacaoRepository } from '@/infrastructure/database/PrismaPrestacaoRepository';
+import { PrismaContaBancariaRepository } from '@/infrastructure/database/PrismaContaBancariaRepository';
 
 /**
  * Receitas — no escopo do **órgão**, em Execução → Financeiro.
@@ -13,7 +14,11 @@ import { PrismaPrestacaoRepository } from '@/infrastructure/database/PrismaPrest
  * Nenhuma rota recebe `prestacaoId`, e é essa ausência que define a tela. O
  * órgão nunca vem da requisição — sai do token, pela extension de tenant.
  */
-const casos = new ReceitaUseCases(new PrismaReceitaRepository(), new PrismaPrestacaoRepository());
+const casos = new ReceitaUseCases(
+  new PrismaReceitaRepository(),
+  new PrismaPrestacaoRepository(),
+  new PrismaContaBancariaRepository(),
+);
 
 export class ReceitaOrgaoController {
   async listar(_req: Request, res: Response, next: NextFunction) {

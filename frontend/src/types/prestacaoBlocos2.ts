@@ -30,6 +30,8 @@ export interface Receita {
   ajusteId?: string | null;
   tipo: ReceitaTipo;
   descricao: string | null;
+  /** Conta do cadastro em que o dinheiro entrou; nula nos lançamentos antigos. */
+  contaBancariaId: string | null;
   dataPrevista: string | null;
   dataRepasse: string | null;
   fonteRecursoTipo: number | null;
@@ -53,6 +55,8 @@ export interface ReceitaPayload {
   ajusteId?: string | null;
   tipo: ReceitaTipo;
   descricao?: string | null;
+  /** A conta do cadastro — é dela que o servidor deriva a fonte de recurso. */
+  contaBancariaId?: string | null;
   dataPrevista?: string | null;
   dataRepasse?: string | null;
   fonteRecursoTipo?: number | null;

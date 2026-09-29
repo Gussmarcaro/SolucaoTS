@@ -1,5 +1,6 @@
 export interface ReceitaDTO {
   ajusteId?: string | null;
+  contaBancariaId?: string | null;
   tipo: string;
   descricao?: string | null;
   dataPrevista?: string | null;
@@ -15,6 +16,7 @@ export interface ReceitaDTO {
 export interface DadosReceita {
   /** Parceria do lançamento; nula até alguém dizer qual. */
   ajusteId?: string | null;
+  contaBancariaId: string | null;
   tipo: string;
   descricao: string | null;
   dataPrevista: Date | null;

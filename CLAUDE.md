@@ -394,6 +394,21 @@ O que liga uma coisa à outra é a definição do próprio TCESP: o **Desconto**
 - **A tela distingue "não atingida" de "sem justificativa" de "divergente"** — esta última é a aferição marcada como atendida com quantidade fora do pactuado. Não é erro (pode haver explicação), mas é o ponto que a fiscalização levanta, e ninguém o veria sem apontar.
 - A justificativa passa a ser **exigida pela tela** quando a meta não foi atingida, e cobrada pelo painel de qualquer forma — exigi-la no servidor impediria salvar em duas etapas.
 
+## Lançamento de Receita — a conta bancária traz a fonte
+
+`Execução → Financeiro → Receitas`. O formulário perguntava a **fonte de recurso** e, num grupo separado, **banco, agência e conta**. Os quatro campos saíram e deram lugar a um só: **Conta bancária**, escolhida do cadastro.
+
+- **O cadastro já sabia.** `ContaBancaria.fonteRecursoTipo` existe justamente para dizer de qual fonte aquela conta recebe. Perguntar de novo era pedir ao usuário que repetisse o que o sistema tinha — e abrir a chance de ele responder diferente: fonte "municipal" numa conta que o cadastro diz ser estadual, sem nada acusar.
+- **Fecha um furo de rejeição que ninguém via.** `fonte_recurso_tipo` é **obrigatório** em `repasses_recebidos` no schema v1.14, e o `limpo()` do montador remove nulos: o repasse lançado sem fonte **sumia do JSON** e o documento voltava rejeitado. Por isso `REPASSE_RECEBIDO` passou a exigir a fonte — e só ele: nos outros tipos o bloco `receitas` transmite apenas descrição e valor, e exigir ali barraria lançamento válido por um dado que o Tribunal nunca vê. O caso já gravado continua aparecendo na conferência, porque o Ajv o reprova.
+- **Quem deriva é o servidor**, não a tela. O payload manda só `contaBancariaId`; fonte, banco, agência e conta são copiados da conta no caso de uso. Aceitar os números do cliente permitiria gravar uma fonte que a conta desmente — a mesma decisão do percentual do rateio.
+- **Os dados bancários continuam gravados, como fotografia.** Não são lidos pela relação: editar a conta amanhã não pode reescrever um lançamento já feito. (Seguem sendo controle interno — o bloco `receitas` não os transmite.)
+- **Edição não apaga o que não mostra.** O formulário não exibe mais a fonte como campo, então editar a descrição de um lançamento antigo enviaria fonte nula. `resolverConta` **preserva** a fonte existente quando nenhuma conta é escolhida.
+- **A conta inativada continua na lista** quando é a do registro. Sem isso, abrir um lançamento antigo mostraria o campo em branco e salvar desfaria o vínculo em silêncio.
+- A fonte aparece **abaixo do seletor, como texto**: ela vai ao TCESP e quem lança precisa ver o que está sendo gravado. Campo que some sem deixar rastro faz a pessoa achar que o dado se perdeu.
+- Sem nenhuma conta cadastrada o formulário avisa e aponta o caminho, em vez de deixar a pessoa descobrir no erro do servidor.
+
+A aba de receita **dentro da prestação** (`ReceitasTab`) segue com outra fonte de contas — as declaradas no **Ajuste** —, e já derivava a fonte delas. Continua exibindo o campo Fonte; unificar as duas telas é trabalho à parte.
+
 ## Cadastro do Rateio
 
 `Cadastro → Financeiro → Rateio Administrativo – Custos Indiretos` — métodos de rateio para distribuir despesa entre ajustes, por período. É a **primeira tela de verdade fora dos placeholders** do módulo Financeiro.
