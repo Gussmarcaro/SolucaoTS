@@ -68,7 +68,7 @@ export function rotaDoResultado(r: ResultadoBusca): string {
     case 'PAGAMENTO':
       return '/execucao/financeiro/pagamentos';
     case 'CONTA_BANCARIA':
-      return '/execucao/financeiro/contas-bancarias';
+      return '/cadastro/financeiro/contas-bancarias';
     case 'GUIA_RECOLHIMENTO':
       return '/execucao/financeiro/guias';
     case 'ORGAO':

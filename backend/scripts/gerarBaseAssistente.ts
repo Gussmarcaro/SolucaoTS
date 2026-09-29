@@ -64,6 +64,11 @@ function lerMenu(): NoMenu[] {
   corpo = corpo.slice(0, corpo.lastIndexOf(']') + 1);
 
   const json = corpo
+    // Comentários de bloco primeiro: eles podem conter dois-pontos, aspas e
+    // acentos, e sobreviveriam às trocas seguintes virando lixo no JSON. Faltava
+    // este passo, e a primeira explicação longa escrita num item do menu
+    // derrubou a geração inteira.
+    .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/\/\/[^\n]*/g, '') // comentários de linha
     .replace(/\bicon:\s*\w+\s*,?/g, '') // ícones são referências a componentes
     .replace(/\bgrupos:\s*GRUPOS_ADMIN/g, '"grupos": ["Administrador", "Suporte"]')

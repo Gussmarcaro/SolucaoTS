@@ -1,5 +1,5 @@
 import { Suspense, lazy, type ComponentType } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Navigate, Routes, Route } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
@@ -202,15 +202,24 @@ export default function App() {
             }
           />
 
-          {/* Execução */}
+          {/* A conta é cadastro do órgão, não lançamento — ver `navigation.ts`. */}
           <Route
-            path="/execucao/financeiro/contas-bancarias"
+            path="/cadastro/financeiro/contas-bancarias"
             element={
               <RequerPermissao recurso="EXECUCAO_CONTAS">
                 <ContasBancarias />
               </RequerPermissao>
             }
           />
+          {/* O caminho antigo continua respondendo: é o que estiver em favoritos
+              e em links já enviados, e um 404 por mudança de menu seria uma
+              regressão gratuita. */}
+          <Route
+            path="/execucao/financeiro/contas-bancarias"
+            element={<Navigate to="/cadastro/financeiro/contas-bancarias" replace />}
+          />
+
+          {/* Execução */}
           <Route
             path="/execucao/financeiro/receitas"
             element={

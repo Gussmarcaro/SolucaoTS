@@ -372,13 +372,43 @@ function PagamentoOrgaoForm({
     }
   }
 
+  /** O que já foi pago de uma nota, ignorando o próprio lançamento em edição. */
+  const pagoDaNota = (id: string) =>
+    pagamentos
+      .filter((p) => p.documentoFiscalId === id && p.id !== item?.id)
+      .reduce((s, p) => s + p.valor, 0);
+
+  /*
+   * A lista oferece **só o que falta pagar**.
+   *
+   * Nota quitada não é opção: escolhê-la leva a um formulário que não aceita
+   * nenhum valor, e a lista fica cheia de linhas que existem para serem
+   * descartadas. Mostrando só as pendentes, o combo passa a responder também
+   * "o que ainda devo?" — que é a pergunta de quem abre esta tela.
+   *
+   * A nota do lançamento **em edição** fica, mesmo quitada: sem ela o campo
+   * abriria em branco e salvar apagaria o vínculo.
+   */
+  const notasPendentes = docs.filter(
+    (d) => d.id === item?.documentoFiscalId || d.valorBruto - pagoDaNota(d.id) > 0.005,
+  );
+  const quitadasOcultas = docs.length - notasPendentes.length;
+
   const opcoesVinculo = [
     { value: FOLHA, label: 'Folha de pagamento (nº 9999)' },
-    ...docs.map((d) => ({
-      value: d.id,
-      label: `Doc. nº ${d.numero}${d.credorNome ? ` — ${d.credorNome}` : ''}`,
-      sub: `${dataBr(d.dataEmissao)} · ${formatarMoeda(d.valorBruto)}`,
-    })),
+    ...notasPendentes.map((d) => {
+      const resta = Math.round((d.valorBruto - pagoDaNota(d.id)) * 100) / 100;
+      return {
+        value: d.id,
+        label: `Doc. nº ${d.numero}${d.credorNome ? ` — ${d.credorNome}` : ''}`,
+        // O que falta entra no rótulo: é o número que decide qual nota pagar,
+        // e vê-lo antes de escolher poupa abrir uma a uma.
+        sub:
+          resta < d.valorBruto
+            ? `${dataBr(d.dataEmissao)} · ${formatarMoeda(d.valorBruto)} · resta ${formatarMoeda(Math.max(resta, 0))}`
+            : `${dataBr(d.dataEmissao)} · ${formatarMoeda(d.valorBruto)}`,
+      };
+    }),
   ];
 
   const docEscolhido = docs.find((d) => d.id === vinculo) ?? null;
@@ -390,11 +420,7 @@ function PagamentoOrgaoForm({
    * lançamento sai da conta quando se está editando: sem isso, corrigir um
    * centavo contaria o valor antigo e o novo, e a correção seria recusada.
    */
-  const jaPago = docEscolhido
-    ? pagamentos
-        .filter((p) => p.documentoFiscalId === docEscolhido.id && p.id !== item?.id)
-        .reduce((s, p) => s + p.valor, 0)
-    : 0;
+  const jaPago = docEscolhido ? pagoDaNota(docEscolhido.id) : 0;
   const saldoDaNota = docEscolhido
     ? Math.round((docEscolhido.valorBruto - jaPago) * 100) / 100
     : 0;
@@ -538,7 +564,13 @@ function PagamentoOrgaoForm({
         onChange={setVinculo}
         options={opcoesVinculo}
         placeholder="Selecione o documento ou a folha..."
-        hint="Os documentos vêm de Execução → Financeiro → Despesas."
+        /* O aviso do que foi escondido existe para a nota que "sumiu" não
+           virar suspeita de dado perdido — some porque não há o que pagar. */
+        hint={
+          quitadasOcultas > 0
+            ? `Só as pendentes de pagamento. ${quitadasOcultas} nota(s) já quitada(s) fora da lista. Os documentos vêm de Execução → Financeiro → Despesas.`
+            : 'Os documentos vêm de Execução → Financeiro → Despesas.'
+        }
       />
       {docEscolhido && (
         <p className="-mt-2 text-xs text-ink-400">
@@ -649,7 +681,7 @@ function PagamentoOrgaoForm({
           placeholder="Selecione a conta..."
           hint={
             contas.length
-              ? 'Vem de Execução → Financeiro → Contas Bancárias. Traz a fonte e o meio.'
+              ? 'Vem de Cadastro → Financeiro → Contas Bancárias. Traz a fonte e o meio.'
               : 'Nenhuma conta cadastrada — informe a fonte e o meio manualmente.'
           }
         />

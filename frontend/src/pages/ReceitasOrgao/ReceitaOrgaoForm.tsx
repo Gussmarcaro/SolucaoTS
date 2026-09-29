@@ -167,8 +167,8 @@ export function ReceitaOrgaoForm({
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>
             Nenhuma conta bancária cadastrada. Cadastre em{' '}
-            <Link to="/execucao/financeiro/contas-bancarias" className="font-semibold underline">
-              Execução → Financeiro → Contas Bancárias
+            <Link to="/cadastro/financeiro/contas-bancarias" className="font-semibold underline">
+              Cadastro → Financeiro → Contas Bancárias
             </Link>{' '}
             — é dela que vem a fonte de recurso do repasse.
           </span>

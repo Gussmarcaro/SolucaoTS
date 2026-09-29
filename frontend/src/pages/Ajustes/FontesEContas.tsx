@@ -39,7 +39,7 @@ function descreverConta(c: ContaBancariaAjuste): string {
  * então sem esta lista o erro só apareceria na análise do Tribunal.
  *
  * **A conta não se digita mais aqui: escolhe-se do cadastro do órgão**
- * (Execução → Financeiro → Contas Bancárias). A mesma conta servia a vários
+ * (Cadastro → Financeiro → Contas Bancárias). A mesma conta servia a vários
  * ajustes e era redigitada em cada um; um dígito trocado num deles não
  * aparecia como erro, aparecia como conciliação que deixou de casar. O que
  * continua sendo do ajuste — e só dele — é a **fonte de recurso que entra na
@@ -200,10 +200,10 @@ export function FontesEContas({ fontes, onFontes, contas, onContas }: Props) {
           <p className="text-xs text-ink-400">
             Nenhuma conta ativa no cadastro do órgão. Cadastre-as em{' '}
             <Link
-              to="/execucao/financeiro/contas-bancarias"
+              to="/cadastro/financeiro/contas-bancarias"
               className="inline-flex items-center gap-1 text-brand-600 hover:underline dark:text-brand-400"
             >
-              Execução → Financeiro → Contas Bancárias
+              Cadastro → Financeiro → Contas Bancárias
               <ExternalLink className="h-3 w-3" />
             </Link>
             .

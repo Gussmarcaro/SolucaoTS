@@ -86,6 +86,21 @@ export const navigation: NavNode[] = [
         icon: Wallet,
         children: [
           {
+            label: 'Contas Bancárias',
+            to: '/cadastro/financeiro/contas-bancarias',
+            /*
+             * Saiu de Execução: a conta é cadastro do órgão, não lançamento —
+             * e é dela que a receita e o pagamento tiram fonte e meio.
+             *
+             * O **recurso mantém o nome antigo** de propósito. Renomeá-lo
+             * apagaria as concessões já gravadas (a matriz guarda o módulo
+             * pelo nome), e todo grupo que a tivesse configurado perderia o
+             * acesso em silêncio — o oposto do que uma mudança de menu deve
+             * causar.
+             */
+            recurso: 'EXECUCAO_CONTAS',
+          },
+          {
             label: 'Rateio Administrativo – Custos Indiretos',
             to: '/cadastro/financeiro/rateio',
             recurso: 'CADASTRO_RATEIO',
@@ -102,7 +117,6 @@ export const navigation: NavNode[] = [
         label: 'Financeiro',
         icon: Wallet,
         children: [
-          { label: 'Contas Bancárias', to: '/execucao/financeiro/contas-bancarias', recurso: 'EXECUCAO_CONTAS' },
           { label: 'Receitas', to: '/execucao/financeiro/receitas', recurso: 'EXECUCAO_RECEITAS' },
           { label: 'Despesas', to: '/execucao/financeiro/despesas', recurso: 'EXECUCAO_DESPESAS' },
           { label: 'Pagamentos', to: '/execucao/financeiro/pagamentos', recurso: 'EXECUCAO_PAGAMENTOS' },
