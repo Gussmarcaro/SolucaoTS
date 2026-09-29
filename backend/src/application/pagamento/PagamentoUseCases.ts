@@ -4,7 +4,7 @@ import type { IPrestacaoRepository } from '@/application/prestacao/IPrestacaoRep
 import type { DadosPagamento, PagamentoDTO } from './dtos';
 import { BusinessError, NotFoundError } from '@/shared/errors';
 import { parseDataISO } from '@/shared/datas';
-import { ratearValor } from '@/core/rateio/Rateio';
+import { limiteDaParcela, ratearValor } from '@/core/rateio/Rateio';
 import type { IRateioRepository } from '@/application/rateio/IRateioRepository';
 import type { DocumentoFiscalUseCases } from '@/application/documentoFiscal/DocumentoFiscalUseCases';
 import type { IAjusteRepository } from '@/application/ajuste/IAjusteRepository';
@@ -149,6 +149,76 @@ export class PagamentoUseCases {
           : `O pagamento não pode passar do valor da nota (${moedaBr(doc.valorBruto)}).`,
       );
     }
+
+    await this.conferirContraParcelaDoRateio(dados, doc, ignorarId);
+  }
+
+  /**
+   * Na nota rateada, o teto é a **parcela do ajuste** — não o saldo da nota.
+   *
+   * O saldo da nota mistura ajustes, e é aí que mora o erro: uma nota de
+   * R$ 500,00 rateada 75/25 com a parcela de 75% já paga mostra "resta
+   * R$ 125,00" — que é dinheiro do **outro** ajuste. Pagar esses R$ 125,00
+   * dentro do ajuste de 75% fecha a nota certinho, passa por toda validação, e
+   * a prestação sai com uma despesa que não é daquela parceria. Ninguém
+   * descobre olhando: os totais batem.
+   *
+   * Por isso, aqui:
+   *
+   * 1. a nota rateada **exige** que o pagamento diga de qual ajuste é — sem
+   *    isso não há parcela contra a qual comparar, e o lançamento poderia ser
+   *    apropriado depois por qualquer prestação;
+   * 2. o ajuste tem de estar **no quadro** do rateio, senão a nota não lhe diz
+   *    respeito;
+   * 3. a soma paga **daquele ajuste** naquela nota não pode passar da parcela.
+   *
+   * A parcela sai do mesmo `ratearValor` que o lançamento rateado usa: duas
+   * contas para o mesmo número divergiriam no centavo do maior resto, e a
+   * diferença apareceria como recusa inexplicável de um pagamento de R$ 0,01.
+   */
+  private async conferirContraParcelaDoRateio(
+    dados: DadosPagamento,
+    doc: { id: string; rateioProveniente: boolean; rateioId: string | null; valorBruto: number; valorEncargos: number },
+    ignorarId?: string,
+  ) {
+    if (!doc.rateioProveniente || !doc.rateioId || !this.rateios) return;
+
+    if (!dados.ajusteId)
+      throw new BusinessError(
+        'Esta nota é rateada entre ajustes. Informe de qual ajuste é este pagamento — o valor é limitado à parcela dele.',
+      );
+
+    const rateio = await this.rateios.buscarPorId(doc.rateioId);
+    // Rateio sumiu do cadastro: não há como apurar a parcela. Deixar passar é
+    // melhor que travar o pagamento de uma nota legítima — a tela já avisa que
+    // o método não foi encontrado, e o teto da nota continua valendo.
+    if (!rateio || !rateio.participantes.length) return;
+
+    const jaPagoNoAjuste = await this.repo.somaPagaDaNotaPorAjuste(
+      doc.id,
+      dados.ajusteId,
+      ignorarId,
+    );
+
+    const { parcela, resta, cabe } = limiteDaParcela(
+      arredondarCentavos(doc.valorBruto - doc.valorEncargos),
+      rateio.participantes,
+      dados.ajusteId,
+      jaPagoNoAjuste,
+      dados.valor,
+    );
+
+    if (parcela === null)
+      throw new BusinessError(
+        `O ajuste deste pagamento não está no quadro do rateio "${rateio.titulo}" — esta despesa não é dele.`,
+      );
+
+    if (!cabe)
+      throw new BusinessError(
+        jaPagoNoAjuste > 0
+          ? `A parte deste ajuste na nota é de ${moedaBr(parcela)} e já tem ${moedaBr(jaPagoNoAjuste)} pago — resta ${moedaBr(resta)}.`
+          : `O pagamento não pode passar da parte deste ajuste na nota (${moedaBr(parcela)}).`,
+      );
   }
 
   async criarNoOrgao(input: PagamentoDTO): Promise<Pagamento> {

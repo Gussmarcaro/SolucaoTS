@@ -435,6 +435,17 @@ A aba de receita **dentro da prestação** (`ReceitasTab`) segue com outra fonte
 - **O percentual não é digitado nem enviado pela tela.** O servidor o recalcula do quadro, para o ajuste daquela prestação, e grava o resultado. Aceitar o número do cliente permitiria gravar 30% num ajuste que o rateio diz ser 10%, e nada acusaria. O valor gravado é **fotografia**: editar o rateio depois não mexe em nota já lançada — a prestação é registro histórico.
 - **Ajuste fora do quadro é recusado**, não gravado com 0%: rateio que não inclui o ajuste não se aplica àquela despesa, e 0% subestimaria o gasto em silêncio.
 
+### O teto do pagamento numa nota rateada
+
+**O saldo da nota não serve de teto quando ela é rateada** — e essa era a brecha. Uma nota de R$ 500,00 dividida 75/25, com a parcela de 75% já paga, mostra *"resta R$ 125,00"*: dinheiro do **outro** ajuste. Pagá-lo dentro do ajuste de 75% fechava a nota certinho, passava por toda validação, e a prestação saía com uma despesa que não é daquela parceria. Ninguém descobre olhando — os totais batem.
+
+- **A nota rateada exige que o pagamento diga de qual ajuste é.** Sem isso não há parcela contra a qual comparar, e o lançamento poderia depois ser apropriado por qualquer prestação (`Pagamento.ajusteId` nascia nulo no lançamento manual). O campo só aparece na nota rateada: nas demais o ajuste continua vindo da apropriação, e perguntar ali seria etapa a mais sem nada em troca.
+- **O teto é a parcela do ajuste menos o que aquele ajuste já pagou naquela nota** (`somaPagaDaNotaPorAjuste`), não a soma geral. O teto da nota inteira continua valendo por cima — os dois se somam, não se substituem.
+- **`limiteDaParcela` é pura e fica no core**, coberta por `verificar:rateio` sem banco: o número decide dinheiro na prestação de contas. Ela reusa `ratearValor`, o mesmo do lançamento rateado — duas contas para o mesmo valor divergiriam no centavo do maior resto, e a diferença apareceria como recusa inexplicável de um pagamento de R$ 0,01.
+- **Ajuste fora do quadro é recusado**, não tratado como parcela zero: a nota não lhe diz respeito.
+- **`useRateioDaNota` é hook porque duas partes da tela precisam do mesmo número** — o painel, que mostra a divisão, e o formulário, que limita o valor. Cada um calculando por si traria de volta a divergência de centavo.
+- No quadro, a linha do ajuste que está sendo lançado fica **em destaque** e as outras esmaecidas. Não é enfeite: o painel mostra a nota inteira, mas só uma daquelas parcelas pode ser paga ali, e sem a marca o usuário lê "resta R$ 125,00" e supõe que pode pagá-los.
+
 ## Fiscalização | Monitoramento (Workflow)
 
 `/fiscalizacao` — as providências e seus prazos. É a outra metade do sino: ele **calcula** prazos a partir dos dados, esta tela **registra o que foi feito** a respeito. Sem ela o sistema sabe cobrar e não sabe que já foi atendido, e um aviso que continua piscando depois de resolvido ensina o usuário a ignorá-lo.

@@ -295,3 +295,41 @@ export function ratearValor(
     valor: centavos[i] / 100,
   }));
 }
+
+/**
+ * Quanto ainda cabe pagar de uma nota rateada, **para um ajuste**.
+ *
+ * O saldo da nota não serve de teto quando ela é rateada, e é aí que mora um
+ * erro que passa por toda validação: uma nota de R$ 500,00 dividida 75/25 com
+ * a parcela de 75% já paga mostra "resta R$ 125,00" — dinheiro do **outro**
+ * ajuste. Pagá-lo dentro do ajuste de 75% fecha a nota certinho e a prestação
+ * sai com uma despesa que não é daquela parceria. Ninguém descobre olhando: os
+ * totais batem.
+ *
+ * Função pura para poder ser conferida sem banco — o valor daqui é dinheiro na
+ * prestação de contas.
+ */
+export interface LimiteDaParcela {
+  /** `null` quando o ajuste não está no quadro: a nota não lhe diz respeito. */
+  parcela: number | null;
+  /** Quanto ainda cabe. Negativo nunca: satura em zero. */
+  resta: number;
+  cabe: boolean;
+}
+
+export function limiteDaParcela(
+  liquidoDaNota: number,
+  participantes: { ajusteId: string; base: number }[],
+  ajusteId: string,
+  jaPagoNoAjuste: number,
+  valorPretendido: number,
+): LimiteDaParcela {
+  const parcela = ratearValor(liquidoDaNota, participantes).find((p) => p.ajusteId === ajusteId);
+  if (!parcela) return { parcela: null, resta: 0, cabe: false };
+
+  const resta = arredondar(parcela.valor - jaPagoNoAjuste, 2);
+  // A mesma folga de meio centavo do resto do sistema: o valor vem de uma
+  // divisão, e reprovar por ponto flutuante recusaria um pagamento correto.
+  const cabe = arredondar(jaPagoNoAjuste + valorPretendido, 2) <= arredondar(parcela.valor, 2) + 0.005;
+  return { parcela: parcela.valor, resta: Math.max(resta, 0), cabe };
+}

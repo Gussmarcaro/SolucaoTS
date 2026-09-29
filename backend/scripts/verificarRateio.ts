@@ -14,6 +14,7 @@ import {
   periodosSobrepoem,
   temQuadro,
   vigentesEm,
+  limiteDaParcela,
   ratearValor,
 } from '../src/core/rateio/Rateio';
 import { validarRateio } from '../src/application/rateio/RateioUseCases';
@@ -296,6 +297,74 @@ console.log('\nCadastro do Rateio\n');
   }
 }
 
+// --- o teto do pagamento numa nota rateada ----------------------------------
+//
+// O erro que isto impede passa por toda a validação e fecha a nota certinho: a
+// prestação sai com uma despesa que é de **outra** parceria, e os totais batem.
+// Ninguém descobre olhando.
+console.log('\n--- limite por parcela na nota rateada ---');
+{
+  // Nota de R$ 500,00 rateada 75/25 — o exemplo da tela.
+  const quadro = [
+    { ajusteId: AJ[0], base: 75 }, // R$ 375,00
+    { ajusteId: AJ[1], base: 25 }, // R$ 125,00
+  ];
+  const lim = (ajusteId: string, jaPago: number, valor: number) =>
+    limiteDaParcela(500, quadro, ajusteId, jaPago, valor);
+
+  conferir('a parcela do ajuste de 75% é 375', lim(AJ[0], 0, 1).parcela === 375);
+  conferir('a do ajuste de 25% é 125', lim(AJ[1], 0, 1).parcela === 125);
+
+  conferir('pagar 375 no ajuste de 75% cabe', lim(AJ[0], 0, 375).cabe);
+  conferir('pagar 376 não cabe', !lim(AJ[0], 0, 376).cabe);
+
+  // O caso da imagem: a parcela de 375 já foi paga, a nota mostra "resta 125"
+  // — e esses 125 são do OUTRO ajuste.
+  conferir(
+    'com a parcela quitada, nada mais cabe naquele ajuste',
+    !lim(AJ[0], 375, 125).cabe && lim(AJ[0], 375, 125).resta === 0,
+    'o saldo da nota é de outro ajuste, e pagá-lo aqui seria despesa de outra parceria',
+  );
+  conferir(
+    'e continua cabendo no ajuste a que pertence',
+    lim(AJ[1], 0, 125).cabe,
+  );
+
+  conferir('parcial: paga 200, restam 175', lim(AJ[0], 200, 1).resta === 175);
+  conferir('e 175 ainda cabe', lim(AJ[0], 200, 175).cabe);
+  conferir('176 não', !lim(AJ[0], 200, 176).cabe);
+
+  conferir(
+    'ajuste fora do quadro não tem parcela',
+    lim(AJ[4], 0, 1).parcela === null && !lim(AJ[4], 0, 1).cabe,
+    'a nota não diz respeito a ele — recusar é diferente de deixar pagar zero',
+  );
+
+  conferir(
+    'o resto nunca é negativo',
+    lim(AJ[0], 400, 1).resta === 0,
+    'pagamento a mais já existente não pode virar crédito',
+  );
+
+  // Ponto flutuante: R$ 1.000,07 em três não divide redondo.
+  {
+    const tres = [
+      { ajusteId: AJ[0], base: 1 },
+      { ajusteId: AJ[1], base: 1 },
+      { ajusteId: AJ[2], base: 1 },
+    ];
+    const p = limiteDaParcela(1000.07, tres, AJ[0], 0, 0).parcela ?? 0;
+    conferir(
+      'a parcela exata cabe, apesar da divisão inexata',
+      limiteDaParcela(1000.07, tres, AJ[0], 0, p).cabe,
+      `${p} — reprovar aqui recusaria um pagamento correto por ponto flutuante`,
+    );
+    conferir(
+      'as três parcelas somam o total',
+      ratearValor(1000.07, tres).reduce((s, x) => s + x.valor, 0) === 1000.07,
+    );
+  }
+}
 
 console.log(falhas.length ? `\n${falhas.length} falha(s).\n` : '\nTudo ok.\n');
 process.exit(falhas.length ? 1 : 0);

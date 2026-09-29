@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { Anexos, enviarPendentes, type AnexoPendente } from '@/components/ui/Anexos';
-import { PainelRateio } from './PainelRateio';
+import { PainelRateio, useRateioDaNota } from './PainelRateio';
 import { GradeSimples } from '@/components/ui/GradeSimples';
 import { AcoesGrade, IconBtn } from '@/components/ui/AcoesGrade';
 import { Input } from '@/components/ui/Input';
@@ -265,6 +265,14 @@ function PagamentoOrgaoForm({
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [pendentes, setPendentes] = useState<AnexoPendente[]>([]);
+  /**
+   * De qual ajuste é este pagamento.
+   *
+   * Só se pergunta na nota **rateada**, onde a resposta decide o teto do valor.
+   * Nas demais o lançamento segue sem ajuste e a prestação o apropria depois,
+   * como antes — perguntar ali seria uma etapa a mais sem nada em troca.
+   */
+  const [ajuste, setAjuste] = useState(item?.ajusteId ?? '');
   /*
    * O id do lançamento que **acabou de nascer** nesta sessão do formulário.
    *
@@ -387,9 +395,41 @@ function PagamentoOrgaoForm({
         .filter((p) => p.documentoFiscalId === docEscolhido.id && p.id !== item?.id)
         .reduce((s, p) => s + p.valor, 0)
     : 0;
-  const restaPagar = docEscolhido
+  const saldoDaNota = docEscolhido
     ? Math.round((docEscolhido.valorBruto - jaPago) * 100) / 100
     : 0;
+
+  /*
+   * O quadro do rateio desta nota — e a parcela do ajuste que está sendo pago.
+   *
+   * **O saldo da nota não serve de teto quando ela é rateada**, e é aí que
+   * mora o erro que isto evita: uma nota de R$ 500,00 dividida 75/25 com a
+   * parcela de 75% já paga mostra "resta R$ 125,00" — dinheiro do **outro**
+   * ajuste. Pagá-lo aqui fecha a nota certinho, passa por toda validação, e a
+   * prestação sai com uma despesa que não é daquela parceria. Ninguém descobre
+   * olhando: os totais batem.
+   */
+  const rateioNota = useRateioDaNota(docEscolhido);
+  const ehRateada = !!docEscolhido?.rateioProveniente && !!rateioNota.rateio?.participantes.length;
+  const parcelaDoAjuste = ehRateada ? rateioNota.parcelaDoAjuste(ajuste || null) : null;
+
+  /** O que este ajuste já pagou nesta nota — o teto é por parcela, não por nota. */
+  const jaPagoNoAjuste =
+    ehRateada && ajuste && docEscolhido
+      ? pagamentos
+          .filter(
+            (p) =>
+              p.documentoFiscalId === docEscolhido.id &&
+              p.ajusteId === ajuste &&
+              p.id !== item?.id,
+          )
+          .reduce((s, p) => s + p.valor, 0)
+      : 0;
+
+  const restaPagar =
+    ehRateada && parcelaDoAjuste != null
+      ? Math.round((parcelaDoAjuste - jaPagoNoAjuste) * 100) / 100
+      : saldoDaNota;
 
   async function submeter(e: React.FormEvent) {
     e.preventDefault();
@@ -406,6 +446,10 @@ function PagamentoOrgaoForm({
      * porque a tela pode ser contornada e a soma pode ter mudado enquanto o
      * formulário estava aberto.
      */
+    // Nota rateada sem ajuste declarado não tem teto contra o que conferir.
+    if (ehRateada && !ajuste)
+      return setErro('Selecione o ajuste deste pagamento — a nota é rateada entre ajustes.');
+
     if (docEscolhido) {
       if (dataPagamento < docEscolhido.dataEmissao)
         return setErro(
@@ -413,14 +457,21 @@ function PagamentoOrgaoForm({
         );
       if (v > restaPagar + 0.005)
         return setErro(
-          jaPago > 0
-            ? `A nota é de ${formatarMoeda(docEscolhido.valorBruto)} e já tem ${formatarMoeda(jaPago)} pago — resta ${formatarMoeda(Math.max(restaPagar, 0))}.`
-            : `O pagamento não pode passar do valor da nota (${formatarMoeda(docEscolhido.valorBruto)}).`,
+          ehRateada && parcelaDoAjuste != null
+            ? jaPagoNoAjuste > 0
+              ? `A parte deste ajuste na nota é de ${formatarMoeda(parcelaDoAjuste)} e já tem ${formatarMoeda(jaPagoNoAjuste)} pago — resta ${formatarMoeda(Math.max(restaPagar, 0))}.`
+              : `O pagamento não pode passar da parte deste ajuste na nota (${formatarMoeda(parcelaDoAjuste)}).`
+            : jaPago > 0
+              ? `A nota é de ${formatarMoeda(docEscolhido.valorBruto)} e já tem ${formatarMoeda(jaPago)} pago — resta ${formatarMoeda(Math.max(restaPagar, 0))}.`
+              : `O pagamento não pode passar do valor da nota (${formatarMoeda(docEscolhido.valorBruto)}).`,
         );
     }
 
     const payload: PagamentoPayload = {
       documentoFiscalId: vinculo === FOLHA ? null : vinculo,
+      // Só vai quando a nota é rateada: fora daí o ajuste continua sendo
+      // definido pela apropriação da prestação, como sempre foi.
+      ajusteId: ehRateada ? ajuste : (item?.ajusteId ?? null),
       dataPagamento,
       valor: v,
       fonteRecursoTipo: Number(apenasDigitos(fonte)),
@@ -516,11 +567,50 @@ function PagamentoOrgaoForm({
           "ratear" ali criaria duplicatas do que já existe. */}
       {!item && docEscolhido?.rateioProveniente && (
         <PainelRateio
-          doc={docEscolhido}
+          {...rateioNota}
+          ajusteSelecionado={ajuste || null}
           pronto={!!dataPagamento && !!fonte.trim() && (meio !== 'BANCO' || (!!banco && !!agencia && !!conta.trim()))}
           rateando={rateando}
           onRatear={ratearPagamento}
         />
+      )}
+
+      {/*
+        De qual ajuste é este pagamento — só na nota rateada.
+
+        É o campo que fecha o furo: o quadro mostra a nota inteira, mas só a
+        parcela **deste** ajuste pode ser paga aqui. Sem declarar o ajuste não
+        há parcela contra a qual comparar, e o lançamento poderia depois ser
+        apropriado por qualquer prestação.
+      */}
+      {ehRateada && (
+        <div>
+          <Select
+            label="Ajuste deste pagamento *"
+            name="ajusteId"
+            value={ajuste}
+            onChange={(e) => setAjuste(e.target.value)}
+            placeholder="Selecione o ajuste..."
+            options={(rateioNota.rateio?.participantes ?? []).map((p) => ({
+              value: p.ajusteId,
+              label: `${p.ajusteCodigo} — ${p.entidadeNome}`,
+            }))}
+          />
+          <p className="mt-1 text-xs text-ink-400">
+            {parcelaDoAjuste != null ? (
+              <>
+                A parte deste ajuste na nota é{' '}
+                <strong className="text-ink-600 dark:text-ink-300">
+                  {formatarMoeda(parcelaDoAjuste)}
+                </strong>
+                {jaPagoNoAjuste > 0 && <> · já pago {formatarMoeda(jaPagoNoAjuste)}</>}. O valor
+                abaixo é limitado a ela — a parcela dos outros ajustes se paga no lançamento deles.
+              </>
+            ) : (
+              'A nota é rateada: o valor que se pode pagar aqui é a parte deste ajuste, não o saldo da nota.'
+            )}
+          </p>
+        </div>
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

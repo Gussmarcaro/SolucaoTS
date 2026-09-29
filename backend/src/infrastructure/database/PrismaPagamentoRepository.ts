@@ -84,6 +84,18 @@ export class PrismaPagamentoRepository implements IPagamentoRepository {
     return Number(r._sum.valor ?? 0);
   }
 
+  async somaPagaDaNotaPorAjuste(
+    documentoFiscalId: string,
+    ajusteId: string,
+    ignorarId?: string,
+  ): Promise<number> {
+    const r = await prisma.pagamento.aggregate({
+      where: { documentoFiscalId, ajusteId, ...(ignorarId ? { id: { not: ignorarId } } : {}) },
+      _sum: { valor: true },
+    });
+    return Number(r._sum.valor ?? 0);
+  }
+
   /** Nasce sem prestação: quem se apropria dele decide isso depois. */
   async criarNoOrgao(dados: Parameters<typeof this.atualizar>[1]) {
     const row = await prisma.pagamento.create({

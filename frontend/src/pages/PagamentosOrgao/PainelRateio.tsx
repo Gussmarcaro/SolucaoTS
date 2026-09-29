@@ -37,6 +37,58 @@ function ratear(total: number, bases: number[]): number[] {
 }
 
 /**
+ * O rateio de uma nota, com as parcelas já calculadas.
+ *
+ * Existe como hook porque **duas partes da tela precisam do mesmo número**: o
+ * painel, que mostra a divisão, e o formulário, que limita o valor à parcela do
+ * ajuste escolhido. Cada um calculando por si divergiria no centavo do maior
+ * resto — e a divergência apareceria como uma recusa de R$ 0,01 que ninguém
+ * saberia explicar.
+ */
+export function useRateioDaNota(doc: DocumentoFiscal | null) {
+  const [rateio, setRateio] = useState<Rateio | null>(null);
+  const [carregando, setCarregando] = useState(false);
+
+  const rateioId = doc?.rateioProveniente ? doc.rateioId : null;
+
+  useEffect(() => {
+    if (!rateioId) {
+      setRateio(null);
+      return;
+    }
+    let vivo = true;
+    setCarregando(true);
+    listarRateios({ page: 1, pageSize: 200 })
+      .then((r) => vivo && setRateio(r.data.find((x) => x.id === rateioId) ?? null))
+      .catch(() => undefined)
+      .finally(() => vivo && setCarregando(false));
+    return () => {
+      vivo = false;
+    };
+  }, [rateioId]);
+
+  // O líquido é o que de fato sai da conta — ratear o bruto faria a soma dos
+  // pagamentos não bater com o extrato.
+  const liquido = doc ? Math.round((doc.valorBruto - doc.valorEncargos) * 100) / 100 : 0;
+  const participantes = rateio?.participantes ?? [];
+  const parcelas = participantes.length ? ratear(liquido, participantes.map((p) => p.base)) : [];
+  // O percentual nao e gravado: recalcula-se das bases, como na tela do
+  // Rateio. Guardado, ele divergiria da base assim que alguem a editasse.
+  const { linhas } = calcularRateio(
+    participantes.map((p) => ({ ajusteId: p.ajusteId, base: p.base })),
+  );
+
+  /** A parte de um ajuste nesta nota; `null` quando ele não está no quadro. */
+  const parcelaDoAjuste = (ajusteId: string | null): number | null => {
+    if (!ajusteId) return null;
+    const i = participantes.findIndex((p) => p.ajusteId === ajusteId);
+    return i < 0 ? null : (parcelas[i] ?? 0);
+  };
+
+  return { rateio, carregando, liquido, parcelas, linhas, parcelaDoAjuste };
+}
+
+/**
  * O pagamento de uma despesa rateada.
  *
  * A despesa acontece uma vez e é paga por vários ajustes. Antes, quem lançava a
@@ -49,32 +101,29 @@ function ratear(total: number, bases: number[]): number[] {
  * lançamentos nascem juntos.
  */
 export function PainelRateio({
-  doc,
   pronto,
   onRatear,
   rateando,
+  rateio,
+  carregando,
+  liquido,
+  parcelas,
+  linhas,
+  ajusteSelecionado,
 }: {
-  doc: DocumentoFiscal;
   /** Os campos comuns (data, fonte, meio…) já estão preenchidos? */
   pronto: boolean;
   onRatear: () => void;
   rateando: boolean;
+  /** Vem de `useRateioDaNota`, no formulário — ver a nota do hook. */
+  rateio: Rateio | null;
+  carregando: boolean;
+  liquido: number;
+  parcelas: number[];
+  linhas: ReturnType<typeof calcularRateio>['linhas'];
+  /** O ajuste que o formulário está lançando; a linha dele ganha destaque. */
+  ajusteSelecionado: string | null;
 }) {
-  const [rateio, setRateio] = useState<Rateio | null>(null);
-  const [carregando, setCarregando] = useState(true);
-
-  useEffect(() => {
-    let vivo = true;
-    setCarregando(true);
-    listarRateios({ page: 1, pageSize: 200 })
-      .then((r) => vivo && setRateio(r.data.find((x) => x.id === doc.rateioId) ?? null))
-      .catch(() => undefined)
-      .finally(() => vivo && setCarregando(false));
-    return () => {
-      vivo = false;
-    };
-  }, [doc.rateioId]);
-
   if (carregando) {
     return (
       <div className="rounded-xl border border-brand-200 bg-brand-50/60 px-4 py-3 dark:border-brand-500/30 dark:bg-brand-500/10">
@@ -92,20 +141,6 @@ export function PainelRateio({
       </div>
     );
   }
-
-  // O líquido é o que de fato sai da conta — ratear o bruto faria a soma dos
-  // pagamentos não bater com o extrato.
-  const liquido = Math.round((doc.valorBruto - doc.valorEncargos) * 100) / 100;
-  // O percentual nao e gravado: recalcula-se das bases, como na tela do
-  // Rateio. Guardado, ele divergiria da base assim que alguem a editasse.
-  const { linhas } = calcularRateio(
-    rateio.participantes.map((p) => ({ ajusteId: p.ajusteId, base: p.base })),
-  );
-
-  const parcelas = ratear(
-    liquido,
-    rateio.participantes.map((p) => p.base),
-  );
 
   return (
     <div className="rounded-xl border border-brand-200 bg-brand-50/60 px-4 py-3 dark:border-brand-500/30 dark:bg-brand-500/10">
@@ -126,24 +161,51 @@ export function PainelRateio({
 
       <table className="w-full text-sm">
         <tbody className="divide-y divide-brand-200/60 dark:divide-brand-500/20">
-          {rateio.participantes.map((p, i) => (
-            <tr key={p.id}>
-              <td className="py-1 pr-2">
-                <span className="block truncate text-ink-700 dark:text-ink-200" title={p.entidadeNome}>
-                  {p.ajusteCodigo}
-                </span>
-                <span className="block truncate text-xs text-ink-400" title={p.ajusteObjeto}>
-                  {p.entidadeNome}
-                </span>
-              </td>
-              <td className="w-20 py-1 text-right tabular-nums text-ink-500 dark:text-ink-400">
-                {(linhas[i]?.percentualExibido ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}%
-              </td>
-              <td className="w-32 py-1 text-right tabular-nums font-medium text-ink-800 dark:text-ink-100">
-                {formatarMoeda(parcelas[i] ?? 0)}
-              </td>
-            </tr>
-          ))}
+          {rateio.participantes.map((p, i) => {
+            /*
+             * A linha do ajuste que está sendo lançado fica em destaque, e as
+             * outras esmaecidas.
+             *
+             * Não é enfeite: o quadro mostra a nota inteira, mas só **uma**
+             * daquelas parcelas pode ser paga neste lançamento. Sem a marca, o
+             * usuário lê "resta R$ 125,00" e supõe que pode pagá-los aqui —
+             * exatamente o erro que a regra do servidor passou a recusar.
+             */
+            const ehOAtual = !!ajusteSelecionado && p.ajusteId === ajusteSelecionado;
+            const esmaecido = !!ajusteSelecionado && !ehOAtual;
+            return (
+              <tr
+                key={p.id}
+                className={
+                  ehOAtual
+                    ? 'bg-brand-100/70 dark:bg-brand-500/20'
+                    : esmaecido
+                      ? 'opacity-45'
+                      : undefined
+                }
+              >
+                <td className="py-1 pl-1 pr-2">
+                  <span className="block truncate text-ink-700 dark:text-ink-200" title={p.entidadeNome}>
+                    {p.ajusteCodigo}
+                    {ehOAtual && (
+                      <span className="ml-2 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-700 ring-1 ring-brand-400 dark:text-brand-300 dark:ring-brand-500/50">
+                        lançando
+                      </span>
+                    )}
+                  </span>
+                  <span className="block truncate text-xs text-ink-400" title={p.ajusteObjeto}>
+                    {p.entidadeNome}
+                  </span>
+                </td>
+                <td className="w-20 py-1 text-right tabular-nums text-ink-500 dark:text-ink-400">
+                  {(linhas[i]?.percentualExibido ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}%
+                </td>
+                <td className="w-32 py-1 pr-1 text-right tabular-nums font-medium text-ink-800 dark:text-ink-100">
+                  {formatarMoeda(parcelas[i] ?? 0)}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
 

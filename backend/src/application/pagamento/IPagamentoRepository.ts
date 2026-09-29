@@ -43,6 +43,12 @@ export interface IPagamentoRepository {
    * correção de centavos seria recusada.
    */
   somaPagaDaNota(documentoFiscalId: string, ignorarId?: string): Promise<number>;
+  /** O mesmo, restrito a um ajuste — o teto da nota rateada é por parcela. */
+  somaPagaDaNotaPorAjuste(
+    documentoFiscalId: string,
+    ajusteId: string,
+    ignorarId?: string,
+  ): Promise<number>;
   docPertenceAPrestacao(prestacaoId: string, documentoFiscalId: string): Promise<boolean>;
   criar(prestacaoId: string, dados: DadosPagamento): Promise<Pagamento>;
   atualizar(id: string, dados: DadosPagamento): Promise<Pagamento>;
