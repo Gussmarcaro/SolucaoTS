@@ -21,9 +21,9 @@ export type TipoDocumentoFiscal =
  * O TCESP recebe só o valor (`valor_encargos`, obrigatório e numérico); qual
  * tributo foi retido não tem campo no schema.
  */
-export type TipoRetencao = 'IRRF' | 'ISSQN' | 'PIS' | 'COFINS' | 'IR' | 'CSSL';
+export type TipoRetencao = 'IRRF' | 'ISSQN' | 'PIS' | 'COFINS' | 'IR' | 'CSSL' | 'INSS';
 
-export const TIPOS_RETENCAO: TipoRetencao[] = ['IRRF', 'ISSQN', 'PIS', 'COFINS', 'IR', 'CSSL'];
+export const TIPOS_RETENCAO: TipoRetencao[] = ['IRRF', 'ISSQN', 'PIS', 'COFINS', 'IR', 'CSSL', 'INSS'];
 
 export const TIPOS_DOCUMENTO_FISCAL: TipoDocumentoFiscal[] = [
   'NOTA_FISCAL',

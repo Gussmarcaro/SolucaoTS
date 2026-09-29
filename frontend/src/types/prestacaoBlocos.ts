@@ -30,7 +30,7 @@ export const TIPO_DOCUMENTO_FISCAL_LABEL: Record<TipoDocumentoFiscal, string> = 
  * O TCESP recebe só o valor (`valor_encargos`, obrigatório e numérico); qual
  * tributo foi retido não tem campo no schema.
  */
-export type TipoRetencao = 'IRRF' | 'ISSQN' | 'PIS' | 'COFINS' | 'IR' | 'CSSL';
+export type TipoRetencao = 'IRRF' | 'ISSQN' | 'PIS' | 'COFINS' | 'IR' | 'CSSL' | 'INSS';
 
 export const TIPO_RETENCAO_LABEL: Record<TipoRetencao, string> = {
   IRRF: 'IRRF',
@@ -39,6 +39,7 @@ export const TIPO_RETENCAO_LABEL: Record<TipoRetencao, string> = {
   COFINS: 'COFINS',
   IR: 'IR',
   CSSL: 'CSSL',
+  INSS: 'INSS',
 };
 
 export interface DocumentoFiscal {
