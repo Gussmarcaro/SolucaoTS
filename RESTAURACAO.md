@@ -26,6 +26,11 @@ certa** até o dia em que ela não abre nada. Um espaço no fim, um caractere qu
 o gerenciador "corrigiu", uma quebra de linha colada junto — nada disso dá
 sinal, e o teste é de trinta segundos.
 
+> **Antes de colar qualquer comando, veja o §2 — "Em qual terminal você está?".**
+> Este é o passo em que se erra de máquina, e a mensagem do OpenSSL não ajuda:
+> arquivo que está no seu Downloads não existe dentro da sessão SSH, e o erro
+> diz "No such file or directory" como se a senha fosse o problema.
+
 Em qualquer variante, digita-se a senha **do gerenciador** — nunca se aponta
 para `~/.backup-pass`. O que se quer provar é a cópia, não o original.
 
