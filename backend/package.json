@@ -43,6 +43,7 @@
     "verificar:conferencia": "tsx scripts/verificarConferencia.ts",
     "verificar:metas": "tsx scripts/verificarMetas.ts",
     "verificar:plano": "tsx scripts/verificarPlano.ts",
+    "verificar:sessoes": "tsx scripts/verificarSessoes.ts",
     "typecheck:scripts": "tsc -p tsconfig.scripts.json --noEmit"
   },
   "dependencies": {

@@ -141,6 +141,7 @@ export const navigation: NavNode[] = [
       { label: 'Usuários', to: '/usuarios', recurso: 'CONFIG_USUARIOS' },
       { label: 'Grupos de Usuários', to: '/grupos', recurso: 'CONFIG_GRUPOS' },
       { label: 'Auditoria', to: '/auditoria', grupos: GRUPOS_ADMIN, recurso: 'CONFIG_AUDITORIA' },
+      { label: 'Histórico de Acessos', to: '/acessos', grupos: GRUPOS_ADMIN, recurso: 'CONFIG_ACESSOS' },
       { label: 'Privacidade e LGPD', to: '/privacidade', recurso: 'CONFIG_PRIVACIDADE' },
     ],
   },

@@ -2,6 +2,10 @@ import type { NextFunction, Request, Response } from 'express';
 import { AppError } from '@/shared/errors';
 import { verificarToken } from '@/shared/auth/jwt';
 import { comContexto } from '@/shared/contexto';
+import { RegistrarAcessoUseCase } from '@/application/sessao/RegistrarAcessoUseCase';
+import { PrismaSessaoRepository } from '@/infrastructure/database/PrismaSessaoRepository';
+
+const acessos = new RegistrarAcessoUseCase(new PrismaSessaoRepository());
 
 /** Usuário autenticado, anexado à requisição para uso nos controllers. */
 export interface UsuarioAutenticado {
@@ -14,6 +18,11 @@ export interface UsuarioAutenticado {
   clienteId: string | null;
   /** Equipe do fornecedor — provisiona órgãos e troca de contexto. */
   suporte: boolean;
+  /**
+   * Sessão de acesso deste token (`SessaoAcesso.id`); null em tokens emitidos
+   * antes do histórico de acessos existir.
+   */
+  sessaoId: string | null;
 }
 
 declare module 'express-serve-static-core' {
@@ -52,6 +61,7 @@ export function autenticar(req: Request, _res: Response, next: NextFunction) {
     grupo: payload.grupo ?? null,
     clienteId: payload.cli ?? null,
     suporte: payload.sup === true,
+    sessaoId: payload.jti ?? null,
   };
 
   comContexto(
@@ -61,6 +71,21 @@ export function autenticar(req: Request, _res: Response, next: NextFunction) {
       rota: `${req.method} ${req.baseUrl}${req.path}`,
       clienteId: payload.cli ?? null,
     },
-    next,
+    () => {
+      /*
+       * O terceiro sinal do histórico de acessos: "esta sessão continua viva".
+       *
+       * É daqui que ele sai porque este middleware vê **toda** requisição
+       * autenticada — e sem ele o histórico só saberia quando alguém entrou,
+       * nunca até quando ficou. Fechar a aba, perder a conexão e desligar a
+       * máquina não mandam evento nenhum ao servidor.
+       *
+       * **Sem `await`, e sem `catch` aqui**: o carimbo não pode atrasar a
+       * requisição nem derrubá-la. Quem engole a falha (e limita a uma escrita
+       * por minuto) é o caso de uso.
+       */
+      void acessos.tocar(payload.jti);
+      next();
+    },
   );
 }

@@ -194,6 +194,36 @@ O grupo vem no **token JWT** (`payload.grupo`), preenchido no login a partir de 
 - **Tokens antigos não têm o grupo.** Quem já estava logado precisa sair e entrar de novo, senão recebe 403.
 - Os grupos são **cadastro livre** (`GrupoUsuario.nome`), não enum, e nenhum seed os cria. Se não existir um grupo "Administrador" ou "Suporte" com usuários vinculados, **ninguém** vê a auditoria. A comparação ignora acento e caixa.
 
+## Histórico de Acessos (logon e logout)
+
+`/acessos` — quem entrou no sistema, quando, de onde e até quando ficou. Irmão da Auditoria: a trilha responde *"quem alterou o quê"*, este responde *"quem esteve aqui"*. As duas são **append-only e só leitura** — não há rota de POST, PUT ou DELETE em `/acessos`, e é essa ausência, não uma regra de tela, que garante o registro.
+
+**O problema que define o desenho:** esta é uma aplicação web com **JWT stateless**, não um programa de mesa. Fechar a aba, matar o processo, perder a conexão e faltar energia **não produzem evento nenhum no servidor** — e o fechamento normal da aba também não. Se a situação dependesse só de logon e logout explícito, "encerrada inesperadamente" não seria a exceção: seria a maioria dos registros, inclusive os de quem trabalhou o dia inteiro. A tela nasceria mentindo.
+
+Daí três sinais, e não dois:
+
+| Sinal | Onde nasce |
+|---|---|
+| **Logon** | `LoginUseCase` grava a linha e põe o id dela no `jti` do token |
+| **Logout** | `POST /auth/logout` — **não existia**; `AuthContext.sair()` só limpava o `localStorage` |
+| **Atividade** | `autenticar` carimba `ultimaAtividadeEm`, no máximo uma vez por minuto por sessão |
+
+- **A situação e o tempo não são colunas.** São derivados na leitura por `core/sessao/Sessao.ts`, pela mesma razão do sino ("notificação armazenada nasce desatualizada") e do rateio (percentual recalculado das bases). Um `status = 'ABERTA'` gravado fica errado no instante em que a pessoa fecha o navegador, e consertá-lo exigiria uma varredura noturna — que gravaria uma **hora de logout que ninguém viveu**. Não há job nem cron neste módulo, de propósito.
+- **O tempo da sessão abandonada conta até a última atividade, nunca até agora.** É o erro caro: quem fechou a aba às 12h01 com um token de 30 dias apareceria com 29 dias de permanência, e a coluna inteira viraria ficção sem nada quebrar.
+- **A ordem das perguntas é a regra**, e o logout vence tudo — inclusive um token já expirado. Depois vem a expiração (nenhuma requisição seria aceita a partir dali), depois o silêncio maior que `JANELA_ABANDONO_MIN` (15 min).
+- **O carimbo de atividade tem duas peneiras, e as duas são necessárias.** Um cache em memória evita até a ida ao banco; a condição `ultimaAtividadeEm < limite` no `where` do `UPDATE` é a que vale de verdade, porque o processo reinicia e pode haver vários. Só o cache erraria após um reinício; só o banco custaria uma consulta por requisição. Nada disso é aguardado (`void acessos.tocar(...)`): o histórico não pode atrasar nem derrubar a requisição.
+- **`SessaoAcesso` está em `NAO_AUDITAR`, e é a entrada mais importante da lista.** Sem ela, cada usuário conectado geraria 60 linhas de trilha por hora e a auditoria viraria um log de heartbeat.
+- **`clienteId` é escrito explicitamente** pelo repositório: o login roda antes de existir contexto de requisição, então o carimbo automático da extension não alcança — exatamente como em `registrar()`, na trilha. Diferente dela, aqui a coluna é **obrigatória**: toda sessão nasce de um login, e não há o caminho "script grava sem órgão".
+- **A ordenação cobre só as três colunas reais** (usuário, logon, logout). Tempo e Situação são derivadas e não existem no SQL; ordenar por elas exigiria calcular a situação de todas as linhas antes de paginar. Quem responde à mesma pergunta em Situação é o **filtro**, que recorta no banco — e `verificar:sessoes` confere que a condição SQL classifica igual a `situacaoDaSessao`.
+- **`POST /auth/logout` não invalida o token.** Ele continua stateless e válido até expirar; invalidá-lo exigiria uma lista de revogação consultada a cada requisição. O endpoint registra o que diz registrar: a hora em que a pessoa saiu.
+- **A troca de órgão do suporte preserva o `jti`.** É a mesma sessão — quem troca de cliente não fez logon de novo. Perdê-lo faria o acesso do suporte aparecer como abandonado justamente quando ele começa a atender alguém.
+- **Não há `sendBeacon` no fechamento da aba**, e foi uma tentativa descartada: `pagehide` não distingue fechar de **recarregar**, então um F5 marcaria como encerrada a sessão de quem continua trabalhando. O sinal de atividade já resolve o caso corretamente, com 15 minutos de atraso — errar com atraso é melhor que errar na hora.
+- **IP e navegador são guardados**, e são dado pessoal: entram porque sem eles *"entraram na minha conta"* não tem resposta. O relatório do titular da LGPD passou a declará-los, como **resumo** (quantos acessos, o último, e o que é guardado) — nunca a lista com cada IP, que transformaria um pedido de transparência num despejo.
+- Recurso `CONFIG_ACESSOS`, restrito aos grupos **Administrador** e **Suporte**, nas mesmas três camadas da Auditoria (gate da rota, `filtrarPorGrupo` no menu, `<RequerGrupo>` no router). **Só a primeira protege de fato.**
+- Coberto por **`npm run verificar:sessoes`** (22 checagens, sem banco), por `tests/acessos.test.ts` (a corrente inteira: login → `jti` → atividade → logout, mais o recorte por órgão) e pelo espelho de apresentação em `src/types/acesso.test.ts`.
+
+**Falta:** política de retenção. Uma linha por login cresce para sempre, e "quem acessou o sistema em 2026" não é informação que precise existir em 2031.
+
 ## Prazos legais (regra que dirige o Workflow)
 
 A Fase V tem **4 prazos distintos** que o Workflow deve controlar:
@@ -223,6 +253,7 @@ No `backend/`:
 - `npm run verificar:conferencia` — conferir o critério do painel "esta prestação está pronta?" (sem banco).
 - `npm run verificar:metas` — conferir a geração dos períodos do Plano de Metas e a validação da meta (sem banco).
 - `npm run verificar:plano` — conferir as competências do Plano de Aplicação segundo a vigência (sem banco).
+- `npm run verificar:sessoes` — conferir a leitura do histórico de acessos (situação, permanência e o corte do filtro; sem banco).
 - `npm run verificar:tenant` — conferir o isolamento multi-tenant (sem banco).
 - `npm run tenant:backfill` — atribuir um órgão aos registros anteriores ao multi-tenant (roda **uma vez**).
 - `npm run financeiro:backfill` — ligar os lançamentos financeiros antigos ao novo modelo (roda **uma vez**, e simula por padrão; use `-- --executar`). **Depois do `tenant:backfill`**, e **antes** de usar as abas de seleção da prestação.
@@ -231,7 +262,7 @@ No `backend/`:
 
 No `frontend/`: `npm run dev` (Vite em :5173) e `npm run build`.
 
-**A CI roda tudo isso a cada push e pull request** (`.github/workflows/ci.yml`): typecheck dos dois projetos, os treze `verificar:*`, o `npm test` e o build do frontend. O job do backend sobe um **Postgres de serviço** e aponta `DATABASE_URL_TEST` para ele — é lá que os testes de integração efetivamente rodam, já que a máquina de desenvolvimento pode não ter banco.
+**A CI roda tudo isso a cada push e pull request** (`.github/workflows/ci.yml`): typecheck dos dois projetos, os catorze `verificar:*`, o `npm test` e o build do frontend. O job do backend sobe um **Postgres de serviço** e aponta `DATABASE_URL_TEST` para ele — é lá que os testes de integração efetivamente rodam, já que a máquina de desenvolvimento pode não ter banco.
 
 ### Divisão do bundle
 
@@ -245,11 +276,11 @@ Cada tela é um pedaço próprio (`lazy` + `Suspense` em `App.tsx`), baixado qua
 
 Duas camadas de checagem automatizada:
 
-- **`verificar:*`** (montador, auditoria, alertas, permissões, assistente, workflow, tenant, agenda, rateio, ofx, conferência, metas, plano) — regras puras, **sem banco**. Rodam em qualquer lugar e são a rede do dia a dia.
+- **`verificar:*`** (montador, auditoria, alertas, permissões, assistente, workflow, tenant, agenda, rateio, ofx, conferência, metas, plano, sessões) — regras puras, **sem banco**. Rodam em qualquer lugar e são a rede do dia a dia.
 - **`npm test`** (vitest + supertest) — integração de verdade, **com Postgres**. Cobre duas coisas, e as duas são ligações que nenhum teste puro alcança:
 
   - **O isolamento multi-tenant** (`tests/isolamento.test.ts`), de ponta a ponta: dois órgãos provisionados, e cada cenário provando que um **não** alcança o outro (listagem, busca por id, alteração, busca global, contagem, usuários, `/orgaos`).
-  - **O caminho da prestação** (`tests/prestacao.test.ts`), do cadastro ao `documentoJSON`. `verificar:montador` já valida o montador contra o JSON Schema oficial, mas parte de um `DadosMontagem` **sintético**: ninguém provava que o que sai do banco chega naquele formato. Entre a nota digitada e o documento há um repositório com trinta `select`, um `toDomain` por bloco e o montador — um campo que pare de ser carregado atravessa os treze `verificar:*` sem acusar nada, e o documento sai válido, é aceito, e volta como inconformidade meses depois. O teste digita de um lado e confere **campo a campo** do outro. As asserções nunca são sobre a existência do bloco: `documentos_fiscais` com um item vazio passaria num teste que só conta o tamanho da lista.
+  - **O caminho da prestação** (`tests/prestacao.test.ts`), do cadastro ao `documentoJSON`. `verificar:montador` já valida o montador contra o JSON Schema oficial, mas parte de um `DadosMontagem` **sintético**: ninguém provava que o que sai do banco chega naquele formato. Entre a nota digitada e o documento há um repositório com trinta `select`, um `toDomain` por bloco e o montador — um campo que pare de ser carregado atravessa os catorze `verificar:*` sem acusar nada, e o documento sai válido, é aceito, e volta como inconformidade meses depois. O teste digita de um lado e confere **campo a campo** do outro. As asserções nunca são sobre a existência do bloco: `documentos_fiscais` com um item vazio passaria num teste que só conta o tamanho da lista.
 
   Sem `DATABASE_URL_TEST` a suíte **pula** em vez de falhar — quem clonou para mexer no frontend não deve ver vermelho por não ter Postgres. Para rodar de fato:
 

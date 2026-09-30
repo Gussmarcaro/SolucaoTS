@@ -2441,3 +2441,76 @@ model AjusteContaBancaria {
   // todas as contas de todos os ajustes para responder "alguém usa esta?".
   @@index([contaBancariaId])
 }
+
+/// Sessão de acesso — o histórico de logons do órgão.
+///
+/// Responde "quem entrou no sistema, quando, e até quando ficou". É irmã da
+/// `RegistroAuditoria` no espírito: **append-only**, sem tela de edição nem de
+/// exclusão, e desnormalizada de propósito.
+///
+/// ## O que NÃO é gravado aqui, e por quê
+///
+/// Não há coluna `status` nem `tempoPermanencia`. Os dois são **derivados** de
+/// `logonEm`, `logoutEm`, `ultimaAtividadeEm` e `expiraEm`, e quem os calcula é
+/// `core/sessao/Sessao.ts`, na leitura. Gravá-los repetiria um erro que este
+/// sistema já corrigiu três vezes: o sino calcula prazos a cada consulta em vez
+/// de gravar notificações, o rateio recalcula o percentual das bases, e a meta
+/// passou a derivar `quantificavel` do tipo depois que as duas colunas
+/// divergiram. Um `status = 'ABERTA'` gravado fica errado no instante em que a
+/// pessoa fecha o navegador — e exigiria uma varredura noturna para consertar,
+/// que gravaria uma hora de logout que ninguém viveu.
+model SessaoAcesso {
+  id String @id @default(uuid()) @db.Uuid
+
+  // Órgão do usuário no momento do logon. Escrito **explicitamente** pelo
+  // `LoginUseCase`: o login acontece antes de existir contexto de requisição,
+  // então o carimbo automático da extension não roda aqui — exatamente como em
+  // `registrar()`, na trilha de auditoria.
+  //
+  // Diferente da trilha, esta coluna é **obrigatória**: toda sessão nasce de um
+  // login, e todo usuário tem órgão desde o aperto do multi-tenant. Não há o
+  // caminho "script grava sem órgão" que obrigou a trilha a aceitar nulo.
+  clienteId String @db.Uuid
+
+  // Autor desnormalizado, como na trilha: o histórico precisa continuar legível
+  // se o usuário for renomeado ou removido depois. Sem FK, pelo mesmo motivo.
+  usuarioId    String @db.Uuid
+  usuarioNome  String
+  usuarioEmail String
+
+  logonEm DateTime @default(now())
+
+  /// Só quando houve logout **explícito** (o botão Sair, ou o `sendBeacon` do
+  /// fechamento da aba). Nulo é a regra, não a exceção: fechar o navegador,
+  /// perder a conexão ou desligar a máquina não produzem evento nenhum no
+  /// servidor.
+  logoutEm DateTime?
+
+  /// A última requisição autenticada desta sessão.
+  ///
+  /// É o terceiro sinal, e o que faz esta tabela dizer a verdade. Sem ele, a
+  /// sessão de quem fechou a aba às 12h01 com token de 30 dias apareceria com
+  /// "permanência: 29 dias". Atualizado no `autenticar`, no máximo uma vez por
+  /// minuto por sessão.
+  ultimaAtividadeEm DateTime @default(now())
+
+  /// Quando o token emitido naquele login expira — o teto da sessão. Guardado
+  /// porque "lembrar de mim" muda a duração, e sem ele a leitura de "ainda
+  /// pode estar aberta" precisaria adivinhar qual regra valia no dia.
+  expiraEm DateTime
+
+  /// "Lembrar de mim": 30 dias em vez de 8 horas. Fica visível na tela porque
+  /// muda o que "sessão ainda aberta" significa.
+  lembrar Boolean @default(false)
+
+  /// Endereço de origem e navegador. São **dado pessoal**, e entram por uma
+  /// razão concreta: sem eles, "entraram na minha conta" não tem resposta.
+  /// Nulos em sessão gravada por caminho que não os informe.
+  ip        String? @db.VarChar(45) // 45 = IPv6 por extenso
+  navegador String? @db.VarChar(300) // User-Agent, recortado
+
+  // A consulta padrão da tela é "deste órgão, logon mais recente primeiro".
+  @@index([clienteId, logonEm])
+  // O filtro por usuário, e o histórico de uma pessoa no relatório da LGPD.
+  @@index([usuarioId, logonEm])
+}

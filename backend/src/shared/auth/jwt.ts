@@ -39,6 +39,19 @@ export interface TokenPayload {
    * órgão de cada vez, e o token diz qual. A diferença é poder escolher.
    */
   sup?: boolean;
+  /**
+   * Identificador da **sessão** aberta neste login (`SessaoAcesso.id`).
+   *
+   * É o que liga uma requisição qualquer de volta ao registro de acesso — sem
+   * ele o token é anônimo quanto à sessão, e nem o logout saberia qual linha
+   * fechar. Usa o nome padrão do JWT (`jti`) por ser exatamente isso.
+   *
+   * **Opcional**, e não por preguiça: tokens emitidos antes desta versão não o
+   * têm. Sessão sem `jti` simplesmente não é carimbada — quem já estava
+   * logado passa a ser registrado quando sair e entrar de novo, como aconteceu
+   * com o grupo.
+   */
+  jti?: string;
 }
 
 /** Assina um JWT. Com "lembrar de mim", usa expiração estendida. */
@@ -47,6 +60,19 @@ export function assinarToken(payload: TokenPayload, lembrar = false): string {
     expiresIn: (lembrar ? JWT_EXPIRES_REMEMBER : JWT_EXPIRES) as SignOptions['expiresIn'],
   };
   return jwt.sign(payload, JWT_SECRET, options);
+}
+
+/**
+ * Instante em que o token expira, lido do próprio `exp` que o `jsonwebtoken`
+ * acabou de escrever.
+ *
+ * Existe para o registro de acesso guardar o teto da sessão sem reinterpretar
+ * `JWT_EXPIRES` / `JWT_EXPIRES_REMEMBER` por conta própria: duas leituras da
+ * mesma duração divergiriam no dia em que alguém mudasse uma das variáveis.
+ */
+export function expiracaoDoToken(token: string): Date {
+  const exp = (jwt.decode(token) as { exp?: number } | null)?.exp;
+  return exp ? new Date(exp * 1000) : new Date();
 }
 
 /** Verifica e decodifica um JWT. Lança se inválido/expirado. */

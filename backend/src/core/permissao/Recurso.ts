@@ -83,6 +83,7 @@ export const RECURSOS: Recurso[] = [
   { id: 'CONFIG_USUARIOS', rotulo: 'Usuários', secao: 'Configurações' },
   { id: 'CONFIG_GRUPOS', rotulo: 'Grupos e Permissões', secao: 'Configurações', restrito: true },
   { id: 'CONFIG_AUDITORIA', rotulo: 'Auditoria', secao: 'Configurações', restrito: true },
+  { id: 'CONFIG_ACESSOS', rotulo: 'Histórico de Acessos', secao: 'Configurações', restrito: true },
   { id: 'CONFIG_PRIVACIDADE', rotulo: 'Privacidade e LGPD', secao: 'Configurações' },
 ];
 

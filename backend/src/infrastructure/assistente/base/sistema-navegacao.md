@@ -1,6 +1,6 @@
 # Mapa de navegação do sistema Solução TS
 
-> Extraído automaticamente do menu do sistema (`navigation.ts`) em 2026-09-29.
+> Extraído automaticamente do menu do sistema (`navigation.ts`) em 2026-09-30.
 > Estes são os caminhos que existem de fato. Nenhum outro caminho deve ser afirmado.
 
 ## Menu principal
@@ -30,6 +30,7 @@
 - **Configurações → Usuários** — rota `/usuarios`
 - **Configurações → Grupos de Usuários** — rota `/grupos`
 - **Configurações → Auditoria** — rota `/auditoria` _(restrito aos grupos: Administrador, Suporte)_
+- **Configurações → Histórico de Acessos** — rota `/acessos` _(restrito aos grupos: Administrador, Suporte)_
 - **Configurações → Privacidade e LGPD** — rota `/privacidade`
 
 ## Observações de acesso

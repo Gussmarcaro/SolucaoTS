@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from 'react';
 import { limparSessao, obterToken, obterUsuario, salvarSessao, trocarSessao } from '@/lib/authStorage';
+import { encerrarSessao } from '@/services/acessos.service';
 import type { UsuarioAutenticado } from '@/types/auth';
 
 interface AuthContextValue {
@@ -55,6 +56,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const sair = useCallback(() => {
+    /*
+     * Avisa o servidor **antes** de limpar a sessão — é o token que diz qual
+     * sessão fechar, e depois do `limparSessao()` ele já não existe para ser
+     * enviado.
+     *
+     * Sem `await`: o logout do navegador não pode ficar esperando a rede. O
+     * pior caso é uma linha do histórico marcada como abandonada, e prender a
+     * pessoa numa tela da qual ela pediu para sair seria pior que isso.
+     * `encerrarSessao` engole a falha por essa razão.
+     */
+    void encerrarSessao();
     limparSessao();
     setUsuario(null);
   }, []);

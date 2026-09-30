@@ -69,6 +69,7 @@ const Usuarios = pagina(() => import('@/pages/Usuarios'), 'Usuarios');
 const Grupos = pagina(() => import('@/pages/Grupos'), 'Grupos');
 const Orgaos = pagina(() => import('@/pages/Orgaos'), 'Orgaos');
 const Auditoria = pagina(() => import('@/pages/Auditoria'), 'Auditoria');
+const Acessos = pagina(() => import('@/pages/Acessos'), 'Acessos');
 const Privacidade = pagina(() => import('@/pages/Privacidade'), 'Privacidade');
 const ProvisionarOrgao = pagina(() => import('@/pages/Suporte/ProvisionarOrgao'), 'ProvisionarOrgao');
 
@@ -377,6 +378,19 @@ export default function App() {
               <RequerGrupo grupos={GRUPOS_ADMIN}>
                 <RequerPermissao recurso="CONFIG_AUDITORIA">
                   <Auditoria />
+                </RequerPermissao>
+              </RequerGrupo>
+            }
+          />
+          {/* Histórico de logons. As três camadas da auditoria valem igual
+              aqui: o gate da rota no servidor é o único que protege de fato,
+              o menu some e a URL digitada à mão não abre a tela. */}
+          <Route
+            path="/acessos"
+            element={
+              <RequerGrupo grupos={GRUPOS_ADMIN}>
+                <RequerPermissao recurso="CONFIG_ACESSOS">
+                  <Acessos />
                 </RequerPermissao>
               </RequerGrupo>
             }

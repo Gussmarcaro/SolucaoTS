@@ -89,7 +89,47 @@ export class PrismaTitularRepository implements ITitularRepository {
       }),
     ]);
 
+    /*
+     * Histórico de acessos do titular.
+     *
+     * Não entra na varredura acima porque `SessaoAcesso` não guarda CPF — é
+     * chegada pelo `usuarioId` de quem a varredura já encontrou. Precisa
+     * constar: "quando esta pessoa entrou no sistema, de onde e em que
+     * navegador" é dado pessoal dela, e um relatório de titular que o omitisse
+     * declararia menos do que o sistema de fato guarda.
+     *
+     * Vai como **resumo**, nunca como lista: devolver cada logon com IP faria
+     * o relatório crescer sem limite e transformaria um pedido de transparência
+     * num despejo. Quem quiser o detalhe tem a tela do histórico.
+     */
+    const acessos = usuarios.length
+      ? await prisma.sessaoAcesso.groupBy({
+          by: ['usuarioId'],
+          where: { usuarioId: { in: usuarios.map((u) => u.id) } },
+          _count: { _all: true },
+          _max: { logonEm: true },
+        })
+      : [];
+    const acessoPorUsuario = new Map(acessos.map((a) => [a.usuarioId, a]));
+
     return [
+      ...usuarios.flatMap((u): OcorrenciaTitular[] => {
+        const a = acessoPorUsuario.get(u.id);
+        if (!a) return [];
+        return [
+          {
+            origem: 'Histórico de acessos',
+            entidade: 'SessaoAcesso',
+            registroId: u.id,
+            descricao: u.nome,
+            dados: {
+              acessos: String(a._count._all),
+              ultimoAcesso: a._max.logonEm ? a._max.logonEm.toISOString() : '—',
+              registrado: 'data e hora de entrada e saída, endereço de origem e navegador',
+            },
+          },
+        ];
+      }),
       ...usuarios.map((u): OcorrenciaTitular => ({
         origem: 'Usuário do sistema',
         entidade: 'Usuario',

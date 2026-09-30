@@ -18,6 +18,7 @@ import { clienteRoutes } from './cliente.routes';
 import { dominioRoutes } from './dominio.routes';
 import { authRoutes } from './auth.routes';
 import { auditoriaRoutes } from './auditoria.routes';
+import { acessoRoutes } from './acesso.routes';
 import { BuscaController } from '@/presentation/controllers/BuscaController';
 import { LgpdController } from '@/presentation/controllers/LgpdController';
 import { AssistenteController } from '@/presentation/controllers/AssistenteController';
@@ -170,6 +171,9 @@ routes.put('/conciliacao/:id', exigirPermissao('EXECUCAO_CONCILIACAO'), (req, re
 routes.use('/grupos', exigirPermissao('CONFIG_GRUPOS'), grupoRoutes);
 routes.use('/orgaos', exigirPermissao('CONFIG_ORGAOS'), clienteRoutes);
 routes.use('/auditoria', exigirPermissao('CONFIG_AUDITORIA'), auditoriaRoutes);
+// Histórico de logons. Irmão da auditoria: a trilha responde "quem alterou o
+// quê"; este responde "quem entrou, quando e até quando ficou".
+routes.use('/acessos', exigirPermissao('CONFIG_ACESSOS'), acessoRoutes);
 
 // Tabelas de domínio (CBO, classificação econômica): catálogo oficial só de
 // leitura, que todo formulário consulta. Barrar aqui quebraria o preenchimento

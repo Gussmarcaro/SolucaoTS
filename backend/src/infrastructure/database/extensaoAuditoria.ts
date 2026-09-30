@@ -35,14 +35,22 @@ export const MODELS_COM_CLIENTE = new Set(
 
 /**
  * Fora da trilha: tabelas de domínio (carga de seed — gerariam ~4.500 linhas a
- * cada recarga) e a própria auditoria, que é append-only e não pode se auditar
- * sob pena de laço infinito.
+ * cada recarga) e as duas tabelas append-only, que não podem se auditar sob
+ * pena de laço infinito.
+ *
+ * **`SessaoAcesso` é a que mais precisa constar aqui.** Ela não é só
+ * append-only: o middleware de autenticação atualiza `ultimaAtividadeEm` uma
+ * vez por minuto por sessão ativa. Sem esta linha, cada usuário conectado
+ * geraria 60 linhas de trilha por hora — a auditoria viraria um log de
+ * heartbeat, e o que ela existe para mostrar (quem alterou o quê) ficaria
+ * enterrado.
  */
 export const NAO_AUDITAR = new Set([
   'Cbo',
   'ClassificacaoEconomica',
   'ComponenteDespesa',
   'RegistroAuditoria',
+  'SessaoAcesso',
 ]);
 
 /**

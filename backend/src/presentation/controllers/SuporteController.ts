@@ -40,6 +40,10 @@ export class SuporteController {
         grupo: u.grupo,
         cli: orgao.id,
         sup: true,
+        // A sessão é a mesma: quem troca de órgão não fez logon de novo.
+        // Perder o `jti` aqui faria o histórico registrar o acesso do suporte
+        // como abandonado no instante em que ele começasse a atender alguém.
+        jti: u.sessaoId ?? undefined,
       });
 
       return res.json({ token, orgao });

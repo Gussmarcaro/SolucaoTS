@@ -32,7 +32,7 @@ console.log('\nCobertura de permissões nas rotas\n');
  */
 const LIBERADAS: Record<string, string> = {
   '/health': 'sonda de disponibilidade, sem dado',
-  '/auth': 'login — anterior à autenticação',
+  '/auth': 'login e recuperação de senha — anteriores à autenticação; o logout autentica, mas sair não é operação que a matriz possa recusar',
   '/dominios': 'catálogo oficial só de leitura, usado por todo formulário',
   '/busca': 'devolve só o que o usuário já veria nas telas',
   '/autoria/:entidade/:id': 'quem incluiu um registro; sem conteúdo do registro',
