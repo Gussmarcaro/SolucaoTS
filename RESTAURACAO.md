@@ -26,23 +26,50 @@ certa** até o dia em que ela não abre nada. Um espaço no fim, um caractere qu
 o gerenciador "corrigiu", uma quebra de linha colada junto — nada disso dá
 sinal, e o teste é de trinta segundos.
 
-O teste certo usa o **anexo do Gmail**, não o arquivo da VPS: é o anexo que
-sobra quando a VPS é o problema. E digita-se a senha **do gerenciador**, nunca
-a do arquivo `~/.backup-pass` — o que se quer provar é a cópia, não o original.
+Em qualquer variante, digita-se a senha **do gerenciador** — nunca se aponta
+para `~/.backup-pass`. O que se quer provar é a cópia, não o original.
+
+> **Não procure o `.enc` na VPS: ele não está lá.** O script cifra, envia por
+> e-mail e **apaga** (`rm -f "$CIFRADO"`). Em `~/backups/` ficam só os
+> `.sql.gz` **sem cifra** — é por isso que aquele diretório é `700`. O arquivo
+> cifrado existe como **anexo no Gmail**, e só.
+
+**Variante A — na própria VPS, sem baixar nada.** Cifra um dump com a senha do
+arquivo e tenta decifrar com a senha do gerenciador: se as duas forem a mesma,
+abre.
 
 ```bash
-# 1. Baixe o anexo mais recente (solucaots-AAAA-MM-DD-HHMM.sql.gz.enc).
-# 2. Decifre. O openssl pede a senha e não a mostra na tela:
-openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 \
-  -in solucaots-AAAA-MM-DD-HHMM.sql.gz.enc | gunzip | head -5
+cd ~/backups
+ULTIMO=$(ls -1t solucaots-*.sql.gz | head -1)
+
+openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt \
+  -in "$ULTIMO" -out teste.enc -pass "file:$HOME/.backup-pass"
+
+# Aqui você DIGITA a senha do gerenciador (não aparece na tela):
+openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in teste.enc -out teste.sql.gz
+
+gunzip -t teste.sql.gz && echo "SENHA CORRETA" || echo "SENHA ERRADA"
+rm -f teste.enc teste.sql.gz
 ```
 
-- **Saiu texto SQL** (`-- PostgreSQL database dump`) → a cópia está correta.
-- **`bad decrypt`** → a senha guardada **não** é a que cifra os backups. Corrija
-  o gerenciador **hoje**; enquanto isso, os anexos são ilegíveis.
+**Variante B — a partir do anexo do Gmail.** É o teste mais fiel, porque exercita
+exatamente o arquivo que sobra quando a VPS é o desastre. Baixe o anexo e, na
+sua máquina:
 
-O `head -5` existe para o teste não gravar um dump de 2,6 MB em disco: o que se
-quer saber é se o primeiro bloco decifra, e isso já responde.
+```bash
+openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 \
+  -in solucaots-AAAA-MM-DD-HHMM.sql.gz.enc -out teste.sql.gz
+gunzip -t teste.sql.gz && echo "SENHA CORRETA" || echo "SENHA ERRADA"
+rm -f teste.sql.gz
+```
+
+- **`SENHA CORRETA`** → a cópia abre o backup. Pode parar de se preocupar.
+- **`bad decrypt`**, ou `SENHA ERRADA` → a senha guardada **não** é a que cifra
+  os backups. Corrija o gerenciador **hoje**; enquanto isso, os anexos são
+  ilegíveis.
+
+O `gunzip -t` confere a integridade sem gravar o dump descompactado, e dá
+resposta binária — melhor que olhar as primeiras linhas e julgar.
 
 > Um detalhe que economiza confusão: o arquivo da VPS é criado com
 > `printf '%s'`, **sem quebra de linha no fim** — a senha são exatamente os
