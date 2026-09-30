@@ -134,6 +134,13 @@ O log responde *"o que houve nesta requisição"*. Isto responde *"este erro é 
 
 - **Por que serviço externo e não uma tabela nossa:** o erro que mais importa investigar é o que acontece **quando o banco está com problema** — e aí uma tabela não registra nada.
 - **Tudo que carrega dado pessoal está desligado explicitamente**, porque os padrões do SDK são permissivos: ele mandaria cookies, cabeçalhos (inclusive o `Authorization`), corpo das requisições, query string e parâmetros de SQL. Cada linha de `dataCollection` é uma decisão, não cópia de exemplo. `beforeSend` (`limparEvento`) é o cinto e suspensório: se uma atualização do SDK mudar um padrão, não vira vazamento silencioso.
+- **`dataCollection` é uma lista de exceções, e por isso categoria nova nasce ligada.** Foi assim que três passaram despercebidas até a conferência antes de ativar em produção:
+  - **`stackFrameVariables` (default `true`) era o pior.** Manda o *valor* de cada variável local de cada frame do stack: um 500 dentro de um caso de uso levaria o DTO inteiro — CPF, endereço, salário, `senhaHash` —, e nada disso está no corpo da requisição que já era limpo. Está na pilha. Filtrar por nome não serve: o empacotamento renomeia locais (`password` vira `a`), como a própria documentação do SDK avisa.
+  - **`genAI` (inputs/outputs)** mandaria a pergunta e a resposta do Assistente da Fase V — e a pergunta é digitada pelo usuário.
+  - **`graphQL`**, desligado pelo mesmo princípio, ainda que não haja GraphQL aqui.
+  - `limparEvento` passou a **apagar `frame.vars`** também. O `dataCollection` já resolve na origem; o `beforeSend` é o único ponto que continua valendo quando o SDK acrescenta uma categoria e ninguém lembra de atualizar a lista.
+- **Queda do processo já é reportada pelo SDK.** `onUncaughtExceptionIntegration` e `onUnhandledRejectionIntegration` são integrações **padrão** do `@sentry/node` — reportá-las à mão no `server.ts` duplicaria o evento. O `registrar()` que existe ali continua, porque vale mesmo sem DSN.
+- **`APP_RELEASE`** agrupa o erro por versão publicada. Sem ela o painel junta tudo, e *"isso começou no deploy de ontem?"* fica sem resposta — que é metade do valor da ferramenta.
 - **`AppError` não é reportado.** Senha errada e dado inválido são uso normal; no painel virariam ruído até o alerta ser ignorado.
 - **O órgão vai como _tag_**, não no corpo: tag é o que o painel agrupa e filtra. É a diferença entre "500 erros" e "500 erros, todos da Prefeitura X" — que costuma ser a resposta inteira.
 - `tracesSampleRate: 0`: o que se quer é erro; traço de transação carregaria consulta e parâmetro para fora sem necessidade.

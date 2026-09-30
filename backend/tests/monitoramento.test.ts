@@ -83,6 +83,53 @@ describe('a peneira antes do envio', () => {
     expect(extra.ok).toBe(1);
   });
 
+  /**
+   * O vazamento mais grave, e o que vinha **ligado por padrão**.
+   *
+   * `stackFrameVariables` manda o valor de cada variável local de cada frame.
+   * Num 500 dentro de um caso de uso isso leva o DTO inteiro — CPF, endereço,
+   * salário, `senhaHash` — e nada disso está no corpo da requisição que a
+   * peneira já limpava: está na pilha.
+   *
+   * `dataCollection` o desliga na origem; este teste guarda o **segundo**
+   * cinto, o `beforeSend`, porque `dataCollection` é uma lista de exceções e
+   * toda categoria nova do SDK nasce ligada.
+   */
+  it('não deixa passar variável local do stack', () => {
+    const comStack = {
+      exception: {
+        values: [
+          {
+            type: 'TypeError',
+            stacktrace: {
+              frames: [
+                { filename: 'a.ts', function: 'criar', vars: { cpf: '12345678909' } },
+                { filename: 'b.ts', function: 'salvar', vars: { senhaHash: '$2b$10$abc' } },
+              ],
+            },
+          },
+        ],
+      },
+    } as unknown as ErrorEvent;
+
+    const limpo = limparEvento(comStack);
+    const frames = limpo?.exception?.values?.[0].stacktrace?.frames ?? [];
+
+    expect(frames).toHaveLength(2);
+    for (const f of frames) expect(f.vars).toBeUndefined();
+    // O stack em si continua: é ele que diz onde o erro aconteceu.
+    expect(frames.map((f) => f.function)).toEqual(['criar', 'salvar']);
+    expect(JSON.stringify(limpo)).not.toContain('12345678909');
+    expect(JSON.stringify(limpo)).not.toContain('$2b$10$abc');
+  });
+
+  it('evento sem stack não quebra a peneira', () => {
+    expect(() => limparEvento({} as ErrorEvent)).not.toThrow();
+    expect(() =>
+      limparEvento({ exception: { values: [{ type: 'Error' }] } } as unknown as ErrorEvent),
+    ).not.toThrow();
+  });
+
   it('evento sem requisição não quebra a peneira', () => {
     // Erro de tarefa de fundo (seed, backfill) chega sem `request`.
     expect(() => limparEvento({} as ErrorEvent)).not.toThrow();

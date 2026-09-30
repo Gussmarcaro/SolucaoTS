@@ -70,6 +70,22 @@ export function limparEvento(evento: ErrorEvent): ErrorEvent | null {
   delete evento.breadcrumbs;
   if (evento.extra) evento.extra = ocultarSensiveis(evento.extra) as Record<string, unknown>;
 
+  /*
+   * As variáveis locais de cada frame, apagadas aqui também.
+   *
+   * `dataCollection.stackFrameVariables: false` já as desliga na origem — mas
+   * foi justamente uma categoria ligada por padrão que criou este risco, e
+   * `dataCollection` é uma lista de **exceções**: toda categoria que o SDK
+   * acrescentar amanhã nasce ligada, e o `beforeSend` é o único lugar que
+   * continua valendo sem ninguém lembrar de atualizar.
+   *
+   * É o mesmo raciocínio que já justificava esta função existir; ela só não
+   * alcançava o stack, que é onde mora o dado mais sensível de todos.
+   */
+  for (const excecao of evento.exception?.values ?? []) {
+    for (const frame of excecao.stacktrace?.frames ?? []) delete frame.vars;
+  }
+
   return evento;
 }
 
@@ -100,6 +116,32 @@ export function iniciarMonitoramento(): void {
       httpBodies: [], // o corpo é o cadastro inteiro: CPF, endereço, salário
       urlQueryParams: false, // a busca do usuário
       databaseQueryData: false, // os parâmetros do SQL
+
+      /*
+       * **O pior vazamento possível, e vinha ligado por padrão.**
+       *
+       * `stackFrameVariables` manda o *valor* de cada variável local de cada
+       * frame do stack. Um 500 dentro de um caso de uso levaria junto o DTO
+       * inteiro — CPF, endereço, salário, `senhaHash` —, e nada disso aparece
+       * no corpo da requisição que já desligamos: está na pilha.
+       *
+       * Filtrar por nome não serve: a própria documentação do SDK avisa que o
+       * empacotamento renomeia locais (`password` vira `a`), então uma lista de
+       * proibidos não casaria com o que é capturado em produção.
+       */
+      stackFrameVariables: false,
+
+      /*
+       * O Assistente da Fase V fala com a API da Anthropic, e o SDK instrumenta
+       * chamadas de IA por padrão — mandaria a pergunta e a resposta. A
+       * pergunta é digitada pelo usuário e pode conter o CPF de um beneficiário
+       * ou o nome de um dirigente.
+       */
+      genAI: { inputs: false, outputs: false },
+
+      // Não há GraphQL aqui; desligado pelo mesmo princípio de não deixar
+      // categoria ligada por omissão.
+      graphQL: { document: false, variables: false },
     },
 
     beforeSend: (evento: ErrorEvent, dica: EventHint) =>
