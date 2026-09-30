@@ -212,6 +212,7 @@ No `backend/`:
 - `npm run verificar:ofx` — conferir o leitor de extrato OFX e as regras de sugestão da conciliação (sem banco).
 - `npm run verificar:conferencia` — conferir o critério do painel "esta prestação está pronta?" (sem banco).
 - `npm run verificar:metas` — conferir a geração dos períodos do Plano de Metas e a validação da meta (sem banco).
+- `npm run verificar:plano` — conferir as competências do Plano de Aplicação segundo a vigência (sem banco).
 - `npm run verificar:tenant` — conferir o isolamento multi-tenant (sem banco).
 - `npm run tenant:backfill` — atribuir um órgão aos registros anteriores ao multi-tenant (roda **uma vez**).
 - `npm run financeiro:backfill` — ligar os lançamentos financeiros antigos ao novo modelo (roda **uma vez**, e simula por padrão; use `-- --executar`). **Depois do `tenant:backfill`**, e **antes** de usar as abas de seleção da prestação.
@@ -220,7 +221,7 @@ No `backend/`:
 
 No `frontend/`: `npm run dev` (Vite em :5173) e `npm run build`.
 
-**A CI roda tudo isso a cada push e pull request** (`.github/workflows/ci.yml`): typecheck dos dois projetos, os doze `verificar:*`, o `npm test` e o build do frontend. O job do backend sobe um **Postgres de serviço** e aponta `DATABASE_URL_TEST` para ele — é lá que os testes de integração efetivamente rodam, já que a máquina de desenvolvimento pode não ter banco.
+**A CI roda tudo isso a cada push e pull request** (`.github/workflows/ci.yml`): typecheck dos dois projetos, os treze `verificar:*`, o `npm test` e o build do frontend. O job do backend sobe um **Postgres de serviço** e aponta `DATABASE_URL_TEST` para ele — é lá que os testes de integração efetivamente rodam, já que a máquina de desenvolvimento pode não ter banco.
 
 ### Divisão do bundle
 
@@ -234,11 +235,11 @@ Cada tela é um pedaço próprio (`lazy` + `Suspense` em `App.tsx`), baixado qua
 
 Duas camadas de checagem automatizada:
 
-- **`verificar:*`** (montador, auditoria, alertas, permissões, assistente, workflow, tenant, agenda, rateio, ofx, conferência, metas) — regras puras, **sem banco**. Rodam em qualquer lugar e são a rede do dia a dia.
+- **`verificar:*`** (montador, auditoria, alertas, permissões, assistente, workflow, tenant, agenda, rateio, ofx, conferência, metas, plano) — regras puras, **sem banco**. Rodam em qualquer lugar e são a rede do dia a dia.
 - **`npm test`** (vitest + supertest) — integração de verdade, **com Postgres**. Cobre duas coisas, e as duas são ligações que nenhum teste puro alcança:
 
   - **O isolamento multi-tenant** (`tests/isolamento.test.ts`), de ponta a ponta: dois órgãos provisionados, e cada cenário provando que um **não** alcança o outro (listagem, busca por id, alteração, busca global, contagem, usuários, `/orgaos`).
-  - **O caminho da prestação** (`tests/prestacao.test.ts`), do cadastro ao `documentoJSON`. `verificar:montador` já valida o montador contra o JSON Schema oficial, mas parte de um `DadosMontagem` **sintético**: ninguém provava que o que sai do banco chega naquele formato. Entre a nota digitada e o documento há um repositório com trinta `select`, um `toDomain` por bloco e o montador — um campo que pare de ser carregado atravessa os doze `verificar:*` sem acusar nada, e o documento sai válido, é aceito, e volta como inconformidade meses depois. O teste digita de um lado e confere **campo a campo** do outro. As asserções nunca são sobre a existência do bloco: `documentos_fiscais` com um item vazio passaria num teste que só conta o tamanho da lista.
+  - **O caminho da prestação** (`tests/prestacao.test.ts`), do cadastro ao `documentoJSON`. `verificar:montador` já valida o montador contra o JSON Schema oficial, mas parte de um `DadosMontagem` **sintético**: ninguém provava que o que sai do banco chega naquele formato. Entre a nota digitada e o documento há um repositório com trinta `select`, um `toDomain` por bloco e o montador — um campo que pare de ser carregado atravessa os treze `verificar:*` sem acusar nada, e o documento sai válido, é aceito, e volta como inconformidade meses depois. O teste digita de um lado e confere **campo a campo** do outro. As asserções nunca são sobre a existência do bloco: `documentos_fiscais` com um item vazio passaria num teste que só conta o tamanho da lista.
 
   Sem `DATABASE_URL_TEST` a suíte **pula** em vez de falhar — quem clonou para mexer no frontend não deve ver vermelho por não ter Postgres. Para rodar de fato:
 
@@ -413,6 +414,24 @@ Por isso a listagem por ajuste tem **dois braços**: a nota lançada *para* o aj
 
 - **Guias de Recolhimento** não entrou no portão. A guia é **do órgão**: um DARF de IRRF de maio recolhe retenções de várias notas e de vários ajustes, e sua identidade no schema é `órgão + tipo + competência`. Recortá-la por parceria criaria uma guia que não existe.
 - **Conciliação Bancária** ainda não entrou. O extrato é de uma **conta**, e a ligação com o ajuste existe (`AjusteContaBancaria`) — é trabalho pequeno, mas mexe na importação de OFX e merece ser feito à parte.
+
+## Plano de Aplicação — o anual sai da vigência
+
+Aba **Plano de Aplicação** no dossiê do Ajuste, modo "Digitar (modelo padrão)". Informa-se **um valor mensal por rubrica** e o servidor o expande nas competências do exercício.
+
+**A expansão era `1..12` fixa, e isso está errado no caso mais comum de todos: o ajuste assinado no meio do ano.** Um convênio de 01/06/2026 a 31/05/2027 tem **sete** competências em 2026 e **cinco** em 2027. Gravando doze em cada, o plano declarava mais que o pactuado: o total do exercício não batia com o valor global do ajuste, e a conferência "execução × plano" comparava a despesa real contra um teto que não existe.
+
+- **`janelaDoExercicio` é pura e fica no core**, coberta por `npm run verificar:plano` sem banco — o número de meses **multiplica dinheiro**, e errá-lo não quebra tela nenhuma.
+- **Sem vigência cadastrada, o ano é cheio.** Ajuste antigo pode não ter as datas, e a regra nova não pode trancar quem hoje consegue salvar.
+- **Exercício fora da vigência é recusado**, não tratado como plano menor: é um plano de um ano em que a parceria não vigora. A tela avisa antes de digitar trinta rubricas para levar o erro no fim.
+- A tela **só mostra a faixa do período quando o ano é parcial**. Aviso que se repete em toda tela deixa de ser lido; o multiplicador diferente de doze é que precisa de explicação.
+- Espelhada em `types/planoAplicacao.ts` porque a tela calcula o anual **enquanto se digita** — e travada por `planoAplicacao.test.ts`, com os mesmos números dos dois lados. Divergindo, a tela promete um anual e o servidor grava outro.
+
+### O formulário abria zerado sobre um plano gravado
+
+`PlanoDigitado` semeia o estado no `useState` inicial, **uma vez só**, e era montado antes de o plano chegar da API. A lista chegava depois e o formulário nunca a via: abria com o modelo em branco sobre um plano que estava salvo — e a grade logo abaixo mostrava os valores, o que fazia parecer que o formulário os tinha perdido.
+
+A correção tem duas metades, e as duas importam: a aba **só monta o formulário depois de carregar**, e passa um `key` derivado do que foi carregado. Sem o `key`, depois de salvar o formulário continuaria mostrando o que foi digitado em vez do que **ficou** gravado. **O Cronograma tinha o mesmo defeito, pela mesma causa**, e recebeu o mesmo par.
 
 ## Conciliação — os dois lados
 

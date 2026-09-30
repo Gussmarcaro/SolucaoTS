@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { AlertCircle, Loader2, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { formatarMoeda, mascaraMoeda, moedaParaNumero } from '@/lib/masks';
+import { dataBr, formatarMoeda, mascaraMoeda, moedaParaNumero } from '@/lib/masks';
+import { janelaDoExercicio, rotuloJanela } from '@/types/planoAplicacao';
 import { extrairMensagemErro } from '@/services/http';
 import { copiarPlanoExercicio, exerciciosDoPlano, salvarPlanoDigitado } from '@/services/ajusteCsv.service';
 import { CopiarExercicio } from './CopiarExercicio';
@@ -100,18 +101,39 @@ export function PlanoDigitado({
   ajusteId,
   itens,
   anoSugerido,
+  vigenciaInicial,
+  vigenciaFinal,
   onSalvo,
 }: {
   ajusteId: string;
   /** O plano já gravado — a grade abre preenchida com ele. */
   itens: PlanoItem[];
   anoSugerido: number;
+  /** A vigência do ajuste: é ela que diz quantas competências o ano tem. */
+  vigenciaInicial: string | null;
+  vigenciaFinal: string | null;
   onSalvo: () => void;
 }) {
   const [ano, setAno] = useState(String(itens[0]?.ano ?? anoSugerido));
   const [grupos, setGrupos] = useState<Grupo[]>(() => gruposIniciais(itens));
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
+
+  /*
+   * Quantas competências este exercício tem, segundo a vigência do ajuste.
+   *
+   * **O anual não é mensal × 12** quando a parceria começa ou termina no meio
+   * do ano: um convênio de 01/06/2026 a 31/05/2027 tem sete competências em
+   * 2026 e cinco em 2027. Multiplicar por doze declararia mais que o pactuado —
+   * o total do exercício não bateria com o valor global do ajuste, e a
+   * conferência "execução × plano" compararia a despesa real contra um teto que
+   * não existe.
+   */
+  const janela = useMemo(
+    () => janelaDoExercicio(Number(ano), vigenciaInicial, vigenciaFinal),
+    [ano, vigenciaInicial, vigenciaFinal],
+  );
+  const meses = janela?.meses ?? 12;
 
   const mensalDe = (l: Linha) => moedaParaNumero(l.valor || '');
   const totalMensal = grupos.reduce(
@@ -200,11 +222,46 @@ export function PlanoDigitado({
         />
         <p className="max-w-xl pb-2.5 text-xs text-ink-400">
           Informe a <strong>Categoria de Despesa AUDESP</strong> e o valor <strong>mensal</strong> de
-          cada rubrica. O anual é o mensal × 12, e as 12 competências são gravadas ao salvar.
-          Rubrica em branco não é gravada — as linhas do modelo que você não usar podem ficar
-          vazias, ou ser removidas.
+          cada rubrica. O anual é o mensal × {meses}, e as {meses} competências são gravadas ao
+          salvar. Rubrica em branco não é gravada — as linhas do modelo que você não usar podem
+          ficar vazias, ou ser removidas.
         </p>
       </div>
+
+      {/*
+        O período que o exercício cobre, à vista.
+
+        O multiplicador do anual deixou de ser sempre doze, e um número
+        diferente do esperado sem explicação parece defeito. Quando a vigência
+        recorta o ano, a faixa diz de onde vem o recorte; quando o ano é cheio,
+        ela não aparece — aviso que se repete em toda tela deixa de ser lido.
+      */}
+      {janela?.parcial && (
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 rounded-xl border border-brand-200 bg-brand-50/60 px-3 py-2 text-sm dark:border-brand-500/30 dark:bg-brand-500/10">
+          <span className="font-medium text-ink-800 dark:text-ink-100">
+            Período do exercício: {rotuloJanela(Number(ano), janela)}
+          </span>
+          <span className="text-xs text-ink-500 dark:text-ink-400">
+            — a vigência do ajuste ({dataBr(vigenciaInicial)} a {dataBr(vigenciaFinal)}) não cobre o
+            ano inteiro, então o anual é o mensal × {meses}.
+          </span>
+        </div>
+      )}
+
+      {/*
+        Exercício fora da vigência não é plano menor: é plano de um ano em que a
+        parceria não existe. O servidor recusa; a tela avisa antes de digitar
+        trinta rubricas para levar um erro no fim.
+      */}
+      {!janela && (
+        <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>
+            O exercício {ano} está fora da vigência do ajuste ({dataBr(vigenciaInicial)} a{' '}
+            {dataBr(vigenciaFinal)}). Corrija o exercício, ou a vigência na aba Dados.
+          </span>
+        </div>
+      )}
 
       <div className="overflow-x-auto rounded-xl border border-ink-200 dark:border-ink-700">
         <table className="w-full min-w-[860px] text-sm">
@@ -241,7 +298,7 @@ export function PlanoDigitado({
                     {formatarMoeda(subtotal)}
                   </td>
                   <td className="px-3 py-1.5 text-right tabular-nums text-ink-800 dark:text-ink-100">
-                    {formatarMoeda(subtotal * 12)}
+                    {formatarMoeda(subtotal * meses)}
                   </td>
                   <td className="px-2 py-1.5 text-center">
                     <button
@@ -295,7 +352,7 @@ export function PlanoDigitado({
                         />
                       </td>
                       <td className="px-3 py-1.5 text-right tabular-nums text-ink-500 dark:text-ink-400">
-                        {mensal > 0 ? formatarMoeda(mensal * 12) : '—'}
+                        {mensal > 0 ? formatarMoeda(mensal * meses) : "—"}
                       </td>
                       <td className="px-2 py-1.5 text-center">
                         <button
@@ -340,7 +397,7 @@ export function PlanoDigitado({
               <td className="px-3 py-2">TOTAL</td>
               <td />
               <td className="px-3 py-2 text-right tabular-nums">{formatarMoeda(totalMensal)}</td>
-              <td className="px-3 py-2 text-right tabular-nums">{formatarMoeda(totalMensal * 12)}</td>
+              <td className="px-3 py-2 text-right tabular-nums">{formatarMoeda(totalMensal * meses)}</td>
               <td />
             </tr>
           </tfoot>

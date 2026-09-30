@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Loader2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { GradeSimples } from '@/components/ui/GradeSimples';
 import type { ColunaDef } from '@/hooks/useResizableColumns';
@@ -77,14 +77,28 @@ export function CronogramaTab({
       </div>
 
       {modo === 'digitar' ? (
-        <CronogramaDigitado
-          ajusteId={ajusteId}
-          plano={plano}
-          cronograma={lista}
-          vigenciaInicial={vigenciaInicial}
-          vigenciaFinal={vigenciaFinal}
-          onSalvo={recarregar}
-        />
+        carregando ? (
+          <div className="py-10 text-center">
+            <Loader2 className="mx-auto h-5 w-5 animate-spin text-brand-500" />
+          </div>
+        ) : (
+          /*
+           * Mesmo cuidado do Plano de Aplicação, e pelo mesmo motivo: a grade
+           * semeia o estado no `useState` inicial, uma vez só. Montando antes
+           * de o cronograma chegar, ela abria zerada sobre o que estava
+           * gravado — e o `key` a faz refletir o que **ficou** salvo depois de
+           * gravar, não o que foi digitado.
+           */
+          <CronogramaDigitado
+            key={`${refreshKey}:${lista.length}`}
+            ajusteId={ajusteId}
+            plano={plano}
+            cronograma={lista}
+            vigenciaInicial={vigenciaInicial}
+            vigenciaFinal={vigenciaFinal}
+            onSalvo={recarregar}
+          />
+        )
       ) : (
         <ImportadorCsv
           dica="CSV com colunas: ano; mês; valor (uma linha por competência)."

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Loader2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { GradeSimples } from '@/components/ui/GradeSimples';
 import type { ColunaDef } from '@/hooks/useResizableColumns';
@@ -18,7 +18,16 @@ const COLUNAS: ColunaDef[] = [
   { key: 'valor', label: 'Valor', width: 170, align: 'right', sortKey: 'valor' },
 ];
 
-export function PlanoAplicacaoTab({ ajusteId }: { ajusteId: string }) {
+export function PlanoAplicacaoTab({
+  ajusteId,
+  vigenciaInicial,
+  vigenciaFinal,
+}: {
+  ajusteId: string;
+  /** A vigência decide quantas competências o exercício tem — ver `PlanoDigitado`. */
+  vigenciaInicial: string | null;
+  vigenciaFinal: string | null;
+}) {
   const [lista, setLista] = useState<PlanoItem[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -71,12 +80,35 @@ export function PlanoAplicacaoTab({ ajusteId }: { ajusteId: string }) {
       </div>
 
       {modo === 'digitar' ? (
-        <PlanoDigitado
-          ajusteId={ajusteId}
-          itens={lista}
-          anoSugerido={new Date().getFullYear()}
-          onSalvo={recarregar}
-        />
+        carregando ? (
+          <div className="py-10 text-center">
+            <Loader2 className="mx-auto h-5 w-5 animate-spin text-brand-500" />
+          </div>
+        ) : (
+          /*
+           * O formulário só monta **depois** de o plano chegar — e remonta
+           * quando ele muda (`key`).
+           *
+           * Era aqui que os valores sumiam: `PlanoDigitado` semeia o estado uma
+           * única vez, no `useState` inicial, e montava com `itens` ainda
+           * vazio. A lista chegava depois e o formulário nunca a via, então
+           * abria zerado sobre um plano que estava gravado — e a grade abaixo
+           * mostrava os valores, o que fazia parecer que o formulário os
+           * perdera.
+           *
+           * O `key` fecha a outra metade: depois de salvar, o formulário
+           * reflete o que **ficou** gravado, não o que foi digitado.
+           */
+          <PlanoDigitado
+            key={`${refreshKey}:${lista.length}`}
+            ajusteId={ajusteId}
+            itens={lista}
+            anoSugerido={new Date().getFullYear()}
+            vigenciaInicial={vigenciaInicial}
+            vigenciaFinal={vigenciaFinal}
+            onSalvo={recarregar}
+          />
+        )
       ) : (
         <ImportadorCsv
           dica="CSV com colunas: categoria; subcategoria; ano; mês; valor; descrição (opcional)."

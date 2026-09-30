@@ -143,7 +143,13 @@ export function AjusteDetalhe() {
         {aba === 'termos' && <TermosAditivosTab ajusteId={ajuste.id} />}
         {aba === 'empenhos' && <EmpenhosTab ajusteId={ajuste.id} />}
         {aba === 'metas' && <ProgramasMetasTab ajusteId={ajuste.id} />}
-        {aba === 'plano' && <PlanoAplicacaoTab ajusteId={ajuste.id} />}
+        {aba === 'plano' && (
+          <PlanoAplicacaoTab
+            ajusteId={ajuste.id}
+            vigenciaInicial={ajuste.vigenciaInicial}
+            vigenciaFinal={ajuste.vigenciaFinal}
+          />
+        )}
         {aba === 'execucao' && <ExecucaoPlanoTab ajusteId={ajuste.id} />}
         {aba === 'cronograma' && (
           <CronogramaTab

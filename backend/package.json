@@ -42,6 +42,7 @@
     "busca:backfill": "tsx prisma/seeds/backfillBusca.ts",
     "verificar:conferencia": "tsx scripts/verificarConferencia.ts",
     "verificar:metas": "tsx scripts/verificarMetas.ts",
+    "verificar:plano": "tsx scripts/verificarPlano.ts",
     "typecheck:scripts": "tsc -p tsconfig.scripts.json --noEmit"
   },
   "dependencies": {

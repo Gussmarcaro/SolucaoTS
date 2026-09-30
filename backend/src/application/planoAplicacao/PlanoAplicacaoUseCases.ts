@@ -5,6 +5,7 @@ import type { DadosPlanoItem, PlanoDigitadoDTO, ResultadoImportacaoPlano } from 
 import { BusinessError, NotFoundError } from '@/shared/errors';
 import { CATEGORIA_DESPESA_CODIGOS } from '@/core/dominio/tabelasFaseV';
 import { parsePlanoAplicacao } from '@/infrastructure/parsers/parsePlanoAplicacao';
+import { janelaDoExercicio } from '@/core/planoAplicacao/competencias';
 
 export class PlanoAplicacaoUseCases {
   constructor(
@@ -13,8 +14,9 @@ export class PlanoAplicacaoUseCases {
   ) {}
 
   private async garantirAjuste(ajusteId: string) {
-    if (!(await this.ajustes.buscarPorId(ajusteId)))
-      throw new NotFoundError('Ajuste não encontrado.');
+    const ajuste = await this.ajustes.buscarPorId(ajusteId);
+    if (!ajuste) throw new NotFoundError('Ajuste não encontrado.');
+    return ajuste;
   }
 
   async importar(ajusteId: string, texto: string): Promise<ResultadoImportacaoPlano> {
@@ -40,11 +42,27 @@ export class PlanoAplicacaoUseCases {
    * consulta.
    */
   async salvarDigitado(ajusteId: string, input: PlanoDigitadoDTO): Promise<PlanoAplicacaoItem[]> {
-    await this.garantirAjuste(ajusteId);
+    const ajuste = await this.garantirAjuste(ajusteId);
 
     const ano = Number(input.ano);
     if (!Number.isInteger(ano) || ano < 2000 || ano > 2100)
       throw new BusinessError('Informe o exercício do plano de aplicação.');
+
+    /*
+     * As competências do exercício saem da **vigência do ajuste**, não de
+     * `1..12` fixo.
+     *
+     * Um convênio de 01/06/2026 a 31/05/2027 tem sete competências em 2026 e
+     * cinco em 2027. Gravar doze em cada declarava mais que o pactuado: o total
+     * do exercício não batia com o valor global, e o "execução × plano"
+     * comparava a despesa real contra um teto que não existe.
+     */
+    const janela = janelaDoExercicio(ano, ajuste.vigenciaInicial, ajuste.vigenciaFinal);
+    if (!janela)
+      throw new BusinessError(
+        `O exercício ${ano} está fora da vigência do ajuste` +
+          `${ajuste.vigenciaInicial && ajuste.vigenciaFinal ? ` (${ajuste.vigenciaInicial} a ${ajuste.vigenciaFinal})` : ''}.`,
+      );
 
     const itens: DadosPlanoItem[] = [];
     for (const linha of input.itens ?? []) {
@@ -90,7 +108,7 @@ export class PlanoAplicacaoUseCases {
       if (cat !== null && !CATEGORIA_DESPESA_CODIGOS.has(cat))
         throw new BusinessError(`Categoria de Despesa AUDESP inexistente em ${subcategoria}: ${cat}.`);
 
-      for (let mes = 1; mes <= 12; mes++) {
+      for (let mes = janela.primeiro; mes <= janela.ultimo; mes++) {
         itens.push({
           categoria,
           subcategoria,
