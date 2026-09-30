@@ -47,25 +47,32 @@ export function Conciliacao() {
   const [lancamentos, setLancamentos] = useState<LancamentoPendente[]>([]);
 
   /*
-   * A janela dos lançamentos pendentes.
+   * A janela dos lançamentos pendentes: o **exercício corrente**.
    *
-   * O filtro da tela nasce **vazio**, e para o extrato isso significa "tudo" —
-   * comportamento que não quero mudar, porque uma linha de três meses atrás que
-   * continua pendente precisa aparecer. Mas "tudo" não serve aqui: varrer todos
-   * os pagamentos do órgão desde sempre para responder a uma pergunta do mês
-   * corrente é caro e não é o que se quer ler.
+   * O filtro da tela nasce vazio, e para o extrato isso significa "tudo" —
+   * comportamento que não muda, porque linha antiga ainda pendente precisa
+   * aparecer. Mas "tudo" não serve aqui: varrer os pagamentos do órgão desde
+   * sempre responde mais do que se quer ler.
    *
-   * Então a seção tem janela própria — os últimos 90 dias enquanto ninguém
-   * escolher —, e o título diz qual é. Período implícito que não se enuncia
-   * vira número que ninguém sabe interpretar.
+   * **A primeira versão usava os últimos 90 dias, e era a unidade errada.** Em
+   * setembro, uma janela de 90 dias começa em julho — e escondia por completo
+   * os pagamentos de maio e junho, que é exatamente o que a conciliação tem a
+   * fazer. A tela abria vazia parecendo que não havia nada a conciliar.
+   *
+   * O exercício é a unidade certa porque é a do resto do sistema: a prestação
+   * é anual, o plano é por exercício, e a conciliação existe para fechar o ano.
+   * Um ano de lançamentos de um órgão é consulta pequena — o índice
+   * `[clienteId, dataPagamento]` serve exatamente a ela.
    */
   const janelaPendentes = useMemo(() => {
-    if (de && ate) return { de, ate, padrao: false };
-    const hoje = new Date();
-    const inicio = new Date(hoje);
-    inicio.setDate(inicio.getDate() - 90);
-    const iso = (d: Date) => d.toISOString().slice(0, 10);
-    return { de: de || iso(inicio), ate: ate || iso(hoje), padrao: !de || !ate };
+    const exercicio = new Date().getFullYear();
+    if (de && ate) return { de, ate, padrao: false, exercicio };
+    return {
+      de: de || `${exercicio}-01-01`,
+      ate: ate || `${exercicio}-12-31`,
+      padrao: true,
+      exercicio,
+    };
   }, [de, ate]);
   const [enviando, setEnviando] = useState(false);
   const [agindo, setAgindo] = useState<string | null>(null);
@@ -365,14 +372,24 @@ export function Conciliacao() {
         "ignorados"), e uma lista de lançamentos ali não responderia ao filtro
         escolhido — apareceria como ruído fixo no rodapé de toda aba.
       */}
-      {filtro === 'pendentes' && lancamentos.length > 0 && (
+      {/*
+        A seção aparece **mesmo vazia**, e isso é correção de um erro meu.
+
+        Escondê-la quando não há lançamentos fazia a tela ficar idêntica à de
+        antes desta funcionalidade existir — e foi o que aconteceu quando a
+        janela padrão (90 dias) não alcançava os lançamentos de maio: o usuário
+        via "nenhum extrato importado" e concluía, com razão, que nada tinha
+        sido feito. Dizer "procurei no exercício X e não achei" custa três
+        linhas e é verificável; o silêncio não é.
+      */}
+      {filtro === 'pendentes' && (
         <div className="mt-6">
           <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
             <h3 className="text-sm font-semibold text-ink-800 dark:text-ink-100">
               Lançados no sistema, ainda sem correspondência no extrato
               <span className="ml-2 font-normal text-ink-400">
                 {janelaPendentes.padrao
-                  ? '· últimos 90 dias'
+                  ? `· exercício ${janelaPendentes.exercicio}`
                   : `· ${dataBr(janelaPendentes.de)} a ${dataBr(janelaPendentes.ate)}`}
               </span>
             </h3>
@@ -384,6 +401,12 @@ export function Conciliacao() {
             </span>
           </div>
 
+          {lancamentos.length === 0 ? (
+            <div className="rounded-xl border border-ink-200 px-4 py-8 text-center text-sm text-ink-400 dark:border-ink-700">
+              Nenhum pagamento ou receita sem correspondência no período. Se o que você procura é de
+              outro exercício, ajuste o <strong>De</strong> e o <strong>Até</strong> acima.
+            </div>
+          ) : (
           <div className="overflow-x-auto rounded-xl border border-ink-200 dark:border-ink-700">
             <table className="w-full min-w-[620px] text-sm">
               <thead className="bg-ink-50/70 text-left text-[11px] uppercase tracking-wide text-ink-400 dark:bg-ink-800/40">
@@ -427,16 +450,19 @@ export function Conciliacao() {
               </tbody>
             </table>
           </div>
+          )}
 
           {/* Não há ação nesta tabela, e é deliberado: conciliar exige os dois
               lados. Marcar aqui seria dizer que o banco confirmou algo que o
               extrato não mostra — exatamente a afirmação que a conciliação
               existe para não deixar ninguém fazer. */}
-          <p className="mt-2 text-xs text-ink-400">
-            Estes lançamentos ainda não foram encontrados no extrato. Importe o OFX do período: os
-            que casarem aparecem acima com a sugestão de par. O que sobrar aqui depois disso é
-            pagamento que não saiu, repasse que não caiu, ou lançamento com valor ou data errados.
-          </p>
+          {lancamentos.length > 0 && (
+            <p className="mt-2 text-xs text-ink-400">
+              Estes lançamentos ainda não foram encontrados no extrato. Importe o OFX do período: os
+              que casarem aparecem acima com a sugestão de par. O que sobrar aqui depois disso é
+              pagamento que não saiu, repasse que não caiu, ou lançamento com valor ou data errados.
+            </p>
+          )}
         </div>
       )}
 
