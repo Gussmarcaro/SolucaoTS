@@ -19,6 +19,38 @@ com o anexo que veio do Gmail — não são um roteiro teórico.
 > Confira **agora**, e não no dia do incêndio, que ela está guardada em outro
 > lugar.
 
+### Conferir que a cópia guardada realmente abre o backup
+
+Ter a senha no gerenciador não basta: **cópia errada é indistinguível de cópia
+certa** até o dia em que ela não abre nada. Um espaço no fim, um caractere que
+o gerenciador "corrigiu", uma quebra de linha colada junto — nada disso dá
+sinal, e o teste é de trinta segundos.
+
+O teste certo usa o **anexo do Gmail**, não o arquivo da VPS: é o anexo que
+sobra quando a VPS é o problema. E digita-se a senha **do gerenciador**, nunca
+a do arquivo `~/.backup-pass` — o que se quer provar é a cópia, não o original.
+
+```bash
+# 1. Baixe o anexo mais recente (solucaots-AAAA-MM-DD-HHMM.sql.gz.enc).
+# 2. Decifre. O openssl pede a senha e não a mostra na tela:
+openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 \
+  -in solucaots-AAAA-MM-DD-HHMM.sql.gz.enc | gunzip | head -5
+```
+
+- **Saiu texto SQL** (`-- PostgreSQL database dump`) → a cópia está correta.
+- **`bad decrypt`** → a senha guardada **não** é a que cifra os backups. Corrija
+  o gerenciador **hoje**; enquanto isso, os anexos são ilegíveis.
+
+O `head -5` existe para o teste não gravar um dump de 2,6 MB em disco: o que se
+quer saber é se o primeiro bloco decifra, e isso já responde.
+
+> Um detalhe que economiza confusão: o arquivo da VPS é criado com
+> `printf '%s'`, **sem quebra de linha no fim** — a senha são exatamente os
+> bytes do arquivo. O `-pass file:` do OpenSSL descartaria um `\n` final, então
+> quem tiver criado o arquivo de outro jeito (com `echo`, por exemplo) tem uma
+> senha um caractere menor do que o arquivo sugere. O teste acima resolve a
+> dúvida sem precisar decidir isso no papel.
+
 O ambiente de origem, para referência: Ubuntu 22.04, PostgreSQL 14.24,
 Node 24, serviço systemd `solucaots-api` (`User=solucao`,
 `WorkingDirectory=/home/solucao/app/backend`, `ExecStart=/usr/bin/npm start`,
