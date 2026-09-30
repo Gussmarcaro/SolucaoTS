@@ -20,6 +20,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { abas, lerPlanilha, lerZip } from '../src/infrastructure/parsers/xlsx';
 import { linhasCsv } from '../src/shared/csv';
+import { lerClassificacaoDoXsd } from './classificacaoXsd';
 
 const AQUI = dirname(fileURLToPath(import.meta.url));
 const RAIZ = resolve(AQUI, '..', '..');
@@ -114,7 +115,7 @@ function gerarClassificacaoEconomica(): void {
     ]);
   }
   registros.sort((a, b) => (a as string[])[0].localeCompare((b as string[])[0]));
-  escrever('classificacao-economica.ndjson', registros);
+  escrever(`classificacao-economica-${EXERCICIO}.ndjson`, registros);
   if (excluidos) console.log(`    (${excluidos} código(s) marcado(s) como excluídos foram ignorados)`);
 
   // --- tabelas auxiliares que compõem o código ---
@@ -136,7 +137,16 @@ function gerarClassificacaoEconomica(): void {
   escrever('componentes-despesa.ndjson', componentes);
 }
 
+
+/** Exercício anterior, lido do XSD das Tabelas Auxiliares — ver o módulo. */
+function gerarClassificacaoAnterior(exercicio: number, arquivo: string): void {
+  console.log(`Classificação Econômica ${exercicio} (${arquivo})`);
+  const registros = lerClassificacaoDoXsd(resolve(DOCS, 'Tabelas Auxiliares', 'auxiliar', arquivo));
+  escrever(`classificacao-economica-${exercicio}.ndjson`, registros);
+}
+
 console.log(`Gerando tabelas de domínio a partir de ${DOCS}\n`);
 gerarCbo();
 gerarClassificacaoEconomica();
+gerarClassificacaoAnterior(2024, 'AUDESP_TABELASAUXILIARES_2024_A.XSD');
 console.log(`\nArquivos escritos em ${SAIDA}`);
