@@ -18,7 +18,7 @@ import { vigentesEm } from '@/types/rateio';
 import type { Fornecedor } from '@/types/fornecedor';
 import type { Contrato } from '@/types/contrato';
 import { QuadroRetencoes, somaRetencoes, type LinhaRetencao } from './QuadroRetencoes';
-import { Anexos } from '@/components/ui/Anexos';
+import { Anexos, enviarPendentes, type AnexoPendente } from '@/components/ui/Anexos';
 import type { Rateio } from '@/types/rateio';
 import {
   TIPO_DOCUMENTO_FISCAL_LABEL,
@@ -104,6 +104,7 @@ export function DespesaForm({
 
   const [erro, setErro] = useState<string | null>(null);
   const { ajusteId } = useAjusteExecucao();
+const [pendentes, setPendentes] = useState<AnexoPendente[]>([]);  /**   * O id da despesa que acabou de nascer nesta sessão do formulário.   *   * Sem ele, o segundo clique em Salvar depois de uma falha de upload criaria   * uma nota duplicada — e nota duplicada passa por toda validação, porque a   * chave de número+credor é do órgão, não do formulário.   */  const [idSalvo, setIdSalvo] = useState<string | null>(null);  const alvo = item?.id ?? idSalvo;
   const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
@@ -268,8 +269,36 @@ export function DespesaForm({
 
     setSalvando(true);
     try {
-      if (item) await despesasApi.atualizar(item.id, payload);
-      else await despesasApi.criar(payload);
+      let id: string;
+      if (alvo) {
+        await despesasApi.atualizar(alvo, payload);
+        id = alvo;
+      } else {
+        id = (await despesasApi.criar(payload)).id;
+      }
+
+      /*
+       * Os arquivos escolhidos antes sobem agora — o envio precisa do id.
+       *
+       * Falha aqui **não** desfaz a despesa: ela está gravada, e dizer o
+       * contrário seria mentir. O formulário fica aberto já apontando para o
+       * registro criado, com os anexos no modo normal para tentar de novo.
+       * Mesmo desenho do Pagamento, e pelo mesmo motivo — sem o `alvo`, o
+       * segundo clique em Salvar criaria uma nota duplicada.
+       */
+      if (pendentes.length) {
+        const { enviados, falhas } = await enviarPendentes('DESPESA', id, pendentes);
+        if (falhas.length) {
+          setIdSalvo(id);
+          setPendentes(pendentes.filter((p) => !enviados.includes(p)));
+          setErro(
+            `Despesa salva, mas ${falhas.length} arquivo(s) não subiram: ` +
+              `${falhas.map((f) => `${f.pendente.arquivo.name} (${f.motivo})`).join('; ')}. ` +
+              'Tente anexar novamente abaixo.',
+          );
+          return;
+        }
+      }
       onSuccess();
     } catch (e) {
       setErro(extrairMensagemErro(e, 'Não foi possível salvar a despesa.'));
@@ -402,16 +431,20 @@ export function DespesaForm({
       </div>
 
       {/* Anexos — a nota, o recibo e os documentos auxiliares.
-          Ficam abaixo dos campos porque dependem do lançamento já existir: o
-          envio precisa do id, que num cadastro novo só há depois de salvar. */}
+          Num cadastro novo o arquivo é escolhido aqui e sobe junto com a
+          gravação: o envio precisa do id, mas o usuário não tem por que saber
+          disso, nem voltar à tela depois para anexar. É a nota digitalizada
+          que a fiscalização pede primeiro. */}
       <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700">
         <legend className="px-1 text-[13px] font-normal text-ink-600 dark:text-ink-300">
           Arquivos <span className="text-ink-400">— nota, recibo e documentos auxiliares</span>
         </legend>
         <Anexos
           dono="DESPESA"
-          donoId={item?.id}
+          donoId={alvo ?? undefined}
           tipos={['DOCUMENTO_FISCAL', 'RECIBO', 'DOCUMENTO_AUXILIAR']}
+          pendentes={pendentes}
+          onPendentes={setPendentes}
         />
       </fieldset>
 
@@ -455,8 +488,15 @@ export function DespesaForm({
       </fieldset>
 
       <div className="flex items-center justify-end gap-2 pt-1">
-        <Button type="button" variant="secondary" onClick={onCancel} disabled={salvando}>
-          Cancelar
+        {/* Depois que a despesa nasceu, "Cancelar" já não cancela nada — e
+            fechar sem recarregar deixaria a grade sem o registro que existe. */}
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={idSalvo ? onSuccess : onCancel}
+          disabled={salvando}
+        >
+          {idSalvo ? 'Fechar' : 'Cancelar'}
         </Button>
         <Button type="submit" disabled={salvando}>
           {salvando && <Loader2 className="h-4 w-4 animate-spin" />}
