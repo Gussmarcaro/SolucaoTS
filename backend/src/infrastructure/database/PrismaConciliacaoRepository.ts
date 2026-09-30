@@ -94,6 +94,23 @@ export class PrismaConciliacaoRepository implements IConciliacaoRepository {
     return rows.map(toDomain);
   }
 
+  /**
+   * As contas declaradas no ajuste — o que liga o extrato à parceria.
+   *
+   * O recorte é feito **em memória**, no caso de uso, e não numa cláusula SQL:
+   * a comparação é por dígitos (agência `0001` e `1`, conta `123655-9` e
+   * `1236559` são a mesma), e isso não se escreve em `where` sem função no
+   * banco. O volume permite — um período de extrato são dezenas de linhas, e a
+   * consulta já é recortada por data e por órgão.
+   */
+  async contasDoAjuste(ajusteId: string) {
+    const rows = await prisma.ajusteContaBancaria.findMany({
+      where: { ajusteId },
+      select: { banco: true, agencia: true, conta: true },
+    });
+    return rows.map((r) => ({ banco: r.banco, agencia: r.agencia, conta: r.conta }));
+  }
+
   async buscarPorId(id: string): Promise<LinhaExtrato | null> {
     const row = await prisma.lancamentoExtrato.findUnique({ where: { id }, select: selecao });
     return row ? toDomain(row) : null;
@@ -125,22 +142,26 @@ export class PrismaConciliacaoRepository implements IConciliacaoRepository {
    * pagamento em importações diferentes — sem ele, o mesmo dinheiro seria
    * conciliado em dois meses seguidos e a conta fecharia por engano.
    */
-  async candidatosPagamento(de: string, ate: string): Promise<Candidato[]> {
+  async candidatosPagamento(de: string, ate: string, ajusteId?: string): Promise<Candidato[]> {
     const rows = await prisma.pagamento.findMany({
       where: {
         dataPagamento: { gte: parseDataISO(de), lte: parseDataISO(ate) },
         lancamentosExtrato: { none: {} },
+        // Dentro de um ajuste, um débito do banco só pode casar com pagamento
+        // **daquela** parceria: sugerir o de outra concilia dinheiro alheio.
+        ...(ajusteId ? { ajusteId } : {}),
       },
       select: { id: true, valor: true, dataPagamento: true },
     });
     return rows.map((r) => ({ id: r.id, valor: Number(r.valor), data: paraDataISO(r.dataPagamento) }));
   }
 
-  async candidatosReceita(de: string, ate: string): Promise<Candidato[]> {
+  async candidatosReceita(de: string, ate: string, ajusteId?: string): Promise<Candidato[]> {
     const rows = await prisma.receita.findMany({
       where: {
         dataRepasse: { gte: parseDataISO(de), lte: parseDataISO(ate) },
         lancamentosExtrato: { none: {} },
+        ...(ajusteId ? { ajusteId } : {}),
       },
       select: { id: true, valor: true, dataRepasse: true },
     });

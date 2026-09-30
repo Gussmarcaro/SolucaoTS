@@ -249,6 +249,14 @@ export default function App() {
                 </RequerPermissao>
               }
             />
+            <Route
+              path="/execucao/financeiro/conciliacao"
+              element={
+                <RequerPermissao recurso="EXECUCAO_CONCILIACAO">
+                  <Conciliacao />
+                </RequerPermissao>
+              }
+            />
           </Route>
           {/* Guias fica de fora do portão: a guia é **do órgão** — um DARF de
               IRRF de maio recolhe retenções de várias notas e de vários
@@ -259,14 +267,6 @@ export default function App() {
             element={
               <RequerPermissao recurso="EXECUCAO_GUIAS">
                 <GuiasRecolhimento />
-              </RequerPermissao>
-            }
-          />
-          <Route
-            path="/execucao/financeiro/conciliacao"
-            element={
-              <RequerPermissao recurso="EXECUCAO_CONCILIACAO">
-                <Conciliacao />
               </RequerPermissao>
             }
           />

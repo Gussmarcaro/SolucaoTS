@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
 import { usePermissoes } from '@/contexts/PermissoesContext';
+import { useAjusteExecucao } from '@/contexts/AjusteExecucaoContext';
 import { conciliacaoApi } from '@/services/conciliacao.service';
 import { extrairMensagemErro } from '@/services/http';
 import { dataBr, formatarMoeda } from '@/lib/masks';
@@ -74,6 +75,9 @@ export function Conciliacao() {
       exercicio,
     };
   }, [de, ate]);
+  // A conciliação acontece dentro de um ajuste: só as contas dele, e só os
+  // lançamentos dele. O portão garante que ele existe.
+  const { ajusteId } = useAjusteExecucao();
   const [enviando, setEnviando] = useState(false);
   const [agindo, setAgindo] = useState<string | null>(null);
   const arquivo = useRef<HTMLInputElement>(null);
@@ -82,14 +86,14 @@ export function Conciliacao() {
     let vivo = true;
     setCarregando(true);
     conciliacaoApi
-      .listar({ de: de || undefined, ate: ate || undefined })
+      .listar({ de: de || undefined, ate: ate || undefined, ajusteId: ajusteId ?? undefined })
       .then((r) => vivo && setLinhas(r))
       .catch((e) => vivo && setErro(extrairMensagemErro(e, 'Falha ao carregar o extrato.')))
       .finally(() => vivo && setCarregando(false));
     return () => {
       vivo = false;
     };
-  }, [refreshKey, de, ate]);
+  }, [refreshKey, de, ate, ajusteId]);
 
   /*
    * O outro lado: o que o sistema lançou e o banco ainda não confirmou.
@@ -105,13 +109,13 @@ export function Conciliacao() {
   useEffect(() => {
     let vivo = true;
     conciliacaoApi
-      .pendentes(janelaPendentes)
+      .pendentes({ ...janelaPendentes, ajusteId: ajusteId ?? undefined })
       .then((r) => vivo && setLancamentos(r))
       .catch(() => vivo && setLancamentos([]));
     return () => {
       vivo = false;
     };
-  }, [refreshKey, janelaPendentes.de, janelaPendentes.ate]);
+  }, [refreshKey, janelaPendentes.de, janelaPendentes.ate, ajusteId]);
 
   const recarregar = () => setRefreshKey((k) => k + 1);
 

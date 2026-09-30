@@ -21,6 +21,8 @@ export class ConciliacaoController {
         await casos.listar({
           de: req.query.de as string | undefined,
           ate: req.query.ate as string | undefined,
+          // Dentro de um ajuste, só as linhas das contas dele.
+          ajusteId: (req.query.ajusteId as string | undefined) || undefined,
         }),
       );
     } catch (e) {
@@ -41,7 +43,8 @@ export class ConciliacaoController {
       const ate = req.query.ate as string | undefined;
       if (!de || !ate)
         throw new BusinessError('Informe o período (de/até) para listar os lançamentos pendentes.');
-      return res.json(await casos.pendentes({ de, ate }));
+      const ajusteId = (req.query.ajusteId as string | undefined) || undefined;
+      return res.json(await casos.pendentes({ de, ate, ajusteId }));
     } catch (e) {
       return next(e);
     }

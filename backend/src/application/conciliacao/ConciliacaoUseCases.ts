@@ -2,6 +2,7 @@ import type { IConciliacaoRepository } from './IConciliacaoRepository';
 import type { ConciliarDTO, LancamentoPendente, LinhaExtrato, ResultadoImportacaoOfx } from './dtos';
 import { parseOfx } from '@/infrastructure/parsers/parseOfx';
 import { sugerirConciliacao, JANELA_DIAS } from '@/core/conciliacao/sugerir';
+import { ehDoAjuste } from '@/core/conciliacao/contas';
 import { BusinessError, NotFoundError } from '@/shared/errors';
 
 /** Desloca uma data ISO em dias — a folga da janela de sugestão. */
@@ -57,8 +58,26 @@ export class ConciliacaoUseCases {
    * A sugestão é calculada aqui e não gravada: os lançamentos mudam, e uma
    * sugestão guardada apontaria para um pagamento já corrigido ou excluído.
    */
-  async listar(filtros: { de?: string; ate?: string }): Promise<LinhaExtrato[]> {
-    const linhas = await this.repo.listar(filtros);
+  async listar(filtros: { de?: string; ate?: string; ajusteId?: string }): Promise<LinhaExtrato[]> {
+    const todas = await this.repo.listar(filtros);
+
+    /*
+     * Dentro de um ajuste, só as linhas das **contas dele**.
+     *
+     * O extrato não tem ajuste — tem banco, agência e conta por extenso. A
+     * ligação é feita comparando números, e por dígitos (`ehDoAjuste`), porque
+     * o OFX traz `123655-9` onde o cadastro traz `1236559` e a agência vem
+     * `0001` num lado e `1` no outro. Comparar texto cru esconderia o extrato
+     * inteiro sem dizer por quê — o modo de falhar que esta tela já teve uma
+     * vez.
+     *
+     * Ajuste sem conta declarada continua vendo tudo: recortar por um conjunto
+     * vazio deixaria o usuário sem conciliação e sem explicação.
+     */
+    const linhas = filtros.ajusteId
+      ? await this.recortarPorContas(todas, filtros.ajusteId)
+      : todas;
+
     const pendentes = linhas.filter((l) => !l.conciliadoEm && !l.ignorado);
     if (!pendentes.length) return linhas;
 
@@ -68,8 +87,8 @@ export class ConciliacaoUseCases {
     const ate = deslocar(datas[datas.length - 1], JANELA_DIAS);
 
     const [pagamentos, receitas] = await Promise.all([
-      this.repo.candidatosPagamento(de, ate),
-      this.repo.candidatosReceita(de, ate),
+      this.repo.candidatosPagamento(de, ate, filtros.ajusteId),
+      this.repo.candidatosReceita(de, ate, filtros.ajusteId),
     ]);
 
     const descricoes = await this.repo.descreverLancamentos({
@@ -112,6 +131,12 @@ export class ConciliacaoUseCases {
     });
   }
 
+  /** As linhas do extrato que são de uma conta declarada no ajuste. */
+  private async recortarPorContas(linhas: LinhaExtrato[], ajusteId: string) {
+    const contas = await this.repo.contasDoAjuste(ajusteId);
+    return linhas.filter((l) => ehDoAjuste(l, contas));
+  }
+
   /**
    * O que o sistema lançou e o banco ainda não confirmou.
    *
@@ -126,10 +151,10 @@ export class ConciliacaoUseCases {
    * respondem exatamente "lançamentos sem conciliação no período", porque é
    * disso que a sugestão precisa. Aqui elas passaram a servir também à tela.
    */
-  async pendentes(filtros: { de: string; ate: string }): Promise<LancamentoPendente[]> {
+  async pendentes(filtros: { de: string; ate: string; ajusteId?: string }): Promise<LancamentoPendente[]> {
     const [pagamentos, receitas] = await Promise.all([
-      this.repo.candidatosPagamento(filtros.de, filtros.ate),
-      this.repo.candidatosReceita(filtros.de, filtros.ate),
+      this.repo.candidatosPagamento(filtros.de, filtros.ate, filtros.ajusteId),
+      this.repo.candidatosReceita(filtros.de, filtros.ate, filtros.ajusteId),
     ]);
 
     const descricoes = await this.repo.descreverLancamentos({

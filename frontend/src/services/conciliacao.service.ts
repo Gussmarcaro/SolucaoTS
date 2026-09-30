@@ -7,7 +7,7 @@ import type {
 } from '@/types/conciliacao';
 
 export const conciliacaoApi = {
-  listar: async (params: { de?: string; ate?: string }): Promise<LinhaExtrato[]> => {
+  listar: async (params: { de?: string; ate?: string; ajusteId?: string }): Promise<LinhaExtrato[]> => {
     const { data } = await http.get<LinhaExtrato[]>('/conciliacao', { params });
     return data;
   },
@@ -16,7 +16,7 @@ export const conciliacaoApi = {
    * O que foi lançado e o banco ainda não confirmou — o outro lado da
    * conciliação. Exige o período: sem ele a consulta varreria o órgão inteiro.
    */
-  pendentes: async (params: { de: string; ate: string }): Promise<LancamentoPendente[]> => {
+  pendentes: async (params: { de: string; ate: string; ajusteId?: string }): Promise<LancamentoPendente[]> => {
     const { data } = await http.get<LancamentoPendente[]>('/conciliacao/pendentes', { params });
     return data;
   },

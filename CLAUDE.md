@@ -413,7 +413,7 @@ Por isso a listagem por ajuste tem **dois braços**: a nota lançada *para* o aj
 ### O que ficou de fora, e por quê
 
 - **Guias de Recolhimento** não entrou no portão. A guia é **do órgão**: um DARF de IRRF de maio recolhe retenções de várias notas e de vários ajustes, e sua identidade no schema é `órgão + tipo + competência`. Recortá-la por parceria criaria uma guia que não existe.
-- **Conciliação Bancária** ainda não entrou. O extrato é de uma **conta**, e a ligação com o ajuste existe (`AjusteContaBancaria`) — é trabalho pequeno, mas mexe na importação de OFX e merece ser feito à parte.
+
 
 ## Plano de Aplicação — o anual sai da vigência
 
@@ -443,6 +443,19 @@ A outra metade é **"o que lancei e o banco ainda não confirmou?"**, e ela vale
 - **Janela própria, e enunciada.** O filtro da tela nasce vazio, e para o extrato isso significa "tudo" — comportamento que não muda, porque linha de três meses atrás ainda pendente precisa aparecer. Mas varrer todos os pagamentos do órgão desde sempre não responde a uma pergunta do mês corrente, então a seção usa os **últimos 90 dias** enquanto ninguém escolher, e diz isso no título: período implícito que não se enuncia vira número que ninguém sabe interpretar.
 - **Só na aba "A conciliar".** Nas outras o recorte é sobre linhas do extrato ("conciliados", "ignorados"), e uma lista de lançamentos ali não responderia ao filtro escolhido — viraria ruído fixo no rodapé de toda aba.
 - **A tabela não tem ação, e é deliberado.** Conciliar exige os dois lados; marcar dali seria afirmar que o banco confirmou algo que o extrato não mostra — exatamente a afirmação que a conciliação existe para não deixar ninguém fazer.
+- **A janela padrão é o exercício, e a primeira versão errou nisso.** Era "últimos 90 dias" — em setembro, uma janela que começa em julho, escondendo por completo os pagamentos de maio e junho. A tela abria vazia parecendo que a funcionalidade não existia. O exercício é a unidade do resto do sistema: a prestação é anual, o plano é por exercício, e a conciliação existe para fechar o ano.
+- **A seção aparece mesmo vazia.** Escondê-la fazia a tela mentir por omissão — o usuário lia "nenhum extrato importado" e concluía que nada havia sido feito. Dizer "procurei no exercício X e não achei" é verificável; o silêncio não é.
+
+### Dentro do ajuste
+
+A conciliação entrou no portão da Execução, e o recorte tem **duas naturezas diferentes**:
+
+- **Lançamentos e candidatos → por `ajusteId`**, exato. É o que impede um débito do banco de ser sugerido contra o pagamento de **outra** parceria — mesma família de erro do teto da nota rateada.
+- **Linhas do extrato → pelas contas declaradas no ajuste.** O extrato não tem ajuste: guarda banco, agência e conta por extenso, porque é do banco e existe mesmo que a conta saia do cadastro depois.
+
+**A comparação é por dígitos** (`ehDoAjuste`, no core), e essa é a decisão que carrega peso: o OFX traz `123655-9` onde o cadastro traz `1236559`, e a agência vem `0001` num lado e `1` no outro. Comparação literal daria "não é deste ajuste" para o extrato inteiro — e a tela ficaria vazia sem dizer por quê, que é **exatamente o modo de falhar que esta tela já teve uma vez**. Coberta por `verificar:ofx`, sem banco.
+
+**Ajuste sem conta declarada vê tudo.** Recortar por um conjunto vazio deixaria o usuário sem conciliação e sem explicação: mostrar demais é recuperável olhando; mostrar de menos não é.
 
 ## Anexos — escolher o arquivo antes de o registro existir
 

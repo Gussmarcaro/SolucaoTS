@@ -8,6 +8,7 @@
  *   npm run verificar:ofx
  */
 import { parseOfx, dataDoOfx, valorDoOfx } from '../src/infrastructure/parsers/parseOfx';
+import { ehDoAjuste } from '../src/core/conciliacao/contas';
 import { sugerirConciliacao } from '../src/core/conciliacao/sugerir';
 
 const falhas: string[] = [];
@@ -130,6 +131,60 @@ ok(
     { id: 'perto', valor: 1500, data: '2026-01-05' },
   ])?.id === 'perto',
 );
+
+// --- a linha do extrato é deste ajuste? --------------------------------------
+//
+// A conciliação acontece dentro de uma parceria, e o extrato não tem ajuste:
+// tem banco, agência e conta por extenso. Comparar texto cru **esconderia** o
+// extrato inteiro — e a tela ficaria vazia sem dizer por quê, que é o modo de
+// falhar que esta tela já teve uma vez.
+console.log('\n--- recorte do extrato pelas contas do ajuste ---');
+{
+  const contas = [{ banco: 1, agencia: 1478, conta: '123655-9' }];
+  const linha = (over: Partial<{ banco: number | null; agencia: string | null; conta: string | null }> = {}) => ({
+    banco: 1,
+    agencia: '1478',
+    conta: '123655-9',
+    ...over,
+  });
+
+  ok('a mesma conta, escrita igual, casa', ehDoAjuste(linha(), contas));
+  ok(
+    'conta sem o traço casa',
+    ehDoAjuste(linha({ conta: '1236559' }), contas),
+    'o OFX traz um formato e o cadastro traz outro',
+  );
+  ok('agência com zeros à esquerda casa', ehDoAjuste(linha({ agencia: '0001478' }), contas));
+  ok('conta com zeros à esquerda casa', ehDoAjuste(linha({ conta: '0001236559' }), contas));
+  ok(
+    'conta com ponto e barra casa',
+    ehDoAjuste(linha({ conta: '12.365/5-9' }), contas),
+    'extrato de banco formata do jeito dele',
+  );
+
+  ok('outro banco não casa', !ehDoAjuste(linha({ banco: 341 }), contas));
+  ok('outra agência não casa', !ehDoAjuste(linha({ agencia: '9999' }), contas));
+  ok('outra conta não casa', !ehDoAjuste(linha({ conta: '999999-9' }), contas));
+
+  ok(
+    'ajuste sem conta declarada vê tudo',
+    ehDoAjuste(linha({ banco: 341, conta: '999' }), []),
+    'recortar por conjunto vazio esconderia o extrato inteiro, sem explicação',
+  );
+
+  ok(
+    'linha sem conta gravada não casa com conta declarada',
+    !ehDoAjuste({ banco: null, agencia: null, conta: null }, contas),
+  );
+
+  const duas = [
+    { banco: 1, agencia: 1478, conta: '123655-9' },
+    { banco: 341, agencia: 9999, conta: '77777-7' },
+  ];
+  ok('com duas contas, casa com qualquer uma', ehDoAjuste(linha({ banco: 341, agencia: '9999', conta: '777777' }), duas));
+  ok('e continua recusando a de fora', !ehDoAjuste(linha({ banco: 33, conta: '1' }), duas));
+}
+
 
 console.log(
   falhas.length ? `\n${falhas.length} falha(s).\n` : '\nTudo ok.\n',
