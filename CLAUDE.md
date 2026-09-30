@@ -481,7 +481,7 @@ A conciliação entrou no portão da Execução, e o recorte tem **duas natureza
 - A fonte aparece **abaixo do seletor, como texto**: ela vai ao TCESP e quem lança precisa ver o que está sendo gravado. Campo que some sem deixar rastro faz a pessoa achar que o dado se perdeu.
 - Sem nenhuma conta cadastrada o formulário avisa e aponta o caminho, em vez de deixar a pessoa descobrir no erro do servidor.
 
-A aba de receita **dentro da prestação** (`ReceitasTab`) segue com outra fonte de contas — as declaradas no **Ajuste** —, e já derivava a fonte delas. Continua exibindo o campo Fonte; unificar as duas telas é trabalho à parte.
+**Não há duas telas de receita.** `ReceitasTab` e `PagamentosTab` existiam no repositório com formulário próprio e outra fonte de contas, mas **nenhuma era importada**: o dossiê da prestação usa as telas de *seleção*, que apropriam o que a Execução lançou. Foram removidas — código morto que parece vivo é pior que ausente, porque convida a corrigir uma tela que ninguém abre.
 
 ## Cadastro do Rateio
 
