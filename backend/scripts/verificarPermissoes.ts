@@ -41,6 +41,8 @@ const LIBERADAS: Record<string, string> = {
   '/assistente/status': 'diz apenas se o assistente existe',
   '/lgpd/acesso-dados': 'cada usuário grava o registro do próprio acesso',
   '/permissoes/eu/resumo': 'o usuário lendo as próprias permissões',
+  '/dashboard/contagens':
+    'contagem dos cadastros do próprio órgão, sem conteúdo — atravessa seis recursos, e cada um é recortado pela própria permissão dentro do caso de uso',
   '/perfil': 'o usuário lendo e editando o próprio cadastro — o id sai do token, não da entrada',
   '/perfil/foto': 'a própria foto — o id sai do token, não da entrada',
   '/usuarios/:id/foto': 'o avatar do colega: aparece na barra e na agenda de todo usuário, e o recorte por órgão já vem da raiz Usuario. Gravar e apagar continuam sob CONFIG_USUARIOS',

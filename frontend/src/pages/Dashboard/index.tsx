@@ -1,18 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  FileText,
-  Building2,
-  Truck,
-  UserRound,
-  Boxes,
-  UserCog,
-  Plus,
-  ArrowRight,
-  CheckCircle2,
-} from 'lucide-react';
+import { Plus, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { KpiTile } from '@/components/ui/KpiTile';
 import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -21,15 +10,10 @@ import { usePermissoes } from '@/contexts/PermissoesContext';
 import { PainelAgenda } from './PainelAgenda';
 import { PainelExecucao } from './PainelExecucao';
 import { PainelFiscalizacao } from './PainelFiscalizacao';
+import { FaixaCadastros } from './FaixaCadastros';
 import { PainelFornecedores } from './PainelFornecedores';
 import { PainelRepasses } from './PainelRepasses';
 import { PainelSituacao } from './PainelSituacao';
-import { listarEntidades } from '@/services/entidades.service';
-import { listarFornecedores } from '@/services/fornecedores.service';
-import { listarColaboradores } from '@/services/colaboradores.service';
-import { listarContratos } from '@/services/contratos.service';
-import { listarBensCedidos } from '@/services/bensCedidos.service';
-import { listarServidoresCedidos } from '@/services/servidoresCedidos.service';
 import { listarAjustes } from '@/services/ajustes.service';
 import { listarPrestacoes } from '@/services/prestacoes.service';
 import { STATUS_PRESTACAO_LABEL, STATUS_PRESTACAO_TONE, type Prestacao } from '@/types/prestacao';
@@ -43,16 +27,6 @@ interface PrazoItem {
   tone: 'danger' | 'warning' | 'neutral';
   dias: number;
 }
-
-/** Total e ativos de um cadastro; `null` enquanto a consulta não volta. */
-interface Contagem {
-  total: number | null;
-  ativos: number | null;
-}
-
-type Contagens = Record<string, Contagem>;
-
-const SEM_CONTAGEM: Contagem = { total: null, ativos: null };
 
 function tempoRelativo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -79,7 +53,6 @@ export function Dashboard() {
   // não tem acesso não vê aviso, vê a tela sem o item.
   const { pode } = usePermissoes();
   const primeiroNome = usuario?.nome?.trim().split(/\s+/)[0] ?? '';
-  const [contagens, setContagens] = useState<Contagens | null>(null);
   const [prazos, setPrazos] = useState<PrazoItem[] | null>(null);
   const [atividade, setAtividade] = useState<Prestacao[] | null>(null);
   const ciclo = prazoPrestacao();
@@ -123,61 +96,17 @@ export function Dashboard() {
     };
   }, []);
 
-  useEffect(() => {
-    let vivo = true;
-    // Duas consultas por cadastro: o total e só os ativos. `pageSize: 1` porque
-    // interessa apenas o `total` que a API devolve junto da página.
-    const um = { page: 1, pageSize: 1 };
-    const soAtivos = { ...um, filtros: { ativo: true } };
-    Promise.allSettled([
-      listarEntidades(um),
-      listarEntidades(soAtivos),
-      listarFornecedores(um),
-      listarFornecedores(soAtivos),
-      listarColaboradores(um),
-      listarColaboradores(soAtivos),
-      listarContratos(um),
-      listarContratos(soAtivos),
-      listarBensCedidos(um),
-      listarBensCedidos(soAtivos),
-      listarServidoresCedidos(um),
-      listarServidoresCedidos(soAtivos),
-    ]).then((res) => {
-      if (!vivo) return;
-      const total = (i: number) =>
-        res[i].status === 'fulfilled' ? (res[i] as PromiseFulfilledResult<{ total: number }>).value.total : null;
-      const par = (i: number): Contagem => ({ total: total(i), ativos: total(i + 1) });
-      setContagens({
-        entidades: par(0),
-        fornecedores: par(2),
-        colaboradores: par(4),
-        contratos: par(6),
-        bens: par(8),
-        servidores: par(10),
-      });
-    });
-    return () => {
-      vivo = false;
-    };
-  }, []);
-
-  const contagem = (chave: string): Contagem => contagens?.[chave] ?? SEM_CONTAGEM;
-
-  /** Número formatado no padrão brasileiro; '—' quando a consulta falhou. */
-  const fmt = (chave: string): string | null => {
-    const { total } = contagem(chave);
-    if (!contagens) return null;
-    return total == null ? '—' : total.toLocaleString('pt-BR');
-  };
-
-  const cards = [
-    { chave: 'entidades', label: 'Entidades beneficiárias', icon: Building2, rota: '/cadastro/entidades' },
-    { chave: 'fornecedores', label: 'Fornecedores / Prestadores', icon: Truck, rota: '/cadastro/fornecedores' },
-    { chave: 'colaboradores', label: 'Colaboradores', icon: UserRound, rota: '/cadastro/colaboradores' },
-    { chave: 'contratos', label: 'Contratos firmados', icon: FileText, rota: '/cadastro/contratos' },
-    { chave: 'bens', label: 'Bens cedidos', icon: Boxes, rota: '/cadastro/bens-cedidos' },
-    { chave: 'servidores', label: 'Servidores cedidos', icon: UserCog, rota: '/cadastro/servidores-cedidos' },
-  ];
+  /*
+   * As contagens dos cadastros saíram daqui.
+   *
+   * Eram **doze** requisições — duas por cadastro, cada uma uma listagem
+   * paginada em `pageSize: 1` da qual se aproveitava só o campo `total`. Mais da
+   * metade de tudo que esta tela pedia ao abrir, gasta no bloco que ocupava o
+   * lugar mais nobre e era o menos acionável dela.
+   *
+   * Hoje são **uma**, em `FaixaCadastros`, no rodapé — e recortadas pela
+   * permissão de cada cadastro, o que esta grade nunca fez.
+   */
 
   return (
     <>
@@ -200,37 +129,13 @@ export function Dashboard() {
           quase em cima. */}
       {pode('AGENDA', 'CONSULTA') && <PainelAgenda />}
 
-      {/* KPIs — contagens reais dos cadastros */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {cards.map((c) => {
-          const { total, ativos } = contagem(c.chave);
-          const inativos = total != null && ativos != null ? total - ativos : null;
-          return (
-            <KpiTile
-              key={c.chave}
-              label={c.label}
-              valor={fmt(c.chave)}
-              icone={c.icon}
-              onClick={() => navigate(c.rota)}
-              rodape={
-                ativos == null ? null : (
-                  <>
-                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                    <span className="font-medium text-emerald-700 dark:text-emerald-400">
-                      {ativos.toLocaleString('pt-BR')} ativos
-                    </span>
-                    {!!inativos && <span className="text-ink-400">· {inativos.toLocaleString('pt-BR')} inativos</span>}
-                  </>
-                )
-              }
-            />
-          );
-        })}
-      </div>
-
       {/* Análise — os três recortes que respondem a perguntas de fiscalização,
-          não de contagem. Ficam **abaixo** dos KPIs de propósito: contagem de
-          cadastro é o que se confere de vez em quando; isto é o que se olha.
+          não de contagem. Passaram a vir logo após a execução e a agenda: o
+          lugar que as seis contagens de cadastro ocupavam.
+
+          Cada painel some sozinho se a consulta falhar ou se não houver dado
+          suficiente para comparar — e a seção inteira desaparece junto, porque
+          um título sobre três espaços vazios é pior que nenhum título.
 
           Cada painel some sozinho se a consulta falhar ou se não houver dado
           suficiente para comparar — e a seção inteira desaparece junto, porque
@@ -307,6 +212,10 @@ export function Dashboard() {
         </Card>
       </div>
       {pode('FISCALIZACAO', 'CONSULTA') && <PainelFiscalizacao />}
+
+      {/* Os cadastros fecham a tela em vez de abri-la. Continuam a um clique —
+          só deixaram de disputar o lugar mais nobre com o que decide o dia. */}
+      <FaixaCadastros />
 
     </>
   );

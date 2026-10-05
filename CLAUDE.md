@@ -331,6 +331,19 @@ A tela de entrada mostra, além das contagens dos cadastros:
 
 Cada painel **só aparece com permissão** no recurso correspondente (`RELATORIOS`, `FISCALIZACAO`) e **some sozinho** se a consulta falhar ou se não houver dado — um cartão vazio na tela de entrada ensina a ignorá-la.
 
+### A hierarquia da tela, e as doze requisições que ela custava
+
+As **seis contagens de cadastro** ocupavam o topo do Dashboard — e custavam **doze requisições**: duas por cadastro (o total e só os ativos), cada uma uma listagem paginada em `pageSize: 1` da qual se aproveitava apenas o campo `total`. Era **mais da metade** de tudo que a tela de entrada pedia ao abrir, gasto no bloco que este próprio arquivo já chamava, duas vezes, de "a informação menos acionável da tela".
+
+Hoje elas fecham a tela (`FaixaCadastros`, no rodapé) e custam **uma**: `GET /dashboard/contagens`. O carregamento caiu de **22 para 11** requisições.
+
+- **O endpoint atravessa seis recursos, então o gate não fica na rota.** Um `exigirPermissao` único só saberia responder "tudo ou nada"; quem recorta é o **caso de uso**, cadastro por cadastro, pela permissão do próprio recurso. A justificativa está em `LIBERADAS` — e é por isso que ela é mais longa que as outras.
+- **Isso apertou uma folga que ninguém via.** A grade antiga não consultava permissão nenhuma: quem não tinha acesso a Colaboradores ficava sabendo quantos existem. Não é vazamento grave — é contagem, sem conteúdo —, mas é informação sobre uma tela que a pessoa não deveria nem procurar, e a regra da casa é que quem não tem acesso não vê o item. O filtro é **do servidor**: escondê-lo na tela deixaria a rota respondendo a quem a chamasse direto.
+- **`IPermissoesLeitor` existe por causa da regra de dependência.** O caso de uso precisa saber o que o grupo pode ler, e quem sabe isso é o cache em `infrastructure`. Importá-lo de `application` inverteria a regra; a porta custa cinco linhas.
+- **`null` ≠ lista vazia.** "Grupo nunca configurado" (que neste RBAC libera tudo) volta como `null`; tratá-lo como conjunto vazio devolveria zero cadastros justamente para quem tem acesso a todos.
+- **Bens Cedidos não tem coluna `ativo`.** A tela antiga pedia `filtros: { ativo: true }` para ele assim mesmo e recebia o total de volta, exibindo "todos ativos" sobre um cadastro que não conhece a distinção. Hoje `ativos` vem **nulo** e a faixa mostra só o total.
+- **O custo que importava nunca foi o do banco.** `count` com índice é barato; eram as doze idas e voltas HTTP. No servidor elas continuam até doze, em paralelo e na mesma conexão.
+
 ### Gráficos do Dashboard
 
 Os quatro primeiros gráficos do sistema. Ficam **abaixo dos KPIs** de propósito: contagem de cadastro se confere de vez em quando; isto é o que se olha.
