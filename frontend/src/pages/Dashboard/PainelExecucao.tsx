@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Wallet } from 'lucide-react';
 import { relatorioExecucao } from '@/services/relatorios.service';
 import { formatarMoeda } from '@/lib/masks';
 import type { LinhaExecucao } from '@/pages/Relatorios/tipos';
+import { BarraEmpilhada, type LinhaEmpilhada } from '@/components/graficos/BarraEmpilhada';
+import { Legenda } from '@/components/graficos/base';
 
 interface Totais {
   valorGlobal: number;
@@ -12,6 +14,15 @@ interface Totais {
   emPoderDaEntidade: number;
   ajustes: number;
 }
+
+/** Quantas parcerias o gráfico desenha. Além disso vira lista, não leitura. */
+const NO_GRAFICO = 6;
+
+const SERIES = [
+  { rotulo: 'Pago pela OSC', cor: 'var(--g-exec-pago)' },
+  { rotulo: 'Em poder da OSC', cor: 'var(--g-exec-osc)' },
+  { rotulo: 'A repassar', cor: 'var(--g-exec-repassar)' },
+];
 
 /**
  * Faixa de execução financeira, no topo do Dashboard.
@@ -26,6 +37,10 @@ interface Totais {
  */
 export function PainelExecucao() {
   const [totais, setTotais] = useState<Totais | null>(null);
+  // As linhas já vinham nesta mesma chamada e eram descartadas depois de somadas
+  // — o gráfico abaixo não custa requisição nenhuma, só deixa de jogar fora o
+  // detalhe que o endpoint já entregava.
+  const [linhas, setLinhas] = useState<LinhaExecucao[]>([]);
   const [falhou, setFalhou] = useState(false);
 
   useEffect(() => {
@@ -33,6 +48,7 @@ export function PainelExecucao() {
     relatorioExecucao()
       .then((linhas: LinhaExecucao[]) => {
         if (!vivo) return;
+        setLinhas(linhas);
         setTotais({
           valorGlobal: linhas.reduce((s, l) => s + l.valorGlobal, 0),
           repassado: linhas.reduce((s, l) => s + l.repassado, 0),
@@ -46,6 +62,37 @@ export function PainelExecucao() {
       vivo = false;
     };
   }, []);
+
+  /**
+   * As parcerias com mais dinheiro parado na conta da entidade, primeiro.
+   *
+   * A ordenação é o gráfico inteiro. Por valor global ele viraria um ranking de
+   * tamanho — que a tela de Relatórios já dá, e que não muda o que se faz hoje.
+   * Ordenado pelo que está em poder da OSC, ele responde à pergunta seguinte à
+   * faixa de totais logo acima: *de quem é* esse dinheiro parado.
+   */
+  const grafico = useMemo<LinhaEmpilhada[]>(
+    () =>
+      [...linhas]
+        .filter((l) => l.valorGlobal > 0)
+        .sort((a, b) => b.emPoderDaEntidade - a.emPoderDaEntidade)
+        .slice(0, NO_GRAFICO)
+        .map((l) => ({
+          id: l.ajusteId,
+          rotulo: l.entidadeNome,
+          sub: l.numero ? `nº ${l.numero}` : l.codigoAjuste,
+          anotacao:
+            l.execucao === null
+              ? '—'
+              : `${(l.execucao * 100).toFixed(0)}% executado`,
+          segmentos: [
+            { rotulo: SERIES[0].rotulo, valor: l.pago, cor: SERIES[0].cor },
+            { rotulo: SERIES[1].rotulo, valor: l.emPoderDaEntidade, cor: SERIES[1].cor },
+            { rotulo: SERIES[2].rotulo, valor: l.aRepassar, cor: SERIES[2].cor },
+          ],
+        })),
+    [linhas],
+  );
 
   // Falha silenciosa: o Dashboard não pode ficar quebrado porque um painel não
   // carregou. O resto da tela continua útil.
@@ -89,6 +136,22 @@ export function PainelExecucao() {
             despesa. Não é irregular por si — é o que se quer acompanhar. */}
         {item('Em poder da OSC', totais?.emPoderDaEntidade ?? null, true)}
       </div>
+
+      {/* O gráfico responde a pergunta que a faixa acima deixa no ar: os totais
+          dizem *quanto* está parado; isto diz *de quem*. Some com menos de duas
+          parcerias — com uma só, a barra não compara nada e repete o que os
+          quatro números já disseram. */}
+      {grafico.length >= 2 && (
+        <div className="border-t border-ink-100 px-4 py-3 dark:border-ink-800">
+          <p className="mb-2.5 text-[11px] uppercase tracking-wide text-ink-400">
+            Onde está o dinheiro · {grafico.length} parcerias com mais saldo na entidade
+          </p>
+          <BarraEmpilhada linhas={grafico} />
+          <div className="mt-3">
+            <Legenda itens={SERIES} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

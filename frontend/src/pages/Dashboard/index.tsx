@@ -21,6 +21,9 @@ import { usePermissoes } from '@/contexts/PermissoesContext';
 import { PainelAgenda } from './PainelAgenda';
 import { PainelExecucao } from './PainelExecucao';
 import { PainelFiscalizacao } from './PainelFiscalizacao';
+import { PainelFornecedores } from './PainelFornecedores';
+import { PainelRepasses } from './PainelRepasses';
+import { PainelSituacao } from './PainelSituacao';
 import { listarEntidades } from '@/services/entidades.service';
 import { listarFornecedores } from '@/services/fornecedores.service';
 import { listarColaboradores } from '@/services/colaboradores.service';
@@ -224,6 +227,21 @@ export function Dashboard() {
           );
         })}
       </div>
+
+      {/* Análise — os três recortes que respondem a perguntas de fiscalização,
+          não de contagem. Ficam **abaixo** dos KPIs de propósito: contagem de
+          cadastro é o que se confere de vez em quando; isto é o que se olha.
+
+          Cada painel some sozinho se a consulta falhar ou se não houver dado
+          suficiente para comparar — e a seção inteira desaparece junto, porque
+          um título sobre três espaços vazios é pior que nenhum título. */}
+      {pode('RELATORIOS', 'CONSULTA') && (
+        <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
+          <PainelSituacao />
+          <PainelRepasses />
+          <PainelFornecedores />
+        </div>
+      )}
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Próximos prazos — Prestação de Contas (30/06) */}

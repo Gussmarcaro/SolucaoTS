@@ -331,6 +331,29 @@ A tela de entrada mostra, além das contagens dos cadastros:
 
 Cada painel **só aparece com permissão** no recurso correspondente (`RELATORIOS`, `FISCALIZACAO`) e **some sozinho** se a consulta falhar ou se não houver dado — um cartão vazio na tela de entrada ensina a ignorá-la.
 
+### Gráficos do Dashboard
+
+Os quatro primeiros gráficos do sistema. Ficam **abaixo dos KPIs** de propósito: contagem de cadastro se confere de vez em quando; isto é o que se olha.
+
+**Nenhuma biblioteca, e nenhum endpoint novo.** Recharts custaria ~100 KB gzipados no pedaço inicial para desenhar retângulos — e o `vendor` separado existe justamente para esse cuidado. Os quatro saem em HTML + CSS (`components/graficos/`) e custaram **+3,8 KB gzip**. Os dados já vinham de `/relatorios/*`; o da execução não custa requisição nenhuma, porque o painel **já buscava as linhas e as descartava** depois de somadas.
+
+| Gráfico | Forma | Por que essa forma |
+|---|---|---|
+| Execução por parceria | barra empilhada horizontal, rampa **ordinal** | a ordem *a repassar → em poder da OSC → pago* é o significado; lê-la como três categorias jogaria fora a progressão |
+| Concentração de fornecedores | **ênfase** (um matiz + cinza) | **não é um Pareto clássico**: aquele desenha barras de valor com linha de acumulado por cima, em **dois eixos y** — a forma mais comum de enganar o próprio leitor. Aqui há um eixo só, e o acumulado vira a frase ("3 de 47 credores concentram 80%") mais a cor de quem o compõe |
+| Repasses previsto × realizado | **dumbbell** | o que se mede é a **distância** entre dois instantes; duas barras lado a lado respondem "qual é maior", que é a pergunta errada. O atraso é literalmente o comprimento do traço |
+| Prestações por situação | barra empilhada, paleta de **estado** | estado é escala reservada: estes tons nunca viram "série 4", e por isso cada um significa sempre a mesma coisa |
+
+- **As cores não foram escolhidas a olho.** Cada conjunto passou num validador (banda de luminosidade, piso de croma, separação sob protanopia/deuteranopia e contraste contra a superfície), **nos dois modos**. O escuro tem passos **próprios**: inverter o claro automaticamente reprova — `#dcedfa` sobre papel branco dá 1,17:1 e some. As três primeiras tentativas falharam, e é por isso que a regra é computar em vez de julgar.
+- **Vivem como variáveis CSS** (`--g-*`, em `index.css`), não como classe do Tailwind. Duas razões que se somam: o SVG/`style` precisa do **valor**, e classe montada em tempo de execução passa no typecheck sem pintar nada — o mesmo defeito que as cores da Agenda já tiveram. Com variável, o tema escuro troca a cor sem o componente saber que existe tema.
+- **A escala é compartilhada entre as linhas**, não 100% por linha. Com cada linha normalizada, uma parceria de R$ 20 mil parada ocuparia a mesma largura de uma de R$ 2 milhões parada — e a tela esconderia justamente a diferença que importa.
+- **A ordenação da execução é por saldo em poder da OSC**, não por valor global. Por valor global seria um ranking de tamanho, que a tela de Relatórios já dá e que não muda o que se faz hoje; por saldo, responde à pergunta que a faixa de totais logo acima deixa no ar: *de quem* é o dinheiro parado.
+- **O vão de 2px entre segmentos é da superfície**, não um contorno: traço em volta da marca é tinta que não é dado. O mesmo vale para o anel dos pontos do dumbbell, que é o que os mantém legíveis quando o atraso é curto.
+- **Texto nunca veste a cor da série.** Rótulo, valor e legenda usam os tons de `ink`; a identidade vem da bolinha ao lado. Azul claro é ilegível como texto sobre fundo branco.
+- **Estado nunca anda sozinho na cor**: vem com ícone e rótulo. Na superfície clara o âmbar fica abaixo de 3:1 por desenho, e o par é a compensação — não enfeite.
+- **Todo painel some sozinho** se a consulta falhar ou se não houver dado que compare (menos de duas parcerias, menos de duas parcelas). Cartão vazio na tela de entrada ensina a ignorá-la, que é o pior defeito que um painel pode ter. O que não cabe no gráfico vai por escrito: ajuste **sem nenhuma prestação** não aparece em exercício nenhum, e é exatamente a lacuna que a tela existe para revelar.
+- A aritmética fica em `graficos/escala.ts` e é travada por `escala.test.ts`: `emDias` não desloca o fuso (`new Date('2026-03-01')` volta como 28/02 em São Paulo) e `normalizar` devolve 0 — nunca `NaN` — quando a janela tem largura zero, o que acontece de verdade com todas as parcelas no mesmo dia. `NaN` viraria `left: NaN%`, que o navegador descarta **em silêncio**.
+
 ## Agenda de Compromissos
 
 `/agenda` — reuniões de monitoramento, visitas in loco, Comissão de Monitoramento e Avaliação (Lei 13.019, arts. 58-59), audiências e compromissos no TCESP. Calendário mensal + lista.

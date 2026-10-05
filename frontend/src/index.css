@@ -5,9 +5,77 @@
 @layer base {
   :root {
     color-scheme: light;
+
+    /*
+     * Cores dos gráficos.
+     *
+     * Ficam aqui, e não como classe do Tailwind, por duas razões que se somam:
+     * o SVG precisa do **valor** no atributo `fill`, e classe montada em tempo
+     * de execução passa no typecheck sem pintar nada — o Tailwind só gera o que
+     * consegue ler no código. Com variável, o tema escuro troca a cor sem o
+     * componente saber que existe tema.
+     *
+     * **Os passos não foram escolhidos a olho.** Cada conjunto passou no
+     * validador de paleta (banda de luminosidade, piso de croma, separação sob
+     * daltonismo protan/deutan e contraste contra a superfície), nos dois modos.
+     * O escuro tem passos **próprios** — inverter o claro automaticamente
+     * reprova: `#dcedfa` sobre papel branco dá 1,17:1, e some.
+     */
+
+    /* Execução: rampa ORDINAL de um matiz só — a ordem é o significado
+       (a repassar → em poder da OSC → pago), e ler isso como três categorias
+       jogaria fora a progressão. */
+    --g-exec-pago: #294f7d;
+    --g-exec-osc: #3574bd;
+    --g-exec-repassar: #62a8e2;
+
+    /* Fornecedores: ênfase — quem forma os 80% em cor, o resto em cinza.
+       Colorir cada barra por valor gastaria o canal de identidade repetindo o
+       que o comprimento da barra já diz. */
+    --g-enfase: #3574bd;
+    --g-apagado: #b0bac6;
+
+    /* Repasses: dumbbell, dois tons do mesmo matiz (previsto → realizado). */
+    --g-previsto: #62a8e2;
+    --g-realizado: #294f7d;
+
+    /* Situação: paleta de ESTADO, reservada. Nunca vira "série 4", e sempre
+       acompanha ícone e rótulo — na superfície clara o âmbar fica abaixo de
+       3:1 por desenho, e o rótulo é a compensação. */
+    --g-rascunho: #b0bac6;
+    --g-enviado: #f59e0b;
+    --g-aceito: #0d9488;
+    --g-rejeitado: #ef4444;
+
+    /* A superfície que separa as marcas. O vão de 2px entre segmentos é
+       desenhado com ela — contorno em volta da marca seria tinta que não é
+       dado. */
+    --g-superficie: #ffffff;
+    --g-grade: #eceef1;
   }
   html.dark {
     color-scheme: dark;
+
+    /* Passos próprios do escuro, validados contra a superfície ink-900. A
+       âncora inverte: no claro o mais escuro é o mais "avançado"; aqui é o
+       mais claro, porque é o que salta do fundo. */
+    --g-exec-pago: #c0def5;
+    --g-exec-osc: #62a8e2;
+    --g-exec-repassar: #2c5f9a;
+
+    --g-enfase: #94c7ee;
+    --g-apagado: #515d71;
+
+    --g-previsto: #3574bd;
+    --g-realizado: #c0def5;
+
+    --g-rascunho: #515d71;
+    --g-enviado: #d97706;
+    --g-aceito: #0d9488;
+    --g-rejeitado: #ef4444;
+
+    --g-superficie: #2b2f38;
+    --g-grade: #3a414e;
   }
 
   * {
