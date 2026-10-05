@@ -49,9 +49,16 @@ export interface ItemLegenda {
  * confiável, e obrigar o leitor a casar cores de memória não é acessibilidade.
  * **Série única não recebe legenda** — há uma cor só, e o título já diz o que
  * está desenhado; uma caixa com um quadradinho repetiria o título.
+ *
+ * **`estado` é a exceção, e ela nasceu de um defeito real.** Com uma única
+ * situação cadastrada, "Prestações por situação" desenhava a barra e nada
+ * dizia o que aquela cor significava: o título diz *o que* está plotado, não
+ * *qual estado* a cor representa. Cor de estado nunca pode viajar sozinha —
+ * ela carrega um juízo (aceito, rejeitado, em elaboração), e o leitor não tem
+ * como deduzi-lo olhando. Com uma série comum o título basta; com estado, não.
  */
-export function Legenda({ itens }: { itens: ItemLegenda[] }) {
-  if (itens.length < 2) return null;
+export function Legenda({ itens, estado = false }: { itens: ItemLegenda[]; estado?: boolean }) {
+  if (itens.length < (estado ? 1 : 2)) return null;
   return (
     <ul className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
       {itens.map((i) => (

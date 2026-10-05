@@ -140,8 +140,19 @@ export function Dashboard() {
           Cada painel some sozinho se a consulta falhar ou se não houver dado
           suficiente para comparar — e a seção inteira desaparece junto, porque
           um título sobre três espaços vazios é pior que nenhum título. */}
+      {/*
+        `auto-fit` em vez de três colunas fixas, e a razão é visível na tela:
+        cada painel some sozinho quando não tem dado que compare, mas a grade
+        de `xl:grid-cols-3` continuava **reservando as três faixas**. Num órgão
+        com dois ajustes e uma prestação, dois painéis desapareciam e sobrava
+        dois terços de tela vazia ao lado do que restou.
+
+        Com `auto-fit`, faixa sem item colapsa: um painel ocupa a linha, dois
+        dividem, três repartem. Quem decide é o conteúdo, não um número escrito
+        no layout — que é justamente o que um painel auto-ocultável exige.
+      */}
       {pode('RELATORIOS', 'CONSULTA') && (
-        <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <div className="mt-6 grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,22rem),1fr))]">
           <PainelSituacao />
           <PainelRepasses />
           <PainelFornecedores />

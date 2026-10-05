@@ -117,8 +117,12 @@ export function PainelSituacao() {
     >
       <BarraEmpilhada linhas={barras} />
 
+      {/* `estado` força a legenda mesmo com uma situação só. Sem ela, um órgão
+          que ainda tenha apenas prestações em elaboração via a barra e nada que
+          dissesse o que a cor significa — e cor de estado carrega um juízo que
+          o leitor não deduz olhando. */}
       <div className="mt-3">
-        <Legenda itens={legenda} />
+        <Legenda itens={legenda} estado />
       </div>
 
       {/* O que não cabe no gráfico, porque não tem barra: ajuste sem nenhuma
