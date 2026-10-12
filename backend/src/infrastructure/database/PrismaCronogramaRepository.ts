@@ -3,6 +3,7 @@ import { prisma } from './prisma';
 import type { ICronogramaRepository } from '@/application/cronograma/ICronogramaRepository';
 import type { DadosCronogramaItem } from '@/application/cronograma/dtos';
 import type { CronogramaItem } from '@/core/cronograma/CronogramaItem';
+import { numerarRubricas } from '@/core/planoAplicacao/ordemRubricas';
 
 const selecao = {
   id: true,
@@ -31,6 +32,15 @@ function toDomain(row: Row): CronogramaItem {
 }
 
 const ordem: Prisma.CronogramaDesembolsoItemOrderByWithRelationInput[] = [
+  /*
+   * `ordem` primeiro: é a posição que o usuário digitou, e era isso que se
+   * perdia — o quadro voltava alfabético da primeira leitura depois de salvar.
+   *
+   * O alfabético continua logo atrás, como **desempate**, e não por apego: as
+   * linhas gravadas antes desta coluna têm `ordem = 0` e caem exatamente na
+   * ordem de antes. Plano que ninguém salvou de novo não se mexe sozinho.
+   */
+  { ordem: 'asc' },
   { categoria: 'asc' },
   { subcategoria: 'asc' },
   { ano: 'asc' },
@@ -52,7 +62,7 @@ export class PrismaCronogramaRepository implements ICronogramaRepository {
       await tx.cronogramaDesembolsoItem.deleteMany({ where: { ajusteId } });
       if (itens.length) {
         await tx.cronogramaDesembolsoItem.createMany({
-          data: itens.map((i) => ({ ajusteId, ...i })),
+          data: numerarRubricas(itens).map((i) => ({ ajusteId, ...i })),
         });
       }
       const rows = await tx.cronogramaDesembolsoItem.findMany({
@@ -75,7 +85,7 @@ export class PrismaCronogramaRepository implements ICronogramaRepository {
     return prisma.$transaction(async (tx) => {
       await tx.cronogramaDesembolsoItem.deleteMany({ where: { ajusteId, ano } });
       if (itens.length) {
-        await tx.cronogramaDesembolsoItem.createMany({ data: itens.map((i) => ({ ajusteId, ...i })) });
+        await tx.cronogramaDesembolsoItem.createMany({ data: numerarRubricas(itens).map((i) => ({ ajusteId, ...i })), });
       }
       const rows = await tx.cronogramaDesembolsoItem.findMany({ where: { ajusteId }, select: selecao, orderBy: ordem });
       return rows.map(toDomain);

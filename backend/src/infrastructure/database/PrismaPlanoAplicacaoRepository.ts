@@ -3,6 +3,7 @@ import { prisma } from './prisma';
 import type { IPlanoAplicacaoRepository } from '@/application/planoAplicacao/IPlanoAplicacaoRepository';
 import type { DadosPlanoItem } from '@/application/planoAplicacao/dtos';
 import type { PlanoAplicacaoItem } from '@/core/planoAplicacao/PlanoAplicacaoItem';
+import { numerarRubricas } from '@/core/planoAplicacao/ordemRubricas';
 
 const selecao = {
   id: true,
@@ -35,6 +36,15 @@ function toDomain(row: Row): PlanoAplicacaoItem {
 }
 
 const ordem: Prisma.PlanoAplicacaoItemOrderByWithRelationInput[] = [
+  /*
+   * `ordem` primeiro: é a posição que o usuário digitou, e era isso que se
+   * perdia — o quadro voltava alfabético da primeira leitura depois de salvar.
+   *
+   * O alfabético continua logo atrás, como **desempate**, e não por apego: as
+   * linhas gravadas antes desta coluna têm `ordem = 0` e caem exatamente na
+   * ordem de antes. Plano que ninguém salvou de novo não se mexe sozinho.
+   */
+  { ordem: 'asc' },
   { categoria: 'asc' },
   { subcategoria: 'asc' },
   { ano: 'asc' },
@@ -88,7 +98,7 @@ export class PrismaPlanoAplicacaoRepository implements IPlanoAplicacaoRepository
       await tx.planoAplicacaoItem.deleteMany({ where: { ajusteId } });
       if (itens.length) {
         await tx.planoAplicacaoItem.createMany({
-          data: itens.map((i) => ({ ajusteId, ...i })),
+          data: numerarRubricas(itens).map((i) => ({ ajusteId, ...i })),
         });
       }
       const rows = await tx.planoAplicacaoItem.findMany({
@@ -111,7 +121,7 @@ export class PrismaPlanoAplicacaoRepository implements IPlanoAplicacaoRepository
     return prisma.$transaction(async (tx) => {
       await tx.planoAplicacaoItem.deleteMany({ where: { ajusteId, ano } });
       if (itens.length) {
-        await tx.planoAplicacaoItem.createMany({ data: itens.map((i) => ({ ajusteId, ...i })) });
+        await tx.planoAplicacaoItem.createMany({ data: numerarRubricas(itens).map((i) => ({ ajusteId, ...i })), });
       }
       const rows = await tx.planoAplicacaoItem.findMany({ where: { ajusteId }, select: selecao, orderBy: ordem });
       return rows.map(toDomain);

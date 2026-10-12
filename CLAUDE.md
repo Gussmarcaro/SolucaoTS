@@ -506,6 +506,18 @@ Aba **Plano de Aplicação** no dossiê do Ajuste, modo "Digitar (modelo padrão
 - A tela **só mostra a faixa do período quando o ano é parcial**. Aviso que se repete em toda tela deixa de ser lido; o multiplicador diferente de doze é que precisa de explicação.
 - Espelhada em `types/planoAplicacao.ts` porque a tela calcula o anual **enquanto se digita** — e travada por `planoAplicacao.test.ts`, com os mesmos números dos dois lados. Divergindo, a tela promete um anual e o servidor grava outro.
 
+### A ordem das rubricas é do usuário, e estava sendo jogada fora
+
+O plano é gravado **uma linha por rubrica e mês**, e a leitura ordenava por `categoria, subcategoria` — alfabético. O quadro digitado na ordem do plano de trabalho (1. Recursos Humanos … 7. Combustível … 16. Outras Despesas) voltava da **primeira leitura depois de salvar** como "Combustível, Gêneros Alimentícios, Materiais Médico-Hospitalares…", e quem conhecia o documento de cor tinha de relê-lo noutra ordem.
+
+- **Não dá para deduzir a ordem do modelo de 16 seções**, e é por isso que virou coluna (`ordem`). A rubrica é **livre** — o modelo é semente, cada entidade apresenta o plano do seu jeito. Reconhecer a categoria pelo nome acertaria em quem usa o padrão e erraria em quem não usa, que é justamente quem mais precisa da ordem preservada.
+- **Derivada no servidor, nunca enviada pelo cliente.** Aceitar um `ordem` do payload permitiria gravar uma ordem que a tela não mostra, sem nada acusar — a mesma decisão do percentual do rateio e da fonte de recurso da conta bancária.
+- **A numeração fica no repositório**, não nos casos de uso: são seis caminhos que gravam (digitado, CSV e cópia de exercício, vezes plano e cronograma), e pôr a regra em cada um é confiar em que ninguém esqueça no sétimo. Mesmo argumento das extensions de auditoria e tenant.
+- **Todas as linhas de uma rubrica compartilham o número.** Numerar linha a linha espalharia os doze meses da mesma categoria pelo quadro.
+- **O alfabético continua, como desempate.** Linha anterior à coluna tem `ordem = 0` e cai exatamente na ordem de antes: plano que ninguém salvou de novo **não se mexe sozinho**. É o que torna a migração silenciosa em vez de surpreendente.
+- **O Cronograma recebeu o mesmo par**, e não por simetria: ele é o plano fracionado pelos meses. Ordenando diferente, a mesma rubrica apareceria em posições distintas nas duas telas.
+- Coberto por `npm run verificar:plano`, sem banco. O frontend **não mudou** — `gruposIniciais` já preservava a ordem recebida; quem a desfazia era a consulta.
+
 ### O formulário abria zerado sobre um plano gravado
 
 `PlanoDigitado` semeia o estado no `useState` inicial, **uma vez só**, e era montado antes de o plano chegar da API. A lista chegava depois e o formulário nunca a via: abria com o modelo em branco sobre um plano que estava salvo — e a grade logo abaixo mostrava os valores, o que fazia parecer que o formulário os tinha perdido.

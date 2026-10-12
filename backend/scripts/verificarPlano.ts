@@ -9,6 +9,7 @@
  *   npm run verificar:plano
  */
 import { janelaDoExercicio } from '../src/core/planoAplicacao/competencias';
+import { numerarRubricas } from '../src/core/planoAplicacao/ordemRubricas';
 
 const falhas: string[] = [];
 const conferir = (descricao: string, ok: boolean, detalhe = '') => {
@@ -89,6 +90,52 @@ console.log('\nPlano de Aplicação — competências do exercício\n');
 {
   const j = janelaDoExercicio(2026, '2026-01-01', '2026-12-31');
   conferir('ano civil exato não é parcial', j?.meses === 12 && j?.parcial === false);
+}
+
+
+// ------------------------------------------- a ordem digitada é preservada
+{
+  /*
+   * O plano é gravado uma linha por rubrica **e mês**, e a leitura ordenava
+   * por categoria — alfabético. O quadro digitado na ordem do plano de
+   * trabalho voltava reorganizado da primeira leitura depois de salvar.
+   */
+  const itens = [
+    { categoria: 'Recursos Humanos', subcategoria: 'Salários', mes: 1 },
+    { categoria: 'Recursos Humanos', subcategoria: 'Salários', mes: 2 },
+    { categoria: 'Recursos Humanos', subcategoria: 'Encargos', mes: 1 },
+    { categoria: 'Combustível', subcategoria: 'Combustível', mes: 1 },
+  ];
+  const n = numerarRubricas(itens);
+
+  conferir('a primeira rubrica recebe 1', n[0].ordem === 1);
+  conferir(
+    'os doze meses de uma rubrica compartilham o número',
+    n[0].ordem === n[1].ordem,
+    'numerar linha a linha espalharia os meses da mesma categoria pelo quadro',
+  );
+  conferir('a segunda rubrica recebe 2', n[2].ordem === 2, 'mesma categoria, outra subcategoria');
+  conferir(
+    'Combustível fica em 3, não em 1',
+    n[3].ordem === 3,
+    'é onde o usuário o digitou; alfabeticamente viria primeiro',
+  );
+  conferir(
+    'zero não é usado',
+    n.every((i) => i.ordem > 0),
+    'o 0 é das linhas anteriores à coluna, que caem no desempate alfabético',
+  );
+}
+
+// Rubrica sem nome: o cronograma a aceita, porque nasceu agregado.
+{
+  const n = numerarRubricas([
+    { categoria: null, subcategoria: null, mes: 1 },
+    { categoria: null, subcategoria: null, mes: 2 },
+    { categoria: 'Obras', subcategoria: 'Obras', mes: 1 },
+  ]);
+  conferir('rubrica vazia forma um grupo só', n[0].ordem === 1 && n[1].ordem === 1);
+  conferir('e não colide com a seguinte', n[2].ordem === 2);
 }
 
 console.log(

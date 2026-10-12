@@ -1027,6 +1027,22 @@ model PlanoAplicacaoItem {
   /// Opcional: os planos importados antes deste campo não a têm, e exigi-la
   /// agora trancaria o lançamento de quem já tem plano cadastrado.
   categoriaDespesaTipo Int?
+  /// Posição da rubrica no quadro, como o usuário a digitou.
+  ///
+  /// Sem ela a leitura ordenava por `categoria` — alfabético —, e o plano
+  /// digitado na ordem do plano de trabalho voltava reorganizado na primeira
+  /// vez que a tela era aberta. A ordem é **dado do usuário**: o modelo de 16
+  /// seções é só uma semente, e deduzi-la do nome da categoria acertaria em
+  /// quem usa o padrão e erraria em quem não usa.
+  ///
+  /// Derivada no servidor a partir da ordem recebida, nunca enviada pelo
+  /// cliente. Todas as linhas de uma mesma rubrica (uma por mês) compartilham
+  /// o número — é o que mantém o grupo junto na leitura.
+  ///
+  /// `0` é o valor das linhas anteriores a esta coluna: elas caem no desempate
+  /// alfabético de antes, e nada se move sozinho em plano que ninguém salvou
+  /// de novo.
+  ordem                Int     @default(0)
   ano                  Int
   mes                  Int // normalizado 1-12
   valor                Decimal @db.Decimal(15, 2)
@@ -1060,6 +1076,11 @@ model CronogramaDesembolsoItem {
   /// Nulas nas linhas agregadas (CSV e importações anteriores à digitação).
   categoria      String?
   subcategoria   String?
+  /// Posição da rubrica no quadro — o par do campo homônimo em
+  /// `PlanoAplicacaoItem`, e pela mesma razão. O cronograma é o plano
+  /// fracionado pelos meses: se os dois ordenassem diferente, a mesma rubrica
+  /// apareceria em posições distintas nas duas telas.
+  ordem          Int     @default(0)
   ano            Int
   mes            Int // normalizado 1-12
   valor          Decimal @db.Decimal(15, 2)
