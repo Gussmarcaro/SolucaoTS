@@ -65,15 +65,43 @@ export const definicaoDoMetodo = (id: string): DefinicaoMetodo | undefined =>
 /** Métodos que distribuem por um quadro de participantes. */
 export const temQuadro = (id: string): boolean => !!definicaoDoMetodo(id)?.rotuloBase;
 
+/**
+ * Uma linha do quadro de rateio.
+ *
+ * **Nem toda linha é um ajuste.** A entidade que recebe o repasse também tem
+ * atividade própria — o atendimento particular, o plano de saúde, o SUS — e
+ * essa atividade consome a mesma despesa administrativa que se está rateando.
+ * Deixá-la fora do quadro não a isenta: encolhe o denominador e faz os
+ * convênios pagarem a fatia dela.
+ */
 export interface ParticipanteRateio {
   id: string;
   rateioId: string;
-  ajusteId: string;
-  ajusteCodigo: string;
-  ajusteObjeto: string;
-  entidadeNome: string;
+  /** Nulo quando a linha é recurso próprio da entidade — ver `origem`. */
+  ajusteId: string | null;
+  ajusteCodigo: string | null;
+  ajusteObjeto: string | null;
+  entidadeNome: string | null;
+  /** Nome da origem que não é ajuste ("Particular", "Plano de saúde"). */
+  origem: string | null;
   /** Receita, nº de colaboradores… — o método diz o quê. */
   base: number;
+}
+
+/** O mínimo que a aritmética precisa saber de uma linha do quadro. */
+export interface BaseDoQuadro {
+  ajusteId: string | null;
+  base: number;
+}
+
+/** Como a linha se chama na tela e no quadro impresso. */
+export function rotuloParticipante(p: {
+  origem?: string | null;
+  ajusteCodigo?: string | null;
+  entidadeNome?: string | null;
+}): string {
+  if (p.origem?.trim()) return p.origem.trim();
+  return [p.ajusteCodigo, p.entidadeNome].filter(Boolean).join(' — ') || '(sem identificação)';
 }
 
 export interface Rateio {
@@ -106,7 +134,8 @@ export const CASAS_PERCENTUAL = 6;
 export const CASAS_EXIBIDAS = 2;
 
 export interface LinhaCalculada {
-  ajusteId: string;
+  /** Nulo na linha de recurso próprio — ela não pertence a parceria nenhuma. */
+  ajusteId: string | null;
   base: number;
   /** Percentual exato — `base ÷ total × 100`, com toda a precisão. */
   percentual: number;
@@ -154,7 +183,7 @@ const UNIDADES_TOTAIS = 100 * 10 ** CASAS_EXIBIDAS;
  * pode ser gravado é a validação, não a aritmética.
  */
 export function calcularRateio(
-  participantes: { ajusteId: string; base: number }[],
+  participantes: BaseDoQuadro[],
 ): ResultadoRateio {
   const totalBase = arredondar(
     participantes.reduce((s, p) => s + (Number.isFinite(p.base) ? p.base : 0), 0),
@@ -230,7 +259,8 @@ export function vigentesEm<T extends { vigenciaInicio: string; vigenciaFim: stri
 
 /** Uma parcela da despesa rateada: quanto cabe a cada ajuste. */
 export interface ParcelaRateada {
-  ajusteId: string;
+  /** Nulo na linha de recurso próprio: esta fatia não cabe a nenhum ajuste. */
+  ajusteId: string | null;
   /** O percentual exibido, o mesmo do quadro. */
   percentual: number;
   /** Em reais, duas casas. As parcelas somam o total **por construção**. */
@@ -254,7 +284,7 @@ export interface ParcelaRateada {
  */
 export function ratearValor(
   valorTotal: number,
-  participantes: { ajusteId: string; base: number }[],
+  participantes: BaseDoQuadro[],
 ): ParcelaRateada[] {
   const { linhas } = calcularRateio(participantes);
   if (!linhas.length) return [];
@@ -267,8 +297,18 @@ export function ratearValor(
 
   // Sem base não há proporção: divide-se igualmente, que é o mesmo critério
   // que o quadro adota ao exibir os percentuais.
-  const exatos = linhas.map((l) => {
-    const p = participantes.find((x) => x.ajusteId === l.ajusteId);
+  /*
+   * Casamento **por posição**, e não por `ajusteId`.
+   *
+   * `calcularRateio` monta as linhas na mesma ordem dos participantes, então o
+   * índice basta. O `find(x => x.ajusteId === l.ajusteId)` que havia aqui
+   * funcionava enquanto todo participante era um ajuste — com duas linhas de
+   * recurso próprio (ambas com `ajusteId` nulo) ele casaria as duas com a
+   * primeira, e a segunda receberia a base da outra. Erro de centavo em cima
+   * de erro de rateio, nenhum dos dois visível olhando.
+   */
+  const exatos = linhas.map((_, i) => {
+    const p = participantes[i];
     const peso = totalBase > 0 ? (p && p.base > 0 ? p.base : 0) / totalBase : 1 / linhas.length;
     return peso * centavosTotais;
   });
@@ -319,11 +359,14 @@ export interface LimiteDaParcela {
 
 export function limiteDaParcela(
   liquidoDaNota: number,
-  participantes: { ajusteId: string; base: number }[],
+  participantes: BaseDoQuadro[],
   ajusteId: string,
   jaPagoNoAjuste: number,
   valorPretendido: number,
 ): LimiteDaParcela {
+  // A busca por `ajusteId` nunca casa com a linha de recurso próprio (nula),
+  // e é o comportamento certo: aquela fatia não é de parceria nenhuma, logo
+  // não há teto de pagamento a calcular para ela.
   const parcela = ratearValor(liquidoDaNota, participantes).find((p) => p.ajusteId === ajusteId);
   if (!parcela) return { parcela: null, resta: 0, cabe: false };
 

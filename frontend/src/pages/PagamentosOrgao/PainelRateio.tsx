@@ -185,16 +185,24 @@ export function PainelRateio({
                 }
               >
                 <td className="py-1 pl-1 pr-2">
-                  <span className="block truncate text-ink-700 dark:text-ink-200" title={p.entidadeNome}>
-                    {p.ajusteCodigo}
+                  {/* A linha de recurso próprio não tem código de ajuste: ela
+                      se identifica pelo nome que a entidade deu. */}
+                  <span
+                    className="block truncate text-ink-700 dark:text-ink-200"
+                    title={p.origem ?? p.entidadeNome ?? ''}
+                  >
+                    {p.origem ?? p.ajusteCodigo}
                     {ehOAtual && (
                       <span className="ml-2 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-700 ring-1 ring-brand-400 dark:text-brand-300 dark:ring-brand-500/50">
                         lançando
                       </span>
                     )}
                   </span>
-                  <span className="block truncate text-xs text-ink-400" title={p.ajusteObjeto}>
-                    {p.entidadeNome}
+                  <span
+                    className="block truncate text-xs text-ink-400"
+                    title={p.ajusteObjeto ?? ''}
+                  >
+                    {p.origem ? 'recurso próprio da entidade — não é pago por nenhuma parceria' : p.entidadeNome}
                   </span>
                 </td>
                 <td className="w-20 py-1 text-right tabular-nums text-ink-500 dark:text-ink-400">

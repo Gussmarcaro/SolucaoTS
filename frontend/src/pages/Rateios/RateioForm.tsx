@@ -84,9 +84,11 @@ export function RateioForm({ rateio, onSuccess, onCancel }: Props) {
     if (!rateio) return;
     setLinhas(
       rateio.participantes.map((p) => ({
+        id: p.id,
         ajusteId: p.ajusteId,
-        codigo: p.ajusteCodigo,
-        descricao: p.entidadeNome || p.ajusteObjeto,
+        origem: p.origem,
+        codigo: p.ajusteCodigo ?? '',
+        descricao: p.origem ? 'Recurso próprio da entidade' : p.entidadeNome || p.ajusteObjeto || '',
         base:
           definicaoDoMetodo(rateio.metodo)?.formato === 'MOEDA'
             ? numeroParaMascaraMoeda(p.base)
@@ -95,7 +97,10 @@ export function RateioForm({ rateio, onSuccess, onCancel }: Props) {
     );
   }, [rateio]);
 
-  const noQuadro = useMemo(() => new Set(linhas.map((l) => l.ajusteId)), [linhas]);
+  const noQuadro = useMemo(
+    () => new Set(linhas.map((l) => l.ajusteId).filter((x): x is string => !!x)),
+    [linhas],
+  );
 
   // O lookup só oferece quem ainda não está no quadro — é o que impede a
   // duplicidade antes de o banco recusar com uma mensagem que não ajuda.
@@ -104,11 +109,35 @@ export function RateioForm({ rateio, onSuccess, onCancel }: Props) {
     .map((a) => ({ value: a.id, label: a.codigoAjuste, sub: a.entidadeNome }));
 
   const linhaDe = (a: AjusteResumo): LinhaQuadro => ({
+    id: a.id,
     ajusteId: a.id,
+    origem: null,
     codigo: a.codigoAjuste,
     descricao: a.entidadeNome || a.objeto,
-    base: definicao.formato === 'MOEDA' ? '' : '',
+    base: '',
   });
+
+  /**
+   * Acrescenta a receita própria da entidade ao quadro.
+   *
+   * Nasce com nome sugerido e editável: a entidade costuma ter mais de uma
+   * origem própria (o particular, o plano de saúde, o SUS), e somá-las numa só
+   * esconderia de onde veio a base. O id é local — esta linha não aponta para
+   * registro nenhum até ser gravada.
+   */
+  function adicionarOrigem() {
+    setLinhas((atual) => [
+      ...atual,
+      {
+        id: `origem-${Date.now()}-${atual.length}`,
+        ajusteId: null,
+        origem: 'Recurso próprio',
+        codigo: '',
+        descricao: 'Recurso próprio da entidade',
+        base: '',
+      },
+    ]);
+  }
 
   function adicionar(ajusteId: string) {
     const a = ajustes.find((x) => x.id === ajusteId);
@@ -157,11 +186,17 @@ export function RateioForm({ rateio, onSuccess, onCancel }: Props) {
       return setErro('Para o método "Outros", descreva o critério adotado.');
 
     const participantes = temQuadro(metodo)
-      ? linhas.map((l) => ({ ajusteId: l.ajusteId, base: baseNumerica(l, definicao.formato) }))
+      ? linhas.map((l) => ({
+          ajusteId: l.ajusteId,
+          origem: l.origem,
+          base: baseNumerica(l, definicao.formato),
+        }))
       : [];
 
     if (temQuadro(metodo)) {
-      if (!participantes.length) return setErro('Inclua ao menos um ajuste no quadro de rateio.');
+      if (!participantes.length) return setErro('Inclua ao menos uma linha no quadro de rateio.');
+      if (!participantes.some((p) => p.ajusteId))
+        return setErro('Inclua ao menos um ajuste no quadro — só com recurso próprio não há o que ratear.');
       const { totalBase } = calcularRateio(participantes);
       if (totalBase <= 0)
         return setErro(
@@ -245,6 +280,7 @@ export function RateioForm({ rateio, onSuccess, onCancel }: Props) {
             onChange={setLinhas}
             opcoes={opcoes}
             onAdicionar={adicionar}
+            onAdicionarOrigem={adicionarOrigem}
             onCarregarVigentes={carregarVigentes}
             carregando={carregando}
           />

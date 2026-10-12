@@ -366,5 +366,86 @@ console.log('\n--- limite por parcela na nota rateada ---');
   }
 }
 
+
+// ------------------- o recurso próprio da entidade entra no denominador
+{
+  /*
+   * O caso relatado: um hospital com três convênios e atendimento particular.
+   *
+   * Sem a linha do recurso próprio o denominador tinha só os convênios, e eles
+   * absorviam a fatia da atividade da entidade — despesa da entidade lançada
+   * na parceria, que é achado clássico do Tribunal.
+   */
+  const soAjustes = [
+    { ajusteId: 'a', base: 1_500_000 },
+    { ajusteId: 'b', base: 500_000 },
+  ];
+  const comProprio = [
+    { ajusteId: 'a', base: 1_500_000 },
+    { ajusteId: 'b', base: 500_000 },
+    { ajusteId: null, base: 500_000 },
+  ];
+
+  const antes = calcularRateio(soAjustes).linhas;
+  const depois = calcularRateio(comProprio).linhas;
+
+  conferir('sem o recurso próprio, 75/25', antes[0].percentualExibido === 75 && antes[1].percentualExibido === 25);
+  conferir(
+    'com ele, 60/20/20',
+    depois[0].percentualExibido === 60 && depois[1].percentualExibido === 20 && depois[2].percentualExibido === 20,
+    'é a correção: o convênio deixa de pagar a fatia da atividade própria',
+  );
+
+  // A conta que vai para a prestação de contas.
+  const parcelas = ratearValor(1000, comProprio);
+  conferir('a nota de R$ 1.000 debita R$ 600 ao ajuste A', parcelas[0].valor === 600, 'antes eram 750');
+  conferir('e R$ 200 ao ajuste B', parcelas[1].valor === 200, 'antes eram 250');
+  conferir(
+    'a fatia da entidade não pertence a ajuste nenhum',
+    parcelas[2].ajusteId === null && parcelas[2].valor === 200,
+    'ela não vira pagamento — a entidade paga com dinheiro dela, fora da prestação',
+  );
+  conferir('e as três ainda somam o total', parcelas.reduce((t, x) => t + x.valor, 0) === 1000);
+}
+
+// Duas origens próprias no mesmo quadro — o caso que o \`find\` antigo quebrava.
+{
+  /*
+   * \`ratearValor\` casava a linha com \`find(x => x.ajusteId === l.ajusteId)\`.
+   * Com duas linhas sem ajuste (ambas nulas), as duas casavam com a primeira:
+   * a segunda recebia a base da outra e o valor saía errado, sem nada acusar.
+   */
+  const quadro = [
+    { ajusteId: 'a', base: 500 },
+    { ajusteId: null, base: 300 },
+    { ajusteId: null, base: 200 },
+  ];
+  const parcelas = ratearValor(1000, quadro);
+  conferir('cada origem própria recebe a SUA base', parcelas[1].valor === 300 && parcelas[2].valor === 200);
+  conferir('o ajuste continua correto', parcelas[0].valor === 500);
+  conferir('e o total fecha', parcelas.reduce((t, x) => t + x.valor, 0) === 1000);
+}
+
+// O teto do pagamento encolhe — e é essa a correção chegando ao bolso.
+{
+  const quadro = [
+    { ajusteId: 'a', base: 1_500_000 },
+    { ajusteId: 'b', base: 500_000 },
+    { ajusteId: null, base: 500_000 },
+  ];
+  const lim = limiteDaParcela(1000, quadro, 'a', 0, 750);
+  conferir(
+    'o ajuste A já não pode pagar os R$ 750 de antes',
+    lim.cabe === false && lim.parcela === 600,
+    'é exatamente o excesso que ia para a prestação como despesa da parceria',
+  );
+  conferir('e pode pagar os R$ 600 que lhe cabem', limiteDaParcela(1000, quadro, 'a', 0, 600).cabe);
+  conferir(
+    'a linha de recurso próprio não tem teto a calcular',
+    limiteDaParcela(1000, quadro, 'nao-e-ajuste', 0, 1).parcela === null,
+  );
+}
+
+
 console.log(falhas.length ? `\n${falhas.length} falha(s).\n` : '\nTudo ok.\n');
 process.exit(falhas.length ? 1 : 0);

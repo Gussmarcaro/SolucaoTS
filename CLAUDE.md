@@ -589,6 +589,24 @@ A conciliação entrou no portão da Execução, e o recorte tem **duas natureza
 - **O percentual não é digitado nem enviado pela tela.** O servidor o recalcula do quadro, para o ajuste daquela prestação, e grava o resultado. Aceitar o número do cliente permitiria gravar 30% num ajuste que o rateio diz ser 10%, e nada acusaria. O valor gravado é **fotografia**: editar o rateio depois não mexe em nota já lançada — a prestação é registro histórico.
 - **Ajuste fora do quadro é recusado**, não gravado com 0%: rateio que não inclui o ajuste não se aplica àquela despesa, e 0% subestimaria o gasto em silêncio.
 
+### O recurso próprio da entidade — o quadro estava cobrando a fatia dela dos convênios
+
+A entidade que recebe o repasse **também tem atividade própria**: o atendimento particular, o plano de saúde, o SUS. Essa atividade consome a mesma despesa administrativa que se está rateando — e ficava fora do quadro, porque `RateioParticipante.ajusteId` era obrigatório.
+
+**Deixá-la de fora não a isentava: encolhia o denominador.** Um hospital com convênios de R$ 1,5 mi e R$ 500 mil e R$ 500 mil de receita própria era rateado **75/25** em vez de **60/20/20**. Numa nota administrativa de R$ 1.000, o convênio maior era debitado em R$ 750 quando lhe cabiam R$ 600 — e os R$ 150 de diferença entravam na prestação de contas como despesa da parceria. É achado clássico do Tribunal, e os totais fecham: ninguém descobre olhando.
+
+- **A linha é "ou ajuste, ou origem própria", nunca as duas.** `ajusteId` virou opcional e ganhou o par `origem`, texto livre. **Várias por rateio**, porque a entidade costuma ter mais de uma fonte própria e somá-las numa só esconderia de onde veio a base.
+- **A duplicidade da origem é conferida no caso de uso, não no banco.** O `@@unique([rateioId, ajusteId])` não a alcança: no Postgres, `NULL` nunca conflita com `NULL`. A comparação ignora acento e caixa, senão "Particular" e "particular" viram duas fatias da mesma coisa e cada uma sai pela metade.
+- **Quadro só de recurso próprio é recusado.** Não há parceria a que debitar nada, e a nota lançada contra ele não produziria pagamento nenhum — o usuário descobriria só ao tentar lançar.
+- **A parcela do recurso próprio não vira `Pagamento`**, e é a regra que torna o quadro honesto: aquela fatia a entidade paga com dinheiro dela, fora da prestação. Gerar o pagamento exigiria um ajuste a que debitar, e debitar a fatia da entidade a uma parceria é exatamente o erro que incluí-la veio corrigir. **Consequência que a tela diz:** a nota rateada deixa de ser integralmente paga aqui dentro — o que falta não é da parceria.
+- `limiteDaParcela` continua recebendo um ajuste de verdade, e a busca nunca casa com a linha própria (nula). É o certo: não há teto a calcular para quem não paga por aqui.
+
+**Um defeito latente corrigido junto.** `ratearValor` casava linha com participante por `find(x => x.ajusteId === l.ajusteId)`. Funcionava enquanto todo participante era um ajuste — com **duas** origens próprias (ambas nulas) as duas casariam com a primeira, e a segunda receberia a base da outra. Passou a casar **por posição**, que é o que `calcularRateio` sempre garantiu ao montar as linhas na ordem dos participantes. O mesmo valia no `percentualDe` do quadro, na tela, onde o sintoma seria o mesmo percentual repetido somando mais de 100%.
+
+`LinhaQuadro` ganhou `id` próprio pela mesma razão: o `ajusteId` servia de `key` do React e duas origens próprias colidiriam — apagar "Particular" faria sumir "Plano de saúde".
+
+Coberto por `npm run verificar:rateio`, com os números do caso real (75/25 → 60/20/20, e a nota de R$ 1.000 passando de R$ 750 para R$ 600 no convênio maior).
+
 ### O teto do pagamento numa nota rateada
 
 **O saldo da nota não serve de teto quando ela é rateada** — e essa era a brecha. Uma nota de R$ 500,00 dividida 75/25, com a parcela de 75% já paga, mostra *"resta R$ 125,00"*: dinheiro do **outro** ajuste. Pagá-lo dentro do ajuste de 75% fechava a nota certinho, passava por toda validação, e a prestação saía com uma despesa que não é daquela parceria. Ninguém descobre olhando — os totais batem.

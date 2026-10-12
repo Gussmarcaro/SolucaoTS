@@ -28,6 +28,7 @@ const selecao = {
       id: true,
       rateioId: true,
       ajusteId: true,
+      origem: true,
       base: true,
       ajuste: {
         select: {
@@ -37,7 +38,17 @@ const selecao = {
         },
       },
     },
-    orderBy: { ajuste: { codigoAjuste: 'asc' } },
+    /*
+     * Os ajustes primeiro, as origens próprias da entidade depois.
+     *
+     * No Postgres o `ASC` já joga NULL para o fim, e a linha de recurso próprio
+     * tem `ajuste` nulo — mas contar com o padrão do banco para a ordem que a
+     * tela mostra é frágil. O segundo critério também desempata duas origens
+     * próprias entre si, que sem ele sairiam em ordem indefinida: ordem
+     * indefinida com percentual ao lado faz o quadro parecer que mudou sozinho
+     * a cada abertura.
+     */
+    orderBy: [{ ajuste: { codigoAjuste: 'asc' } }, { origem: 'asc' }],
   },
 } satisfies Prisma.RateioSelect;
 
@@ -57,9 +68,11 @@ function toDomain(row: Row): Rateio {
       id: p.id,
       rateioId: p.rateioId,
       ajusteId: p.ajusteId,
-      ajusteCodigo: p.ajuste.codigoAjuste,
-      ajusteObjeto: p.ajuste.objeto,
-      entidadeNome: p.ajuste.entidadeBeneficiaria.razaoSocial,
+      // Nulos na linha de recurso próprio: ela não aponta para ajuste nenhum.
+      ajusteCodigo: p.ajuste?.codigoAjuste ?? null,
+      ajusteObjeto: p.ajuste?.objeto ?? null,
+      entidadeNome: p.ajuste?.entidadeBeneficiaria.razaoSocial ?? null,
+      origem: p.origem,
       base: Number(p.base),
     })),
     criadoPor: row.criadoPor,

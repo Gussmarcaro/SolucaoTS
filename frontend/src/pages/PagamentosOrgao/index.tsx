@@ -631,10 +631,15 @@ function PagamentoOrgaoForm({
             value={ajuste}
             onChange={(e) => setAjuste(e.target.value)}
             placeholder="Selecione o ajuste..."
-            options={(rateioNota.rateio?.participantes ?? []).map((p) => ({
-              value: p.ajusteId,
-              label: `${p.ajusteCodigo} — ${p.entidadeNome}`,
-            }))}
+            /* Só os ajustes. A linha de recurso próprio da entidade está no
+               quadro para entrar no denominador, mas não é pagável aqui: aquela
+               fatia a entidade paga com dinheiro dela, fora da prestação. */
+            options={(rateioNota.rateio?.participantes ?? [])
+              .filter((p): p is typeof p & { ajusteId: string } => !!p.ajusteId)
+              .map((p) => ({
+                value: p.ajusteId,
+                label: `${p.ajusteCodigo ?? ''} — ${p.entidadeNome ?? ''}`,
+              }))}
           />
           <p className="mt-1 text-xs text-ink-400">
             {parcelaDoAjuste != null ? (

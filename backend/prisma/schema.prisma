@@ -2393,13 +2393,32 @@ model Rateio {
 model RateioParticipante {
   id       String  @id @default(uuid()) @db.Uuid
   rateioId String  @db.Uuid
-  ajusteId String  @db.Uuid
+  /// Ajuste participante. **Nulo quando a linha é recurso próprio da
+  /// entidade** — ver `origem`.
+  ajusteId String? @db.Uuid
+  /// Nome da origem que **não é um ajuste**: o atendimento particular, o plano
+  /// de saúde, o SUS — a receita própria da entidade.
+  ///
+  /// Sem esta linha o rateio estava **errado, e para o lado caro**: o
+  /// denominador só tinha os ajustes, então os convênios absorviam a fatia da
+  /// atividade própria da entidade. Um hospital com 1,5 mi e 500 mil em
+  /// convênios e 500 mil de particular era rateado 75/25 em vez de 60/20/20, e
+  /// a diferença entrava na prestação de contas como despesa da parceria —
+  /// achado clássico do Tribunal.
+  ///
+  /// É texto livre e aceita **várias** linhas por rateio, porque a entidade
+  /// costuma ter mais de uma origem própria e somá-las numa só esconderia de
+  /// onde veio a base.
+  origem   String?
   base     Decimal @default(0) @db.Decimal(15, 2)
 
-  rateio Rateio @relation(fields: [rateioId], references: [id], onDelete: Cascade)
-  ajuste Ajuste @relation(fields: [ajusteId], references: [id])
+  rateio Rateio  @relation(fields: [rateioId], references: [id], onDelete: Cascade)
+  ajuste Ajuste? @relation(fields: [ajusteId], references: [id])
 
-  // O mesmo ajuste não entra duas vezes no mesmo rateio.
+  // O mesmo ajuste não entra duas vezes no mesmo rateio. No Postgres, NULL
+  // nunca conflita com NULL — que é justamente o que se quer aqui: a trava
+  // continua valendo para os ajustes e não limita as origens próprias, cuja
+  // duplicidade é conferida pelo nome, no caso de uso.
   @@unique([rateioId, ajusteId])
   @@index([ajusteId])
 }

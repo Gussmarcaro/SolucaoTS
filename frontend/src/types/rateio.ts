@@ -46,10 +46,12 @@ export const temQuadro = (id: string): boolean => !!definicaoDoMetodo(id)?.rotul
 export interface ParticipanteRateio {
   id: string;
   rateioId: string;
-  ajusteId: string;
-  ajusteCodigo: string;
-  ajusteObjeto: string;
-  entidadeNome: string;
+  ajusteId: string | null;
+  ajusteCodigo: string | null;
+  ajusteObjeto: string | null;
+  entidadeNome: string | null;
+  /** Origem que não é ajuste: o particular, o plano de saúde, o SUS. */
+  origem: string | null;
   /** Receita, nº de colaboradores… — o método diz o quê. */
   base: number;
 }
@@ -76,7 +78,7 @@ export interface RateioPayload {
   metodo: MetodoRateio;
   descricaoMetodo?: string | null;
   observacoes?: string | null;
-  participantes: { ajusteId: string; base: number }[];
+  participantes: { ajusteId: string | null; base: number }[];
 }
 
 /** Precisão guardada no cálculo interno. */
@@ -85,7 +87,8 @@ export const CASAS_PERCENTUAL = 6;
 export const CASAS_EXIBIDAS = 2;
 
 export interface LinhaCalculada {
-  ajusteId: string;
+  /** Nulo na linha de recurso próprio da entidade — ela não é parceria. */
+  ajusteId: string | null;
   base: number;
   /** Percentual exato — `base ÷ total × 100`, com toda a precisão. */
   percentual: number;
@@ -121,7 +124,7 @@ const UNIDADES_TOTAIS = 100 * 10 ** CASAS_EXIBIDAS;
  * de um centésimo.
  */
 export function calcularRateio(
-  participantes: { ajusteId: string; base: number }[],
+  participantes: { ajusteId: string | null; base: number }[],
 ): ResultadoRateio {
   const totalBase = arredondar(
     participantes.reduce((s, p) => s + (Number.isFinite(p.base) ? p.base : 0), 0),

@@ -51,25 +51,66 @@ export function validarRateio(input: RateioDTO): DadosRateio {
   // Participantes: só os métodos com quadro os têm. Guardar participante num
   // método sem quadro deixaria dado órfão que ninguém mostra nem soma.
   const brutos = Array.isArray(input.participantes) ? input.participantes : [];
-  const participantes: { ajusteId: string; base: number }[] = [];
+  const participantes: { ajusteId: string | null; origem: string | null; base: number }[] = [];
 
   if (temQuadro(metodo)) {
-    const vistos = new Set<string>();
+    /*
+     * Cada linha do quadro é **um ajuste ou uma origem própria da entidade** —
+     * nunca as duas, nunca nenhuma.
+     *
+     * A origem própria (o atendimento particular, o plano de saúde) não é um
+     * ajuste e não tem id: identifica-se pelo nome. Ela existe porque sem ela o
+     * denominador do rateio ficava só com os convênios, e eles absorviam a
+     * fatia da atividade própria da entidade.
+     */
+    const ajustesVistos = new Set<string>();
+    const origensVistas = new Set<string>();
+
     for (const p of brutos) {
       const ajusteId = p?.ajusteId?.trim() ?? '';
-      if (!UUID.test(ajusteId)) throw new BusinessError('Participante com ajuste inválido.');
-      // O banco também recusa (chave única), mas a mensagem de lá não ajuda.
-      if (vistos.has(ajusteId))
-        throw new BusinessError('O mesmo ajuste foi incluído duas vezes no rateio.');
-      vistos.add(ajusteId);
+      const origem = p?.origem?.trim() ?? '';
+
+      if (ajusteId && origem)
+        throw new BusinessError('Uma linha do quadro é um ajuste ou uma origem própria, não as duas.');
+      if (!ajusteId && !origem)
+        throw new BusinessError('Informe o ajuste ou o nome da origem própria em cada linha do quadro.');
+
+      if (ajusteId) {
+        if (!UUID.test(ajusteId)) throw new BusinessError('Participante com ajuste inválido.');
+        // O banco também recusa (chave única), mas a mensagem de lá não ajuda.
+        if (ajustesVistos.has(ajusteId))
+          throw new BusinessError('O mesmo ajuste foi incluído duas vezes no rateio.');
+        ajustesVistos.add(ajusteId);
+      } else {
+        if (origem.length > 120) throw new BusinessError(`Nome de origem longo demais: ${origem}.`);
+        /*
+         * A duplicidade da origem é conferida **aqui**, e não no banco: o
+         * `@@unique([rateioId, ajusteId])` não alcança estas linhas, porque no
+         * Postgres NULL nunca conflita com NULL. Comparação sem acento e sem
+         * caixa, senão "Particular" e "particular" viram duas fatias da mesma
+         * coisa e o percentual de ambas sai pela metade.
+         */
+        const chave = origem.toLocaleLowerCase('pt-BR').normalize('NFD').replace(/\p{Diacritic}/gu, '');
+        if (origensVistas.has(chave))
+          throw new BusinessError(`A origem "${origem}" foi incluída duas vezes no rateio.`);
+        origensVistas.add(chave);
+      }
 
       const base = num(p.base) ?? 0;
       if (base < 0) throw new BusinessError('A base do rateio não pode ser negativa.');
-      participantes.push({ ajusteId, base });
+      participantes.push({ ajusteId: ajusteId || null, origem: origem || null, base });
     }
 
     if (participantes.length === 0)
-      throw new BusinessError('Inclua ao menos um ajuste no quadro de rateio.');
+      throw new BusinessError('Inclua ao menos uma linha no quadro de rateio.');
+
+    /*
+     * Quadro só de recurso próprio não é rateio: não há parceria a que debitar
+     * nada, e a nota lançada contra ele não produziria pagamento nenhum. O
+     * usuário descobriria isso só ao tentar lançar.
+     */
+    if (ajustesVistos.size === 0)
+      throw new BusinessError('Inclua ao menos um ajuste no quadro — só com recurso próprio não há o que ratear.');
 
     // Sem base não há como distribuir: o percentual de todos seria zero, e o
     // rateio ficaria gravado sem dizer nada.
@@ -82,7 +123,7 @@ export function validarRateio(input: RateioDTO): DadosRateio {
       );
 
     if (metodo === 'RECEITA' && participantes.some((p) => p.base <= 0))
-      throw new BusinessError('A receita de cada ajuste precisa ser maior que zero.');
+      throw new BusinessError('A receita de cada linha do quadro precisa ser maior que zero.');
 
     if (metodo === 'COLABORADORES' && participantes.some((p) => !Number.isInteger(p.base)))
       throw new BusinessError('O número de colaboradores precisa ser inteiro.');
@@ -107,8 +148,10 @@ export class RateioUseCases {
   constructor(private readonly repo: IRateioRepository) {}
 
   private async conferirAjustes(dados: DadosRateio) {
-    if (dados.participantes.length === 0) return;
-    const ids = dados.participantes.map((p) => p.ajusteId);
+    // Só as linhas que apontam para um ajuste — a origem própria não tem id a
+    // conferir, e mandá-la para o `IN (…)` buscaria por nulo.
+    const ids = dados.participantes.map((p) => p.ajusteId).filter((x): x is string => !!x);
+    if (ids.length === 0) return;
     const existem = await this.repo.ajustesExistentes(ids);
     if (existem.length !== ids.length)
       throw new BusinessError('Há participante apontando para um ajuste inexistente.');

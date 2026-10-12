@@ -289,9 +289,28 @@ export class PagamentoUseCases {
     const base = arredondarCentavos(doc.valorBruto - doc.valorEncargos);
     if (base <= 0) throw new BusinessError('O valor líquido da nota não é maior que zero.');
 
-    const parcelas = ratearValor(base, rateio.participantes).filter((p) => p.valor > 0);
+    /*
+     * A parcela do **recurso próprio da entidade não vira pagamento**, e essa é
+     * a regra que torna o quadro honesto.
+     *
+     * Quando a entidade entra no rateio com a atividade própria (o particular,
+     * o plano de saúde), aquela fatia da despesa é dela — paga com dinheiro
+     * dela, fora da prestação de contas. Gerar um `Pagamento` para ela exigiria
+     * um ajuste a que debitar, e debitar a fatia da entidade a uma parceria é
+     * exatamente o erro que incluí-la no quadro veio corrigir.
+     *
+     * Consequência que a tela precisa dizer: a nota deixa de ser integralmente
+     * paga aqui dentro. É o certo — a parte que falta não é da parceria.
+     */
+    const todas = ratearValor(base, rateio.participantes).filter((p) => p.valor > 0);
+    const parcelas = todas.filter((p): p is typeof p & { ajusteId: string } => !!p.ajusteId);
     if (!parcelas.length)
-      throw new BusinessError('O quadro do rateio não produziu nenhuma parcela com valor.');
+      throw new BusinessError(
+        todas.length
+          ? `No rateio "${rateio.titulo}" só há recurso próprio da entidade no quadro — ` +
+            'não há parceria a que debitar esta nota.'
+          : 'O quadro do rateio não produziu nenhuma parcela com valor.',
+      );
 
     /*
      * Um por vez, e não numa transação.
