@@ -44,6 +44,7 @@
     "verificar:metas": "tsx scripts/verificarMetas.ts",
     "verificar:plano": "tsx scripts/verificarPlano.ts",
     "verificar:sessoes": "tsx scripts/verificarSessoes.ts",
+    "plano:ordem": "tsx scripts/backfillOrdemPlano.ts",
     "typecheck:scripts": "tsc -p tsconfig.scripts.json --noEmit"
   },
   "dependencies": {

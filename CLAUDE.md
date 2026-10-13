@@ -516,7 +516,11 @@ O plano é gravado **uma linha por rubrica e mês**, e a leitura ordenava por `c
 - **Todas as linhas de uma rubrica compartilham o número.** Numerar linha a linha espalharia os doze meses da mesma categoria pelo quadro.
 - **O alfabético continua, como desempate.** Linha anterior à coluna tem `ordem = 0` e cai exatamente na ordem de antes: plano que ninguém salvou de novo **não se mexe sozinho**. É o que torna a migração silenciosa em vez de surpreendente.
 - **O Cronograma recebeu o mesmo par**, e não por simetria: ele é o plano fracionado pelos meses. Ordenando diferente, a mesma rubrica apareceria em posições distintas nas duas telas.
-- Coberto por `npm run verificar:plano`, sem banco. O frontend **não mudou** — `gruposIniciais` já preservava a ordem recebida; quem a desfazia era a consulta.
+- Coberto por `npm run verificar:plano`, sem banco.
+- **Faltava o par da coluna: reordenar.** A migração silenciosa (linha antiga com `ordem = 0` caindo no alfabético) dependia de o usuário salvar de novo para o quadro assumir a ordem digitada — e o formulário **não tinha como reordenar**, então "salve de novo" só servia a quem redigitasse as dezesseis seções. As setas ↑↓ na categoria e na subcategoria são a resposta definitiva.
+  - **Setas, e não arrastar.** A ordem vai para o banco e é a que o usuário reconhece no documento impresso; arrastar é gesto que se dispara sem querer — mesmo argumento do `podeArrastar` da Agenda. E seta funciona com teclado, o que arrastar não dá de graça.
+  - Desabilitada no extremo em vez de escondida: botão que some faz a coluna mudar de largura a cada linha, e o olho persegue o movimento.
+- **`npm run plano:ordem` é o atalho, não a regra.** Numera os planos já gravados pela ordem do modelo de 16 seções, para quem o segue não ter de redigitar. Simula por padrão (`-- --executar` grava). Duas recusas deliberadas: **não toca em ajuste que já tem ordem** (seria desfazer escolha feita à mão), e **numera todas as rubricas, não só as reconhecidas** — numerar só as do modelo deixaria as demais em `0`, que ordena *antes* de `1`, e as categorias próprias da entidade saltariam para o topo. O reconhecimento é pelo nome, então erra em quem renomeou: por isso é atalho, e as setas continuam sendo a resposta.
 
 ### O formulário abria zerado sobre um plano gravado
 

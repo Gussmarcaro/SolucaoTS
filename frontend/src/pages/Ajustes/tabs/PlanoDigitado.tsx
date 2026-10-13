@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { AlertCircle, Loader2, Plus, Trash2 } from 'lucide-react';
+import { AlertCircle, ChevronDown, ChevronUp, Loader2, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { dataBr, formatarMoeda, mascaraMoeda, moedaParaNumero } from '@/lib/masks';
@@ -153,6 +153,27 @@ export function PlanoDigitado({
       ),
     );
 
+  /**
+   * Troca dois itens de lugar numa lista.
+   *
+   * Reordenar é o par que faltava da coluna `ordem`: o servidor passou a
+   * guardar a ordem digitada, mas o formulário não tinha como mudá-la — então
+   * "salve de novo para assumir a ordem" só servia a quem redigitasse tudo.
+   */
+  const trocar = <T,>(lista: T[], i: number, j: number): T[] => {
+    if (j < 0 || j >= lista.length) return lista;
+    const copia = [...lista];
+    [copia[i], copia[j]] = [copia[j], copia[i]];
+    return copia;
+  };
+
+  const moverGrupo = (gi: number, passo: -1 | 1) => setGrupos((gs) => trocar(gs, gi, gi + passo));
+
+  const moverLinha = (gid: string, li: number, passo: -1 | 1) =>
+    setGrupos((gs) =>
+      gs.map((g) => (g.id === gid ? { ...g, linhas: trocar(g.linhas, li, li + passo) } : g)),
+    );
+
   async function salvar() {
     setErro(null);
 
@@ -300,7 +321,20 @@ export function PlanoDigitado({
                   <td className="px-3 py-1.5 text-right tabular-nums text-ink-800 dark:text-ink-100">
                     {formatarMoeda(subtotal * meses)}
                   </td>
-                  <td className="px-2 py-1.5 text-center">
+                  <td className="px-2 py-1.5">
+                    <div className="flex items-center justify-center gap-0.5">
+                      <Seta
+                        titulo="Subir a categoria"
+                        desabilitada={gi === 0}
+                        onClick={() => moverGrupo(gi, -1)}
+                        children={<ChevronUp className="h-4 w-4" />}
+                      />
+                      <Seta
+                        titulo="Descer a categoria"
+                        desabilitada={gi === grupos.length - 1}
+                        onClick={() => moverGrupo(gi, 1)}
+                        children={<ChevronDown className="h-4 w-4" />}
+                      />
                     <button
                       type="button"
                       title="Remover a categoria inteira"
@@ -309,6 +343,7 @@ export function PlanoDigitado({
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
+                    </div>
                   </td>
                 </tr>,
 
@@ -354,7 +389,20 @@ export function PlanoDigitado({
                       <td className="px-3 py-1.5 text-right tabular-nums text-ink-500 dark:text-ink-400">
                         {mensal > 0 ? formatarMoeda(mensal * meses) : "—"}
                       </td>
-                      <td className="px-2 py-1.5 text-center">
+                      <td className="px-2 py-1.5">
+                        <div className="flex items-center justify-center gap-0.5">
+                        <Seta
+                          titulo="Subir a subcategoria"
+                          desabilitada={li === 0}
+                          onClick={() => moverLinha(g.id, li, -1)}
+                          children={<ChevronUp className="h-4 w-4" />}
+                        />
+                        <Seta
+                          titulo="Descer a subcategoria"
+                          desabilitada={li === g.linhas.length - 1}
+                          onClick={() => moverLinha(g.id, li, 1)}
+                          children={<ChevronDown className="h-4 w-4" />}
+                        />
                         <button
                           type="button"
                           title="Remover a subcategoria"
@@ -365,6 +413,7 @@ export function PlanoDigitado({
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -434,7 +483,8 @@ export function PlanoDigitado({
         As categorias e subcategorias são <strong>suas</strong> — o modelo que abre é apenas o
         arranjo mais comum. Renomeie, acrescente e remova o que precisar; o que o Tribunal
         padroniza é a <strong>Categoria de Despesa AUDESP</strong> da coluna ao lado, não o nome da
-        rubrica.
+        rubrica. <strong>A ordem também é sua</strong>: use as setas para organizar o quadro como no
+        plano de trabalho, e é assim que ele volta nas próximas vezes.
       </p>
 
       <p className="text-xs text-ink-400">
@@ -443,5 +493,41 @@ export function PlanoDigitado({
         percebesse.
       </p>
     </div>
+  );
+}
+
+/**
+ * Seta de reordenar.
+ *
+ * **Setas, e não arrastar.** A ordem aqui vai para o banco e é a que o usuário
+ * vai reconhecer no documento impresso; arrastar é gesto que se dispara sem
+ * querer — e é o mesmo motivo pelo qual a Agenda recusa arrastar o que não pode
+ * mover. Setas também funcionam com teclado, o que arrastar não dá de graça.
+ *
+ * Desabilitada no extremo em vez de escondida: botão que some faz a coluna
+ * mudar de largura a cada linha, e o olho persegue o movimento.
+ */
+function Seta({
+  titulo,
+  desabilitada,
+  onClick,
+  children,
+}: {
+  titulo: string;
+  desabilitada: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      title={titulo}
+      aria-label={titulo}
+      disabled={desabilitada}
+      onClick={onClick}
+      className="focus-ring rounded-lg p-1 text-ink-400 transition-colors hover:bg-ink-100 hover:text-ink-600 disabled:cursor-default disabled:opacity-25 disabled:hover:bg-transparent dark:hover:bg-ink-700 dark:hover:text-ink-200"
+    >
+      {children}
+    </button>
   );
 }
