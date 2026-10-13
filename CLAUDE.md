@@ -494,6 +494,20 @@ Por isso a listagem por ajuste tem **dois braços**: a nota lançada *para* o aj
 - **Guias de Recolhimento** não entrou no portão. A guia é **do órgão**: um DARF de IRRF de maio recolhe retenções de várias notas e de vários ajustes, e sua identidade no schema é `órgão + tipo + competência`. Recortá-la por parceria criaria uma guia que não existe.
 
 
+### Toda fonte de recurso precisa de conta bancária
+
+O recurso é alocado **por fonte**, e cada fonte tem conta própria — é assim que se prova, no extrato, que o dinheiro federal não pagou o que era do municipal.
+
+O sistema já checava **um** dos sentidos: toda conta declara uma fonte, e ela tem de estar entre as do ajuste. **Faltava o contrário**: dava para declarar as fontes 1, 2 e 5 e cadastrar conta só para a 1 — o ajuste passava inteiro, com duas fontes sem onde receber.
+
+Encontrado em dado real: um ajuste com **três fontes e quatro contas, todas sem fonte** — contas cadastradas antes da regra da fonte existir.
+
+- **Bloqueia ao salvar o ajuste** (`validarAjuste`), e não só na conferência: a fonte sem conta é defeito do **cadastro**, e o cadastro é onde se conserta. Deixar passar aqui empurraria a descoberta para meses depois, na prestação.
+- **E vira pendência `IMPEDE` na conferência da prestação.** Diferente do Plano de Aplicação, aqui **não há "vazio legítimo"**: a fonte foi *declarada pelo próprio ajuste*; se ela existe, precisa de onde receber. Por isso não há o equivalente ao `SEM_PLANO`.
+- **Conta sem fonte não cobre fonte nenhuma.** É o caso achado em produção, e tratá-la como cobertura esconderia exatamente o furo que a regra existe para fechar. Ela já é recusada por outra regra (`Conta bancária X: informe a fonte`), então o ajuste antigo pede as duas coisas na primeira edição — e é a mesma decisão de não deixar registro meio preenchido para sempre.
+- **O vínculo conta↔ajuste continua sendo declarado do lado do Ajuste** (`Fontes de Recursos e Contas`), e não no modal de Nova Conta. Um segundo caminho de escrita seria armadilha: `atualizar` do ajuste faz `deleteMany` nas contas e recria do formulário, então vínculo criado pelo cadastro da conta seria **apagado em silêncio** no próximo "Salvar" de um formulário já aberto.
+- `fontesSemConta` é pura e fica no core, usada em três lugares (validação, conferência e — quando houver — a tela). Coberta por `verificar:plano` e `verificar:conferencia`, sem banco, inclusive o acordo de número da frase: plural errado numa mensagem de bloqueio faz o aviso parecer defeito.
+
 ## Plano de Aplicação — o anual sai da vigência
 
 Aba **Plano de Aplicação** no dossiê do Ajuste, modo "Digitar (modelo padrão)". Informa-se **um valor mensal por rubrica** e o servidor o expande nas competências do exercício.

@@ -1,5 +1,6 @@
 import { prisma } from './prisma';
 import { valorGlobalEfetivo } from '@/core/planoAplicacao/totalDoPlano';
+import { fontesSemConta } from '@/core/ajuste/fontesSemConta';
 import type { IMontadorRepository } from '@/application/montador/IMontadorRepository';
 import type { CodigosInexistentes, ContextoConferencia, DadosMontagem } from '@/application/montador/tipos';
 import { apurarMetas, type ApuracaoMetas } from '@/core/meta/apuracao';
@@ -414,6 +415,10 @@ export class PrismaMontadorRepository implements IMontadorRepository {
             // **de hoje** que o Plano de Aplicação tem de fechar.
             valorGlobal: true,
             termosAditivos: { select: { valorAcrescido: true, valorSuprimido: true } },
+            // As fontes declaradas e as contas que apontam para elas: é o par
+            // que diz se toda fonte tem onde receber.
+            fontesRecurso: { select: { fonteRecursoTipo: true } },
+            contasBancarias: { select: { fonteRecursoTipo: true } },
             cliente: { select: { empenhaRepasse: true } },
           },
         },
@@ -460,6 +465,10 @@ export class PrismaMontadorRepository implements IMontadorRepository {
       ]);
 
     return {
+      fontesSemConta: fontesSemConta(
+        prestacao.ajuste.fontesRecurso.map((f) => f.fonteRecursoTipo),
+        prestacao.ajuste.contasBancarias,
+      ),
       totalDoPlano: Number(somaPlano._sum.valor ?? 0),
       valorDoAjuste: valorGlobalEfetivo(
         Number(prestacao.ajuste.valorGlobal),

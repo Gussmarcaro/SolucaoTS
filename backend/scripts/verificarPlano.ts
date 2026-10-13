@@ -10,6 +10,7 @@
  */
 import { janelaDoExercicio } from '../src/core/planoAplicacao/competencias';
 import { numerarRubricas } from '../src/core/planoAplicacao/ordemRubricas';
+import { explicarFontesSemConta, fontesSemConta } from '../src/core/ajuste/fontesSemConta';
 import {
   conferirTotalDoPlano,
   explicarPlano,
@@ -201,6 +202,47 @@ console.log('\nPlano de Aplicação — competências do exercício\n');
   );
 }
 
+
+
+// ------------------ toda fonte de recurso precisa de conta bancária
+{
+  /*
+   * O sistema já checava o sentido contrário — toda conta declara uma fonte
+   * prevista. Faltava este: dava para declarar as fontes 1, 2 e 5 e cadastrar
+   * conta só para a 1, e o ajuste passava inteiro, com duas fontes sem onde
+   * receber. Encontrado em dado real: um ajuste com três fontes e quatro
+   * contas, **todas sem fonte**.
+   */
+  conferir(
+    'fonte sem conta é apontada',
+    fontesSemConta([1, 2, 5], [{ fonteRecursoTipo: 1 }]).join(',') === '2,5',
+  );
+  conferir(
+    'todas cobertas não apontam nada',
+    fontesSemConta([1, 2], [{ fonteRecursoTipo: 2 }, { fonteRecursoTipo: 1 }]).length === 0,
+    'a ordem das contas não importa',
+  );
+  conferir(
+    'conta SEM fonte não cobre fonte nenhuma',
+    fontesSemConta([1, 2], [{ fonteRecursoTipo: null }, { fonteRecursoTipo: null }]).join(',') === '1,2',
+    'é exatamente o caso achado em produção — tratá-la como cobertura esconderia o furo',
+  );
+  conferir(
+    'fonte repetida não vira duas pendências',
+    fontesSemConta([3, 3], []).join(',') === '3',
+  );
+  conferir(
+    'ajuste sem conta nenhuma aponta todas',
+    fontesSemConta([1, 2, 5], []).join(',') === '1,2,5',
+  );
+  conferir(
+    'a frase concorda em número',
+    explicarFontesSemConta([2]).includes('A fonte de recurso 2 não tem') &&
+      explicarFontesSemConta([2, 5]).includes('As fontes de recurso 2, 5 não têm'),
+    'plural errado numa mensagem de bloqueio faz o aviso parecer defeito',
+  );
+  conferir('sem pendência, sem frase', explicarFontesSemConta([]) === '');
+}
 
 console.log(
   falhas.length

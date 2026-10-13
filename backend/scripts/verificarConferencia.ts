@@ -122,6 +122,7 @@ const ctxPadrao: ContextoConferencia = {
   apuracaoMetas: null,
   // O caso normal: o plano fecha com o valor do ajuste. Os cenários que
   // divergem o fazem explicitamente, abaixo.
+  fontesSemConta: [],
   totalDoPlano: 1_000_000,
   valorDoAjuste: 1_000_000,
 };
@@ -425,6 +426,25 @@ console.log('\n--- metas não atingidas e o Desconto ---');
     !conferirPrestacao(completa(), ctxPadrao).some((x) =>
       x.titulo.includes('Plano de Aplicação divergente'),
     ),
+  );
+}
+
+
+// ---------------- fonte de recurso sem conta bancária
+{
+  /*
+   * Impede, e não avisa: sem a conta da fonte não há como demonstrar de onde
+   * saiu cada pagamento. Aqui não há "vazio legítimo" — a fonte foi DECLARADA
+   * pelo próprio ajuste; se ela existe, precisa de onde receber.
+   */
+  const p = conferirPrestacao(completa(), { ...ctxPadrao, fontesSemConta: [2, 5] });
+  conferir(
+    'fonte sem conta impede',
+    p.some((x) => x.titulo.includes('não têm conta bancária') && x.severidade === 'IMPEDE'),
+  );
+  conferir(
+    'com todas cobertas não aparece',
+    !conferirPrestacao(completa(), ctxPadrao).some((x) => x.titulo.includes('conta bancária')),
   );
 }
 

@@ -1,5 +1,6 @@
 import type { ContextoConferencia, DadosMontagem, Pendencia } from './tipos';
 import { conferirTotalDoPlano, explicarPlano } from '@/core/planoAplicacao/totalDoPlano';
+import { explicarFontesSemConta } from '@/core/ajuste/fontesSemConta';
 
 /**
  * O que ainda falta nesta prestação.
@@ -43,6 +44,19 @@ export function conferirPrestacao(d: DadosMontagem, ctx: ContextoConferencia): P
    * pendências não pode ter. O que se aponta é o plano que **existe e não
    * fecha**: aí não é estado legítimo, é conta errada.
    */
+  /*
+   * Fonte de recurso sem conta bancária.
+   *
+   * Impede, e não avisa: sem a conta da fonte não há como demonstrar de onde
+   * saiu cada pagamento, e a prestação chega ao Tribunal sem a separação que a
+   * norma exige. Diferente do plano, aqui não há "vazio legítimo" — a fonte foi
+   * **declarada** pelo próprio ajuste; se ela existe, precisa de onde receber.
+   */
+  if (ctx.fontesSemConta.length) {
+    // Sem bloco: a correção é no cadastro do Ajuste, não numa aba da prestação.
+    impede(null, explicarFontesSemConta(ctx.fontesSemConta));
+  }
+
   {
     const plano = conferirTotalDoPlano(ctx.totalDoPlano, ctx.valorDoAjuste);
     if (plano.situacao === 'A_MAIOR' || plano.situacao === 'A_MENOR') {

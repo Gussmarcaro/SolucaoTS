@@ -343,6 +343,14 @@ export interface ContextoConferencia {
    * errado justamente o ajuste aditivado, que é quando o plano precisa mudar.
    */
   valorDoAjuste: number;
+  /**
+   * Fontes de recurso do ajuste que não têm conta bancária.
+   *
+   * O recurso é alocado por fonte, e cada fonte tem conta própria — é assim que
+   * se prova, no extrato, que o dinheiro federal não pagou o que era do
+   * municipal. Vem do contexto porque é fato do **ajuste**, não do documento.
+   */
+  fontesSemConta: number[];
 }
 
 /** Resposta de `GET /prestacoes/:id/conferencia`. */

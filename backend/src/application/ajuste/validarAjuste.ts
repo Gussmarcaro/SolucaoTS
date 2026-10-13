@@ -1,4 +1,5 @@
 import { BusinessError } from '@/shared/errors';
+import { explicarFontesSemConta, fontesSemConta } from '@/core/ajuste/fontesSemConta';
 import { FONTE_RECURSO_CODIGOS } from '@/core/dominio/tabelasFaseV';
 import { parseDataISO } from '@/shared/datas';
 import { apenasDigitos, isCPFValido } from '@/shared/validators/documento';
@@ -159,6 +160,19 @@ export function normalizarEValidarAjuste(input: CriarAjusteDTO): DadosAjuste {
       };
     },
   );
+
+  /*
+   * Toda fonte precisa de conta — o sentido que faltava.
+   *
+   * A checagem acima garante que **toda conta** aponta para uma fonte prevista.
+   * Esta garante o contrário: que **toda fonte** tem onde receber. Sem ela dava
+   * para declarar três fontes e cadastrar conta só para uma, e o ajuste passava
+   * inteiro — com duas fontes sem conta em que o dinheiro entraria.
+   */
+  {
+    const semConta = fontesSemConta(fontesRecurso, contasBancarias);
+    if (semConta.length) throw new BusinessError(explicarFontesSemConta(semConta));
+  }
 
   /*
    * O tipo faz parte da identidade da conta.
