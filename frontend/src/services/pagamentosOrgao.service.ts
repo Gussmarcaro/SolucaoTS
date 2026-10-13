@@ -8,10 +8,22 @@ import type { Pagamento, PagamentoPayload } from '@/types/prestacaoBlocos';
  * apropriar dele. É a mesma entidade da aba da prestação, vista de cima.
  */
 export const pagamentosOrgaoApi = {
-  /** Com `ajusteId`, só os daquela parceria. */
-  listar: async (ajusteId?: string): Promise<Pagamento[]> => {
+  /**
+   * Com `ajusteId`, só os daquela parceria; com `documentoFiscalId`, só os
+   * daquela nota — **de todos os ajustes**.
+   *
+   * Os dois recortes respondem perguntas opostas, e por isso convivem. A grade
+   * mostra o que é da parceria em execução; o formulário precisa saber quanto
+   * a **nota** já tem pago, e a rateada é paga por vários ajustes: somar só o
+   * que a grade mostra daria um saldo maior que o real, e a tela prometeria um
+   * teto que o servidor recusa.
+   */
+  listar: async (filtros?: { ajusteId?: string; documentoFiscalId?: string }): Promise<Pagamento[]> => {
     const { data } = await http.get<Pagamento[]>('/pagamentos', {
-      params: ajusteId ? { ajusteId } : undefined,
+      params: {
+        ...(filtros?.ajusteId ? { ajusteId: filtros.ajusteId } : {}),
+        ...(filtros?.documentoFiscalId ? { documentoFiscalId: filtros.documentoFiscalId } : {}),
+      },
     });
     return data;
   },

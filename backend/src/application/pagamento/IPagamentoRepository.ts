@@ -30,8 +30,17 @@ export interface IPagamentoRepository {
    * dados. Passá-lo aqui daria a impressão de que o recorte é escolha de quem
    * chama — e é justamente o contrário.
    */
-  /** Com `ajusteId`, só os daquela parceria. */
-  listarDoOrgao(ajusteId?: string): Promise<Pagamento[]>;
+  /**
+   * Com `ajusteId`, só os daquela parceria; com `documentoFiscalId`, só os
+   * daquela nota — **de todos os ajustes**.
+   *
+   * Os dois recortes respondem perguntas opostas, e é por isso que coexistem.
+   * A tela lista o que é da parceria em execução; o formulário precisa saber
+   * quanto a **nota** já tem pago, e a nota rateada é paga por vários ajustes:
+   * somar só o que se vê na tela daria um saldo maior que o real, e a tela
+   * prometeria um teto que o servidor recusa.
+   */
+  listarDoOrgao(filtros?: { ajusteId?: string; documentoFiscalId?: string }): Promise<Pagamento[]>;
   /** Cria no escopo do órgão; `clienteId` é carimbado pela extension. */
   criarNoOrgao(dados: DadosPagamento): Promise<Pagamento>;
   buscarPorId(id: string): Promise<Pagamento | null>;

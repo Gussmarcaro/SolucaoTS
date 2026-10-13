@@ -39,7 +39,16 @@ export class PagamentoOrgaoController {
     try {
       // A Execução acontece dentro de um ajuste; a tela informa qual.
       const ajusteId = typeof req.query.ajusteId === 'string' ? req.query.ajusteId : undefined;
-      return res.json(await casos.listarDoOrgao(ajusteId || undefined));
+      // Por nota, o formulário pergunta quanto dela já saiu — de todos os
+      // ajustes, porque a rateada é paga por vários.
+      const documentoFiscalId =
+        typeof req.query.documentoFiscalId === 'string' ? req.query.documentoFiscalId : undefined;
+      return res.json(
+        await casos.listarDoOrgao({
+          ajusteId: ajusteId || undefined,
+          documentoFiscalId: documentoFiscalId || undefined,
+        }),
+      );
     } catch (e) {
       return next(e);
     }

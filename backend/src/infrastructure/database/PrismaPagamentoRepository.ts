@@ -62,9 +62,15 @@ export class PrismaPagamentoRepository implements IPagamentoRepository {
    * sem recorte funciona perfeitamente para quem a escreveu, e para os outros
    * órgãos também.
    */
-  async listarDoOrgao(ajusteId?: string) {
+  async listarDoOrgao(filtros?: { ajusteId?: string; documentoFiscalId?: string }) {
+    const { ajusteId, documentoFiscalId } = filtros ?? {};
     const rows = await prisma.pagamento.findMany({
-      where: ajusteId ? { ajusteId } : undefined,
+      where: {
+        ...(ajusteId ? { ajusteId } : {}),
+        // Por nota, **sem** recorte de ajuste: a nota rateada é paga por
+        // vários, e o que se quer saber aqui é quanto dela já saiu ao todo.
+        ...(documentoFiscalId ? { documentoFiscalId } : {}),
+      },
       select: selecao,
       orderBy: [{ dataPagamento: 'desc' }, { id: 'desc' }],
     });
