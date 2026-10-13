@@ -78,7 +78,8 @@ export interface RateioPayload {
   metodo: MetodoRateio;
   descricaoMetodo?: string | null;
   observacoes?: string | null;
-  participantes: { ajusteId: string | null; base: number }[];
+  /** Cada linha é **ou** um ajuste, **ou** uma origem própria da entidade. */
+  participantes: { ajusteId: string | null; origem?: string | null; base: number }[];
 }
 
 /** Precisão guardada no cálculo interno. */
