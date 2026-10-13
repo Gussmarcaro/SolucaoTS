@@ -96,6 +96,11 @@ describe.skipIf(!TEM_BANCO)('execução recortada por ajuste', () => {
           vigenciaFinal: '2026-12-31',
           periodicidade: 'ANUAL',
           fontesRecurso: [1],
+          // Toda fonte declarada precisa de conta onde receber — a conta é
+          // própria de cada ajuste, por isso o número leva o código dele.
+          contasBancarias: [
+            { banco: 341, agencia: 1234, conta: `${codigo.slice(-4)}-0`, contaTipo: 1, fonteRecursoTipo: 1 },
+          ],
         })
       ).id;
 

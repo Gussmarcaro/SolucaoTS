@@ -113,6 +113,9 @@ describe.skipIf(!TEM_BANCO)('a prestação, do cadastro ao documento JSON', () =
       // Obrigatória: o ajuste sem fonte de recurso é recusado, e o código é
       // conferido contra a tabela oficial — não basta ser número.
       fontesRecurso: [1],
+      // E toda fonte declarada precisa de conta onde receber: é assim que se
+      // prova, no extrato, que o dinheiro de uma fonte não pagou o da outra.
+      contasBancarias: [{ ...CONTA, fonteRecursoTipo: 1 }],
     });
     ajusteId = ajuste.id;
 
