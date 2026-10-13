@@ -456,6 +456,25 @@ function PagamentoOrgaoForm({
   const ehRateada = !!docEscolhido?.rateioProveniente && !!rateioNota.rateio?.participantes.length;
   const parcelaDoAjuste = ehRateada ? rateioNota.parcelaDoAjuste(ajuste || null) : null;
 
+  /*
+   * O ajuste nasce preenchido com o da Execução.
+   *
+   * Quem chega aqui já atravessou o portão: está lançando dentro de uma
+   * parceria, e é a parcela dela que vai pagar. Pedir que escolha de novo o
+   * ajuste em que já está não é cautela — é o campo ficar vazio, e com ele o
+   * teto do valor mostrar o saldo da **nota inteira** (R$ 5.000,00 onde cabem
+   * R$ 3.750,00), que é justamente o número que não se pode pagar aqui.
+   *
+   * Só semeia o que está em branco, e só quando o ajuste da Execução está no
+   * quadro: fora dele não há parcela, e inventar uma escolha seria pior que
+   * não escolher. Em edição o ajuste é o do lançamento, e não se mexe.
+   */
+  useEffect(() => {
+    if (item || !ehRateada || !ajusteEmExecucao) return;
+    if (!rateioNota.rateio?.participantes.some((p) => p.ajusteId === ajusteEmExecucao)) return;
+    setAjuste((atual) => atual || ajusteEmExecucao);
+  }, [item, ehRateada, ajusteEmExecucao, rateioNota.rateio, docEscolhido?.id]);
+
   /** O que este ajuste já pagou nesta nota — o teto é por parcela, não por nota. */
   const jaPagoNoAjuste =
     ehRateada && ajuste && docEscolhido
@@ -687,7 +706,17 @@ function PagamentoOrgaoForm({
           onChange={(e) => setValor(mascaraMoeda(e.target.value))}
           placeholder="0,00"
           inputMode="numeric"
-          hint={docEscolhido ? `Até ${formatarMoeda(Math.max(restaPagar, 0))}.` : undefined}
+          /* Na nota rateada sem ajuste escolhido, "Até R$ 5.000,00" seria o
+             saldo da nota inteira — dinheiro das outras parcerias. Enquanto
+             não há parcela contra a qual comparar, a dica diz o que fazer em
+             vez de anunciar um teto que não vale aqui. */
+          hint={
+            docEscolhido
+              ? ehRateada && parcelaDoAjuste == null
+                ? 'Escolha o ajuste acima para saber quanto cabe neste pagamento.'
+                : `Até ${formatarMoeda(Math.max(restaPagar, 0))}.`
+              : undefined
+          }
         />
         {/* A conta paga, e ela já sabe o resto.
             A fonte de recurso e o meio de pagamento constam do cadastro da
