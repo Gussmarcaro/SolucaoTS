@@ -10,7 +10,10 @@ export class ContaBancariaController {
     try {
       // `?ativas=true` é o que o combo do Ajuste pede: conta inativa não deve
       // ser oferecida para uso novo, mas continua visível no cadastro.
-      return res.json(await casos.listar(req.query.ativas === 'true'));
+      // `ajusteId` vem das telas de Execução, que operam dentro de uma
+      // parceria. Sem ele, a listagem do cadastro continua trazendo tudo.
+      const ajusteId = typeof req.query.ajusteId === 'string' ? req.query.ajusteId : undefined;
+      return res.json(await casos.listar(req.query.ativas === 'true', ajusteId));
     } catch (e) {
       return next(e);
     }

@@ -8,9 +8,20 @@ import type { ContaBancaria, ContaBancariaPayload } from '@/types/contaBancaria'
  * para uso novo, mas continua visível no cadastro e no que já a cita.
  */
 export const contasApi = {
-  listar: async (apenasAtivas = false): Promise<ContaBancaria[]> => {
+  /**
+   * As contas do órgão. Com `ajusteId`, **só as declaradas naquele ajuste**.
+   *
+   * É o que as telas de Execução pedem: elas operam dentro de uma parceria, e
+   * oferecer a conta de outra é exatamente o erro que o portão da Execução
+   * existe para impedir — lançamento na conta errada é indistinguível de um
+   * lançamento certo até alguém conferir extrato por extrato.
+   */
+  listar: async (apenasAtivas = false, ajusteId?: string): Promise<ContaBancaria[]> => {
     const { data } = await http.get<ContaBancaria[]>('/contas-bancarias', {
-      params: apenasAtivas ? { ativas: 'true' } : undefined,
+      params: {
+        ...(apenasAtivas ? { ativas: 'true' } : {}),
+        ...(ajusteId ? { ajusteId } : {}),
+      },
     });
     return data;
   },

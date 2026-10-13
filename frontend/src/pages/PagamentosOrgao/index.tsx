@@ -311,14 +311,23 @@ function PagamentoOrgaoForm({
 
   useEffect(() => {
     let vivo = true;
+    /*
+     * Só as contas **do ajuste em execução**.
+     *
+     * A lista trazia as contas de todas as parcerias do órgão: pagando pelo
+     * convênio 01 apareciam as contas do 02, e escolher a errada é
+     * indistinguível de acertar até alguém conferir extrato por extrato. É o
+     * mesmo erro que o portão da Execução existe para impedir — só a lista de
+     * contas tinha escapado dele.
+     */
     contasApi
-      .listar(true)
+      .listar(true, ajusteEmExecucao ?? undefined)
       .then((r) => vivo && setContas(r))
       .catch(() => undefined);
     return () => {
       vivo = false;
     };
-  }, []);
+  }, [ajusteEmExecucao]);
 
   const contaEscolhida = contas.find((c) => c.id === contaBancariaId) ?? null;
 

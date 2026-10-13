@@ -71,17 +71,27 @@ export function ReceitaOrgaoForm({
 
   useEffect(() => {
     let vivo = true;
-    // Só as ativas: conta desativada não deve ser oferecida para lançamento
-    // novo. A que já está no registro continua aparecendo — ver `opcoes`.
+    /*
+     * Só as ativas, e **só as do ajuste em execução**.
+     *
+     * A lista vinha com as contas de todas as parcerias do órgão: lançando
+     * receita do convênio 01 apareciam as contas do 02, e escolher a errada é
+     * indistinguível de acertar até alguém conferir extrato por extrato. É o
+     * mesmo erro que o portão da Execução existe para impedir — a lista de
+     * contas só tinha escapado dele.
+     *
+     * Conta desativada não é oferecida para lançamento novo; a que já está no
+     * registro continua aparecendo — ver `opcoes`.
+     */
     contasApi
-      .listar(true)
+      .listar(true, ajusteId ?? undefined)
       .then((r) => vivo && setContas(r))
       .catch(() => vivo && setContas([]))
       .finally(() => vivo && setCarregandoContas(false));
     return () => {
       vivo = false;
     };
-  }, []);
+  }, [ajusteId]);
 
   const conta = contas.find((c) => c.id === contaId) ?? null;
 

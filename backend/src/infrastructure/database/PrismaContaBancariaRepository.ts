@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
+import { chaveDaConta } from '@/core/conciliacao/contas';
 import { normalizarTexto } from '@/shared/normalizar';
 import { apenasDigitos } from '@/shared/validators/documento';
 import { tenantObrigatorio } from '@/shared/contexto';
@@ -26,13 +27,39 @@ const toDomain = (row: Row): ContaBancaria => row;
 
 export class PrismaContaBancariaRepository implements IContaBancariaRepository {
   /** Sem `where` de órgão: quem recorta é a extension de tenant. */
-  async listar(apenasAtivas: boolean): Promise<ContaBancaria[]> {
+  async listar(apenasAtivas: boolean, ajusteId?: string): Promise<ContaBancaria[]> {
     const rows = await prisma.contaBancaria.findMany({
       where: apenasAtivas ? { ativo: true } : undefined,
       select: selecao,
       orderBy: [{ ativo: 'desc' }, { banco: 'asc' }, { agencia: 'asc' }, { conta: 'asc' }],
     });
-    return rows.map(toDomain);
+    const contas = rows.map(toDomain);
+    if (!ajusteId) return contas;
+
+    /*
+     * O recorte pelo ajuste, por **duas** chaves.
+     *
+     * `contaBancariaId` é o vínculo direto, e é o que o cadastro novo grava.
+     * Mas `AjusteContaBancaria.contaBancariaId` é **opcional**: as contas que o
+     * ajuste declarou antes do cadastro central existir têm só banco, agência e
+     * número soltos. Casar só pelo id esconderia justamente as contas dos
+     * ajustes antigos — e o usuário veria a lista vazia num ajuste que declara
+     * contas, sem nada explicando.
+     *
+     * A comparação por dígitos é a mesma da conciliação (`chaveDaConta`): o
+     * cadastro traz `1236559` onde o ajuste trouxe `123655-9`, e a agência vem
+     * `0001` de um lado e `1` do outro.
+     */
+    const declaradas = await prisma.ajusteContaBancaria.findMany({
+      where: { ajusteId },
+      select: { contaBancariaId: true, banco: true, agencia: true, conta: true },
+    });
+    if (!declaradas.length) return [];
+
+    const porId = new Set(declaradas.map((d) => d.contaBancariaId).filter((x): x is string => !!x));
+    const porDigitos = new Set(declaradas.map((d) => chaveDaConta(d)));
+
+    return contas.filter((c) => porId.has(c.id) || porDigitos.has(chaveDaConta(c)));
   }
 
   async buscarPorId(id: string): Promise<ContaBancaria | null> {

@@ -2,7 +2,20 @@ import type { ContaBancaria } from '@/core/contaBancaria/ContaBancaria';
 import type { DadosContaBancaria } from './dtos';
 
 export interface IContaBancariaRepository {
-  listar(apenasAtivas: boolean): Promise<ContaBancaria[]>;
+  /**
+   * As contas do órgão. Com `ajusteId`, **só as declaradas naquele ajuste**.
+   *
+   * O recorte existe porque a Execução é um portão por parceria: lançar receita
+   * do convênio 01 na conta do convênio 02 é indistinguível de um lançamento
+   * certo até alguém conferir extrato por extrato.
+   *
+   * Devolve **vazio** quando o ajuste não declarou conta nenhuma, e não a lista
+   * inteira. É o contrário da conciliação, e de propósito: lá se **lê** um
+   * extrato, e esconder tudo deixaria o usuário sem explicação; aqui se
+   * **grava**, e oferecer a conta de outra parceria é exatamente o erro. A tela
+   * diz o que falta e aponta onde declarar.
+   */
+  listar(apenasAtivas: boolean, ajusteId?: string): Promise<ContaBancaria[]>;
   buscarPorId(id: string): Promise<ContaBancaria | null>;
   /** Duplicidade no órgão — a conta é única por banco, agência, número e tipo. */
   buscarDuplicada(dados: DadosContaBancaria): Promise<ContaBancaria | null>;

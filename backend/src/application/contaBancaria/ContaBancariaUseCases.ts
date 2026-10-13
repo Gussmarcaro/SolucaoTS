@@ -76,8 +76,8 @@ function validar(input: ContaBancariaDTO): DadosContaBancaria {
 export class ContaBancariaUseCases {
   constructor(private readonly repo: IContaBancariaRepository) {}
 
-  async listar(apenasAtivas = false): Promise<ContaBancaria[]> {
-    return this.repo.listar(apenasAtivas);
+  async listar(apenasAtivas = false, ajusteId?: string): Promise<ContaBancaria[]> {
+    return this.repo.listar(apenasAtivas, ajusteId?.trim() || undefined);
   }
 
   async criar(input: ContaBancariaDTO): Promise<ContaBancaria> {

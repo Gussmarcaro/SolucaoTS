@@ -483,6 +483,17 @@ O que liga uma coisa à outra é a definição do próprio TCESP: o **Desconto**
 - Guardado em `localStorage` **com o órgão na chave**, e revalidado contra a lista: o suporte troca de cliente, e o ajuste do anterior não existe no novo — sem isso a Execução abriria filtrando por um id órfão e mostrando tudo vazio sem explicar por quê.
 - **Rota de layout, não provider global:** quem nunca entra na Execução não paga a consulta dos ajustes, e o contexto não existe onde não significa nada.
 
+### A lista de contas tinha escapado do portão
+
+`ExecucaoLayout` é um portão por parceria, mas o seletor de **Conta bancária** de Receitas e Pagamentos trazia as contas de **todas** as parcerias do órgão. Lançando receita do convênio 01 apareciam as contas do 02 — e escolher a errada é indistinguível de acertar até alguém conferir extrato por extrato. É exatamente o erro que o portão existe para impedir.
+
+`GET /contas-bancarias` passou a aceitar `ajusteId`, e as duas telas o enviam a partir do contexto da Execução. (A Despesa não entra: nota fiscal não tem conta bancária.)
+
+- **O recorte é por duas chaves, e a segunda não é redundância.** `AjusteContaBancaria.contaBancariaId` é o vínculo direto — mas é **opcional**: as contas que o ajuste declarou antes do cadastro central existir têm só banco, agência e número soltos. Casar só pelo id esconderia justamente as contas dos ajustes antigos, e o usuário veria lista vazia num ajuste que declara contas, sem nada explicando. A segunda chave é `chaveDaConta`, a mesma da conciliação: o cadastro traz `1236559` onde o ajuste trouxe `123655-9`, e a agência vem `0001` de um lado e `1` do outro.
+- **Ajuste sem conta declarada devolve vazio, e não a lista inteira** — o **contrário** da conciliação, de propósito. Lá se *lê* um extrato, e esconder tudo deixaria o usuário sem explicação; aqui se *grava*, e oferecer a conta de outra parceria é precisamente o erro. Desde que toda fonte exige conta, o conserto é uma edição do Ajuste.
+- **O recorte é do servidor.** Filtrar na tela seria sugestão: a rota continuaria respondendo a lista inteira a quem a chamasse direto.
+- A conta já gravada no lançamento **continua na lista** mesmo fora do recorte, pela mesma razão de sempre: abrir um registro antigo mostraria o campo em branco e salvar apagaria o vínculo em silêncio.
+
 ### A nota rateada é de vários ajustes
 
 `DocumentoFiscal.ajusteId` é **nulo quando a nota é rateada**, e isso não é omissão: ela pertence a todas as parcerias do quadro, e quem diz quais é o `rateioId`. Gravar uma delas escolheria um dono arbitrário para uma despesa que não tem dono único; duplicar a nota por ajuste faria o mesmo documento fiscal existir várias vezes — o que o `@@unique` de número+credor existe para impedir.
