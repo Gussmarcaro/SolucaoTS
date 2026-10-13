@@ -148,6 +148,7 @@ export function AjusteDetalhe() {
             ajusteId={ajuste.id}
             vigenciaInicial={ajuste.vigenciaInicial}
             vigenciaFinal={ajuste.vigenciaFinal}
+            valorDoAjuste={ajuste.valorGlobalEfetivo ?? ajuste.valorGlobal}
           />
         )}
         {aba === 'execucao' && <ExecucaoPlanoTab ajusteId={ajuste.id} />}

@@ -22,11 +22,14 @@ export function PlanoAplicacaoTab({
   ajusteId,
   vigenciaInicial,
   vigenciaFinal,
+  valorDoAjuste,
 }: {
   ajusteId: string;
   /** A vigência decide quantas competências o exercício tem — ver `PlanoDigitado`. */
   vigenciaInicial: string | null;
   vigenciaFinal: string | null;
+  /** Quanto o ajuste vale hoje — é contra ele que o total do plano fecha. */
+  valorDoAjuste: number;
 }) {
   const [lista, setLista] = useState<PlanoItem[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -104,6 +107,7 @@ export function PlanoAplicacaoTab({
             ajusteId={ajusteId}
             itens={lista}
             anoSugerido={new Date().getFullYear()}
+            valorDoAjuste={valorDoAjuste}
             vigenciaInicial={vigenciaInicial}
             vigenciaFinal={vigenciaFinal}
             onSalvo={recarregar}

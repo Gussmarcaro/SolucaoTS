@@ -329,6 +329,20 @@ export interface ContextoConferencia {
    * Metas, que não é transmitido e portanto não pertence ao documento.
    */
   apuracaoMetas: ApuracaoMetas | null;
+  /**
+   * Soma do Plano de Aplicação do ajuste, **todos os exercícios**.
+   *
+   * O valor global cobre a vigência inteira, e uma vigência que atravessa dois
+   * anos tem plano em cada um: conferir exercício a exercício compararia contra
+   * um teto que o ajuste não declara.
+   */
+  totalDoPlano: number;
+  /**
+   * Quanto o ajuste vale **hoje** — o global mais os acréscimos e menos as
+   * supressões dos termos aditivos. Comparar contra o global cru acusaria de
+   * errado justamente o ajuste aditivado, que é quando o plano precisa mudar.
+   */
+  valorDoAjuste: number;
 }
 
 /** Resposta de `GET /prestacoes/:id/conferencia`. */

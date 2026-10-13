@@ -10,6 +10,11 @@
  */
 import { janelaDoExercicio } from '../src/core/planoAplicacao/competencias';
 import { numerarRubricas } from '../src/core/planoAplicacao/ordemRubricas';
+import {
+  conferirTotalDoPlano,
+  explicarPlano,
+  valorGlobalEfetivo,
+} from '../src/core/planoAplicacao/totalDoPlano';
 
 const falhas: string[] = [];
 const conferir = (descricao: string, ok: boolean, detalhe = '') => {
@@ -137,6 +142,65 @@ console.log('\nPlano de Aplicação — competências do exercício\n');
   conferir('rubrica vazia forma um grupo só', n[0].ordem === 1 && n[1].ordem === 1);
   conferir('e não colide com a seguinte', n[2].ordem === 2);
 }
+
+
+// ---------------- o total do plano tem de coincidir com o do ajuste
+{
+  /*
+   * O erro que esta conta existe para pegar: o plano é digitado MENSAL e somado
+   * ANUAL, e confundir as colunas multiplica o plano pelo número de
+   * competências sem nada parecer errado. Um ajuste de R$ 1,5 mi recebeu um
+   * plano de R$ 12 mi — os dois números são plausíveis olhando para a tela.
+   */
+  const c = conferirTotalDoPlano(12_000_000, 1_500_000);
+  conferir('plano oito vezes maior é acusado', c.situacao === 'A_MAIOR');
+  conferir('e a diferença é o excesso', c.diferenca === 10_500_000);
+  conferir('a frase diz os dois números', explicarPlano(c).includes('12.000.000') && explicarPlano(c).includes('1.500.000'));
+
+  conferir('plano igual confere', conferirTotalDoPlano(1_500_000, 1_500_000).confere);
+  conferir(
+    'meio centavo de folga não reprova',
+    conferirTotalDoPlano(1_500_000.004, 1_500_000).confere,
+    'o total sai de somas de Decimal; reprovar por ponto flutuante barraria plano correto',
+  );
+  conferir('um centavo a mais reprova', !conferirTotalDoPlano(1_500_000.01, 1_500_000).confere);
+
+  conferir(
+    'plano vazio é SEM_PLANO, não A_MENOR',
+    conferirTotalDoPlano(0, 1_500_000).situacao === 'SEM_PLANO',
+    'quem não cadastrou precisa ouvir outra coisa de quem cadastrou de menos',
+  );
+  conferir(
+    'plano menor diz quanto falta',
+    explicarPlano(conferirTotalDoPlano(1_000_000, 1_500_000)).includes('faltam'),
+  );
+}
+
+// O aditivo muda o valor a comparar — e é o caso em que o plano DEVE mudar.
+{
+  conferir(
+    'sem aditivo, o valor é o global',
+    valorGlobalEfetivo(1_500_000, []) === 1_500_000,
+  );
+  conferir(
+    'acréscimo entra na base',
+    valorGlobalEfetivo(1_500_000, [{ valorAcrescido: 300_000, valorSuprimido: null }]) === 1_800_000,
+    'comparar contra o global cru acusaria de errado justamente o ajuste aditivado',
+  );
+  conferir(
+    'supressão sai da base',
+    valorGlobalEfetivo(1_500_000, [{ valorAcrescido: null, valorSuprimido: 200_000 }]) === 1_300_000,
+  );
+  conferir(
+    'vários aditivos se acumulam',
+    valorGlobalEfetivo(1_000_000, [
+      { valorAcrescido: 500_000, valorSuprimido: null },
+      { valorAcrescido: null, valorSuprimido: 100_000 },
+      { valorAcrescido: 50_000, valorSuprimido: 50_000 },
+    ]) === 1_400_000,
+  );
+}
+
 
 console.log(
   falhas.length

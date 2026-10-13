@@ -15,4 +15,14 @@ export interface IAjusteRepository {
   /** Lê o PDF — a única consulta que carrega o binário. */
   obterDocumento(id: string, tipo: TipoDocumentoAjuste): Promise<ArquivoAjuste | null>;
   removerDocumento(id: string, tipo: TipoDocumentoAjuste): Promise<Ajuste>;
+
+  /**
+   * O total do Plano de Aplicação (todos os exercícios) e quanto o ajuste vale
+   * hoje, já com os termos aditivos somados.
+   *
+   * Os dois vêm juntos de propósito: pedi-los em duas chamadas abriria a janela
+   * em que um aditivo entra entre uma e outra, e o bloqueio acusaria uma
+   * divergência que não existe.
+   */
+  totaisDoPlano(id: string): Promise<{ totalDoPlano: number; valorDoAjuste: number }>;
 }

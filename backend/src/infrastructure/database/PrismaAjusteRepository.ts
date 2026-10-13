@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
+import { valorGlobalEfetivo } from '@/core/planoAplicacao/totalDoPlano';
 import { tenantObrigatorio } from '@/shared/contexto';
 import type { IAjusteRepository } from '@/application/ajuste/IAjusteRepository';
 import type {
@@ -70,6 +71,9 @@ const selecao = {
     orderBy: [{ banco: 'asc' }, { agencia: 'asc' }, { conta: 'asc' }],
   },
   entidadeBeneficiaria: { select: { razaoSocial: true } },
+  // Só os dois valores, para derivar o `valorGlobalEfetivo` — o plano é
+  // conferido contra o valor de hoje, não contra o original.
+  termosAditivos: { select: { valorAcrescido: true, valorSuprimido: true } },
   cliente: { select: { nome: true } },
 } satisfies Prisma.AjusteSelect;
 
@@ -88,6 +92,13 @@ function toDomain(row: Row): Ajuste {
     numero: row.numero,
     objeto: row.objeto,
     valorGlobal: Number(row.valorGlobal),
+    valorGlobalEfetivo: valorGlobalEfetivo(
+      Number(row.valorGlobal),
+      (row.termosAditivos ?? []).map((t) => ({
+        valorAcrescido: t.valorAcrescido === null ? null : Number(t.valorAcrescido),
+        valorSuprimido: t.valorSuprimido === null ? null : Number(t.valorSuprimido),
+      })),
+    ),
     fontesRecurso: row.fontesRecurso.map((f) => f.fonteRecursoTipo),
     contasBancarias: row.contasBancarias.map((c) => ({
       id: c.id,
@@ -362,4 +373,39 @@ export class PrismaAjusteRepository implements IAjusteRepository {
       totalPages: Math.max(1, Math.ceil(total / pageSize)),
     };
   }
+  /**
+   * O total do plano e quanto o ajuste vale hoje, **numa consulta só**.
+   *
+   * Pedi-los separados abriria a janela em que um aditivo entra entre as duas
+   * chamadas, e o bloqueio acusaria uma divergência que não existe.
+   */
+  async totaisDoPlano(id: string): Promise<{ totalDoPlano: number; valorDoAjuste: number }> {
+    const ajuste = await prisma.ajuste.findUnique({
+      where: { id },
+      select: {
+        valorGlobal: true,
+        termosAditivos: { select: { valorAcrescido: true, valorSuprimido: true } },
+        // A soma dos itens vem pela relação, não por um `aggregate` à parte:
+        // assim o recorte por órgão da extension vale sobre o `Ajuste`, que é a
+        // raiz — o item do plano não é, e agregá-lo direto somaria todos.
+        planoAplicacao: { select: { valor: true } },
+      },
+    });
+    if (!ajuste) return { totalDoPlano: 0, valorDoAjuste: 0 };
+
+    const totalDoPlano =
+      Math.round(ajuste.planoAplicacao.reduce((s, i) => s + Number(i.valor), 0) * 100) / 100;
+
+    return {
+      totalDoPlano,
+      valorDoAjuste: valorGlobalEfetivo(
+        Number(ajuste.valorGlobal),
+        ajuste.termosAditivos.map((t) => ({
+          valorAcrescido: t.valorAcrescido === null ? null : Number(t.valorAcrescido),
+          valorSuprimido: t.valorSuprimido === null ? null : Number(t.valorSuprimido),
+        })),
+      ),
+    };
+  }
+
 }

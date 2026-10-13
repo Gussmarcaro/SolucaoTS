@@ -36,6 +36,15 @@ export interface Ajuste {
   numero: string | null;
   objeto: string;
   valorGlobal: number;
+  /**
+   * Quanto o ajuste vale **hoje**: o global mais os acréscimos e menos as
+   * supressões dos termos aditivos.
+   *
+   * Derivado no servidor, e não somado na tela, pela razão de sempre: a tela do
+   * Plano não carrega os aditivos, e duas contas para o mesmo número
+   * divergiriam — justamente o número contra o qual o plano é conferido.
+   */
+  valorGlobalEfetivo: number;
   dataAssinatura: string; // 'YYYY-MM-DD'
   vigenciaInicial: string | null;
   vigenciaFinal: string | null;

@@ -120,6 +120,10 @@ const ctxPadrao: ContextoConferencia = {
   pagamentosSemComprovante: 0,
   orgaoEmpenha: true,
   apuracaoMetas: null,
+  // O caso normal: o plano fecha com o valor do ajuste. Os cenários que
+  // divergem o fazem explicitamente, abaixo.
+  totalDoPlano: 1_000_000,
+  valorDoAjuste: 1_000_000,
 };
 
 const tem = (ps: ReturnType<typeof conferirPrestacao>, bloco: string | null, trecho: string) =>
@@ -370,6 +374,57 @@ console.log('\n--- metas não atingidas e o Desconto ---');
     'acusa "atendida" com quantidade fora do pactuado',
     tem(divergente, 'atividades', 'marcada(s) como atendida(s)'),
     'é exatamente o ponto que a fiscalização questiona, e ninguém o veria sem apontar',
+  );
+}
+
+
+// ------------- o Plano de Aplicação tem de fechar com o valor do ajuste
+{
+  /*
+   * O erro é silencioso e específico: o plano é digitado **mensal** e somado
+   * **anual**, então trocar as colunas multiplica o plano pelo número de
+   * competências. Um ajuste de R$ 1,5 mi recebe um plano de R$ 12 mi, e os dois
+   * números parecem plausíveis na tela.
+   */
+  const comPlanoMaior = conferirPrestacao(completa(), {
+    ...ctxPadrao,
+    totalDoPlano: 12_000_000,
+    valorDoAjuste: 1_500_000,
+  });
+  conferir(
+    'plano que não fecha com o ajuste impede',
+    comPlanoMaior.some((x) => x.titulo.includes('Plano de Aplicação divergente')),
+    'é despesa declarada contra um teto que não existe',
+  );
+
+  const comPlanoMenor = conferirPrestacao(completa(), {
+    ...ctxPadrao,
+    totalDoPlano: 400_000,
+    valorDoAjuste: 1_500_000,
+  });
+  conferir('plano menor diz quanto falta', comPlanoMenor.some((x) => x.titulo.includes('faltam')));
+
+  /*
+   * **A regra que salva o painel de virar ruído.** O plano é opcional hoje:
+   * cobrar quem nunca o cadastrou trancaria usuários que operam há meses, e
+   * pendência que aparece para todo mundo ensina a ignorar a tela.
+   */
+  const semPlano = conferirPrestacao(completa(), {
+    ...ctxPadrao,
+    totalDoPlano: 0,
+    valorDoAjuste: 1_500_000,
+  });
+  conferir(
+    'ajuste sem plano nenhum NÃO vira pendência',
+    !semPlano.some((x) => x.titulo.includes('Plano de Aplicação divergente')),
+    'o plano é opcional; apontá-lo sempre transformaria o painel em ruído',
+  );
+
+  conferir(
+    'plano que fecha não é apontado',
+    !conferirPrestacao(completa(), ctxPadrao).some((x) =>
+      x.titulo.includes('Plano de Aplicação divergente'),
+    ),
   );
 }
 

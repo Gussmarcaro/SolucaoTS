@@ -506,6 +506,27 @@ Aba **Plano de Aplicação** no dossiê do Ajuste, modo "Digitar (modelo padrão
 - A tela **só mostra a faixa do período quando o ano é parcial**. Aviso que se repete em toda tela deixa de ser lido; o multiplicador diferente de doze é que precisa de explicação.
 - Espelhada em `types/planoAplicacao.ts` porque a tela calcula o anual **enquanto se digita** — e travada por `planoAplicacao.test.ts`, com os mesmos números dos dois lados. Divergindo, a tela promete um anual e o servidor grava outro.
 
+### O total do plano tem de fechar com o valor do ajuste
+
+O plano é digitado **mensal** e somado **anual** — e confundir as duas colunas multiplica o plano pelo número de competências sem nada parecer errado. Um ajuste de R$ 1,5 mi recebeu um plano de R$ 12 mi, e os dois números são plausíveis olhando para a tela. É a conferência que ninguém faz à mão.
+
+**Três camadas, e a escolha de cada uma vem de uma frase do usuário:** *"o Plano de Aplicação usualmente é feito em várias etapas"*. Barrar a cada gravação tornaria impossível salvar o trabalho pela metade — a pessoa perderia o que digitou ou inventaria números para passar pela validação, que é pior que não validar.
+
+| Onde | O quê | Por quê ali |
+|---|---|---|
+| Tela do Plano | **alerta**, enquanto se digita | o erro é de confundir coluna; descobri-lo ao salvar faria digitar trinta rubricas para levar o aviso no fim |
+| Ajuste → "Enviado" | **bloqueio** | é o momento em que o cadastro deixa de estar em elaboração |
+| Conferência da prestação | **pendência `IMPEDE`** | é o que vai ao Tribunal |
+
+- **A base não é o `valorGlobal` cru.** `TermoAditivo` tem `valorAcrescido` e `valorSuprimido`; comparar contra o valor original acusaria de errado justamente o ajuste aditivado — o caso em que o plano **precisa** mudar. `valorGlobalEfetivo` é derivado no servidor e exposto no ajuste: a tela do Plano não carrega os aditivos, e duas contas para o mesmo número divergiriam.
+- **A soma é de todos os exercícios, não de um.** O valor global cobre a vigência inteira, e uma vigência de 01/05/2026 a 30/04/2027 atravessa dois exercícios. Conferir ano a ano compararia contra um teto que o ajuste não declara — ele não diz quanto cabe a 2026 e quanto a 2027.
+- **Plano inexistente não vira pendência nem bloqueio.** O plano é opcional hoje, e cobrá-lo trancaria quem opera há meses sem ele — ruído em vez de aviso, que é o único defeito que um painel de pendências não pode ter. O que se aponta é o plano que **existe e não fecha**: aí não é estado legítimo, é conta errada. `verificar:conferencia` reprova explicitamente quem acrescentar `SEM_PLANO` à lista.
+- **O bloqueio é só na virada** para "Enviado", não enquanto permanece enviado: um ajuste já marcado cujo plano fique divergente por outro caminho não pode ficar impossível de editar, com o usuário sem nenhuma tela por onde sair.
+- **`SEM_PLANO` é separado de `A_MENOR`**, e não é preciosismo: quem não cadastrou nada precisa ouvir "cadastre o plano"; quem cadastrou menos precisa ouvir *quanto* falta — e lê a primeira mensagem como se o trabalho dele tivesse sumido.
+- **Entrada não-finita vira zero.** Sem isso um `undefined` produzia `NaN`, e **toda** comparação com `NaN` é falsa: a cascata caía no último ramo e acusava de "a maior" quem não tem plano nenhum. Foi o `verificar:conferencia` que mostrou, reprovando quatro casos de uma vez.
+- A frase exibida (`explicarPlano`) fica no core porque são **três** lugares que a mostram; três textos para o mesmo fato divergiriam, e o usuário leria duas explicações do mesmo número.
+- Coberto por `verificar:plano` e `verificar:conferencia`, sem banco, e pelo espelho em `src/types/totalDoPlano.test.ts` — com os mesmos números do caso real (R$ 12 mi contra R$ 1,5 mi).
+
 ### A ordem das rubricas é do usuário, e estava sendo jogada fora
 
 O plano é gravado **uma linha por rubrica e mês**, e a leitura ordenava por `categoria, subcategoria` — alfabético. O quadro digitado na ordem do plano de trabalho (1. Recursos Humanos … 7. Combustível … 16. Outras Despesas) voltava da **primeira leitura depois de salvar** como "Combustível, Gêneros Alimentícios, Materiais Médico-Hospitalares…", e quem conhecia o documento de cor tinha de relê-lo noutra ordem.

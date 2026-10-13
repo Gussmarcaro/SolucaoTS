@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { dataBr, formatarMoeda, mascaraMoeda, moedaParaNumero } from '@/lib/masks';
 import { janelaDoExercicio, rotuloJanela } from '@/types/planoAplicacao';
+import { conferirTotalDoPlano } from '@/types/totalDoPlano';
 import { extrairMensagemErro } from '@/services/http';
 import { copiarPlanoExercicio, exerciciosDoPlano, salvarPlanoDigitado } from '@/services/ajusteCsv.service';
 import { CopiarExercicio } from './CopiarExercicio';
@@ -103,6 +104,7 @@ export function PlanoDigitado({
   anoSugerido,
   vigenciaInicial,
   vigenciaFinal,
+  valorDoAjuste,
   onSalvo,
 }: {
   ajusteId: string;
@@ -112,6 +114,8 @@ export function PlanoDigitado({
   /** A vigência do ajuste: é ela que diz quantas competências o ano tem. */
   vigenciaInicial: string | null;
   vigenciaFinal: string | null;
+  /** Quanto o ajuste vale hoje, já com os aditivos — a conta vem do servidor. */
+  valorDoAjuste: number;
   onSalvo: () => void;
 }) {
   const [ano, setAno] = useState(String(itens[0]?.ano ?? anoSugerido));
@@ -140,6 +144,25 @@ export function PlanoDigitado({
     (s, g) => s + g.linhas.reduce((t, l) => t + mensalDe(l), 0),
     0,
   );
+
+  /**
+   * O total do plano **inteiro** contra o valor do ajuste.
+   *
+   * Três cuidados, e cada um corrige uma leitura errada:
+   *
+   * 1. soma **todos os exercícios**, não só o que está na tela. O valor global
+   *    cobre a vigência inteira, e uma vigência que atravessa dois anos tem
+   *    plano em cada um — comparar só este ano acusaria de faltar metade;
+   * 2. o exercício em edição entra pelo que está **sendo digitado**, não pelo
+   *    que está gravado: o aviso precisa responder enquanto se digita;
+   * 3. multiplica pelas competências do exercício, que não são sempre doze.
+   */
+  const conferencia = useMemo(() => {
+    const deOutrosAnos = itens
+      .filter((i) => i.ano !== Number(ano))
+      .reduce((s, i) => s + i.valor, 0);
+    return conferirTotalDoPlano(deOutrosAnos + totalMensal * meses, valorDoAjuste);
+  }, [itens, ano, totalMensal, meses, valorDoAjuste]);
 
   const alterarGrupo = (gid: string, parcial: Partial<Grupo>) =>
     setGrupos((gs) => gs.map((g) => (g.id === gid ? { ...g, ...parcial } : g)));
@@ -452,6 +475,41 @@ export function PlanoDigitado({
           </tfoot>
         </table>
       </div>
+
+      {/*
+        O total do plano contra o valor do ajuste.
+
+        Fica **colado no rodapé da tabela**, onde o número que diverge acabou de
+        ser lido — e não no topo da tela, que a pessoa já passou. Aparece
+        enquanto se digita, porque o erro que ele pega é o de confundir a coluna
+        mensal com a anual: descobri-lo só ao salvar faria digitar trinta
+        rubricas para levar o aviso no fim.
+
+        Some quando o plano fecha. Aviso que fica na tela mesmo quando está tudo
+        certo deixa de ser lido — e este precisa ser lido na única vez que
+        aparecer.
+      */}
+      {conferencia.situacao !== 'CONFERE' && conferencia.situacao !== 'SEM_PLANO' && (
+        <div className="flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2.5 text-xs leading-relaxed text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>
+            <strong className="font-semibold">
+              O plano não fecha com o valor do ajuste.
+            </strong>{' '}
+            Somando todos os exercícios, o plano dá{' '}
+            <strong className="font-semibold">{formatarMoeda(conferencia.totalPlano)}</strong> e o
+            ajuste vale{' '}
+            <strong className="font-semibold">{formatarMoeda(conferencia.valorAjuste)}</strong> —{' '}
+            {conferencia.diferenca > 0
+              ? `${formatarMoeda(conferencia.diferenca)} a mais.`
+              : `faltam ${formatarMoeda(Math.abs(conferencia.diferenca))}.`}
+            <span className="mt-1 block text-amber-800/80 dark:text-amber-300/80">
+              Dá para salvar assim — o plano costuma ser montado em etapas. A conferência só
+              impede marcar o ajuste como <strong>Enviado</strong> e transmitir a prestação.
+            </span>
+          </span>
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Button

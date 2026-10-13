@@ -1,4 +1,5 @@
 import { prisma } from './prisma';
+import { valorGlobalEfetivo } from '@/core/planoAplicacao/totalDoPlano';
 import type { IMontadorRepository } from '@/application/montador/IMontadorRepository';
 import type { CodigosInexistentes, ContextoConferencia, DadosMontagem } from '@/application/montador/tipos';
 import { apurarMetas, type ApuracaoMetas } from '@/core/meta/apuracao';
@@ -407,12 +408,20 @@ export class PrismaMontadorRepository implements IMontadorRepository {
       select: {
         ajusteId: true,
         ano: true,
-        ajuste: { select: { cliente: { select: { empenhaRepasse: true } } } },
+        ajuste: {
+          select: {
+            // O valor do ajuste e os aditivos que o alteram: é contra o valor
+            // **de hoje** que o Plano de Aplicação tem de fechar.
+            valorGlobal: true,
+            termosAditivos: { select: { valorAcrescido: true, valorSuprimido: true } },
+            cliente: { select: { empenhaRepasse: true } },
+          },
+        },
       },
     });
     if (!prestacao) return null;
 
-    const [categorias, metasPrevistas, notasSemAnexo, pagamentosSemComprovante] =
+    const [categorias, metasPrevistas, notasSemAnexo, pagamentosSemComprovante, somaPlano] =
       await Promise.all([
         prisma.planoAplicacaoItem.findMany({
           where: { ajusteId: prestacao.ajusteId, categoriaDespesaTipo: { not: null } },
@@ -437,9 +446,28 @@ export class PrismaMontadorRepository implements IMontadorRepository {
         prisma.pagamento.count({
           where: { prestacaoId, anexos: { none: { tipo: 'COMPROVANTE_PAGAMENTO' } } },
         }),
+        /*
+         * A soma do plano, de **todos** os exercícios.
+         *
+         * O valor global cobre a vigência inteira, e uma vigência que atravessa
+         * dois anos tem plano em cada um — somar só o exercício desta prestação
+         * compararia contra um teto que o ajuste não declara.
+         */
+        prisma.planoAplicacaoItem.aggregate({
+          where: { ajusteId: prestacao.ajusteId },
+          _sum: { valor: true },
+        }),
       ]);
 
     return {
+      totalDoPlano: Number(somaPlano._sum.valor ?? 0),
+      valorDoAjuste: valorGlobalEfetivo(
+        Number(prestacao.ajuste.valorGlobal),
+        prestacao.ajuste.termosAditivos.map((t) => ({
+          valorAcrescido: t.valorAcrescido === null ? null : Number(t.valorAcrescido),
+          valorSuprimido: t.valorSuprimido === null ? null : Number(t.valorSuprimido),
+        })),
+      ),
       categoriasDoPlano: categorias.map((c) => c.categoriaDespesaTipo!).sort((a, b) => a - b),
       metasPrevistas,
       notasSemAnexo,

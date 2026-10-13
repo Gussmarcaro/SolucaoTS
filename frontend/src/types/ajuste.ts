@@ -79,6 +79,8 @@ export interface Ajuste {
   numero: string | null;
   objeto: string;
   valorGlobal: number;
+  /** Global + acréscimos − supressões dos aditivos; derivado no servidor. */
+  valorGlobalEfetivo?: number;
   dataAssinatura: string; // 'YYYY-MM-DD'
   vigenciaInicial: string | null;
   vigenciaFinal: string | null;
@@ -136,6 +138,8 @@ export interface AjustePayload {
   numero?: string | null;
   objeto: string;
   valorGlobal: number;
+  /** Global + acréscimos − supressões dos aditivos; derivado no servidor. */
+  valorGlobalEfetivo?: number;
   dataAssinatura: string;
   vigenciaInicial?: string | null;
   vigenciaFinal?: string | null;

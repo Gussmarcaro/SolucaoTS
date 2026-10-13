@@ -1,4 +1,5 @@
 import type { ContextoConferencia, DadosMontagem, Pendencia } from './tipos';
+import { conferirTotalDoPlano, explicarPlano } from '@/core/planoAplicacao/totalDoPlano';
 
 /**
  * O que ainda falta nesta prestação.
@@ -27,6 +28,28 @@ export function conferirPrestacao(d: DadosMontagem, ctx: ContextoConferencia): P
   const p: Pendencia[] = [];
   const impede = (bloco: string | null, titulo: string) =>
     p.push({ bloco, titulo, severidade: 'IMPEDE' });
+
+  /*
+   * O total do Plano de Aplicação contra o valor do ajuste.
+   *
+   * O erro que isto pega é específico e silencioso: o plano é digitado
+   * **mensal** e somado **anual**, então confundir as colunas multiplica o
+   * plano pelo número de competências. Um ajuste de R$ 1,5 mi recebe um plano
+   * de R$ 12 mi, e os dois números parecem plausíveis na tela.
+   *
+   * **Plano inexistente não vira pendência**, e é a regra de projeto deste
+   * painel: o plano é opcional hoje, e cobrá-lo aqui trancaria quem nunca o
+   * cadastrou — ruído em vez de aviso, que é o único defeito que um painel de
+   * pendências não pode ter. O que se aponta é o plano que **existe e não
+   * fecha**: aí não é estado legítimo, é conta errada.
+   */
+  {
+    const plano = conferirTotalDoPlano(ctx.totalDoPlano, ctx.valorDoAjuste);
+    if (plano.situacao === 'A_MAIOR' || plano.situacao === 'A_MENOR') {
+      // Sem bloco: a correção é no dossiê do Ajuste, não numa aba da prestação.
+      impede(null, `Plano de Aplicação divergente — ${explicarPlano(plano)}`);
+    }
+  }
   const atencao = (bloco: string | null, titulo: string) =>
     p.push({ bloco, titulo, severidade: 'ATENCAO' });
 
