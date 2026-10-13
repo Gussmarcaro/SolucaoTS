@@ -669,6 +669,19 @@ Coberto por `npm run verificar:rateio`, com os números do caso real (75/25 → 
 - **A lista de "Documento / vínculo" oferece só o que falta pagar.** Nota quitada não é opção: escolhê-la leva a um formulário que não aceita valor nenhum, e a lista enche de linhas que existem para serem descartadas. Escondendo-as, o combo passa a responder também *"o que ainda devo?"*. O que falta entra no subtítulo de cada linha, e a nota do lançamento **em edição** permanece mesmo quitada — sem ela o campo abriria em branco e salvar apagaria o vínculo. Quando alguma some, o rótulo diz quantas: nota que "sumiu" não pode virar suspeita de dado perdido.
 - No quadro, a linha do ajuste que está sendo lançado fica **em destaque** e as outras esmaecidas. Não é enfeite: o painel mostra a nota inteira, mas só uma daquelas parcelas pode ser paga ali, e sem a marca o usuário lê "resta R$ 125,00" e supõe que pode pagá-los.
 
+### A divisão aparece no lançamento da despesa, não só no pagamento
+
+O quadro da divisão existia só na tela de Pagamentos — e quem lança a nota decide ali, no formulário da Despesa, qual método de rateio usar. Escolhia às cegas: o efeito da escolha (quanto vai para cada parceria) só aparecia dias depois, para outra pessoa, na hora de pagar.
+
+Agora a mesma tabela aparece assim que o método é escolhido, e se refaz a cada tecla do valor.
+
+- **A conta saiu de dentro da tela de Pagamentos** para `types/rateio.ts` (`ratearValor`, espelho do core), e a tabela virou `components/rateio/QuadroDivisao.tsx`. Duas prévias da mesma divisão divergiriam no que não se vê — o centavo do maior resto, a linha de recurso próprio, a casa do percentual —, e o usuário leria dois quadros diferentes da mesma nota. É o mesmo argumento que já fez `useRateioDaNota` ser um hook.
+- **Divide o líquido, não o bruto.** É o que o painel do Pagamento divide; ratear o bruto aqui mostraria um número que a tela seguinte não repetiria.
+- **Sem valor digitado, o quadro aparece zerado em vez de sumir.** Os percentuais já respondem "como esta nota vai se dividir", que é metade da pergunta, e um painel que só nasce depois do valor faria a escolha do método continuar às cegas.
+- **O ajuste em execução não entra como "lançando", e sim como "em execução".** A nota rateada é de todas as parcerias do quadro — ela não está sendo lançada para uma. A etiqueta é um parâmetro da tabela justamente para a mesma marca não afirmar coisas diferentes nas duas telas.
+- **Ajuste em execução fora do quadro vira aviso**, não bloqueio: a nota pode mesmo ser de outras parcerias. Mas quem a lança dentro de um ajuste que o rateio não inclui está prestes a não ver aquela despesa em prestação nenhuma — e é a apropriação, meses depois, que recusaria.
+- `ratearValor` do front é travado por `types/rateio.test.ts` com os números do caso real (75/25 → 60/20/20) e o das três parcelas iguais que somam R$ 100,00, não R$ 99,99.
+
 ## Fiscalização | Monitoramento (Workflow)
 
 `/fiscalizacao` — as providências e seus prazos. É a outra metade do sino: ele **calcula** prazos a partir dos dados, esta tela **registra o que foi feito** a respeito. Sem ela o sistema sabe cobrar e não sabe que já foi atendido, e um aviso que continua piscando depois de resolvido ensina o usuário a ignorá-lo.

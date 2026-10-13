@@ -4,6 +4,7 @@ import {
   METODOS,
   calcularRateio,
   percentualBr,
+  ratearValor,
   temQuadro,
   vigentesEm,
 } from './rateio';
@@ -144,5 +145,56 @@ describe('vigentesEm', () => {
     // convivem, porque o método se escolhe pela natureza da despesa.
     const dois = [r('2026-01-01', '2026-12-31'), r('2026-06-01', '2026-08-31')];
     expect(vigentesEm(dois, '2026-07-15')).toHaveLength(2);
+  });
+});
+
+describe('ratearValor', () => {
+  it('divide em centavos: as parcelas somam o total, não 99,99', () => {
+    // Três ajustes iguais dão 33,333…%. Aplicar os 33,33% exibidos devolveria
+    // R$ 99,99 — e o centavo sumiria justamente do pagamento, que tem de
+    // fechar com o extrato.
+    const p = ratearValor(100, [
+      { ajusteId: id(1), base: 1 },
+      { ajusteId: id(2), base: 1 },
+      { ajusteId: id(3), base: 1 },
+    ]);
+    expect(p.reduce((s, x) => s + x.valor, 0)).toBeCloseTo(100, 2);
+    expect(p.filter((x) => x.valor === 33.34)).toHaveLength(1);
+  });
+
+  it('o recurso próprio da entidade encolhe a fatia das parcerias', () => {
+    // O caso real: convênios de R$ 1,5 mi e R$ 500 mil com R$ 500 mil de
+    // receita própria. Sem a linha própria o rateio seria 75/25, e a nota de
+    // R$ 1.000,00 debitaria R$ 750,00 ao convênio maior — R$ 150,00 a mais do
+    // que lhe cabe, entrando na prestação como despesa da parceria.
+    const p = ratearValor(1000, [
+      { ajusteId: id(1), base: 1_500_000 },
+      { ajusteId: id(2), base: 500_000 },
+      { ajusteId: null, base: 500_000 },
+    ]);
+    expect(p.map((x) => x.valor)).toEqual([600, 200, 200]);
+    expect(p.map((x) => x.percentual)).toEqual([60, 20, 20]);
+  });
+
+  it('casa por posição: duas origens próprias não colidem no id nulo', () => {
+    const p = ratearValor(300, [
+      { ajusteId: id(1), base: 100 },
+      { ajusteId: null, base: 200 },
+      { ajusteId: null, base: 300 },
+    ]);
+    expect(p.map((x) => x.valor)).toEqual([50, 100, 150]);
+  });
+
+  it('sem base divide igualmente — o mesmo critério do quadro', () => {
+    const p = ratearValor(90, [
+      { ajusteId: id(1), base: 0 },
+      { ajusteId: id(2), base: 0 },
+      { ajusteId: id(3), base: 0 },
+    ]);
+    expect(p.map((x) => x.valor)).toEqual([30, 30, 30]);
+  });
+
+  it('quadro vazio não devolve parcela nenhuma', () => {
+    expect(ratearValor(100, [])).toEqual([]);
   });
 });

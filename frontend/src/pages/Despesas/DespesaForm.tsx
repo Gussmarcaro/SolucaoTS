@@ -14,11 +14,12 @@ import { listarContratos } from '@/services/contratos.service';
 import { listarRateios } from '@/services/rateios.service';
 import { despesasApi } from '@/services/despesas.service';
 import { extrairMensagemErro } from '@/services/http';
-import { vigentesEm } from '@/types/rateio';
+import { ratearValor, vigentesEm } from '@/types/rateio';
 import type { Fornecedor } from '@/types/fornecedor';
 import type { Contrato } from '@/types/contrato';
 import { QuadroRetencoes, somaRetencoes, type LinhaRetencao } from './QuadroRetencoes';
 import { Anexos, enviarPendentes, type AnexoPendente } from '@/components/ui/Anexos';
+import { QuadroDivisao } from '@/components/rateio/QuadroDivisao';
 import type { Rateio } from '@/types/rateio';
 import {
   TIPO_DOCUMENTO_FISCAL_LABEL,
@@ -216,6 +217,34 @@ const [pendentes, setPendentes] = useState<AnexoPendente[]>([]);  /**   * O id d
    * não estava em vigor quando a despesa aconteceu.
    */
   const rateiosDisponiveis = dataEmissao ? vigentesEm(rateios, dataEmissao) : [];
+
+  /*
+   * A prévia da divisão — quanto desta nota cabe a cada ajuste.
+   *
+   * O percentual continua sendo gravado só na apropriação, e nada daqui é
+   * enviado. Mas quem lança a nota precisa ver a divisão **no momento em que a
+   * digita**: é aí que ele ainda sabe o que comprou e para quem, e é aí que um
+   * método errado — ou um quadro que não inclui o ajuste em execução — custa
+   * um clique para trocar. Descobrir isso no pagamento, dias depois, é
+   * descobrir tarde.
+   *
+   * O valor dividido é o **líquido**, o mesmo do painel do Pagamento: ratear o
+   * bruto mostraria aqui um número que o pagamento não repetiria.
+   */
+  const rateioEscolhido = rateioProveniente
+    ? (rateios.find((r) => r.id === rateioId) ?? null)
+    : null;
+  const liquidoDaNota = Math.max(
+    Math.round((moedaParaNumero(bruto) - somaRetencoes(retencoes)) * 100) / 100,
+    0,
+  );
+  const parcelasDaNota = rateioEscolhido
+    ? ratearValor(
+        liquidoDaNota,
+        rateioEscolhido.participantes.map((p) => ({ ajusteId: p.ajusteId, base: p.base })),
+      )
+    : [];
+  const ajusteNoQuadro = !!rateioEscolhido?.participantes.some((p) => p.ajusteId === ajusteId);
 
   async function submeter(e: React.FormEvent) {
     e.preventDefault();
@@ -483,6 +512,46 @@ const [pendentes, setPendentes] = useState<AnexoPendente[]>([]);  /**   * O id d
               Só aparecem os rateios <strong>vigentes na data de emissão</strong>. O percentual de
               cada ajuste é calculado na prestação de contas, não aqui.
             </p>
+
+            {/* A divisão, enquanto se digita — ver o comentário do cálculo. */}
+            {rateioEscolhido &&
+              (rateioEscolhido.participantes.length === 0 ? (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+                  Este rateio está <strong>sem ajustes no quadro</strong>: não há como dividir a
+                  nota. Acerte o quadro em Cadastro → Financeiro → Rateio.
+                </div>
+              ) : (
+                <div className="rounded-xl border border-brand-200 bg-brand-50/60 px-4 py-3 dark:border-brand-500/30 dark:bg-brand-500/10">
+                  <p className="text-sm font-medium text-ink-800 dark:text-ink-100">
+                    Divisão desta nota — {rateioEscolhido.titulo}
+                  </p>
+                  <p className="mb-2 text-xs text-ink-500 dark:text-ink-400">
+                    {liquidoDaNota > 0
+                      ? `Líquido de ${formatarMoeda(liquidoDaNota)} dividido pelo quadro do rateio.`
+                      : 'Informe o valor bruto para ver quanto cabe a cada ajuste.'}
+                  </p>
+
+                  <QuadroDivisao
+                    participantes={rateioEscolhido.participantes}
+                    parcelas={parcelasDaNota}
+                    ajusteSelecionado={ajusteId}
+                    marca="em execução"
+                  />
+
+                  <p className="mt-2 text-xs text-ink-400">
+                    Prévia: a nota é de <strong>todas</strong> as parcerias do quadro, e por isso
+                    não fica presa a um ajuste. Quem grava o percentual é o servidor, quando uma
+                    prestação se apropria dela; o pagamento de cada parcela é lançado em Execução →
+                    Pagamentos.
+                  </p>
+                  {!ajusteNoQuadro && (
+                    <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                      O ajuste em execução não está neste quadro — nenhuma parte desta nota caberá a
+                      ele.
+                    </p>
+                  )}
+                </div>
+              ))}
           </div>
         )}
       </fieldset>

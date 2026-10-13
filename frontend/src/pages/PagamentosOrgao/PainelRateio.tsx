@@ -1,40 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Loader2, Split } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { QuadroDivisao } from '@/components/rateio/QuadroDivisao';
 import { formatarMoeda } from '@/lib/masks';
 import { listarRateios } from '@/services/rateios.service';
-import { calcularRateio, type Rateio } from '@/types/rateio';
+import { ratearValor, type ParcelaRateada, type Rateio } from '@/types/rateio';
 import type { DocumentoFiscal } from '@/types/prestacaoBlocos';
-
-/**
- * Divide um valor entre os ajustes — **espelho do `ratearValor` do backend**.
- *
- * Existe só para a **prévia**: o usuário precisa ver quanto vai para cada
- * ajuste antes de confirmar. Quem divide de verdade é o servidor, com a mesma
- * regra — aqui o número é informativo, e nenhum valor calculado nesta tela é
- * enviado.
- *
- * Divide em **centavos**, pelo maior resto: aplicar os percentuais exibidos
- * faria três ajustes iguais somarem R$ 99,99 de R$ 100,00, e a prévia
- * mostraria um total que não é o da nota.
- */
-function ratear(total: number, bases: number[]): number[] {
-  const centavos = Math.round(total * 100);
-  const soma = bases.reduce((s, b) => s + (b > 0 ? b : 0), 0);
-  const exatos = bases.map((b) => (soma > 0 ? ((b > 0 ? b : 0) / soma) * centavos : centavos / bases.length));
-  const pisos = exatos.map((e) => Math.floor(e));
-  let sobra = centavos - pisos.reduce((s, v) => s + v, 0);
-  const ordem = exatos
-    .map((e, i) => ({ i, resto: e - Math.floor(e) }))
-    .sort((a, b) => b.resto - a.resto || a.i - b.i);
-  const out = [...pisos];
-  for (const { i } of ordem) {
-    if (sobra <= 0) break;
-    out[i] += 1;
-    sobra -= 1;
-  }
-  return out.map((c) => c / 100);
-}
 
 /**
  * O rateio de uma nota, com as parcelas já calculadas.
@@ -44,6 +15,9 @@ function ratear(total: number, bases: number[]): number[] {
  * ajuste escolhido. Cada um calculando por si divergiria no centavo do maior
  * resto — e a divergência apareceria como uma recusa de R$ 0,01 que ninguém
  * saberia explicar.
+ *
+ * A conta em si é a de `ratearValor`, em `types/rateio.ts`: espelho do backend,
+ * compartilhada com a prévia do lançamento da despesa.
  */
 export function useRateioDaNota(doc: DocumentoFiscal | null) {
   const [rateio, setRateio] = useState<Rateio | null>(null);
@@ -71,10 +45,10 @@ export function useRateioDaNota(doc: DocumentoFiscal | null) {
   // pagamentos não bater com o extrato.
   const liquido = doc ? Math.round((doc.valorBruto - doc.valorEncargos) * 100) / 100 : 0;
   const participantes = rateio?.participantes ?? [];
-  const parcelas = participantes.length ? ratear(liquido, participantes.map((p) => p.base)) : [];
-  // O percentual nao e gravado: recalcula-se das bases, como na tela do
-  // Rateio. Guardado, ele divergiria da base assim que alguem a editasse.
-  const { linhas } = calcularRateio(
+  // O percentual não é gravado: recalcula-se das bases, como na tela do
+  // Rateio. Guardado, ele divergiria da base assim que alguém a editasse.
+  const parcelas = ratearValor(
+    liquido,
     participantes.map((p) => ({ ajusteId: p.ajusteId, base: p.base })),
   );
 
@@ -82,10 +56,10 @@ export function useRateioDaNota(doc: DocumentoFiscal | null) {
   const parcelaDoAjuste = (ajusteId: string | null): number | null => {
     if (!ajusteId) return null;
     const i = participantes.findIndex((p) => p.ajusteId === ajusteId);
-    return i < 0 ? null : (parcelas[i] ?? 0);
+    return i < 0 ? null : (parcelas[i]?.valor ?? 0);
   };
 
-  return { rateio, carregando, liquido, parcelas, linhas, parcelaDoAjuste };
+  return { rateio, carregando, liquido, parcelas, parcelaDoAjuste };
 }
 
 /**
@@ -108,7 +82,6 @@ export function PainelRateio({
   carregando,
   liquido,
   parcelas,
-  linhas,
   ajusteSelecionado,
 }: {
   /** Os campos comuns (data, fonte, meio…) já estão preenchidos? */
@@ -119,8 +92,7 @@ export function PainelRateio({
   rateio: Rateio | null;
   carregando: boolean;
   liquido: number;
-  parcelas: number[];
-  linhas: ReturnType<typeof calcularRateio>['linhas'];
+  parcelas: ParcelaRateada[];
   /** O ajuste que o formulário está lançando; a linha dele ganha destaque. */
   ajusteSelecionado: string | null;
 }) {
@@ -159,63 +131,11 @@ export function PainelRateio({
         </Button>
       </div>
 
-      <table className="w-full text-sm">
-        <tbody className="divide-y divide-brand-200/60 dark:divide-brand-500/20">
-          {rateio.participantes.map((p, i) => {
-            /*
-             * A linha do ajuste que está sendo lançado fica em destaque, e as
-             * outras esmaecidas.
-             *
-             * Não é enfeite: o quadro mostra a nota inteira, mas só **uma**
-             * daquelas parcelas pode ser paga neste lançamento. Sem a marca, o
-             * usuário lê "resta R$ 125,00" e supõe que pode pagá-los aqui —
-             * exatamente o erro que a regra do servidor passou a recusar.
-             */
-            const ehOAtual = !!ajusteSelecionado && p.ajusteId === ajusteSelecionado;
-            const esmaecido = !!ajusteSelecionado && !ehOAtual;
-            return (
-              <tr
-                key={p.id}
-                className={
-                  ehOAtual
-                    ? 'bg-brand-100/70 dark:bg-brand-500/20'
-                    : esmaecido
-                      ? 'opacity-45'
-                      : undefined
-                }
-              >
-                <td className="py-1 pl-1 pr-2">
-                  {/* A linha de recurso próprio não tem código de ajuste: ela
-                      se identifica pelo nome que a entidade deu. */}
-                  <span
-                    className="block truncate text-ink-700 dark:text-ink-200"
-                    title={p.origem ?? p.entidadeNome ?? ''}
-                  >
-                    {p.origem ?? p.ajusteCodigo}
-                    {ehOAtual && (
-                      <span className="ml-2 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-700 ring-1 ring-brand-400 dark:text-brand-300 dark:ring-brand-500/50">
-                        lançando
-                      </span>
-                    )}
-                  </span>
-                  <span
-                    className="block truncate text-xs text-ink-400"
-                    title={p.ajusteObjeto ?? ''}
-                  >
-                    {p.origem ? 'recurso próprio da entidade — não é pago por nenhuma parceria' : p.entidadeNome}
-                  </span>
-                </td>
-                <td className="w-20 py-1 text-right tabular-nums text-ink-500 dark:text-ink-400">
-                  {(linhas[i]?.percentualExibido ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}%
-                </td>
-                <td className="w-32 py-1 pr-1 text-right tabular-nums font-medium text-ink-800 dark:text-ink-100">
-                  {formatarMoeda(parcelas[i] ?? 0)}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      <QuadroDivisao
+        participantes={rateio.participantes}
+        parcelas={parcelas}
+        ajusteSelecionado={ajusteSelecionado}
+      />
 
       <p className="mt-2 text-xs text-ink-400">
         {pronto ? (
