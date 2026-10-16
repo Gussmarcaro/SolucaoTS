@@ -16,6 +16,15 @@ export interface ContaBancaria {
   apelido: string | null;
   observacao: string | null;
   ativo: boolean;
+  /**
+   * Os ajustes que declaram esta conta — **só leitura**, e só quando pedido.
+   *
+   * O vínculo se declara no dossiê do Ajuste, nunca aqui: salvar o ajuste
+   * apaga e recria as contas dele, então um segundo caminho de escrita seria
+   * destruído em silêncio. A grade mostra o resultado para responder "esta
+   * conta serve a quê?" sem abrir esse caminho.
+   */
+  ajustes?: { id: string; codigo: string; entidade: string | null }[];
 }
 
 export interface ContaBancariaPayload {

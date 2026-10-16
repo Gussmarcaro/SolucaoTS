@@ -13,7 +13,12 @@ export class ContaBancariaController {
       // `ajusteId` vem das telas de Execução, que operam dentro de uma
       // parceria. Sem ele, a listagem do cadastro continua trazendo tudo.
       const ajusteId = typeof req.query.ajusteId === 'string' ? req.query.ajusteId : undefined;
-      return res.json(await casos.listar(req.query.ativas === 'true', ajusteId));
+      // `?vinculos=true` é só da grade do cadastro, que mostra a que ajustes
+      // cada conta serve. Os combos não pedem: seria peso em toda requisição
+      // para servir a uma tela só.
+      return res.json(
+        await casos.listar(req.query.ativas === 'true', ajusteId, req.query.vinculos === 'true'),
+      );
     } catch (e) {
       return next(e);
     }

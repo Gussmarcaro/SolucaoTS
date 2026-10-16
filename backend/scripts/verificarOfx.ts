@@ -9,6 +9,7 @@
  */
 import { parseOfx, dataDoOfx, valorDoOfx } from '../src/infrastructure/parsers/parseOfx';
 import { ehDoAjuste } from '../src/core/conciliacao/contas';
+import { ajustesDaConta, type VinculoDeAjuste } from '../src/core/contaBancaria/vinculos';
 import { sugerirConciliacao } from '../src/core/conciliacao/sugerir';
 
 const falhas: string[] = [];
@@ -183,6 +184,69 @@ console.log('\n--- recorte do extrato pelas contas do ajuste ---');
   ];
   ok('com duas contas, casa com qualquer uma', ehDoAjuste(linha({ banco: 341, agencia: '9999', conta: '777777' }), duas));
   ok('e continua recusando a de fora', !ehDoAjuste(linha({ banco: 33, conta: '1' }), duas));
+}
+
+/*
+ * A outra ponta da mesma chave: quais ajustes declaram uma conta do cadastro.
+ *
+ * Mora aqui, e não num script próprio, porque é a **mesma** comparação por
+ * dígitos — se `chaveDaConta` mudar, as duas leituras mudam juntas. Errar aqui
+ * é silencioso nos dois sentidos: a coluna do cadastro diria "nenhum ajuste"
+ * sobre uma conta em uso, e a exclusão passaria a apagá-la.
+ */
+{
+  console.log('\nQuais ajustes declaram a conta (cadastro)\n');
+
+  const conta = { id: 'conta-1', banco: 1, agencia: '0001', conta: '123655-9' };
+  const vinculo = (over: Partial<VinculoDeAjuste>): VinculoDeAjuste => ({
+    ajusteId: 'a1',
+    codigoAjuste: '2026000000000001',
+    entidadeNome: 'Associação Vida e Saúde',
+    contaBancariaId: null,
+    banco: 1,
+    agencia: 1,
+    conta: '1236559',
+    ...over,
+  });
+
+  ok(
+    'casa pelo id quando o vínculo é do cadastro novo',
+    ajustesDaConta(conta, [vinculo({ contaBancariaId: 'conta-1', banco: 999, conta: 'outra' })]).length === 1,
+    'o id manda mesmo quando os números divergem — foi dele que a linha veio',
+  );
+
+  ok(
+    'casa pelos dígitos quando o vínculo é antigo (sem id)',
+    ajustesDaConta(conta, [vinculo({})]).length === 1,
+    '"123655-9" do ajuste e "1236559" do cadastro são a mesma conta',
+  );
+
+  ok(
+    'o zero à esquerda da agência não separa as duas',
+    ajustesDaConta({ ...conta, agencia: '1' }, [vinculo({ agencia: 1 })]).length === 1,
+  );
+
+  ok(
+    'conta de outro ajuste não entra',
+    ajustesDaConta(conta, [vinculo({ conta: '99999-9' })]).length === 0,
+  );
+
+  ok(
+    'o mesmo ajuste não aparece duas vezes',
+    ajustesDaConta(conta, [vinculo({}), vinculo({ contaBancariaId: 'conta-1' })]).length === 1,
+    'corrente e aplicação da mesma conta são duas linhas do mesmo ajuste',
+  );
+
+  const dois = ajustesDaConta(conta, [
+    vinculo({ ajusteId: 'b', codigoAjuste: '2026000000000002' }),
+    vinculo({ ajusteId: 'a', codigoAjuste: '2026000000000001' }),
+  ]);
+  ok(
+    'dois ajustes podem declarar a mesma conta, em ordem de código',
+    dois.length === 2 && dois[0].codigo === '2026000000000001',
+  );
+
+  ok('conta sem vínculo nenhum devolve lista vazia', ajustesDaConta(conta, []).length === 0);
 }
 
 

@@ -29,6 +29,15 @@ const COLUNAS: ColunaDef[] = [
   { key: 'agencia', label: 'Agência', width: 120 },
   { key: 'conta', label: 'Conta', width: 160, sortKey: 'conta' },
   { key: 'tipo', label: 'Tipo', width: 150 },
+  /*
+   * Quem usa a conta. **Coluna de leitura, e isso é o desenho.**
+   *
+   * O vínculo conta↔ajuste é declarado no dossiê do Ajuste, e não pode ter um
+   * segundo caminho de escrita: salvar o ajuste apaga as contas dele e recria
+   * do formulário, então um vínculo criado daqui sumiria sem aviso. A coluna
+   * responde a pergunta ("esta conta serve a quê?") sem abrir essa porta.
+   */
+  { key: 'ajustes', label: 'Ajustes', width: 260 },
   { key: 'situacao', label: 'Situação', width: 120, align: 'center' },
 ];
 
@@ -63,7 +72,10 @@ export function ContasBancarias() {
     let vivo = true;
     setCarregando(true);
     contasApi
-      .listar()
+      // Com os vínculos: é esta tela que responde "a conta serve a qual
+      // parceria?". A pergunta aparece aqui porque o vínculo **não** se
+      // declara aqui — ele vem do dossiê do Ajuste.
+      .listar(false, undefined, true)
       .then((r) => vivo && setLista(r))
       .catch((e) => vivo && setErro(extrairMensagemErro(e, 'Falha ao carregar as contas.')))
       .finally(() => vivo && setCarregando(false));
@@ -169,6 +181,27 @@ export function ContasBancarias() {
               return <span className="block truncate tabular-nums text-ink-700 dark:text-ink-200">{c.conta}</span>;
             case 'tipo':
               return <span className="block truncate text-ink-500 dark:text-ink-400">{rotuloTipo(c.contaTipo)}</span>;
+            case 'ajustes': {
+              const ajustes = c.ajustes ?? [];
+              /*
+               * "Nenhum" é informação, não vazio.
+               *
+               * Conta sem ajuste é conta que **não aparece** em Receitas nem em
+               * Pagamentos de parceria nenhuma — o recorte da Execução a
+               * esconde. É justamente o caso que alguém precisa ver aqui, então
+               * ele é escrito, não deixado em branco.
+               */
+              if (!ajustes.length)
+                return <span className="text-ink-400">nenhum</span>;
+              return (
+                <span
+                  className="block truncate text-ink-600 dark:text-ink-300"
+                  title={ajustes.map((a) => `${a.codigo}${a.entidade ? ` — ${a.entidade}` : ''}`).join('\n')}
+                >
+                  {ajustes.map((a) => a.codigo).join(', ')}
+                </span>
+              );
+            }
             case 'situacao':
               return <Badge tone={c.ativo ? 'success' : 'neutral'}>{c.ativo ? 'Ativa' : 'Inativa'}</Badge>;
             default:
@@ -181,6 +214,11 @@ export function ContasBancarias() {
         A <strong>corrente e a aplicação</strong> da mesma conta têm o mesmo número: cadastre as
         duas, informando o <strong>tipo</strong> de cada. É o par conta + tipo que as distingue —
         no Ajuste, na conciliação e no bloco de Disponibilidades.
+      </p>
+      <p className="mt-1 text-xs text-ink-400">
+        A coluna <strong>Ajustes</strong> é só leitura: o vínculo se declara no dossiê do Ajuste,
+        em <strong>Fontes de Recursos e Contas</strong>. Conta sem ajuste nenhum não aparece nas
+        telas de Execução de parceria alguma.
       </p>
 
       <Modal

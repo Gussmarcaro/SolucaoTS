@@ -1,6 +1,7 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
 import { chaveDaConta } from '@/core/conciliacao/contas';
+import type { VinculoDeAjuste } from '@/core/contaBancaria/vinculos';
 import { normalizarTexto } from '@/shared/normalizar';
 import { apenasDigitos } from '@/shared/validators/documento';
 import { tenantObrigatorio } from '@/shared/contexto';
@@ -60,6 +61,40 @@ export class PrismaContaBancariaRepository implements IContaBancariaRepository {
     const porDigitos = new Set(declaradas.map((d) => chaveDaConta(d)));
 
     return contas.filter((c) => porId.has(c.id) || porDigitos.has(chaveDaConta(c)));
+  }
+
+  /**
+   * Todos os vínculos conta↔ajuste do órgão, para a coluna do cadastro.
+   *
+   * **A consulta parte do `Ajuste`, e não de `AjusteContaBancaria`**, por uma
+   * razão de isolamento: o ajuste é raiz de tenant e sai recortado pela
+   * extension; a tabela de vínculo não é raiz, e consultá-la direto traria os
+   * vínculos de todos os órgãos — a grade mostraria o código de um ajuste
+   * alheio ao lado da conta de quem está olhando, e nada acusaria.
+   */
+  async listarVinculos(): Promise<VinculoDeAjuste[]> {
+    const ajustes = await prisma.ajuste.findMany({
+      select: {
+        id: true,
+        codigoAjuste: true,
+        entidadeBeneficiaria: { select: { razaoSocial: true } },
+        contasBancarias: {
+          select: { contaBancariaId: true, banco: true, agencia: true, conta: true },
+        },
+      },
+    });
+
+    return ajustes.flatMap((a) =>
+      a.contasBancarias.map((c) => ({
+        ajusteId: a.id,
+        codigoAjuste: a.codigoAjuste,
+        entidadeNome: a.entidadeBeneficiaria?.razaoSocial ?? null,
+        contaBancariaId: c.contaBancariaId,
+        banco: c.banco,
+        agencia: c.agencia,
+        conta: c.conta,
+      })),
+    );
   }
 
   async buscarPorId(id: string): Promise<ContaBancaria | null> {
@@ -135,15 +170,6 @@ export class PrismaContaBancariaRepository implements IContaBancariaRepository {
       take: limite,
     });
     return rows.map(toDomain);
-  }
-
-  /** Uma consulta de existência, não a lista: só interessa se há alguma. */
-  async emUso(id: string): Promise<boolean> {
-    const uso = await prisma.ajusteContaBancaria.findFirst({
-      where: { contaBancariaId: id },
-      select: { id: true },
-    });
-    return !!uso;
   }
 
   async excluir(id: string): Promise<void> {

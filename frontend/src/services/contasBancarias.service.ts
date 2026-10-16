@@ -16,11 +16,18 @@ export const contasApi = {
    * existe para impedir — lançamento na conta errada é indistinguível de um
    * lançamento certo até alguém conferir extrato por extrato.
    */
-  listar: async (apenasAtivas = false, ajusteId?: string): Promise<ContaBancaria[]> => {
+  listar: async (
+    apenasAtivas = false,
+    ajusteId?: string,
+    comVinculos = false,
+  ): Promise<ContaBancaria[]> => {
     const { data } = await http.get<ContaBancaria[]>('/contas-bancarias', {
       params: {
         ...(apenasAtivas ? { ativas: 'true' } : {}),
         ...(ajusteId ? { ajusteId } : {}),
+        // Só a grade do cadastro pede os vínculos; os combos não têm o que
+        // fazer com eles, e carregá-los em toda escolha seria peso à toa.
+        ...(comVinculos ? { vinculos: 'true' } : {}),
       },
     });
     return data;

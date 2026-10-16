@@ -3,6 +3,10 @@ import type { IContaBancariaRepository } from './IContaBancariaRepository';
 import type { ContaBancariaDTO, DadosContaBancaria } from './dtos';
 import { BusinessError, ConflictError, NotFoundError } from '@/shared/errors';
 import { BANCO_CODIGOS, FONTE_RECURSO_CODIGOS } from '@/core/dominio/tabelasFaseV';
+import { ajustesDaConta, type AjusteVinculado } from '@/core/contaBancaria/vinculos';
+
+/** A conta do cadastro, com os ajustes que a declaram (quando pedidos). */
+export type ContaComAjustes = ContaBancaria & { ajustes?: AjusteVinculado[] };
 
 function validar(input: ContaBancariaDTO): DadosContaBancaria {
   const banco = Number(String(input.banco ?? '').replace(/\D/g, ''));
@@ -76,8 +80,25 @@ function validar(input: ContaBancariaDTO): DadosContaBancaria {
 export class ContaBancariaUseCases {
   constructor(private readonly repo: IContaBancariaRepository) {}
 
-  async listar(apenasAtivas = false, ajusteId?: string): Promise<ContaBancaria[]> {
-    return this.repo.listar(apenasAtivas, ajusteId?.trim() || undefined);
+  /**
+   * As contas do órgão. Com `comVinculos`, cada uma leva os ajustes que a
+   * declaram.
+   *
+   * Os vínculos são **opcionais de propósito**: quem pede a lista é, na maioria
+   * das vezes, um combo de escolha (Receita, Pagamento, Ajuste), e ali o nome
+   * do ajuste não significa nada — seria peso em toda requisição para servir a
+   * uma tela só. A grade do cadastro pede; o resto não.
+   */
+  async listar(
+    apenasAtivas = false,
+    ajusteId?: string,
+    comVinculos = false,
+  ): Promise<ContaComAjustes[]> {
+    const contas = await this.repo.listar(apenasAtivas, ajusteId?.trim() || undefined);
+    if (!comVinculos) return contas;
+
+    const vinculos = await this.repo.listarVinculos();
+    return contas.map((c) => ({ ...c, ajustes: ajustesDaConta(c, vinculos) }));
   }
 
   async criar(input: ContaBancariaDTO): Promise<ContaBancaria> {
@@ -106,10 +127,23 @@ export class ContaBancariaUseCases {
    * ela sai das listas de escolha e o passado continua legível.
    */
   async excluir(id: string): Promise<void> {
-    await this.garantir(id);
-    if (await this.repo.emUso(id))
+    const conta = await this.garantir(id);
+    /*
+     * "Está em uso?" é a **mesma** pergunta que a coluna da grade responde, e
+     * por isso usa a mesma função.
+     *
+     * A versão anterior consultava só `contaBancariaId`, e isso deixava passar
+     * exatamente as contas dos ajustes antigos — aquelas declaradas antes do
+     * cadastro central existir, que se ligam pelos dígitos e não pelo id. A
+     * grade diria "usada no convênio 01/2026" e a exclusão a apagaria assim
+     * mesmo; o ajuste ficaria declarando uma conta que o cadastro não tem
+     * mais, e ela sumiria das telas de Execução daquela parceria.
+     */
+    const ajustes = ajustesDaConta(conta, await this.repo.listarVinculos());
+    if (ajustes.length)
       throw new BusinessError(
-        'Esta conta está vinculada a um ou mais ajustes. Para tirá-la de uso sem perder o ' +
+        `Esta conta está vinculada a ${ajustes.length === 1 ? 'um ajuste' : `${ajustes.length} ajustes`} ` +
+          `(${ajustes.map((a) => a.codigo).join(', ')}). Para tirá-la de uso sem perder o ` +
           'histórico, inative-a.',
       );
     await this.repo.excluir(id);
