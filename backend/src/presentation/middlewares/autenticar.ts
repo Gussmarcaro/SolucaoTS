@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import { AppError } from '@/shared/errors';
 import { verificarToken } from '@/shared/auth/jwt';
-import { comContexto } from '@/shared/contexto';
+import { comContexto, type ContextoRequisicao } from '@/shared/contexto';
 import { RegistrarAcessoUseCase } from '@/application/sessao/RegistrarAcessoUseCase';
 import { PrismaSessaoRepository } from '@/infrastructure/database/PrismaSessaoRepository';
 
@@ -28,6 +28,15 @@ export interface UsuarioAutenticado {
 declare module 'express-serve-static-core' {
   interface Request {
     usuario?: UsuarioAutenticado;
+    /**
+     * O contexto aberto por `autenticar`, guardado para quem precise reabri-lo.
+     *
+     * Existe por causa do upload: o `AsyncLocalStorage` não sobrevive ao
+     * multer — ver `infrastructure/upload/upload.ts`. Guardar o contexto aqui
+     * é o que permite reentrar nele com os **mesmos** valores, em vez de
+     * remontá-lo noutro lugar e as duas versões divergirem.
+     */
+    contexto?: ContextoRequisicao;
   }
 }
 
@@ -64,13 +73,15 @@ export function autenticar(req: Request, _res: Response, next: NextFunction) {
     sessaoId: payload.jti ?? null,
   };
 
+  req.contexto = {
+    usuarioId: payload.sub,
+    usuarioNome: payload.nome,
+    rota: `${req.method} ${req.baseUrl}${req.path}`,
+    clienteId: payload.cli ?? null,
+  };
+
   comContexto(
-    {
-      usuarioId: payload.sub,
-      usuarioNome: payload.nome,
-      rota: `${req.method} ${req.baseUrl}${req.path}`,
-      clienteId: payload.cli ?? null,
-    },
+    req.contexto,
     () => {
       /*
        * O terceiro sinal do histórico de acessos: "esta sessão continua viva".

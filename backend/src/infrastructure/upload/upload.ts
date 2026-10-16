@@ -1,35 +1,82 @@
+import type { RequestHandler } from 'express';
 import multer from 'multer';
 import { BusinessError } from '@/shared/errors';
+import { comContexto } from '@/shared/contexto';
+
+/**
+ * Devolve a requisição ao contexto depois do upload.
+ *
+ * ## O defeito que isto conserta
+ *
+ * O `AsyncLocalStorage` aberto por `autenticar` **não sobrevive ao multer**, e
+ * a razão está no Node, não aqui: o corpo multipart é lido do socket, e os
+ * eventos que entregam esses pedaços nascem no contexto da **conexão** — que é
+ * anterior a qualquer `run` nosso. Tudo que vem depois do upload continua,
+ * portanto, fora do contexto: `tenantAtual()` devolve nulo numa requisição que
+ * tem órgão, usuário e token perfeitamente válidos.
+ *
+ * O sintoma foi a importação de OFX respondendo **500**: `tenantObrigatorio`
+ * recusava gravar `LancamentoExtrato` "sem órgão no contexto", enquanto a
+ * própria linha de log da requisição trazia o órgão — porque aquela lê de
+ * `req.usuario`, e não do contexto.
+ *
+ * ## Por que o conserto fica aqui, e não na rota
+ *
+ * Envolver cada rota de upload é confiar em que ninguém esqueça na próxima. É
+ * o mesmo argumento das extensions de auditoria e de tenant: a regra vale para
+ * **todo** caminho que use upload, inclusive o que for escrito amanhã.
+ *
+ * A reentrada usa o contexto que `autenticar` guardou em `req.contexto` — o
+ * mesmo objeto, não uma cópia remontada aqui, que poderia divergir dele.
+ *
+ * Isto também devolve o carimbo de autoria: sem contexto, a extension de
+ * auditoria gravava anexo sem `criadoPor`, calada.
+ */
+function devolverAoContexto(middleware: RequestHandler): RequestHandler {
+  return (req, res, next) =>
+    middleware(req, res, (erro?: unknown) => {
+      // Erro do multer (tipo recusado, tamanho estourado) segue direto: ele
+      // vai ao errorHandler, que não depende do contexto.
+      if (erro) return next(erro);
+      const ctx = req.contexto;
+      if (!ctx) return next();
+      comContexto(ctx, () => next());
+    });
+}
 
 /**
  * Upload de CSV em memória (campo "file"), até 5 MB. O arquivo NÃO é persistido;
  * o buffer fica em `req.file.buffer` para ser decodificado (Latin-1) e parseado.
  */
-export const uploadCsv = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
-    if (!/\.csv$/i.test(file.originalname)) {
-      return cb(new BusinessError('Envie um arquivo .csv.'));
-    }
-    cb(null, true);
-  },
-}).single('file');
+export const uploadCsv = devolverAoContexto(
+  multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      if (!/\.csv$/i.test(file.originalname)) {
+        return cb(new BusinessError('Envie um arquivo .csv.'));
+      }
+      cb(null, true);
+    },
+  }).single('file'),
+);
 
 /**
  * Upload do PDF do estatuto (campo "arquivo"), até 5 MB. Também fica em memória:
  * o buffer vai direto para o banco, porque o disco do Render é efêmero.
  */
-export const uploadPdf = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
-    if (file.mimetype !== 'application/pdf' || !/\.pdf$/i.test(file.originalname)) {
-      return cb(new BusinessError('Envie um arquivo .pdf.'));
-    }
-    cb(null, true);
-  },
-}).single('arquivo');
+export const uploadPdf = devolverAoContexto(
+  multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      if (file.mimetype !== 'application/pdf' || !/\.pdf$/i.test(file.originalname)) {
+        return cb(new BusinessError('Envie um arquivo .pdf.'));
+      }
+      cb(null, true);
+    },
+  }).single('arquivo'),
+);
 
 /**
  * Upload do extrato OFX (campo "file"), até 10 MB, em memória.
@@ -51,16 +98,18 @@ export const uploadPdf = multer({
  * internet banking; exigir PDF obrigaria o usuário a converter o arquivo antes
  * de anexá-lo — trabalho que ele faria fora do sistema, ou não faria.
  */
-export const uploadAnexo = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
-    const ok =
-      file.mimetype === 'application/pdf' || /^image\/(jpeg|png|webp|heic|heif)$/i.test(file.mimetype);
-    if (!ok) return cb(new BusinessError('Envie um PDF ou uma imagem (JPG, PNG).'));
-    cb(null, true);
-  },
-}).single('arquivo');
+export const uploadAnexo = devolverAoContexto(
+  multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      const ok =
+        file.mimetype === 'application/pdf' || /^image\/(jpeg|png|webp|heic|heif)$/i.test(file.mimetype);
+      if (!ok) return cb(new BusinessError('Envie um PDF ou uma imagem (JPG, PNG).'));
+      cb(null, true);
+    },
+  }).single('arquivo'),
+);
 
 /**
  * Upload da foto do usuário (campo "arquivo"), até 1 MB.
@@ -74,24 +123,28 @@ export const uploadAnexo = multer({
  * gravaria uma foto que boa parte dos usuários veria como imagem quebrada. A
  * tela converte para JPEG no recorte, antes de enviar.
  */
-export const uploadFoto = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
-    if (!/^image\/(jpeg|png|webp)$/i.test(file.mimetype)) {
-      return cb(new BusinessError('Envie uma imagem JPG, PNG ou WebP.'));
-    }
-    cb(null, true);
-  },
-}).single('arquivo');
+export const uploadFoto = devolverAoContexto(
+  multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      if (!/^image\/(jpeg|png|webp)$/i.test(file.mimetype)) {
+        return cb(new BusinessError('Envie uma imagem JPG, PNG ou WebP.'));
+      }
+      cb(null, true);
+    },
+  }).single('arquivo'),
+);
 
-export const uploadOfx = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
-    if (!/\.(ofx|qfx)$/i.test(file.originalname)) {
-      return cb(new BusinessError('Envie um arquivo .ofx.'));
-    }
-    cb(null, true);
-  },
-}).single('file');
+export const uploadOfx = devolverAoContexto(
+  multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      if (!/\.(ofx|qfx)$/i.test(file.originalname)) {
+        return cb(new BusinessError('Envie um arquivo .ofx.'));
+      }
+      cb(null, true);
+    },
+  }).single('file'),
+);

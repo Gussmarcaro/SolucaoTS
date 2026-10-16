@@ -603,6 +603,18 @@ A conciliação entrou no portão da Execução, e o recorte tem **duas natureza
 
 **Ajuste sem conta declarada vê tudo.** Recortar por um conjunto vazio deixaria o usuário sem conciliação e sem explicação: mostrar demais é recuperável olhando; mostrar de menos não é.
 
+
+### O contexto não sobrevive ao upload
+
+A importação de OFX respondia **500** com `tenantObrigatorio` recusando gravar `LancamentoExtrato` "sem órgão no contexto" — numa requisição cuja própria linha de log trazia o órgão. As duas coisas eram verdadeiras ao mesmo tempo porque leem de lugares diferentes: a linha de log lê `req.usuario`, a gravação lê o `AsyncLocalStorage`.
+
+**O `AsyncLocalStorage` não atravessa o multer**, e a razão é do Node: o corpo multipart é lido do socket, e os eventos que entregam esses pedaços nascem no contexto da **conexão**, anterior a qualquer `run` nosso. Tudo que vem depois do upload continua fora do contexto.
+
+- **O conserto fica no próprio `upload.ts`**, envolvendo cada middleware (`devolverAoContexto`), e não nas rotas: envolver rota a rota é confiar em que ninguém esqueça na próxima. Mesmo argumento das extensions de auditoria e de tenant.
+- **Reentra com o contexto que `autenticar` guardou** em `req.contexto` — o mesmo objeto, não uma cópia remontada no upload, que poderia divergir dele.
+- **Isso também devolveu o carimbo de autoria**: sem contexto, a extension de auditoria gravava anexo sem `criadoPor`, calada. Só o OFX gritava porque é o único upload que cria uma **raiz** — `Anexo` não tem `clienteId`, então nada o barrava.
+- Erro do multer (tipo recusado, tamanho estourado) segue direto para o `errorHandler`, que não depende do contexto.
+
 ## Anexos — escolher o arquivo antes de o registro existir
 
 `components/ui/Anexos.tsx`. O envio precisa do **id** do lançamento, que num cadastro novo só existe depois da gravação. Isso virava uma frase pedindo que a pessoa salvasse e voltasse — e na prática empurra o comprovante para "depois", que é justamente quando a fiscalização pergunta e ninguém acha o arquivo.
