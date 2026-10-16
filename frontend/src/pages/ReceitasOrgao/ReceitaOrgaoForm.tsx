@@ -181,12 +181,26 @@ export function ReceitaOrgaoForm({
       {semContas && (
         <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          {/*
+            A lista é recortada pelo ajuste, então vazia **não** quer dizer
+            "nenhuma conta cadastrada" — quer dizer "nenhuma declarada nesta
+            parceria", que é outra conversa e tem outro conserto. Dizer a
+            primeira mandaria a pessoa cadastrar de novo uma conta que já
+            existe, e a lista continuaria vazia depois disso.
+          */}
           <span>
-            Nenhuma conta bancária cadastrada. Cadastre em{' '}
+            Esta parceria não declara nenhuma conta do cadastro. Declare em{' '}
+            <Link
+              to={ajusteId ? `/cadastro/ajustes/${ajusteId}` : '/cadastro/ajustes'}
+              className="font-semibold underline"
+            >
+              Ajuste → Fontes de Recursos e Contas
+            </Link>
+            , escolhendo as contas de{' '}
             <Link to="/cadastro/financeiro/contas-bancarias" className="font-semibold underline">
               Cadastro → Financeiro → Contas Bancárias
             </Link>{' '}
-            — é dela que vem a fonte de recurso do repasse.
+            — é delas que vem a fonte de recurso do repasse.
           </span>
         </div>
       )}

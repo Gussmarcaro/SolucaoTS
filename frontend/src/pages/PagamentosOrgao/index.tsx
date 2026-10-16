@@ -796,10 +796,20 @@ function PagamentoOrgaoForm({
           onChange={escolherConta}
           options={opcoesConta}
           placeholder="Selecione a conta..."
+          /*
+           * Vazia **não** quer dizer "nenhuma conta cadastrada".
+           *
+           * A lista é recortada pelo ajuste em execução, então vazia significa
+           * que esta parceria não declara nenhuma conta do cadastro — e o
+           * conserto é no dossiê do Ajuste, não aqui. A frase antiga mandava
+           * cadastrar de novo uma conta que já existe, e a lista continuaria
+           * vazia depois disso: a tela ficava sem dizer por quê, que é o modo
+           * de falhar que o recorte por ajuste já teve uma vez.
+           */
           hint={
             contas.length
-              ? 'Vem de Cadastro → Financeiro → Contas Bancárias. Traz a fonte e o meio.'
-              : 'Nenhuma conta cadastrada — informe a fonte e o meio manualmente.'
+              ? 'Só as contas declaradas neste ajuste. Trazem a fonte e o meio.'
+              : 'Esta parceria não declara nenhuma conta do cadastro — declare em Ajuste → Fontes de Recursos e Contas, ou informe a fonte e o meio aqui mesmo.'
           }
         />
         <SelectDominio
