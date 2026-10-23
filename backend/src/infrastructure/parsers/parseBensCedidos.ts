@@ -1,5 +1,5 @@
 import type { DadosBemAjuste } from '@/application/bemAjuste/dtos';
-import { linhasCsv, parseDataBR, parseValorBR } from '@/shared/csv';
+import { pareceCabecalho, parseDataBR, parseValorBR, registrosCsv } from '@/shared/csv';
 
 export interface ResultadoParseBens {
   itens: DadosBemAjuste[];
@@ -14,14 +14,18 @@ export interface ResultadoParseBens {
  * desconsideradas — mantém-se a primeira ocorrência.
  */
 export function parseBensCedidos(texto: string): ResultadoParseBens {
-  const linhas = linhasCsv(texto);
+  const registros = registrosCsv(texto);
   const mapa = new Map<string, DadosBemAjuste>();
   const erros: string[] = [];
   let ignoradas = 0;
 
-  linhas.forEach((linha, i) => {
+  // O valor é a única coluna obrigatoriamente numérica: identificador pode ser
+  // texto e a data não é número em lugar nenhum.
+  const temCabecalho = registros.length > 0 && pareceCabecalho(registros[0], [2]);
+
+  registros.forEach((campos, i) => {
     const n = i + 1;
-    const campos = linha.split(';');
+    if (i === 0 && temCabecalho) return;
     if (campos.length < 4) {
       erros.push(`Linha ${n}: colunas insuficientes (esperado identificador;data;valor;código).`);
       ignoradas++;
@@ -60,5 +64,5 @@ export function parseBensCedidos(texto: string): ResultadoParseBens {
     mapa.set(identificador, { identificador, data, valor: Math.round(valor * 100) / 100, codigo });
   });
 
-  return { itens: [...mapa.values()], totalLinhas: linhas.length, ignoradas, erros };
+  return { itens: [...mapa.values()], totalLinhas: registros.length, ignoradas, erros };
 }

@@ -67,6 +67,19 @@ Três importações (`PlanoAplicacaoItem`, `CronogramaDesembolsoItem`, `BemCedid
 - valores em **padrão brasileiro** (`1.522.632,45`);
 - **linhas duplicadas** (deduplicar/somar conforme o bloco).
 
+### São dois formatos, não um — e o segundo é o que o usuário tem na mão
+
+Os exemplos de `Documentação/` são campos soltos, sem cabeçalho. Mas o arquivo que o usuário realmente usa é a **exportação do próprio AUDESP**, e ela é outra coisa: traz cabeçalho, **todo campo entre aspas** e a descrição ocupando **várias linhas dentro do campo**.
+
+O leitor quebrava por `\n` e por `;`, então aquele arquivo era recusado **por inteiro** — *158 linhas, 158 ignoradas*, com "ano inválido (`"2026"`)" repetido linha a linha. O arquivo estava certo.
+
+- **`registrosCsv` (em `shared/csv.ts`) lê CSV de verdade**: aspas por campo, `""` como aspa literal, separador e quebra de linha **dentro** do campo. Um só leitor para os três importadores — o defeito era o mesmo nos três, e consertar um deixaria os outros esperando o próximo usuário.
+- **O número do registro é o número da linha na planilha.** Um campo de nove linhas é uma linha só no Excel, e é assim que ele é contado: a mensagem de erro precisa apontar para a linha que o usuário acha.
+- **A compatibilidade que parece estranha:** o exemplo de cronograma do TCESP vem com a **linha inteira** entre aspas (`"2024;ABRIL;5656"`), o que pela regra do CSV é um campo só. Como nenhum formato nosso tem uma coluna só, registro único que ainda contenha o separador é reaberto.
+- **Cabeçalho é detectado, não exigido** (`pareceCabecalho`): pergunta-se às colunas que **têm de ser número** — se nenhuma é, aquela linha descreve o arquivo. Vale só para o **primeiro** registro; no meio do arquivo, linha assim é erro de verdade.
+- **O encoding passou a ser descoberto** (`textoDeCsv`). Os três controllers liam o buffer **sempre em latin1**, porque o CSV do TCESP é Windows-1252 — mas a exportação do AUDESP é UTF-8, e lida como latin1 "VALE ALIMENTAÇÃO" vira "VALE ALIMENTAÃÃO": a importação **funciona**, grava tudo, sem erro nenhum, com a rubrica corrompida. Pior que recusar. A decisão é por tentativa: sequência UTF-8 inválida vira U+FFFD, então o arquivo latin1 se denuncia sozinho.
+- Coberto por **`tests/csv.test.ts`** (27 checagens, **sem banco**). Conferido contra o arquivo real: 62 registros, 61 itens, zero erros, e o total fecha em **R$ 360.000,00** — exatamente o valor global do ajuste, atravessando 2026 e 2027.
+
 ## Tabelas de domínio oficiais
 
 Códigos publicados pelo TCESP/MTE, carregados no banco por seed e **somente lidos** pela aplicação. Inventar código causa rejeição no envio, então os formulários selecionam da tabela em vez de aceitar digitação livre (`BuscaCbo` / `BuscaClassificacao` no front, rotas `/dominios` no back).

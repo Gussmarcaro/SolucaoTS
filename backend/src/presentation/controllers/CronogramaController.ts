@@ -1,3 +1,4 @@
+import { textoDeCsv } from '@/shared/csv';
 import type { Request, Response, NextFunction } from 'express';
 import { CronogramaUseCases } from '@/application/cronograma/CronogramaUseCases';
 import { PrismaCronogramaRepository } from '@/infrastructure/database/PrismaCronogramaRepository';
@@ -21,7 +22,7 @@ export class CronogramaController {
   async importar(req: Request, res: Response, next: NextFunction) {
     try {
       if (!req.file) throw new BusinessError('Envie um arquivo .csv no campo "file".');
-      const texto = req.file.buffer.toString('latin1');
+      const texto = textoDeCsv(req.file.buffer);
       return res.json(await casos.importar(req.params.ajusteId, texto));
     } catch (e) {
       return next(e);

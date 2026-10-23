@@ -1,5 +1,5 @@
 import type { DadosCronogramaItem } from '@/application/cronograma/dtos';
-import { linhasCsv, normalizarMes, parseValorBR } from '@/shared/csv';
+import { normalizarMes, pareceCabecalho, parseValorBR, registrosCsv } from '@/shared/csv';
 
 const arredonda2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -16,14 +16,17 @@ export interface ResultadoParseCronograma {
  * ano+mês) são somadas.
  */
 export function parseCronograma(texto: string): ResultadoParseCronograma {
-  const linhas = linhasCsv(texto);
+  const registros = registrosCsv(texto);
   const mapa = new Map<string, DadosCronogramaItem>();
   const erros: string[] = [];
   let ignoradas = 0;
 
-  linhas.forEach((linha, i) => {
+  // Ano e valor: as duas colunas que, não sendo número, denunciam o cabeçalho.
+  const temCabecalho = registros.length > 0 && pareceCabecalho(registros[0], [0, 2]);
+
+  registros.forEach((campos, i) => {
     const n = i + 1;
-    const campos = linha.split(';');
+    if (i === 0 && temCabecalho) return;
     if (campos.length < 3) {
       erros.push(`Linha ${n}: colunas insuficientes (esperado ano;mês;valor).`);
       ignoradas++;
@@ -55,5 +58,5 @@ export function parseCronograma(texto: string): ResultadoParseCronograma {
     else mapa.set(chave, { ano, mes, valor: arredonda2(valor) });
   });
 
-  return { itens: [...mapa.values()], totalLinhas: linhas.length, ignoradas, erros };
+  return { itens: [...mapa.values()], totalLinhas: registros.length, ignoradas, erros };
 }
