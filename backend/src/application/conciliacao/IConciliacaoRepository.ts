@@ -1,5 +1,5 @@
 import type { LancamentoOfx } from '@/infrastructure/parsers/parseOfx';
-import type { LinhaExtrato, ConciliarDTO } from './dtos';
+import type { LinhaExtrato, ConciliarDTO, ContaDoExtrato } from './dtos';
 import type { Candidato } from '@/core/conciliacao/sugerir';
 import type { ContaBancariaChave } from '@/core/conciliacao/contas';
 
@@ -27,6 +27,15 @@ export interface IConciliacaoRepository {
    * do banco e existe mesmo que a conta saia do cadastro do ajuste depois.
    */
   contasDoAjuste(ajusteId: string): Promise<ContaBancariaChave[]>;
+  /**
+   * As contas que **o extrato importado** tem, com quantas linhas cada uma.
+   *
+   * Existe para a tela poder explicar a lista vazia. Dentro de um ajuste as
+   * linhas são recortadas pelas contas dele, e quando o extrato é de outra
+   * conta o resultado é zero linha — indistinguível, para quem olha, de
+   * "nenhum extrato importado". Esta consulta é o que separa as duas coisas.
+   */
+  contasDoExtrato(filtros: { de?: string; ate?: string }): Promise<ContaDoExtrato[]>;
 
   /**
    * Pagamentos e receitas ainda sem conciliação, para casar e para escolher à mão.

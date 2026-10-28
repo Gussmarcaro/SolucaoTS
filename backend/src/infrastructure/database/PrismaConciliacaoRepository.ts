@@ -2,7 +2,7 @@ import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
 import { tenantObrigatorio } from '@/shared/contexto';
 import type { IConciliacaoRepository } from '@/application/conciliacao/IConciliacaoRepository';
-import type { ConciliarDTO, LinhaExtrato } from '@/application/conciliacao/dtos';
+import type { ConciliarDTO, ContaDoExtrato, LinhaExtrato } from '@/application/conciliacao/dtos';
 import type { LancamentoOfx, TipoLancamentoExtrato } from '@/infrastructure/parsers/parseOfx';
 import type { Candidato } from '@/core/conciliacao/sugerir';
 import { paraDataISO, parseDataISO } from '@/shared/datas';
@@ -109,6 +109,29 @@ export class PrismaConciliacaoRepository implements IConciliacaoRepository {
       select: { banco: true, agencia: true, conta: true },
     });
     return rows.map((r) => ({ banco: r.banco, agencia: r.agencia, conta: r.conta }));
+  }
+
+  /**
+   * As contas do extrato já importado, com a contagem de linhas.
+   *
+   * `groupBy` em vez de trazer as linhas: a pergunta é "de quais contas é este
+   * extrato?", e um ano de movimento são milhares de linhas para responder o
+   * que o banco resume em três.
+   */
+  async contasDoExtrato(filtros: { de?: string; ate?: string }): Promise<ContaDoExtrato[]> {
+    const data: Prisma.DateTimeFilter = {};
+    if (filtros.de) data.gte = parseDataISO(filtros.de);
+    if (filtros.ate) data.lte = parseDataISO(filtros.ate);
+
+    const rows = await prisma.lancamentoExtrato.groupBy({
+      by: ['banco', 'agencia', 'conta'],
+      where: Object.keys(data).length ? { data } : undefined,
+      _count: { _all: true },
+    });
+
+    return rows
+      .map((r) => ({ banco: r.banco, agencia: r.agencia, conta: r.conta, linhas: r._count._all }))
+      .sort((a, b) => b.linhas - a.linhas);
   }
 
   async buscarPorId(id: string): Promise<LinhaExtrato | null> {

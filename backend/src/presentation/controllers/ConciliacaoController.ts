@@ -31,6 +31,26 @@ export class ConciliacaoController {
   }
 
   /**
+   * De quais contas é o extrato importado — para a tela explicar lista vazia.
+   *
+   * **Sem `ajusteId`, de propósito.** A pergunta existe justamente quando o
+   * recorte por ajuste escondeu tudo: recortá-la também devolveria o mesmo
+   * nada, e a tela continuaria sem o que dizer.
+   */
+  async contasDoExtrato(req: Request, res: Response, next: NextFunction) {
+    try {
+      return res.json(
+        await casos.contasDoExtrato({
+          de: req.query.de as string | undefined,
+          ate: req.query.ate as string | undefined,
+        }),
+      );
+    } catch (e) {
+      return next(e);
+    }
+  }
+
+  /**
    * Os lançamentos que ainda não apareceram no extrato.
    *
    * Exige o período, e não o assume: sem `de`/`ate` a consulta varreria todos

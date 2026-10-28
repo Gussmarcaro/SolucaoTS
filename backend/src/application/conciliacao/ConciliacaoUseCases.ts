@@ -1,5 +1,11 @@
 import type { IConciliacaoRepository } from './IConciliacaoRepository';
-import type { ConciliarDTO, LancamentoPendente, LinhaExtrato, ResultadoImportacaoOfx } from './dtos';
+import type {
+  ConciliarDTO,
+  ContaDoExtrato,
+  LancamentoPendente,
+  LinhaExtrato,
+  ResultadoImportacaoOfx,
+} from './dtos';
 import { parseOfx } from '@/infrastructure/parsers/parseOfx';
 import { sugerirConciliacao, JANELA_DIAS } from '@/core/conciliacao/sugerir';
 import { ehDoAjuste } from '@/core/conciliacao/contas';
@@ -58,6 +64,19 @@ export class ConciliacaoUseCases {
    * A sugestão é calculada aqui e não gravada: os lançamentos mudam, e uma
    * sugestão guardada apontaria para um pagamento já corrigido ou excluído.
    */
+  /**
+   * De quais contas é o extrato já importado.
+   *
+   * Serve a uma pergunta só, e ela nasce de um caso real: o usuário importou
+   * 20 transações com sucesso e a lista continuou vazia, dizendo "extrato
+   * ainda não importado". O extrato era do banco 461, conta 65260077; o ajuste
+   * em execução declara outras três. O recorte estava certo — a tela é que não
+   * tinha como dizer isso.
+   */
+  async contasDoExtrato(filtros: { de?: string; ate?: string }): Promise<ContaDoExtrato[]> {
+    return this.repo.contasDoExtrato(filtros);
+  }
+
   async listar(filtros: { de?: string; ate?: string; ajusteId?: string }): Promise<LinhaExtrato[]> {
     const todas = await this.repo.listar(filtros);
 

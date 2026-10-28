@@ -1,6 +1,7 @@
 import { http } from './http';
 import type {
   ConciliarPayload,
+  ContaDoExtrato,
   LancamentoPendente,
   LinhaExtrato,
   ResultadoImportacaoOfx,
@@ -18,6 +19,17 @@ export const conciliacaoApi = {
    */
   pendentes: async (params: { de: string; ate: string; ajusteId?: string }): Promise<LancamentoPendente[]> => {
     const { data } = await http.get<LancamentoPendente[]>('/conciliacao/pendentes', { params });
+    return data;
+  },
+
+  /**
+   * De quais contas é o extrato importado — só para explicar lista vazia.
+   *
+   * **Sem `ajusteId`**: a pergunta nasce justamente quando o recorte por
+   * ajuste escondeu tudo, então recortá-la devolveria o mesmo nada.
+   */
+  contasDoExtrato: async (params: { de?: string; ate?: string }): Promise<ContaDoExtrato[]> => {
+    const { data } = await http.get<ContaDoExtrato[]>('/conciliacao/contas', { params });
     return data;
   },
 

@@ -9,9 +9,30 @@ import { useAjusteExecucao } from '@/contexts/AjusteExecucaoContext';
 import { conciliacaoApi } from '@/services/conciliacao.service';
 import { extrairMensagemErro } from '@/services/http';
 import { dataBr, formatarMoeda } from '@/lib/masks';
-import type { LancamentoPendente, LinhaExtrato, ResultadoImportacaoOfx } from '@/types/conciliacao';
+import type {
+  ContaDoExtrato,
+  LancamentoPendente,
+  LinhaExtrato,
+  ResultadoImportacaoOfx,
+} from '@/types/conciliacao';
+import { BANCO } from '@/lib/dominiosFaseV';
 
 type Filtro = 'pendentes' | 'conciliados' | 'ignorados' | 'todos';
+
+/**
+ * "Banco do Brasil ag. 1478 c/ 123655-9" — como a conta do extrato se anuncia.
+ *
+ * Com mais de uma, lista todas: o usuário pode ter importado dois arquivos, e
+ * saber qual deles é de outra parceria é metade da resposta.
+ */
+const rotuloContas = (contas: ContaDoExtrato[]): string =>
+  contas
+    .map((c) => {
+      const banco = BANCO.find((b) => b.value === String(c.banco))?.label ?? `banco ${c.banco ?? '—'}`;
+      const agencia = c.agencia ? ` ag. ${c.agencia}` : '';
+      return `${banco}${agencia} c/ ${c.conta ?? '—'} (${c.linhas} linha${c.linhas === 1 ? '' : 's'})`;
+    })
+    .join(' · ');
 
 const FILTROS: { key: Filtro; label: string }[] = [
   { key: 'pendentes', label: 'A conciliar' },
@@ -82,11 +103,21 @@ export function Conciliacao() {
   const [agindo, setAgindo] = useState<string | null>(null);
   const arquivo = useRef<HTMLInputElement>(null);
 
+  /*
+   * Data pela metade não vai ao servidor.
+   *
+   * O `<input type="date">` entrega o ano com **mais de quatro dígitos** quando
+   * se digita um a mais (`20267-06-01`), e o servidor respondia 500 — "Erro
+   * interno do servidor" numa tela em que o usuário só estava escolhendo o
+   * período. O servidor passou a recusar com mensagem; aqui nem se pergunta.
+   */
+  const periodo = (v: string) => (/^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined);
+
   useEffect(() => {
     let vivo = true;
     setCarregando(true);
     conciliacaoApi
-      .listar({ de: de || undefined, ate: ate || undefined, ajusteId: ajusteId ?? undefined })
+      .listar({ de: periodo(de), ate: periodo(ate), ajusteId: ajusteId ?? undefined })
       .then((r) => vivo && setLinhas(r))
       .catch((e) => vivo && setErro(extrairMensagemErro(e, 'Falha ao carregar o extrato.')))
       .finally(() => vivo && setCarregando(false));
@@ -94,6 +125,29 @@ export function Conciliacao() {
       vivo = false;
     };
   }, [refreshKey, de, ate, ajusteId]);
+
+  /*
+   * De quais contas é o extrato — carregado **só quando a lista está vazia**.
+   *
+   * É o que separa "nenhum extrato importado" de "o extrato é de outra conta".
+   * Dentro de um ajuste as linhas são recortadas pelas contas dele, e um
+   * extrato de outra conta some por inteiro: sem esta resposta a tela mandava
+   * importar de novo um arquivo que já tinha entrado.
+   */
+  const [contasExtrato, setContasExtrato] = useState<ContaDoExtrato[]>([]);
+  const listaVazia = !carregando && linhas.length === 0;
+
+  useEffect(() => {
+    if (!listaVazia) return;
+    let vivo = true;
+    conciliacaoApi
+      .contasDoExtrato({ de: periodo(de), ate: periodo(ate) })
+      .then((r) => vivo && setContasExtrato(r))
+      .catch(() => vivo && setContasExtrato([]));
+    return () => {
+      vivo = false;
+    };
+  }, [listaVazia, de, ate, refreshKey]);
 
   /*
    * O outro lado: o que o sistema lançou e o banco ainda não confirmou.
@@ -247,15 +301,39 @@ export function Conciliacao() {
         </div>
       ) : visiveis.length === 0 ? (
         <div className="rounded-xl border border-ink-200 px-4 py-10 text-center text-sm text-ink-400 dark:border-ink-700">
-          {linhas.length === 0
-            ? lancamentos.length > 0
-              ? // Com lançamentos esperando, "nada a conciliar" seria falso: há
-                // o que conferir, falta o lado do banco.
-                'Extrato ainda não importado — os lançamentos abaixo estão esperando o confronto. Baixe o OFX no internet banking e use o botão acima.'
-              : 'Nenhum extrato importado. Baixe o OFX no internet banking e use o botão acima.'
-            : filtro === 'pendentes'
-              ? 'Nada a conciliar no período. Tudo conferido.'
-              : 'Nenhuma linha neste filtro.'}
+          {linhas.length === 0 ? (
+            contasExtrato.length > 0 ? (
+              /*
+               * Há extrato — só não é deste ajuste.
+               *
+               * Dizer "importe o OFX" aqui mandaria repetir uma importação que
+               * já deu certo, e o usuário repetiria quantas vezes fossem
+               * necessárias sem nunca ver uma linha. O que falta é o vínculo
+               * entre a conta do extrato e a parceria, e é ele que a frase
+               * aponta — nomeando a conta que de fato foi importada.
+               */
+              <>
+                <p className="text-ink-600 dark:text-ink-300">
+                  O extrato importado é de outra conta: {rotuloContas(contasExtrato)}.
+                </p>
+                <p className="mt-1">
+                  Esta parceria só mostra o extrato das contas que ela declara, em{' '}
+                  <strong>Ajuste → Fontes de Recursos e Contas</strong>. Declare a conta acima ali,
+                  ou importe o OFX da conta certa.
+                </p>
+              </>
+            ) : lancamentos.length > 0 ? (
+              // Com lançamentos esperando, "nada a conciliar" seria falso: há
+              // o que conferir, falta o lado do banco.
+              'Extrato ainda não importado — os lançamentos abaixo estão esperando o confronto. Baixe o OFX no internet banking e use o botão acima.'
+            ) : (
+              'Nenhum extrato importado. Baixe o OFX no internet banking e use o botão acima.'
+            )
+          ) : filtro === 'pendentes' ? (
+            'Nada a conciliar no período. Tudo conferido.'
+          ) : (
+            'Nenhuma linha neste filtro.'
+          )}
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-ink-200 dark:border-ink-700">

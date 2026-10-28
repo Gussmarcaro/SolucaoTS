@@ -59,3 +59,16 @@ export interface LancamentoPendente {
   valor: number;
   data: string;
 }
+
+/**
+ * Uma conta presente no extrato já importado.
+ *
+ * A tela usa só para **explicar lista vazia**: dentro de um ajuste as linhas
+ * são recortadas pelas contas dele, e um extrato de outra conta some inteiro.
+ */
+export interface ContaDoExtrato {
+  banco: number | null;
+  agencia: string | null;
+  conta: string | null;
+  linhas: number;
+}

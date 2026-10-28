@@ -616,6 +616,10 @@ A conciliação entrou no portão da Execução, e o recorte tem **duas natureza
 
 **Ajuste sem conta declarada vê tudo.** Recortar por um conjunto vazio deixaria o usuário sem conciliação e sem explicação: mostrar demais é recuperável olhando; mostrar de menos não é.
 
+- **Lista vazia dentro do ajuste não quer dizer "extrato não importado".** Foi o que a tela disse depois de importar 20 transações com sucesso: o extrato era do banco 461, conta 65260077, e o ajuste em execução declara outras três. O recorte estava certo; faltava a tela poder dizer isso. `GET /conciliacao/contas` responde de quais contas é o extrato — **sem** `ajusteId`, porque a pergunta nasce justamente quando o recorte escondeu tudo — e a frase passa a nomear a conta encontrada e apontar `Ajuste → Fontes de Recursos e Contas`. Mandar "importe o OFX" ali fazia repetir uma importação que já tinha dado certo.
+- **Data de filtro não derruba o servidor.** `parseDataISO` lançava `Error` seco, e o tratador classifica isso como **500**: um `<input type="date">` com ano de cinco dígitos (`20267-06-01`, um toque a mais) respondia "Erro interno do servidor" numa tela em que o usuário só escolhia o período. Hoje lança `BusinessError` (422) com o valor na mensagem, e a tela nem envia o que sabe estar pela metade. A distinção não é cortesia: 5xx é o que vira alerta e o que faz o usuário achar que o sistema quebrou.
+- **Dia que não existe deixou de virar outro dia.** `new Date('2026-02-30')` não é inválida para o JavaScript — rola para 2 de março. `parseDataISO` passou a conferir a volta, como `parseDataBR` já fazia. Coberto por `tests/datas.test.ts`, sem banco.
+
 
 ### O contexto não sobrevive ao upload
 
