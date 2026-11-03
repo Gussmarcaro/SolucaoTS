@@ -5,8 +5,12 @@ import type {
   LinhaExecucao,
   LinhaRepasse,
   ResumoSituacao,
+  FiltroPeriodo,
+  NotaCrua,
+  ReceitasPorTipo,
 } from '@/application/relatorio/RelatorioUseCases';
-import { paraDataISO } from '@/shared/datas';
+import { paraDataISO, parseDataISO } from '@/shared/datas';
+import { ratearValor } from '@/core/rateio/Rateio';
 
 const num = (v: unknown): number => (v == null ? 0 : Number(v));
 
@@ -284,5 +288,135 @@ export class PrismaRelatorioRepository implements IRelatorioRepository {
     }
 
     return [...mapa.values()];
+  }
+
+  /**
+   * As notas que o período alcança, com os pagamentos de cada uma.
+   *
+   * **Parte do `DocumentoFiscal`, não da prestação** — e é a diferença que
+   * define este relatório. Os demais olham o que alguma prestação já
+   * apropriou; este é operacional: a nota lançada ontem precisa aparecer no
+   * fechamento de hoje, muito antes de existir prestação.
+   *
+   * Três cuidados:
+   *
+   * 1. **Os dois braços da nota rateada**, como na tela de Despesas: a nota
+   *    lançada *para* o ajuste e a rateada cujo quadro *o inclui*. Sem o
+   *    segundo, a despesa da sede sumiria de todas as parcerias.
+   * 2. **A parcela, não o valor cheio.** Dentro de um ajuste, a nota rateada
+   *    entra pela fatia dele — somar a nota inteira em cada parceria contaria
+   *    a mesma despesa duas vezes.
+   * 3. **O pagamento é recortado pelo ajuste junto com a nota.** Na rateada,
+   *    cada parceria paga a sua parte, e trazer os pagamentos das outras
+   *    inflaria o desembolso do período.
+   */
+  async notasDoPeriodo(filtro: FiltroPeriodo): Promise<NotaCrua[]> {
+    const de = parseDataISO(filtro.de);
+    const ate = parseDataISO(filtro.ate);
+    const { ajusteId } = filtro;
+
+    const doAjuste = ajusteId
+      ? [{ ajusteId }, { rateioProveniente: true, rateio: { participantes: { some: { ajusteId } } } }]
+      : undefined;
+
+    const rows = await prisma.documentoFiscal.findMany({
+      where: {
+        ...(doAjuste ? { OR: doAjuste } : {}),
+        // Emitida no período **ou** paga nele: a nota de dezembro quitada em
+        // janeiro é despesa de dezembro e desembolso de janeiro.
+        AND: [
+          {
+            OR: [
+              { dataEmissao: { gte: de, lte: ate } },
+              { pagamentos: { some: { dataPagamento: { gte: de, lte: ate } } } },
+            ],
+          },
+        ],
+      },
+      select: {
+        id: true,
+        dataEmissao: true,
+        tipoDocumento: true,
+        numero: true,
+        descricao: true,
+        credorNome: true,
+        credorTipoDoc: true,
+        credorNumeroDoc: true,
+        categoriaDespesaTipo: true,
+        propostaCategoria: true,
+        propostaSubcategoria: true,
+        valorBruto: true,
+        rateioProveniente: true,
+        rateio: { select: { participantes: { select: { ajusteId: true, base: true } } } },
+        pagamentos: {
+          // Na rateada, só os pagamentos desta parceria — ver o cuidado 3.
+          where: ajusteId ? { ajusteId } : undefined,
+          select: {
+            dataPagamento: true,
+            valor: true,
+            // O identificador do banco vem da linha de extrato conciliada: é
+            // o "código do pagamento do extrato" que o quadro de comprovantes
+            // pede, e ele só existe porque a conciliação foi feita.
+            lancamentosExtrato: { select: { fitId: true }, take: 1 },
+          },
+          orderBy: { dataPagamento: 'asc' },
+        },
+      },
+      orderBy: [{ dataEmissao: 'asc' }, { numero: 'asc' }],
+    });
+
+    return rows.map((r) => {
+      const cheio = num(r.valorBruto);
+      /*
+       * A parcela sai do **mesmo** `ratearValor` do lançamento e do teto do
+       * pagamento. Uma segunda conta para o mesmo valor divergiria no centavo
+       * do maior resto, e a diferença apareceria como um relatório que não
+       * fecha com o que foi pago.
+       */
+      const participantes = r.rateio?.participantes ?? [];
+      const valorContabil =
+        ajusteId && r.rateioProveniente && participantes.length
+          ? (ratearValor(cheio, participantes.map((p) => ({ ajusteId: p.ajusteId, base: num(p.base) })))
+              .find((x) => x.ajusteId === ajusteId)?.valor ?? 0)
+          : cheio;
+
+      return {
+        id: r.id,
+        dataEmissao: paraDataISO(r.dataEmissao),
+        tipoDocumento: r.tipoDocumento ?? null,
+        numero: r.numero,
+        descricao: r.descricao,
+        credorNome: r.credorNome,
+        credorTipoDoc: String(r.credorTipoDoc),
+        credorNumeroDoc: r.credorNumeroDoc,
+        categoriaDespesaTipo: r.categoriaDespesaTipo,
+        propostaCategoria: r.propostaCategoria,
+        propostaSubcategoria: r.propostaSubcategoria,
+        valorContabil,
+        pagamentos: r.pagamentos.map((p) => ({
+          data: paraDataISO(p.dataPagamento),
+          valor: num(p.valor),
+          codigoExtrato: p.lancamentosExtrato[0]?.fitId ?? null,
+        })),
+      };
+    });
+  }
+
+  /**
+   * As receitas recebidas no período, somadas por tipo.
+   *
+   * Pela **data do repasse**, não pela prevista: o resumo responde "quanto
+   * entrou", e o previsto que não entrou não é dinheiro disponível.
+   */
+  async receitasDoPeriodo(filtro: FiltroPeriodo): Promise<ReceitasPorTipo[]> {
+    const rows = await prisma.receita.groupBy({
+      by: ['tipo'],
+      where: {
+        ...(filtro.ajusteId ? { ajusteId: filtro.ajusteId } : {}),
+        dataRepasse: { gte: parseDataISO(filtro.de), lte: parseDataISO(filtro.ate) },
+      },
+      _sum: { valor: true },
+    });
+    return rows.map((r) => ({ tipo: r.tipo, valor: num(r._sum.valor) }));
   }
 }

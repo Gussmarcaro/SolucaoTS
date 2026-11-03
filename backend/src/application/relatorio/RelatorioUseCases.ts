@@ -1,3 +1,9 @@
+import { despesasDoPeriodo, type TotaisDespesas } from '@/core/relatorio/despesasPeriodo';
+import { BusinessError } from '@/shared/errors';
+
+/** Data ISO — o formato que os campos de data da tela enviam. */
+const ISO = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
+
 /**
  * Relatórios gerenciais — as perguntas que o gestor faz e que nenhuma tela de
  * cadastro responde.
@@ -99,6 +105,78 @@ export interface FiltroRelatorio {
   ano?: number;
 }
 
+/**
+ * O recorte dos quadros de despesa: **um período, não um exercício**.
+ *
+ * Os demais relatórios filtram por ano porque respondem a perguntas anuais.
+ * Estes são o que a entidade monta todo mês para a prestação — e o mesmo
+ * cálculo, com o período do exercício, é o que preenche o anexo do Tribunal.
+ */
+export interface FiltroPeriodo {
+  de: string;
+  ate: string;
+  ajusteId?: string;
+}
+
+/** Uma linha dos quadros de despesa, com o que a tela e o anexo mostram. */
+export interface DespesaDoPeriodo {
+  id: string;
+  dataEmissao: string;
+  /** Tipo + número, como o quadro chama de "especificação do documento". */
+  tipoDocumento: string | null;
+  numero: string;
+  descricao: string;
+  credorNome: string | null;
+  credorTipoDoc: string;
+  credorNumeroDoc: string;
+  /** Código da tabela do TCESP; o rótulo é resolvido na tela. */
+  categoriaDespesaTipo: number;
+  propostaCategoria: string | null;
+  propostaSubcategoria: string | null;
+  /** Na nota rateada dentro de um ajuste, já é a **parcela** dele. */
+  valorContabil: number;
+  pagoNoPeriodo: number;
+  aPagar: number;
+  pagamentos: { data: string; valor: number; codigoExtrato: string | null }[];
+}
+
+/**
+ * O RESUMO do relatório — o que entrou e o que saiu no período.
+ *
+ * As linhas são as mesmas do anexo oficial (A a G), e por isso os tipos de
+ * receita do cadastro foram feitos para casar com elas.
+ */
+export interface ResumoDoPeriodo {
+  repasses: number;
+  rendimentos: number;
+  outrasReceitas: number;
+  recursosProprios: number;
+  /** Repasses + rendimentos + outras (sem o recurso próprio, que é da entidade). */
+  totalRecursosPublicos: number;
+  /** Com o recurso próprio — o (G) do anexo. */
+  totalDisponivel: number;
+}
+
+export interface RelatorioDespesas {
+  periodo: { de: string; ate: string };
+  contabilizadas: DespesaDoPeriodo[];
+  naoPagas: DespesaDoPeriodo[];
+  pagas: DespesaDoPeriodo[];
+  totais: TotaisDespesas;
+  resumo: ResumoDoPeriodo;
+}
+
+/** A nota como o banco a entrega, antes de o período a classificar. */
+export interface NotaCrua extends Omit<DespesaDoPeriodo, 'pagoNoPeriodo' | 'aPagar'> {
+  pagamentos: { data: string; valor: number; codigoExtrato: string | null }[];
+}
+
+/** Receitas do período, já somadas por tipo. */
+export interface ReceitasPorTipo {
+  tipo: string;
+  valor: number;
+}
+
 export interface IRelatorioRepository {
   execucao(filtro: FiltroRelatorio): Promise<LinhaExecucao[]>;
   repasses(filtro: FiltroRelatorio): Promise<LinhaRepasse[]>;
@@ -107,6 +185,16 @@ export interface IRelatorioRepository {
   fornecedores(filtro: FiltroRelatorio): Promise<
     Omit<LinhaFornecedor, 'percentual' | 'acumulado'>[]
   >;
+  /**
+   * As notas que o período alcança — emitidas **ou** pagas dentro dele.
+   *
+   * Os dois braços são necessários: a nota de dezembro paga em janeiro não é
+   * despesa de janeiro, mas é desembolso de janeiro, e some do relatório se a
+   * consulta olhar só para a emissão.
+   */
+  notasDoPeriodo(filtro: FiltroPeriodo): Promise<NotaCrua[]>;
+  /** Receitas recebidas no período, somadas por tipo. */
+  receitasDoPeriodo(filtro: FiltroPeriodo): Promise<ReceitasPorTipo[]>;
 }
 
 /** Atraso a partir do qual a linha merece destaque na tela. */
@@ -211,5 +299,83 @@ export class RelatorioUseCases {
       maiorFatia: linhas.length ? linhas[0].percentual : null,
       credoresPara80: total > 0 && indice >= 0 ? indice + 1 : null,
     };
+  }
+
+  /**
+   * Os três quadros de despesa do período, mais o resumo do que entrou.
+   *
+   * É o relatório que a entidade monta todo mês e o mesmo cálculo que, com o
+   * período do exercício, preenche as quatro colunas do anexo oficial. A
+   * classificação fica no core (`despesasDoPeriodo`), pura e conferida sem
+   * banco: três quadros calculados por conta própria dariam três respostas
+   * que se contradizem num centavo, e a contradição iria para o documento
+   * assinado.
+   */
+  async despesas(filtro: FiltroPeriodo): Promise<RelatorioDespesas> {
+    const periodo = this.normalizarPeriodo(filtro);
+    const [notas, receitas] = await Promise.all([
+      this.repo.notasDoPeriodo(periodo),
+      this.repo.receitasDoPeriodo(periodo),
+    ]);
+
+    const classificado = despesasDoPeriodo(
+      notas.map((n) => ({
+        id: n.id,
+        dataEmissao: n.dataEmissao,
+        valorContabil: n.valorContabil,
+        pagamentos: n.pagamentos,
+      })),
+      periodo,
+    );
+
+    // A classificação devolve id + números; o resto da linha vem da nota.
+    const porId = new Map(notas.map((n) => [n.id, n]));
+    const juntar = (linhas: { id: string; pagoNoPeriodo: number; aPagar: number; pagamentos: NotaCrua['pagamentos'] }[]) =>
+      linhas.flatMap((l) => {
+        const n = porId.get(l.id);
+        return n ? [{ ...n, pagoNoPeriodo: l.pagoNoPeriodo, aPagar: l.aPagar, pagamentos: l.pagamentos }] : [];
+      });
+
+    const soma = (prefixo: string) =>
+      Math.round(
+        receitas.filter((r) => r.tipo.startsWith(prefixo)).reduce((s, r) => s + r.valor, 0) * 100,
+      ) / 100;
+
+    const repasses = soma('REPASSE_RECEBIDO');
+    const rendimentos = soma('APLIC_FINANC');
+    const outrasReceitas = soma('OUTRA');
+    const recursosProprios = soma('RECURSO_PROPRIO');
+    const totalRecursosPublicos = Math.round((repasses + rendimentos + outrasReceitas) * 100) / 100;
+
+    return {
+      periodo: { de: periodo.de, ate: periodo.ate },
+      contabilizadas: juntar(classificado.contabilizadas),
+      naoPagas: juntar(classificado.naoPagas),
+      pagas: juntar(classificado.pagas),
+      totais: classificado.totais,
+      resumo: {
+        repasses,
+        rendimentos,
+        outrasReceitas,
+        recursosProprios,
+        totalRecursosPublicos,
+        totalDisponivel: Math.round((totalRecursosPublicos + recursosProprios) * 100) / 100,
+      },
+    };
+  }
+
+  /**
+   * O período é **obrigatório**, e recusado quando inválido.
+   *
+   * Sem ele a consulta varreria o órgão inteiro para responder a uma pergunta
+   * de um mês — e o relatório é de fechamento, não de tudo que já houve.
+   */
+  private normalizarPeriodo(filtro: FiltroPeriodo): FiltroPeriodo {
+    const de = (filtro.de ?? '').trim();
+    const ate = (filtro.ate ?? '').trim();
+    if (!ISO.test(de) || !ISO.test(ate))
+      throw new BusinessError('Informe o período (data inicial e final) no formato AAAA-MM-DD.');
+    if (ate < de) throw new BusinessError('A data final do período é anterior à inicial.');
+    return { de, ate, ajusteId: filtro.ajusteId?.trim() || undefined };
   }
 }

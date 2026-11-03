@@ -863,6 +863,23 @@ O Espelho já mostrava erros e avisos — mas só para quem o abre, e **quem abr
 - `QuadroRelatorio` é o molde: cada coluna diz como se desenha (`celula`), como se exporta (`texto`) e o que soma no rodapé (`rodape`). Relatório novo custa uma lista de colunas, não uma tela.
 - Recurso `RELATORIOS`, faixa Consulta basta.
 
+### Despesas do período — os três quadros do fechamento
+
+Aba **Despesas do período**, a primeira do módulo. Vem do documento que o parceiro usa todo mês (*Relatórios Prestação de Contas*) e responde, para um período: o que foi **contabilizado**, o que ficou **a pagar** e o que foi **pago**.
+
+**Os três quadros são um cálculo só** (`core/relatorio/despesasPeriodo.ts`). Calculá-los em separado daria três respostas que se contradizem num centavo — e a contradição iria para o documento assinado pelo dirigente. A função é pura e travada por `tests/despesasPeriodo.test.ts` (11 checagens, sem banco).
+
+- **São duas datas, e nenhuma basta sozinha.** *Contabilizada* é pela data do documento; *paga*, pela do pagamento. A nota de dezembro quitada em janeiro é despesa de dezembro **e** desembolso de janeiro — é o exemplo que o próprio formulário do TCESP usa para justificar as colunas. Por isso a consulta tem dois braços (`dataEmissao` no período **ou** pagamento no período): com um só, metade do movimento sumiria.
+- **O mesmo cálculo preenche o anexo oficial.** Os totais já saem nas quatro colunas do RP-06/08/10/12/14: **(H)** anteriores pagas no período, **(I)** contabilizadas e pagas nele, **(J = H + I)** e *a pagar*. O relatório do dia a dia é a versão analítica do que o anexo pede somado por categoria — uma consulta serve aos dois.
+- **O saldo é o do fechamento, não o de hoje.** Pagamento feito depois do período não apaga a dívida que existia no último dia dele: relido meses depois, o quadro precisa dar o mesmo número que deu quando foi assinado.
+- **A parcela, não a nota inteira.** Dentro de um ajuste, a nota rateada entra pela fatia dele — pelo mesmo `ratearValor` do lançamento e do teto do pagamento. Duas contas para o mesmo valor divergiriam no centavo do maior resto, e o relatório deixaria de fechar com o que foi pago. Os pagamentos também são recortados pelo ajuste: trazer os das outras parcerias inflaria o desembolso.
+- **O "código do pagamento do extrato" vem da conciliação** — é o identificador do banco na linha conciliada. O quadro de comprovantes o exige, e ele só existe porque alguém conciliou: é o primeiro lugar em que a conciliação paga por si mesma.
+- **"Número página" fica em branco de propósito.** É a página do documento no dossiê encadernado, e o número só existe quando a prestação inteira é gerada em arquivo — hoje preenchida à mão na impressão. Omitir a coluna mudaria um formulário que a equipe já conhece; preenchê-la com qualquer coisa seria inventar a numeração do processo.
+- **Provisões não aparecem**, e o documento que as pediu já dizia "a ser implementado". Linha zerada com rótulo oficial faria o leitor supor que o sistema apurou e deu zero — pior que a ausência.
+- **Período, não exercício**, e o filtro de ano some nesta aba: mostrar os dois faria o usuário preencher um campo que o relatório ignora, e depois duvidar do número. Abre no **mês corrente** — é o fechamento que a entidade monta.
+
+**Falta, em ordem:** o CONCILIANDO (saldo bancário anterior e dos extratos, que o leitor de OFX ainda não captura, e "outros desembolsos", que não tem onde ser lançado); a **fonte de recurso na despesa**, que o anexo exige para emitir uma via por verba (Tesouro 01, Estadual 02, Federal 05); e o **Demonstrativo Integral** — um gerador só, cinco vocabulários, escolhido pelo `tipoAjuste`, porque RP-06 e RP-12 são estruturalmente idênticos.
+
 ## Transparência
 
 `/transparencia` — relação das parcerias para publicação no portal do órgão (Lei 13.019/2014, art. 10): data e identificação do instrumento, OSC e CNPJ, objeto, valor, vigência e situação da prestação de contas.

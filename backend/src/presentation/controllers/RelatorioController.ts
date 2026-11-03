@@ -42,4 +42,25 @@ export class RelatorioController {
       return next(e);
     }
   }
+
+  /**
+   * Os três quadros de despesa do período.
+   *
+   * Pede **período**, e não ano: é o relatório de fechamento que a entidade
+   * monta todo mês. O caso de uso recusa período ausente ou invertido — sem
+   * ele a consulta varreria o órgão inteiro.
+   */
+  async despesas(req: Request, res: Response, next: NextFunction) {
+    try {
+      return res.json(
+        await casos.despesas({
+          de: String(req.query.de ?? ''),
+          ate: String(req.query.ate ?? ''),
+          ajusteId: (req.query.ajusteId as string | undefined) || undefined,
+        }),
+      );
+    } catch (e) {
+      return next(e);
+    }
+  }
 }

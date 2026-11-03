@@ -1,16 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BarChart3, CalendarClock, ClipboardList, Users, Wallet } from 'lucide-react';
+import { BarChart3, CalendarClock, ClipboardList, Receipt, Users, Wallet } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Select } from '@/components/ui/Select';
 import { Input } from '@/components/ui/Input';
 import { QuadroRelatorio, type ColunaRel } from './QuadroRelatorio';
+import { QuadrosDespesa } from './QuadrosDespesa';
 import { listarAjustes } from '@/services/ajustes.service';
 import {
   relatorioExecucao,
   relatorioRepasses,
   relatorioSituacao,
   relatorioFornecedores,
+  relatorioDespesas,
   type FiltroRelatorio,
 } from '@/services/relatorios.service';
 import { extrairMensagemErro } from '@/services/http';
@@ -22,12 +24,30 @@ import {
   type LinhaFornecedor,
   type LinhaRepasse,
   type ResumoFornecedores,
+  type RelatorioDespesas,
   type ResumoSituacao,
 } from './tipos';
 
-type Aba = 'execucao' | 'repasses' | 'situacao' | 'fornecedores';
+type Aba = 'despesas' | 'execucao' | 'repasses' | 'situacao' | 'fornecedores';
+
+/** Primeiro e último dia do mês corrente — o fechamento que a entidade faz. */
+function mesCorrente(): { de: string; ate: string } {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = hoje.getMonth();
+  const iso = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return { de: iso(new Date(ano, mes, 1)), ate: iso(new Date(ano, mes + 1, 0)) };
+}
 
 const ABAS: { id: Aba; rotulo: string; icone: typeof Wallet; descricao: string }[] = [
+  {
+    id: 'despesas',
+    rotulo: 'Despesas do período',
+    icone: Receipt,
+    descricao:
+      'Contabilizadas, a pagar e pagas — os três quadros do fechamento, e as colunas do anexo do Tribunal.',
+  },
   {
     id: 'execucao',
     rotulo: 'Execução por ajuste',
@@ -65,15 +85,25 @@ const pct = (v: number | null) => (v === null ? '—' : `${(v * 100).toFixed(1)}
  * atrasou e o que falta prestar.
  */
 export function Relatorios() {
-  const [aba, setAba] = useState<Aba>('execucao');
+  const [aba, setAba] = useState<Aba>('despesas');
   const [ajusteId, setAjusteId] = useState('');
   const [ano, setAno] = useState('');
+  /*
+   * O período é só da aba de despesas, e começa no **mês corrente**.
+   *
+   * As outras abas respondem perguntas anuais e continuam filtrando por
+   * exercício. Esta é o fechamento que a entidade monta todo mês — abrir com
+   * "tudo" obrigaria a escolher duas datas antes de ver qualquer coisa.
+   */
+  const [de, setDe] = useState(() => mesCorrente().de);
+  const [ate, setAte] = useState(() => mesCorrente().ate);
   const [ajustes, setAjustes] = useState<{ value: string; label: string }[]>([]);
 
   const [execucao, setExecucao] = useState<LinhaExecucao[] | null>(null);
   const [repasses, setRepasses] = useState<LinhaRepasse[] | null>(null);
   const [situacao, setSituacao] = useState<ResumoSituacao | null>(null);
   const [fornecedores, setFornecedores] = useState<ResumoFornecedores | null>(null);
+  const [despesas, setDespesas] = useState<RelatorioDespesas | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
   const filtro = useMemo<FiltroRelatorio>(
@@ -98,21 +128,26 @@ export function Relatorios() {
     setRepasses(null);
     setSituacao(null);
     setFornecedores(null);
+    setDespesas(null);
 
     const carregar =
-      aba === 'execucao'
-        ? relatorioExecucao(filtro).then((d) => vivo && setExecucao(d))
-        : aba === 'repasses'
-          ? relatorioRepasses(filtro).then((d) => vivo && setRepasses(d))
-          : aba === 'fornecedores'
-            ? relatorioFornecedores(filtro).then((d) => vivo && setFornecedores(d))
-            : relatorioSituacao(filtro).then((d) => vivo && setSituacao(d));
+      aba === 'despesas'
+        ? relatorioDespesas({ de, ate, ajusteId: ajusteId || undefined }).then(
+            (d) => vivo && setDespesas(d),
+          )
+        : aba === 'execucao'
+          ? relatorioExecucao(filtro).then((d) => vivo && setExecucao(d))
+          : aba === 'repasses'
+            ? relatorioRepasses(filtro).then((d) => vivo && setRepasses(d))
+            : aba === 'fornecedores'
+              ? relatorioFornecedores(filtro).then((d) => vivo && setFornecedores(d))
+              : relatorioSituacao(filtro).then((d) => vivo && setSituacao(d));
 
     carregar.catch((e) => vivo && setErro(extrairMensagemErro(e, 'Não foi possível montar o relatório.')));
     return () => {
       vivo = false;
     };
-  }, [aba, filtro]);
+  }, [aba, filtro, de, ate, ajusteId]);
 
   const filtros = (
     <>
@@ -135,6 +170,33 @@ export function Relatorios() {
           placeholder="Todos"
           inputMode="numeric"
         />
+      </div>
+    </>
+  );
+
+  /*
+   * O período substitui o exercício na aba de despesas.
+   *
+   * Mostrar os dois lado a lado faria o usuário preencher um filtro que
+   * aquele relatório ignora — e depois duvidar do número que recebeu.
+   */
+  const filtrosPeriodo = (
+    <>
+      <div className="w-full sm:w-80">
+        <Select
+          label="Ajuste"
+          name="ajusteId"
+          value={ajusteId}
+          onChange={(e) => setAjusteId(e.target.value)}
+          options={ajustes}
+          placeholder="Todos os ajustes"
+        />
+      </div>
+      <div className="w-full sm:w-44">
+        <Input label="De" name="de" type="date" value={de} onChange={(e) => setDe(e.target.value)} />
+      </div>
+      <div className="w-full sm:w-44">
+        <Input label="Até" name="ate" type="date" value={ate} onChange={(e) => setAte(e.target.value)} />
       </div>
     </>
   );
@@ -380,6 +442,20 @@ export function Relatorios() {
           );
         })}
       </div>
+
+      {aba === 'despesas' && (
+        <div className="space-y-4">
+          {/* Os filtros ficam fora dos quadros porque valem para os três. */}
+          <div className="flex flex-wrap items-end gap-3 rounded-xl border border-ink-200 p-4 dark:border-ink-700">
+            {filtrosPeriodo}
+          </div>
+          <QuadrosDespesa
+            dados={despesas}
+            erro={erro}
+            ajusteEscolhido={ajusteId ? 'ajuste' : 'orgao'}
+          />
+        </div>
+      )}
 
       {aba === 'execucao' && (
         <QuadroRelatorio

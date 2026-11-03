@@ -3,6 +3,7 @@ import type {
   LinhaExecucao,
   LinhaRepasse,
   ResumoFornecedores,
+  RelatorioDespesas,
   ResumoSituacao,
 } from '@/pages/Relatorios/tipos';
 
@@ -34,6 +35,23 @@ export async function relatorioSituacao(f: FiltroRelatorio = {}): Promise<Resumo
 export async function relatorioFornecedores(f: FiltroRelatorio = {}): Promise<ResumoFornecedores> {
   const { data } = await http.get<ResumoFornecedores>('/relatorios/fornecedores', {
     params: params(f),
+  });
+  return data;
+}
+
+/**
+ * Os três quadros de despesa do período.
+ *
+ * Pede **período**, não ano: é o relatório de fechamento mensal, e o mesmo
+ * cálculo com o período do exercício preenche o anexo do Tribunal.
+ */
+export async function relatorioDespesas(f: {
+  de: string;
+  ate: string;
+  ajusteId?: string;
+}): Promise<RelatorioDespesas> {
+  const { data } = await http.get<RelatorioDespesas>('/relatorios/despesas', {
+    params: { de: f.de, ate: f.ate, ajusteId: f.ajusteId || undefined },
   });
   return data;
 }

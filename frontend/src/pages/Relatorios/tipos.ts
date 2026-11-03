@@ -66,3 +66,53 @@ export interface ResumoFornecedores {
   maiorFatia: number | null;
   credoresPara80: number | null;
 }
+
+/** Uma linha dos quadros de despesa do período. */
+export interface DespesaDoPeriodo {
+  id: string;
+  dataEmissao: string;
+  tipoDocumento: string | null;
+  numero: string;
+  descricao: string;
+  credorNome: string | null;
+  credorTipoDoc: string;
+  credorNumeroDoc: string;
+  categoriaDespesaTipo: number;
+  propostaCategoria: string | null;
+  propostaSubcategoria: string | null;
+  /** Na nota rateada dentro de um ajuste, já é a **parcela** dele. */
+  valorContabil: number;
+  pagoNoPeriodo: number;
+  aPagar: number;
+  pagamentos: { data: string; valor: number; codigoExtrato: string | null }[];
+}
+
+/** Os quatro números que o anexo oficial pede em colunas. */
+export interface TotaisDespesas {
+  contabilizado: number;
+  /** (H) emitidas antes do período e pagas dentro dele. */
+  anterioresPagasNoPeriodo: number;
+  /** (I) emitidas e pagas dentro do período. */
+  contabilizadoEPagoNoPeriodo: number;
+  /** (J = H + I). */
+  pagoNoPeriodo: number;
+  aPagar: number;
+}
+
+export interface ResumoDoPeriodo {
+  repasses: number;
+  rendimentos: number;
+  outrasReceitas: number;
+  recursosProprios: number;
+  totalRecursosPublicos: number;
+  totalDisponivel: number;
+}
+
+export interface RelatorioDespesas {
+  periodo: { de: string; ate: string };
+  contabilizadas: DespesaDoPeriodo[];
+  naoPagas: DespesaDoPeriodo[];
+  pagas: DespesaDoPeriodo[];
+  totais: TotaisDespesas;
+  resumo: ResumoDoPeriodo;
+}

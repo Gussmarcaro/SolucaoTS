@@ -271,6 +271,9 @@ routes.get('/relatorios/situacao', exigirPermissao('RELATORIOS'), (req, res, nex
 );
 // Concentração de fornecedores: para quem a entidade compra. Mesmo recurso —
 // é leitura gerencial do mesmo conjunto de dados.
+routes.get('/relatorios/despesas', exigirPermissao('RELATORIOS'), (req, res, next) =>
+  relatorios.despesas(req, res, next),
+);
 routes.get('/relatorios/fornecedores', exigirPermissao('RELATORIOS'), (req, res, next) =>
   relatorios.fornecedores(req, res, next),
 );
