@@ -643,6 +643,25 @@ A importação de OFX respondia **500** com `tenantObrigatorio` recusando gravar
 - **`idSalvo` existe por causa de um caso estreito e caro:** sem ele, o segundo clique em Salvar depois de uma falha de upload criaria um pagamento **duplicado** — dois registros do mesmo dinheiro, que é o erro que ninguém percebe olhando. Pelo mesmo motivo o botão "Cancelar" vira **"Fechar"** e recarrega a grade: depois que o pagamento nasceu, cancelar já não cancela nada.
 - Os envios são **em série**, não em paralelo: um lote de dez anexos simultâneos é exatamente a rajada que o teto de 300 req/min existe para conter.
 
+### Cadastrar o credor e pagar, sem sair do lançamento
+
+Dois atalhos pedidos pela operação, ambos **só de tela** — nenhuma rota nova, nenhuma coluna nova.
+
+**O credor nasce num modal, com o formulário de verdade.** A nota chega com um fornecedor que ninguém cadastrou, e mandar a pessoa à outra tela custa o lançamento inteiro: ela volta e redigita número, data, valor e descrição. O modal reusa o **`FornecedorForm`**, não uma versão reduzida — meia validação criaria fornecedor pela metade, que a tela de Fornecedores cobraria depois.
+
+- `FornecedorForm.onSuccess` passou a **devolver o que criou**. Recarregar a lista e procurar pelo nome acharia o homônimo errado; quem só fecha a tela ignora o argumento.
+- O modal fica **fora do `<form>`** da despesa. Formulário dentro de formulário não é HTML válido, e o "Salvar" de dentro submeteria o de fora — a despesa seria gravada pela metade ao cadastrar o credor. (O portal do modal não resolve: evento de React borbulha pela árvore de componentes, não pela do DOM.)
+- **O efeito que pré-seleciona o credor da nota passou a semear só o que está em branco.** Ele depende da lista de fornecedores, que agora cresce sem recarregar a tela: atribuindo direto, cadastrar um credor **desfazia a escolha** e devolvia o campo ao valor anterior, sem nada explicando.
+- O `hint` do `Combobox` aceita **nó**, não só texto, pela mesma razão do vazio do `QuadroRelatorio`: dica que aponta o caminho vale mais que dica que descreve o campo, e caminho precisa de botão.
+
+**O pagamento junto, e só onde ele cabe.** Boa parte da despesa chega com o comprovante.
+
+- **Só na nota nova e só na não rateada.** Na rateada o valor não é o da nota, é a parcela de cada parceria — e quem a calcula é o quadro da tela de Pagamentos, com o teto por ajuste. Repetir metade dessa regra aqui produziria exatamente o erro que o rateio existe para impedir, com os totais fechando. A tela **diz** isso, em vez de esconder o campo sem explicação. Na edição o pagamento já existe (ou já foi decidido que não), e oferecer de novo convidaria à duplicidade.
+- **Fonte e meio de pagamento saem da conta**, nunca da digitação — a mesma decisão do lançamento de Receita. E as contas oferecidas são só as **declaradas no ajuste em execução**: o recorte do portão vale aqui como vale lá.
+- **Semeia o que já se sabe** ao marcar: hoje, e o líquido da nota. São os dois campos que o operador digitaria igual em nove de dez vezes. O teto continua sendo o **bruto**, porque é o que o servidor confere — há nota paga pelo cheio.
+- **A conferência do pagamento roda antes de a nota ser criada.** Deixá-la para o servidor recusaria depois de a despesa já existir, e o usuário teria de ir a outra tela terminar o que começou aqui.
+- **Falha no pagamento não desfaz a despesa**, e a tela não diz que desfez: a mensagem separa o que foi salvo do que não foi e aponta Execução → Pagamentos. O formulário fica apontando para o registro criado (`idSalvo`), que é o que impede o segundo clique em Salvar de criar uma **nota duplicada** — mesmo cuidado dos anexos, e pela mesma razão: duas notas do mesmo gasto ninguém percebe olhando.
+
 ## Lançamento de Receita — a conta bancária traz a fonte
 
 `Execução → Financeiro → Receitas`. O formulário perguntava a **fonte de recurso** e, num grupo separado, **banco, agência e conta**. Os quatro campos saíram e deram lugar a um só: **Conta bancária**, escolhida do cadastro.

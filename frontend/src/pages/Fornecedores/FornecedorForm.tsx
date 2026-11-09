@@ -23,7 +23,15 @@ import type { Fornecedor, FornecedorPayload } from '@/types/fornecedor';
 
 interface Props {
   fornecedor?: Fornecedor | null;
-  onSuccess: () => void;
+  /**
+   * Avisa que gravou — e **devolve o que foi criado**.
+   *
+   * O argumento existe para quem abre este formulário de dentro de outra
+   * tela: o lançamento da despesa precisa selecionar o fornecedor que acabou
+   * de nascer, e recarregar a lista para procurá-lo pelo nome acharia o
+   * homônimo errado. Quem só fecha a tela ignora o argumento.
+   */
+  onSuccess: (criado?: Fornecedor) => void;
   onCancel: () => void;
 }
 
@@ -136,9 +144,12 @@ export function FornecedorForm({ fornecedor, onSuccess, onCancel }: Props) {
 
     setSalvando(true);
     try {
-      if (editando) await atualizarFornecedor(fornecedor!.id, payload);
-      else await criarFornecedor(payload);
-      onSuccess();
+      if (editando) {
+        await atualizarFornecedor(fornecedor!.id, payload);
+        onSuccess();
+      } else {
+        onSuccess(await criarFornecedor(payload));
+      }
     } catch (error) {
       const codigo = extrairCodigoErro(error);
       const msg = extrairMensagemErro(error, 'Não foi possível salvar o fornecedor.');

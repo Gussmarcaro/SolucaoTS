@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Check, ChevronDown, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { LabelCampo, temValor } from './LabelCampo';
@@ -16,7 +16,13 @@ interface Props {
   options: OpcaoCombo[];
   placeholder?: string;
   error?: string;
-  hint?: string;
+  /**
+   * Dica abaixo do campo. Aceita **nó**, e não só texto, pela mesma razão do
+   * vazio do `QuadroRelatorio`: dica que aponta um caminho ("cadastrar um
+   * agora") vale mais que dica que descreve o campo, e caminho precisa de
+   * link ou botão.
+   */
+  hint?: ReactNode;
   disabled?: boolean;
   name?: string;
 }

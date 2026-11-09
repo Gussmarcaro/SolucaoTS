@@ -19,6 +19,12 @@ import type { Fornecedor } from '@/types/fornecedor';
 import type { Contrato } from '@/types/contrato';
 import { QuadroRetencoes, somaRetencoes, type LinhaRetencao } from './QuadroRetencoes';
 import { Anexos, enviarPendentes, type AnexoPendente } from '@/components/ui/Anexos';
+import { Modal } from '@/components/ui/Modal';
+import { FornecedorForm } from '@/pages/Fornecedores/FornecedorForm';
+import { contasApi } from '@/services/contasBancarias.service';
+import { pagamentosOrgaoApi } from '@/services/pagamentosOrgao.service';
+import { BANCO } from '@/lib/dominiosFaseV';
+import type { ContaBancaria } from '@/types/contaBancaria';
 import { QuadroDivisao } from '@/components/rateio/QuadroDivisao';
 import type { Rateio } from '@/types/rateio';
 import {
@@ -30,6 +36,9 @@ import {
 
 /** O credor já gravado que não está entre os fornecedores ativos. */
 const PRESERVADO = '__gravado__';
+
+const rotuloBanco = (codigo: number) =>
+  BANCO.find((b) => b.value === String(codigo))?.label ?? String(codigo);
 
 /**
  * Lançamento da despesa no escopo do órgão.
@@ -104,8 +113,40 @@ export function DespesaForm({
   const [rateios, setRateios] = useState<Rateio[]>([]);
 
   const [erro, setErro] = useState<string | null>(null);
+  const [cadastrandoCredor, setCadastrandoCredor] = useState(false);
   const { ajusteId } = useAjusteExecucao();
-const [pendentes, setPendentes] = useState<AnexoPendente[]>([]);  /**   * O id da despesa que acabou de nascer nesta sessão do formulário.   *   * Sem ele, o segundo clique em Salvar depois de uma falha de upload criaria   * uma nota duplicada — e nota duplicada passa por toda validação, porque a   * chave de número+credor é do órgão, não do formulário.   */  const [idSalvo, setIdSalvo] = useState<string | null>(null);  const alvo = item?.id ?? idSalvo;
+
+  /*
+   * Pagar no mesmo lançamento.
+   *
+   * Boa parte da despesa chega com o comprovante de pagamento junto, e separar
+   * as duas coisas obriga a abrir outra tela, reencontrar a nota num combo e
+   * redigitar o que já estava à vista. Aqui o pagamento nasce ligado à nota
+   * que acabou de ser gravada.
+   *
+   * **Só na nota nova e só na não rateada.** Na rateada o valor não é da nota,
+   * é a parcela de cada parceria, e quem calcula isso é o quadro da tela de
+   * Pagamentos — repetir metade da regra aqui produziria o erro que o rateio
+   * existe para impedir, e os totais fechariam. Na edição, o pagamento já
+   * existe (ou não) e oferecer de novo convidaria à duplicidade.
+   */
+  const [pagarAgora, setPagarAgora] = useState(false);
+  const [pgtoData, setPgtoData] = useState('');
+  const [pgtoContaId, setPgtoContaId] = useState('');
+  const [pgtoValor, setPgtoValor] = useState('');
+  const [pgtoTransacao, setPgtoTransacao] = useState('');
+  const [contas, setContas] = useState<ContaBancaria[]>([]);
+  const [pendentes, setPendentes] = useState<AnexoPendente[]>([]);
+
+  /**
+   * O id da despesa que acabou de nascer nesta sessão do formulário.
+   *
+   * Sem ele, o segundo clique em Salvar depois de uma falha de upload criaria
+   * uma nota duplicada — e nota duplicada passa por toda validação, porque a
+   * chave de número+credor é do órgão, não do formulário.
+   */
+  const [idSalvo, setIdSalvo] = useState<string | null>(null);
+  const alvo = item?.id ?? idSalvo;
   const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
@@ -123,10 +164,17 @@ const [pendentes, setPendentes] = useState<AnexoPendente[]>([]);  /**   * O id d
       .rubricas()
       .then((r) => vivo && setRubricas(r))
       .catch(() => undefined);
+    // Só as contas **declaradas no ajuste em execução** — o mesmo recorte da
+    // tela de Pagamentos. Oferecer a conta de outra parceria aqui seria o
+    // erro que o portão da Execução existe para impedir.
+    contasApi
+      .listar(true, ajusteId ?? undefined)
+      .then((r) => vivo && setContas(r))
+      .catch(() => undefined);
     return () => {
       vivo = false;
     };
-  }, []);
+  }, [ajusteId]);
 
   // O credor gravado que não está entre os ativos vira opção própria: sem isso,
   // editar uma nota antiga abriria com o campo vazio, e salvar a apagaria.
@@ -135,7 +183,15 @@ const [pendentes, setPendentes] = useState<AnexoPendente[]>([]);  /**   * O id d
   useEffect(() => {
     if (!item) return;
     const achado = fornecedores.find((f) => f.documento === item.credorNumeroDoc);
-    setCredorId(achado ? achado.id : PRESERVADO);
+    /*
+     * Só semeia o que está em branco.
+     *
+     * O efeito depende de `fornecedores`, e a lista passou a crescer sem
+     * recarregar a tela — ao cadastrar um credor daqui mesmo. Atribuindo
+     * direto, esse cadastro **desfazia a escolha**: o efeito corria de novo e
+     * devolvia o campo ao credor gravado na nota, sem nada explicando.
+     */
+    setCredorId((atual) => atual || (achado ? achado.id : PRESERVADO));
   }, [item, fornecedores]);
 
   const opcoesCredor: OpcaoCombo[] = [
@@ -246,6 +302,15 @@ const [pendentes, setPendentes] = useState<AnexoPendente[]>([]);  /**   * O id d
     : [];
   const ajusteNoQuadro = !!rateioEscolhido?.participantes.some((p) => p.ajusteId === ajusteId);
 
+  /** Pagar junto só na nota **nova** e **não rateada** — ver o comentário do estado. */
+  const podePagarAgora = !item && !rateioProveniente;
+
+  const opcoesConta: OpcaoCombo[] = contas.map((c) => ({
+    value: c.id,
+    label: c.apelido || `${c.conta} — ${rotuloBanco(c.banco)}`,
+    sub: `Ag. ${c.agencia} · c/ ${c.conta}${c.contaTipo === 2 ? ' (investimento)' : ''}`,
+  }));
+
   async function submeter(e: React.FormEvent) {
     e.preventDefault();
     setErro(null);
@@ -261,6 +326,24 @@ const [pendentes, setPendentes] = useState<AnexoPendente[]>([]);  /**   * O id d
     if (vRet >= vBruto) return setErro('A retenção deve ser menor que o valor bruto.');
     if (!categoria.trim()) return setErro('Informe a categoria de despesa AUDESP.');
     if (rateioProveniente && !rateioId) return setErro('Escolha o método de rateio.');
+
+    /*
+     * O pagamento é conferido **antes** de a nota ser criada.
+     *
+     * Deixar para o servidor recusaria depois de a despesa já existir, e o
+     * usuário teria de ir a outra tela terminar o que começou aqui. O
+     * servidor confere de novo — é ele quem de fato protege.
+     */
+    if (pagarAgora && podePagarAgora) {
+      if (!pgtoData) return setErro('Informe a data do pagamento.');
+      if (pgtoData < dataEmissao)
+        return setErro('O pagamento não pode ser anterior à emissão do documento.');
+      if (!pgtoContaId) return setErro('Selecione a conta que pagou.');
+      const vPago = moedaParaNumero(pgtoValor);
+      if (vPago <= 0) return setErro('Informe o valor pago.');
+      if (vPago > vBruto + 0.005)
+        return setErro(`O pagamento não pode passar do valor da nota (${formatarMoeda(vBruto)}).`);
+    }
 
     // O credor é copiado do cadastro para a nota — fotografia, não vínculo: o
     // que o TCESP recebe precisa ser o credor na data da emissão.
@@ -307,6 +390,47 @@ const [pendentes, setPendentes] = useState<AnexoPendente[]>([]);  /**   * O id d
       }
 
       /*
+       * O pagamento vem depois da nota, porque precisa do id dela.
+       *
+       * Falha aqui **não desfaz a despesa**, e a tela não diz que desfez: ela
+       * está gravada. O formulário passa a apontar para o registro criado
+       * (`idSalvo`), e é isso que impede o segundo clique em Salvar de criar
+       * uma nota duplicada — o mesmo cuidado dos anexos, e pela mesma razão:
+       * duas notas do mesmo gasto ninguém percebe olhando.
+       */
+      if (pagarAgora && !alvo) {
+        const conta = contas.find((c) => c.id === pgtoContaId);
+        try {
+          if (!conta) throw new Error('Selecione a conta que pagou.');
+          if (conta.fonteRecursoTipo == null)
+            throw new Error('Esta conta está sem fonte de recurso no cadastro.');
+          await pagamentosOrgaoApi.criar({
+            // A parceria vem do portão, como no lançamento avulso.
+            ajusteId: ajusteId ?? null,
+            documentoFiscalId: id,
+            dataPagamento: pgtoData,
+            valor: moedaParaNumero(pgtoValor),
+            // Fonte e meio saem da conta, nunca da digitação — a mesma
+            // decisão do lançamento de Receita e do de Pagamento.
+            fonteRecursoTipo: conta.fonteRecursoTipo,
+            meioPagamento: conta.contaTipo === 2 ? 'FUNDO_FIXO' : 'BANCO',
+            banco: conta.banco,
+            agencia: Number(apenasDigitos(conta.agencia)) || null,
+            contaCorrente: conta.conta,
+            numeroTransacao: pgtoTransacao.trim() || null,
+          });
+        } catch (e) {
+          setIdSalvo(id);
+          setPagarAgora(false);
+          setErro(
+            `A despesa foi salva, mas o pagamento não: ${extrairMensagemErro(e, 'erro ao lançar o pagamento')}. ` +
+              'Lance-o em Execução → Pagamentos.',
+          );
+          return;
+        }
+      }
+
+      /*
        * Os arquivos escolhidos antes sobem agora — o envio precisa do id.
        *
        * Falha aqui **não** desfaz a despesa: ela está gravada, e dizer o
@@ -337,6 +461,7 @@ const [pendentes, setPendentes] = useState<AnexoPendente[]>([]);  /**   * O id d
   }
 
   return (
+    <>
     <form onSubmit={submeter} onKeyDown={enterComoTab} className="space-y-4">
       {erro && (
         <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
@@ -378,7 +503,28 @@ const [pendentes, setPendentes] = useState<AnexoPendente[]>([]);  /**   * O id d
             options={opcoesCredor}
             placeholder={opcoesCredor.length ? 'Digite para localizar...' : 'Nenhum fornecedor ativo cadastrado'}
             disabled={!opcoesCredor.length}
-            hint="Vem de Cadastro → Fornecedores / Prestadores."
+            hint={
+              /*
+               * Cadastrar o credor sem sair daqui.
+               *
+               * A nota chega com um fornecedor que ninguém cadastrou ainda, e
+               * mandar a pessoa a outra tela custa o formulário inteiro: ela
+               * volta e redigita número, data, valor e descrição. O botão abre
+               * o **mesmo** formulário do cadastro, num modal — não uma versão
+               * reduzida, que gravaria fornecedor pela metade e faria a tela
+               * de Fornecedores pedir o resto depois.
+               */
+              <>
+                Vem de Cadastro → Fornecedores / Prestadores.{' '}
+                <button
+                  type="button"
+                  onClick={() => setCadastrandoCredor(true)}
+                  className="font-semibold text-brand-600 underline hover:text-brand-700 dark:text-brand-400"
+                >
+                  Cadastrar um agora
+                </button>
+              </>
+            }
           />
         </div>
         <div className="sm:col-span-4">
@@ -556,6 +702,102 @@ const [pendentes, setPendentes] = useState<AnexoPendente[]>([]);  /**   * O id d
         )}
       </fieldset>
 
+      {/* Pagar no mesmo lançamento — ver o comentário do estado. */}
+      {podePagarAgora && (
+        <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700">
+          <legend className="px-1 text-[13px] font-normal text-ink-600 dark:text-ink-300">
+            Pagamento <span className="text-ink-400">— quando a nota já vem paga</span>
+          </legend>
+          <label className="flex items-center gap-2 py-2 text-sm text-ink-700 dark:text-ink-200">
+            <input
+              type="checkbox"
+              checked={pagarAgora}
+              onChange={(e) => {
+                setPagarAgora(e.target.checked);
+                // Semeia o que já se sabe: hoje, e o líquido da nota. São os
+                // dois campos que o operador digitaria igual em 9 de 10 vezes.
+                if (e.target.checked) {
+                  if (!pgtoData) setPgtoData(new Date().toISOString().slice(0, 10));
+                  if (!pgtoValor && liquidoDaNota > 0)
+                    setPgtoValor(numeroParaMascaraMoeda(liquidoDaNota));
+                }
+              }}
+              className="h-4 w-4 rounded border-ink-300 text-brand-500 focus:ring-brand-400 dark:border-ink-600 dark:bg-ink-800"
+            />
+            Lançar o pagamento junto com esta despesa
+          </label>
+
+          {pagarAgora &&
+            (contas.length === 0 ? (
+              /* Mesma frase das outras telas: vazio aqui não é "nenhuma conta
+                 cadastrada", é "esta parceria não declara nenhuma". */
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+                Esta parceria não declara nenhuma conta do cadastro — declare em{' '}
+                <strong>Ajuste → Fontes de Recursos e Contas</strong>, ou lance o pagamento depois
+                em Execução → Pagamentos.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-12">
+                <div className="sm:col-span-3">
+                  <Input
+                    label="Data do pagamento *"
+                    name="pgtoData"
+                    type="date"
+                    value={pgtoData}
+                    min={dataEmissao || undefined}
+                    onChange={(e) => setPgtoData(e.target.value)}
+                    hint={dataEmissao ? `Não pode ser anterior a ${dataBr(dataEmissao)}.` : undefined}
+                  />
+                </div>
+                <div className="sm:col-span-6">
+                  <Combobox
+                    label="Conta que pagou *"
+                    name="pgtoContaId"
+                    value={pgtoContaId}
+                    onChange={setPgtoContaId}
+                    options={opcoesConta}
+                    placeholder="Selecione a conta..."
+                    hint="Traz a fonte de recurso e o meio de pagamento."
+                  />
+                </div>
+                <div className="sm:col-span-3">
+                  <Input
+                    label="Valor pago (R$) *"
+                    name="pgtoValor"
+                    value={pgtoValor}
+                    onChange={(e) => setPgtoValor(mascaraMoeda(e.target.value))}
+                    placeholder="0,00"
+                    inputMode="numeric"
+                    /* O líquido é o que sai da conta; a retenção é recolhida
+                       depois, por guia. Mas o teto é o bruto, porque é o que o
+                       servidor confere — e há nota paga pelo cheio. */
+                    hint={liquidoDaNota > 0 ? `Líquido da nota: ${formatarMoeda(liquidoDaNota)}.` : undefined}
+                  />
+                </div>
+                <div className="sm:col-span-12">
+                  <Input
+                    label="Nº da transação (opcional)"
+                    name="pgtoTransacao"
+                    value={pgtoTransacao}
+                    onChange={(e) => setPgtoTransacao(e.target.value)}
+                  />
+                </div>
+              </div>
+            ))}
+        </fieldset>
+      )}
+
+      {/*
+        Na nota rateada o pagamento não cabe aqui, e dizer por quê evita que
+        alguém procure o campo que não existe.
+      */}
+      {!item && rateioProveniente && (
+        <p className="text-xs text-ink-400">
+          Nota rateada se paga em <strong>Execução → Pagamentos</strong>, onde o quadro mostra
+          quanto cabe a cada parceria — aqui não haveria contra o que limitar o valor.
+        </p>
+      )}
+
       <div className="flex items-center justify-end gap-2 pt-1">
         {/* Depois que a despesa nasceu, "Cancelar" já não cancela nada — e
             fechar sem recarregar deixaria a grade sem o registro que existe. */}
@@ -573,5 +815,32 @@ const [pendentes, setPendentes] = useState<AnexoPendente[]>([]);  /**   * O id d
         </Button>
       </div>
     </form>
+
+      {/*
+        O cadastro de fornecedor, no mesmo formulário da tela dele.
+
+        Fica **fora** do `<form>` da despesa — formulário dentro de formulário
+        não é HTML válido, e o "Salvar" de dentro submeteria o de fora: a
+        despesa seria gravada pela metade ao cadastrar o credor.
+      */}
+      <Modal
+        open={cadastrandoCredor}
+        onClose={() => setCadastrandoCredor(false)}
+        title="Novo Fornecedor / Prestador"
+        subtitle="O endereço é preenchido automaticamente pelo CEP."
+        size="2xl"
+      >
+        <FornecedorForm
+          onSuccess={(criado) => {
+            if (criado) {
+              setFornecedores((atual) => [...atual, criado]);
+              setCredorId(criado.id);
+            }
+            setCadastrandoCredor(false);
+          }}
+          onCancel={() => setCadastrandoCredor(false)}
+        />
+      </Modal>
+    </>
   );
 }
