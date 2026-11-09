@@ -14,6 +14,8 @@
  * números. Divergiu, um dos dois fica vermelho.
  */
 
+import { diaRef, janelaEfetiva, vigenciaInvertida } from './vigencia';
+
 export type TipoMeta =
   | 'QUANTITATIVA'
   | 'QUALITATIVA_QUANTIFICAVEL'
@@ -174,15 +176,7 @@ const MESES = [
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ];
 
-/** 'YYYY-MM-DD' → ano e mês, sem passar por `Date` (que desloca fuso). */
-function anoMes(iso: string): { ano: number; mes: number } | null {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso.trim());
-  if (!m) return null;
-  const ano = Number(m[1]);
-  const mes = Number(m[2]);
-  if (mes < 1 || mes > 12) return null;
-  return { ano, mes };
-}
+
 
 /**
  * Os períodos da meta, a partir da vigência dela.
@@ -191,16 +185,24 @@ function anoMes(iso: string): { ano: number; mes: number } | null {
  * dia 1º de um período cheio, e a contagem é ancorada no **ano civil** — o 2º
  * quadrimestre é mai–ago, comece a meta em junho ou não. Ver o exemplo do
  * manual em `core/meta/periodos.ts`.
+ *
+ * **O dia do início também conta**, mas só na ponta: quem decide se aquele mês
+ * tem período próprio é `janelaEfetiva`. Sem isso, um convênio de 29/01/2026 a
+ * 28/01/2027 ganhava treze períodos mensais onde o TCESP gera doze.
  */
 export function gerarPeriodos(
   periodicidade: PeriodicidadeMeta,
   inicio: string | null | undefined,
   fim: string | null | undefined,
 ): PeriodoMeta[] {
-  const a = inicio ? anoMes(inicio) : null;
-  const b = fim ? anoMes(fim) : null;
-  if (!a || !b) return [];
-  if (b.ano < a.ano || (b.ano === a.ano && b.mes < a.mes)) return [];
+  const de = inicio ? diaRef(inicio) : null;
+  const ate = fim ? diaRef(fim) : null;
+  if (!de || !ate) return [];
+  if (vigenciaInvertida(de, ate)) return [];
+
+  // Os meses que a vigência de fato ocupa: a ponta que só encosta em poucos
+  // dias do mês não ganha período próprio.
+  const { de: a, ate: b } = janelaEfetiva(de, ate);
 
   if (periodicidade === 'UNICA') {
     const meses = (b.ano - a.ano) * 12 + (b.mes - a.mes) + 1;

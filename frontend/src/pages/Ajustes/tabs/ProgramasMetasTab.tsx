@@ -25,6 +25,7 @@ import {
   type QualificadorMeta,
   type TipoMeta,
 } from '@/types/meta';
+import { diasAbsorvidos } from '@/types/vigencia';
 import { extrairCodigoErro, extrairMensagemErro } from '@/services/http';
 import {
   atualizarMeta,
@@ -356,6 +357,21 @@ function MetaForm({
     });
   }, [periodos]);
 
+  /*
+   * Os dias de vigência que ficaram fora do quadro.
+   *
+   * O período é a casa do **ano civil**, e a ponta que só encosta em poucos
+   * dias do mês não ganha período próprio — senão três dias de janeiro
+   * pediriam a mesma meta de fevereiro inteiro. Esses dias continuam sendo
+   * vigência e são apurados no período vizinho, mas "a parceria começou em
+   * janeiro e o quadro começa em fevereiro" é a dúvida que faz alguém achar
+   * que falta um período. Por isso a tela diz.
+   */
+  const absorvidos = useMemo(
+    () => (comQuadro ? diasAbsorvidos(vigenciaInicio, vigenciaFim) : { noInicio: 0, noFim: 0 }),
+    [comQuadro, vigenciaInicio, vigenciaFim],
+  );
+
   const alterarLinha = (i: number, campo: keyof LinhaQuadro, valor: string) =>
     setQuadro((q) => q.map((l, k) => (k === i ? { ...l, [campo]: valor } : l)));
 
@@ -558,6 +574,26 @@ function MetaForm({
               </div>
             )}
           </div>
+
+          {periodos.length > 0 && (absorvidos.noInicio > 0 || absorvidos.noFim > 0) && (
+            <p className="border-b border-ink-100 px-3 py-2 text-xs text-ink-500 dark:border-ink-800 dark:text-ink-400">
+              {absorvidos.noInicio > 0 && (
+                <>
+                  A vigência começa com <strong>{absorvidos.noInicio}</strong>{' '}
+                  {absorvidos.noInicio === 1 ? 'dia' : 'dias'} num mês que não forma período próprio
+                  — {absorvidos.noInicio === 1 ? 'ele é apurado' : 'eles são apurados'} no primeiro
+                  período do quadro.{' '}
+                </>
+              )}
+              {absorvidos.noFim > 0 && (
+                <>
+                  Na outra ponta sobram <strong>{absorvidos.noFim}</strong>{' '}
+                  {absorvidos.noFim === 1 ? 'dia' : 'dias'}, apurados no último período.{' '}
+                </>
+              )}
+              É assim que o cadastro do TCESP monta os períodos.
+            </p>
+          )}
 
           {periodos.length === 0 ? (
             <p className="px-3 py-6 text-center text-sm text-ink-400">

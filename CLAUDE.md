@@ -474,6 +474,29 @@ Aba **Programas e Metas** no dossiê do Ajuste. O cadastro do plano é feito na 
   - **Este bloco não é transmitido**, então qualificador novo custa uma entrada no catálogo e um valor no enum; nenhum schema do TCESP precisa aceitá-lo.
 - **`npm run verificar:metas`** (103 checagens, sem banco) cobre a geração dos períodos, a validação, a leitura do atingimento e a apuração. O espelho do front é travado por `src/types/meta.test.ts` — inclusive `avaliarMeta` e `apurarMetas`, que existem dos dois lados.
 
+### O dia do início decide se o mês tem período
+
+O manual só exemplifica vigência que começa no dia 1º, então ele nada diz sobre o caso comum: a parceria assinada no meio do mês. O sistema contava **mês a mês**, e um convênio de 29/01/2026 a 28/01/2027 — doze meses de duração — encostava em **treze** meses do calendário: três dias de janeiro de 2026 numa ponta, vinte e oito de janeiro de 2027 na outra.
+
+Os três dias viravam um período indistinguível de um mês inteiro. O estrago não é de tela:
+
+- no **Plano de Metas**, "quantidade igual em todos" dividia a meta por 13 — 32 por mês onde a entidade pactuou ~35 —, e isso em **todos** os meses, não só no de três dias;
+- no **Plano de Aplicação**, o valor mensal era replicado em 13 competências e o total **estourava o valor global**, que hoje é pendência `IMPEDE` na conferência da prestação.
+
+E o que decide: **a tela do TCESP gera doze períodos** para essa vigência, de fevereiro/2026 a janeiro/2027 (conferido no cadastro real de um convênio). O plano de metas é confrontado pelo Tribunal em código, nome, **período** e periodicidade.
+
+**A regra (`core/vigencia/mesesEfetivos.ts`): um mês entra quando a vigência cobre a maior parte dos dias dele.** Uma peça só, usada pelos dois lados — `gerarPeriodos` e `janelaDoExercicio` —, porque o mesmo erro aparecia nos dois e consertar um deixaria o outro esperando o próximo usuário.
+
+- **Não é reancorar a contagem na vigência**, e a distinção é o ponto. O período continua sendo a casa do **ano civil** — o 2º quadrimestre é mai–ago, comece a parceria em junho ou não. Por isso o exemplo do manual (vigência de 01/06, primeira periodicidade com 3 meses: junho, julho e agosto) continua valendo **intacto**: ali as pontas caem no dia 1º e no último dia, não há dia solto a decidir, e a regra nova não muda nada. Reancorar mudaria o **número** do período, que é justamente o que o Tribunal confronta.
+- **O dia decide a ponta, e só ela.** Não há pro rata dentro do período: 15/03 ocupa a maior parte de março, então março entra **inteiro**.
+- **O dia solto não some da execução.** Ele não tem período próprio e é apurado junto do vizinho — que é o que a entidade já faz ao apresentar "29/01 a 28/02" como o primeiro mês. A tela do quadro **diz isso**, porque "a parceria começou em janeiro e o quadro começa em fevereiro" é a dúvida que faz alguém procurar um período que não existe.
+- **O empate desempata para lados opostos**, e não é preciosismo: as duas pontas se completam, o que falta numa sobra na outra. O início entra com `>=` e o fim com `>`, então uma vigência de doze meses dá **sempre** doze competências — mesmo quando o mês se parte exatamente ao meio (16/04 a 15/04, com abril de 30 dias). Com o mesmo critério nas duas pontas sairiam onze ou treze.
+- **Vigência curta a cavalo, sem maioria em nenhum mês** (30/03 a 02/04), fica no mês de maior presença. Devolver janela vazia deixaria a meta sem período nenhum e o plano sem competência — pior que a aproximação.
+- **Vigência invertida devolve o ano cheio**, como antes da regra: é cadastro pela metade, não janela menor.
+- Coberto por `verificar:metas` e `verificar:plano`, sem banco, e pelos espelhos em `types/meta.test.ts` e `types/planoAplicacao.test.ts` — com os números do caso real (416 atendimentos repartidos por doze, não treze).
+
+**Consequência no que já está gravado:** meta cadastrada com treze períodos perde o de janeiro na próxima edição, e o total do quadro cai junto — é visível no rodapé "Total", e a redistribuição é do usuário. O mesmo vale para a competência de janeiro de um plano já digitado.
+
 ### Atingimento de metas → bloco Desconto
 
 O que liga uma coisa à outra é a definição do próprio TCESP: o **Desconto** é *"a dedução aplicada ao valor de repasse em razão do descumprimento parcial ou integral de metas estabelecidas no plano de trabalho"*. Meta não atingida, portanto, **não é só fato da execução** — é a origem de um bloco que nós transmitimos, e os termos costumam fixar faixas sobre o percentual ("até 10%, comunicação sem penalidade; de 10% a 20%, desconto de 10% da parcela").

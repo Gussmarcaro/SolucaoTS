@@ -55,14 +55,48 @@ describe('gerarPeriodos', () => {
   });
 
   it('corta dos dois lados quando a vigência começa e termina no meio', () => {
+    // 15/03 ocupa a maior parte de março, então março entra; 10/09 não ocupa
+    // setembro, e aquele mês não ganha lugar no quadro.
     const ps = gerarPeriodos('SEMESTRAL', '2025-03-15', '2025-09-10');
-    expect(compacto(ps)).toEqual(['1:3-6/2025*', '2:7-9/2025*']);
+    expect(compacto(ps)).toEqual(['1:3-6/2025*', '2:7-8/2025*']);
   });
 
-  it('só o mês conta — o dia não faz pro rata', () => {
+  it('o dia decide a ponta, e não faz pro rata dentro do período', () => {
     const cheio = gerarPeriodos('TRIMESTRAL', '2025-07-01', '2025-09-30');
-    const meio = gerarPeriodos('TRIMESTRAL', '2025-07-20', '2025-09-02');
+    const meio = gerarPeriodos('TRIMESTRAL', '2025-07-05', '2025-09-25');
     expect(compacto(meio)).toEqual(compacto(cheio));
+  });
+
+  it('o convênio de doze meses dá doze períodos, não treze', () => {
+    // O caso real: 29/01/2026 a 28/01/2027. Contando mês a mês, os três dias
+    // de janeiro/2026 viravam um período igual a fevereiro inteiro — e a tela
+    // do TCESP gera doze, de fevereiro/2026 a janeiro/2027.
+    const ps = gerarPeriodos('MENSAL', '2026-01-29', '2027-01-28');
+    expect(ps).toHaveLength(12);
+    expect(compacto(ps)[0]).toBe('2:2-2/2026');
+    expect(compacto(ps)[11]).toBe('1:1-1/2027');
+  });
+
+  it('a quantidade igual se reparte por doze, não por treze', () => {
+    const ps = gerarPeriodos('MENSAL', '2026-01-29', '2027-01-28');
+    const qs = distribuirProporcional(416, ps);
+    expect(qs.reduce((a, b) => a + b, 0)).toBeCloseTo(416, 2);
+    // 34,67 e não 32 — é a meta mensal que a entidade pactuou.
+    expect(qs.every((q) => q === 34.67 || q === 34.66)).toBe(true);
+  });
+
+  it('mês partido ao meio desempata para dentro, e dá doze', () => {
+    // Abril tem 30 dias: 16..30 são 15 e 1..15 são 15. Sem desempate a
+    // vigência de doze meses daria onze ou treze períodos.
+    const ps = gerarPeriodos('MENSAL', '2026-04-16', '2027-04-15');
+    expect(ps).toHaveLength(12);
+    expect(compacto(ps)[0]).toBe('4:4-4/2026');
+    expect(compacto(ps)[11]).toBe('3:3-3/2027');
+  });
+
+  it('vigência curta a cavalo fica no mês de maior presença', () => {
+    const ps = gerarPeriodos('MENSAL', '2026-03-30', '2026-04-02');
+    expect(compacto(ps)).toEqual(['3:3-3/2026']);
   });
 
   it('devolve vazio sem vigência completa ou com datas invertidas', () => {

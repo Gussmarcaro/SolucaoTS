@@ -56,15 +56,76 @@ console.log('\nPlano de Aplicação — competências do exercício\n');
   conferir('vigência de um mês dá uma competência', j?.meses === 1 && j?.primeiro === 7);
 }
 
-// O dia não conta: o plano é por competência mensal.
+// O dia decide a **ponta**, e só ela: não existe meia competência.
 {
-  const a = janelaDoExercicio(2026, '2026-06-30', '2026-12-01');
+  const a = janelaDoExercicio(2026, '2026-06-05', '2026-12-20');
   const b = janelaDoExercicio(2026, '2026-06-01', '2026-12-31');
   conferir(
-    'o dia da vigência não muda a janela',
+    'o dia não parte a competência pelo meio',
     JSON.stringify(a) === JSON.stringify(b),
-    'não existe meio mês de rubrica',
+    'as duas ocupam jun–dez: a rubrica é mensal, não pro rata',
   );
+}
+{
+  // 30/06 é um dia de junho; 01/12 é um dia de dezembro. Nenhum dos dois
+  // comporta um mês de rubrica, e cobrá-lo inflaria o plano em dois meses.
+  const j = janelaDoExercicio(2026, '2026-06-30', '2026-12-01');
+  conferir(
+    'ponta de um dia não vira competência',
+    j?.primeiro === 7 && j?.ultimo === 11 && j?.meses === 5,
+    JSON.stringify(j),
+  );
+}
+
+/*
+ * O caso real que originou a regra.
+ *
+ * Convênio de 29/01/2026 a 28/01/2027: doze meses de vigência encostando em
+ * treze meses do calendário. Contando mês a mês dava 12 + 1 = **13**
+ * competências, e o valor mensal × 13 estourava o valor global do ajuste.
+ */
+{
+  const a = janelaDoExercicio(2026, '2026-01-29', '2027-01-28');
+  const b = janelaDoExercicio(2027, '2026-01-29', '2027-01-28');
+  conferir(
+    'janeiro de três dias não vira competência',
+    a?.primeiro === 2 && a?.ultimo === 12 && a?.meses === 11,
+    JSON.stringify(a),
+  );
+  conferir(
+    'janeiro de 28 dias vira, e é a última competência',
+    b?.primeiro === 1 && b?.ultimo === 1 && b?.meses === 1,
+    JSON.stringify(b),
+  );
+  conferir(
+    'as duas pontas somam doze competências, não treze',
+    (a?.meses ?? 0) + (b?.meses ?? 0) === 12,
+  );
+}
+
+// O empate: as pontas se completam, e exatamente uma delas fica.
+{
+  // Abril tem 30 dias; 16..30 são 15 e 1..15 são 15. Sem desempate seriam 11
+  // ou 13 competências — nunca as doze que o convênio dura.
+  const a = janelaDoExercicio(2026, '2026-04-16', '2027-04-15');
+  const b = janelaDoExercicio(2027, '2026-04-16', '2027-04-15');
+  conferir(
+    'mês partido ao meio desempata para dentro no início',
+    a?.primeiro === 4 && a?.ultimo === 12 && a?.meses === 9,
+    JSON.stringify(a),
+  );
+  conferir(
+    'e para fora no fim, somando doze',
+    b?.meses === 3 && (a?.meses ?? 0) + (b?.meses ?? 0) === 12,
+    JSON.stringify(b),
+  );
+}
+
+// Vigência invertida: o ano cheio, como antes da regra — é cadastro pela
+// metade, não janela menor.
+{
+  const j = janelaDoExercicio(2026, '2026-12-31', '2026-01-01');
+  conferir('vigência invertida não inventa janela', j?.meses === 12 && j?.parcial === false);
 }
 
 // Sem vigência, o ano é cheio — a regra nova não tranca o cadastro antigo.

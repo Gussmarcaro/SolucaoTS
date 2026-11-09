@@ -22,19 +22,15 @@ export interface JanelaDoExercicio {
   parcial: boolean;
 }
 
-/** Ano e mês de 'YYYY-MM-DD', lidos do texto: `Date` deslocaria o fuso. */
-function anoMes(iso: string): { ano: number; mes: number } | null {
-  const m = /^(\d{4})-(\d{2})/.exec(iso.trim());
-  if (!m) return null;
-  const mes = Number(m[2]);
-  return mes >= 1 && mes <= 12 ? { ano: Number(m[1]), mes } : null;
-}
+import { diaRef, janelaEfetiva, vigenciaInvertida } from './vigencia';
 
 /**
  * A janela do exercício, recortada pela vigência do ajuste.
  *
  * Um convênio de 01/06/2026 a 31/05/2027 tem **sete** competências em 2026 e
- * **cinco** em 2027 — não doze em cada. Sem isso o plano declara mais que o
+ * **cinco** em 2027 — não doze em cada. E o **dia** conta na ponta: um de
+ * 29/01/2026 a 28/01/2027 tem onze em 2026 e uma em 2027, porque três dias de
+ * janeiro não comportam um mês de rubrica. Sem isso o plano declara mais que o
  * pactuado, o total do exercício não bate com o valor global, e o "execução ×
  * plano" compara a despesa real contra um teto que não existe.
  *
@@ -51,9 +47,15 @@ export function janelaDoExercicio(
 ): JanelaDoExercicio | null {
   const cheio: JanelaDoExercicio = { primeiro: 1, ultimo: 12, meses: 12, parcial: false };
 
-  const ini = vigenciaInicial ? anoMes(vigenciaInicial) : null;
-  const fim = vigenciaFinal ? anoMes(vigenciaFinal) : null;
-  if (!ini || !fim) return cheio;
+  const de = vigenciaInicial ? diaRef(vigenciaInicial) : null;
+  const ate = vigenciaFinal ? diaRef(vigenciaFinal) : null;
+  if (!de || !ate) return cheio;
+
+  // Vigência invertida é cadastro pela metade, não janela menor.
+  if (vigenciaInvertida(de, ate)) return cheio;
+
+  // A ponta que só encosta em poucos dias do mês não ganha competência.
+  const { de: ini, ate: fim } = janelaEfetiva(de, ate);
 
   if (ano < ini.ano || ano > fim.ano) return null;
 

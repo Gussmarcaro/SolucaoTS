@@ -48,11 +48,40 @@ describe('janelaDoExercicio', () => {
     });
   });
 
-  it('o dia não conta, só o mês', () => {
+  it('o dia decide a ponta, e não parte a competência pelo meio', () => {
     // O plano é por competência mensal; não há meio mês de rubrica.
-    expect(janelaDoExercicio(2026, '2026-06-30', '2026-12-01')).toEqual(
+    expect(janelaDoExercicio(2026, '2026-06-05', '2026-12-20')).toEqual(
       janelaDoExercicio(2026, '2026-06-01', '2026-12-31'),
     );
+  });
+
+  it('ponta de um dia não vira competência', () => {
+    // 30/06 é um dia de junho e 01/12 é um dia de dezembro: nenhum comporta
+    // um mês de rubrica, e cobrá-los inflaria o plano em dois meses.
+    expect(janelaDoExercicio(2026, '2026-06-30', '2026-12-01')).toEqual({
+      primeiro: 7,
+      ultimo: 11,
+      meses: 5,
+      parcial: true,
+    });
+  });
+
+  it('o convênio de doze meses dá doze competências, não treze', () => {
+    // O caso real: 29/01/2026 a 28/01/2027. Com treze, o valor mensal × 13
+    // estourava o valor global do ajuste.
+    const a = janelaDoExercicio(2026, '2026-01-29', '2027-01-28');
+    const b = janelaDoExercicio(2027, '2026-01-29', '2027-01-28');
+    expect(a).toEqual({ primeiro: 2, ultimo: 12, meses: 11, parcial: true });
+    expect(b).toEqual({ primeiro: 1, ultimo: 1, meses: 1, parcial: true });
+  });
+
+  it('vigência invertida não inventa janela', () => {
+    expect(janelaDoExercicio(2026, '2026-12-31', '2026-01-01')).toEqual({
+      primeiro: 1,
+      ultimo: 12,
+      meses: 12,
+      parcial: false,
+    });
   });
 
   it('aceita vigência de um mês só', () => {

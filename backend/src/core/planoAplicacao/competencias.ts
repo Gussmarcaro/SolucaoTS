@@ -14,7 +14,17 @@
  *
  * Função pura para poder ser conferida sem banco: o número de meses multiplica
  * dinheiro, e errá-lo não quebra tela nenhuma.
+ *
+ * **O dia do início também conta.** Um convênio de 29/01/2026 a 28/01/2027
+ * encosta em treze meses do calendário, mas dura doze: três dias de janeiro de
+ * 2026 numa ponta, vinte e oito de janeiro de 2027 na outra. Contando mês a
+ * mês, o valor mensal era replicado em treze competências e o total do plano
+ * estourava o valor global — que é pendência que impede a prestação. Quem
+ * decide se a ponta tem competência própria é `janelaEfetiva`, a mesma regra
+ * que gera os períodos do Plano de Metas.
  */
+
+import { janelaEfetiva, type DiaRef } from '@/core/vigencia/mesesEfetivos';
 
 export interface JanelaDoExercicio {
   /** Primeiro e último mês (1-12) que o plano deve cobrir naquele ano. */
@@ -31,12 +41,19 @@ export interface JanelaDoExercicio {
   parcial: boolean;
 }
 
-/** Ano e mês de uma data 'YYYY-MM-DD', sem passar por `Date` (que desloca fuso). */
-function anoMes(iso: string): { ano: number; mes: number } | null {
-  const m = /^(\d{4})-(\d{2})/.exec(iso.trim());
+/**
+ * Ano, mês e dia de 'YYYY-MM-DD', sem passar por `Date` (que desloca fuso).
+ *
+ * O dia passou a ser lido: é ele que diz se a ponta da vigência ocupa o mês ou
+ * apenas encosta nele.
+ */
+function diaRef(iso: string): DiaRef | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso.trim());
   if (!m) return null;
   const mes = Number(m[2]);
-  return mes >= 1 && mes <= 12 ? { ano: Number(m[1]), mes } : null;
+  const dia = Number(m[3]);
+  if (mes < 1 || mes > 12 || dia < 1 || dia > 31) return null;
+  return { ano: Number(m[1]), mes, dia };
 }
 
 /**
@@ -56,9 +73,19 @@ export function janelaDoExercicio(
 ): JanelaDoExercicio | null {
   const cheio: JanelaDoExercicio = { primeiro: 1, ultimo: 12, meses: 12, parcial: false };
 
-  const ini = vigenciaInicial ? anoMes(vigenciaInicial) : null;
-  const fim = vigenciaFinal ? anoMes(vigenciaFinal) : null;
-  if (!ini || !fim) return cheio;
+  const de = vigenciaInicial ? diaRef(vigenciaInicial) : null;
+  const ate = vigenciaFinal ? diaRef(vigenciaFinal) : null;
+  if (!de || !ate) return cheio;
+
+  // Vigência invertida não é janela menor, é cadastro incompleto — e o ano
+  // cheio é o que o plano já fazia antes de existir esta regra.
+  const invertida =
+    ate.ano < de.ano || (ate.ano === de.ano && (ate.mes < de.mes || (ate.mes === de.mes && ate.dia < de.dia)));
+  if (invertida) return cheio;
+
+  // Os meses que a vigência de fato ocupa: a ponta que só encosta em poucos
+  // dias do mês não ganha competência própria.
+  const { de: ini, ate: fim } = janelaEfetiva(de, ate);
 
   // A vigência inteira passa ao largo do exercício.
   if (ano < ini.ano || ano > fim.ano) return null;

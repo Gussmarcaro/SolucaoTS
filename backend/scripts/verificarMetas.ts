@@ -112,15 +112,70 @@ console.log('\nPlano de Metas\n');
   conferir('semestral cortada dos dois lados dá 2 períodos', ps.length === 2, resumo(ps));
   conferir(
     'os dois são parciais',
-    ps.every((p) => p.parcial) && ps[0]?.meses === 4 && ps[1]?.meses === 3,
+    ps.every((p) => p.parcial) && ps[0]?.meses === 4 && ps[1]?.meses === 2,
     resumo(ps),
   );
   conferir(
-    'o dia não conta, só o mês',
-    // 15/03 e 10/09: o período começa em março e termina em setembro inteiros.
-    // O TCESP pede quantidade por período, não pro rata de dias.
-    ps[0]?.mesInicial === 3 && ps[1]?.mesFinal === 9,
+    'o dia decide a ponta, e só ela',
+    // 15/03 ocupa a maior parte de março, então março entra inteiro — não há
+    // pro rata de dias dentro do período. 10/09 não ocupa setembro, e aquele
+    // mês não ganha lugar no quadro; os dez dias são reportados no período
+    // anterior, como a entidade já faz.
+    ps[0]?.mesInicial === 3 && ps[1]?.mesFinal === 8,
+    resumo(ps),
   );
+}
+
+/*
+ * O caso real que originou a regra do dia.
+ *
+ * Convênio de 29/01/2026 a 28/01/2027, meta mensal. Contando mês a mês dava
+ * **13** períodos, com os três dias de janeiro/2026 valendo tanto quanto
+ * fevereiro inteiro: "quantidade igual em todos" dividia a meta por 13 e saía
+ * menor que a pactuada em todos os meses. A tela do TCESP gera doze, de
+ * fevereiro/2026 a janeiro/2027 — e o plano de metas é confrontado pelo
+ * Tribunal justamente em período.
+ */
+{
+  const ps = gerarPeriodos('MENSAL', d('2026-01-29'), d('2027-01-28'));
+  conferir('o convênio de doze meses dá doze períodos, não treze', ps.length === 12, resumo(ps));
+  conferir(
+    'começa em fevereiro de 2026',
+    ps[0]?.ano === 2026 && ps[0]?.periodo === 2,
+    resumo(ps.slice(0, 1)),
+  );
+  conferir(
+    'termina em janeiro de 2027 — 28 dias ocupam o mês',
+    ps[11]?.ano === 2027 && ps[11]?.periodo === 1,
+    resumo(ps.slice(11)),
+  );
+  conferir('nenhum é parcial: são doze meses cheios', ps.every((x) => !x.parcial && x.meses === 1));
+  conferir(
+    'a quantidade igual se reparte por doze, não por treze',
+    // 416 atendimentos no caso real: 34,67/mês, e não 32.
+    distribuirProporcional(416, ps).every((q) => q === 34.67 || q === 34.66),
+    distribuirProporcional(416, ps).slice(0, 3).join(' '),
+  );
+}
+
+// O empate: as pontas se completam, e exatamente uma delas fica.
+{
+  // Abril tem 30 dias; 16..30 são 15 e 1..15 são 15. Sem desempate a vigência
+  // de doze meses daria onze ou treze períodos.
+  const ps = gerarPeriodos('MENSAL', d('2026-04-16'), d('2027-04-15'));
+  conferir('mês partido ao meio dá doze períodos', ps.length === 12, resumo(ps));
+  conferir(
+    'o empate desempata para dentro no início',
+    ps[0]?.ano === 2026 && ps[0]?.periodo === 4 && ps[11]?.ano === 2027 && ps[11]?.periodo === 3,
+    resumo(ps),
+  );
+}
+
+// Vigência curta sem maioria em nenhum mês: fica o de maior presença.
+{
+  const ps = gerarPeriodos('MENSAL', d('2026-03-30'), d('2026-04-02'));
+  conferir('vigência de quatro dias a cavalo dá um período', ps.length === 1, resumo(ps));
+  conferir('fica o mês de maior presença (março, 2 dias contra 2)', ps[0]?.periodo === 3, resumo(ps));
 }
 
 // --- a vigência de um mês só ------------------------------------------------

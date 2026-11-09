@@ -24,7 +24,18 @@
  * o quadrimestre 1 é jan–abr, o 2 é mai–ago, o 3 é set–dez. Uma vigência que
  * começa em junho cai no meio do quadrimestre 2, e é esse recorte que torna o
  * primeiro período curto.
+ *
+ * ## E o dia do início também conta
+ *
+ * O exemplo do manual começa no dia 1º, então ele nada diz sobre a vigência
+ * que começa no meio do mês — que é o caso comum. Quem decide se aquele mês
+ * tem período próprio é `janelaEfetiva`: ele entra quando a vigência cobre a
+ * maior parte dos dias dele. Sem isso, um convênio de 29/01/2026 a 28/01/2027
+ * ganhava **treze** períodos mensais, com três dias de janeiro valendo tanto
+ * quanto fevereiro inteiro — e a tela do TCESP gera doze.
  */
+
+import { janelaEfetiva, type DiaRef } from '@/core/vigencia/mesesEfetivos';
 
 export type PeriodicidadeMeta =
   | 'MENSAL'
@@ -70,8 +81,12 @@ export interface PeriodoMeta {
   parcial: boolean;
 }
 
-/** Ano e mês de uma data, em UTC — as datas do schema são `@db.Date`. */
-const anoMes = (d: Date) => ({ ano: d.getUTCFullYear(), mes: d.getUTCMonth() + 1 });
+/** Ano, mês e dia de uma data, em UTC — as datas do schema são `@db.Date`. */
+const diaRef = (d: Date): DiaRef => ({
+  ano: d.getUTCFullYear(),
+  mes: d.getUTCMonth() + 1,
+  dia: d.getUTCDate(),
+});
 
 /**
  * Gera os períodos entre duas datas.
@@ -88,8 +103,11 @@ export function gerarPeriodos(
   if (!inicio || !fim) return [];
   if (fim < inicio) return [];
 
-  const a = anoMes(inicio);
-  const b = anoMes(fim);
+  // Os meses que a vigência de fato ocupa: a ponta que só encosta em alguns
+  // dias do mês não ganha período próprio. Ver `core/vigencia/mesesEfetivos`.
+  const janela = janelaEfetiva(diaRef(inicio), diaRef(fim));
+  const a = janela.de;
+  const b = janela.ate;
 
   /*
    * `UNICA` é um período só, cobrindo a vigência inteira.
