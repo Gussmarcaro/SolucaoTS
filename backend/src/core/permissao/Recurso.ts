@@ -74,6 +74,10 @@ export const RECURSOS: Recurso[] = [
   { id: 'EXECUCAO_PAGAMENTOS', rotulo: 'Pagamentos', secao: 'Execução' },
   { id: 'EXECUCAO_GUIAS', rotulo: 'Guias de Recolhimento', secao: 'Execução' },
   { id: 'EXECUCAO_CONCILIACAO', rotulo: 'Conciliação Bancária', secao: 'Execução' },
+  // Execução → Técnico. Grava nas linhas do Relatório de Atividades da
+  // prestação, mas quem apura o atendimento é a equipe técnica: dar-lhe
+  // `PRESTACAO_CONTAS` daria junto o poder de transmitir ao Tribunal.
+  { id: 'EXECUCAO_TECNICO', rotulo: 'Execução Técnica (metas)', secao: 'Execução' },
   { id: 'PRESTACAO_CONTAS', rotulo: 'Prestação de Contas', secao: 'Prestação', temAprovacao: true },
   { id: 'FISCALIZACAO', rotulo: 'Fiscalização | Monitoramento', secao: 'Prestação' },
   { id: 'AGENDA', rotulo: 'Agenda de Compromissos', secao: 'Prestação' },

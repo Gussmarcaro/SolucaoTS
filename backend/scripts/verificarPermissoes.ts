@@ -121,7 +121,6 @@ const nav = readFileSync(
  */
 const MENU_SEM_RECURSO: Record<string, string> = {
   '/': 'Dashboard — todo usuário autenticado entra; cada painel dentro dela confere a própria permissão',
-  '/execucao/tecnico': 'placeholder, sem backend',
 };
 
 /**

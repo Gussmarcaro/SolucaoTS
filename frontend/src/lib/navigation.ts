@@ -124,7 +124,7 @@ export const navigation: NavNode[] = [
           { label: 'Conciliação Bancária', to: '/execucao/financeiro/conciliacao', recurso: 'EXECUCAO_CONCILIACAO' },
         ],
       },
-      { label: 'Técnico', to: '/execucao/tecnico' },
+      { label: 'Técnico', to: '/execucao/tecnico', recurso: 'EXECUCAO_TECNICO' },
     ],
   },
   { label: 'Prestação de Contas', icon: ClipboardCheck, to: '/prestacao-contas', recurso: 'PRESTACAO_CONTAS' },

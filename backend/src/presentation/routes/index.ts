@@ -36,6 +36,7 @@ import { ReceitaOrgaoController } from '@/presentation/controllers/ReceitaOrgaoC
 import { PagamentoOrgaoController } from '@/presentation/controllers/PagamentoOrgaoController';
 import { GuiaRecolhimentoController } from '@/presentation/controllers/GuiaRecolhimentoController';
 import { ConciliacaoController } from '@/presentation/controllers/ConciliacaoController';
+import { ExecucaoTecnicaController } from '@/presentation/controllers/ExecucaoTecnicaController';
 import { ContaBancariaController } from '@/presentation/controllers/ContaBancariaController';
 import { uploadAnexo, uploadFoto, uploadOfx } from '@/infrastructure/upload/upload';
 import { autenticar } from '@/presentation/middlewares/autenticar';
@@ -170,6 +171,20 @@ routes.get('/conciliacao/pendentes', exigirPermissao('EXECUCAO_CONCILIACAO'), (r
 routes.get('/conciliacao/contas', exigirPermissao('EXECUCAO_CONCILIACAO'), (req, res, next) => conciliacao.contasDoExtrato(req, res, next));
 routes.post('/conciliacao/importar', exigirPermissao('EXECUCAO_CONCILIACAO'), uploadOfx, (req, res, next) => conciliacao.importar(req, res, next));
 routes.put('/conciliacao/:id', exigirPermissao('EXECUCAO_CONCILIACAO'), (req, res, next) => conciliacao.conciliar(req, res, next));
+/*
+ * Execução → Técnico: o realizado das metas, lançado ao longo do ano.
+ *
+ * **Recurso próprio, e não `PRESTACAO_CONTAS`**, embora grave nas linhas do
+ * bloco §19: quem apura o atendimento é a equipe técnica da parceria, e dar a
+ * ela a permissão da prestação seria dar junto o poder de transmitir ao
+ * Tribunal. É a mesma razão por que a despesa tem recurso separado da
+ * prestação que a apropria.
+ */
+const execucaoTecnica = new ExecucaoTecnicaController();
+routes.get('/execucao/tecnico', exigirPermissao('EXECUCAO_TECNICO'), (req, res, next) => execucaoTecnica.painel(req, res, next));
+routes.put('/execucao/tecnico', exigirPermissao('EXECUCAO_TECNICO'), (req, res, next) => execucaoTecnica.registrar(req, res, next));
+routes.delete('/execucao/tecnico/:id', exigirPermissao('EXECUCAO_TECNICO'), (req, res, next) => execucaoTecnica.remover(req, res, next));
+
 routes.use('/grupos', exigirPermissao('CONFIG_GRUPOS'), grupoRoutes);
 routes.use('/orgaos', exigirPermissao('CONFIG_ORGAOS'), clienteRoutes);
 routes.use('/auditoria', exigirPermissao('CONFIG_AUDITORIA'), auditoriaRoutes);

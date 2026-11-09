@@ -58,6 +58,7 @@ const ReceitasOrgao = pagina(() => import('@/pages/ReceitasOrgao'), 'ReceitasOrg
 const PagamentosOrgao = pagina(() => import('@/pages/PagamentosOrgao'), 'PagamentosOrgao');
 const GuiasRecolhimento = pagina(() => import('@/pages/GuiasRecolhimento'), 'GuiasRecolhimento');
 const Conciliacao = pagina(() => import('@/pages/Conciliacao'), 'Conciliacao');
+const ExecucaoTecnica = pagina(() => import('@/pages/ExecucaoTecnica'), 'ExecucaoTecnica');
 
 const Agenda = pagina(() => import('@/pages/Agenda'), 'Agenda');
 const Fiscalizacao = pagina(() => import('@/pages/Fiscalizacao'), 'Fiscalizacao');
@@ -258,6 +259,16 @@ export default function App() {
                 </RequerPermissao>
               }
             />
+            {/* Técnico entra no portão: a meta é de uma parceria, e o
+                realizado lançado no ajuste errado é indistinguível do certo. */}
+            <Route
+              path="/execucao/tecnico"
+              element={
+                <RequerPermissao recurso="EXECUCAO_TECNICO">
+                  <ExecucaoTecnica />
+                </RequerPermissao>
+              }
+            />
           </Route>
           {/* Guias fica de fora do portão: a guia é **do órgão** — um DARF de
               IRRF de maio recolhe retenções de várias notas e de vários
@@ -271,7 +282,6 @@ export default function App() {
               </RequerPermissao>
             }
           />
-          <Route path="/execucao/tecnico" element={<Placeholder title="Técnico" />} />
 
           {/* Demais */}
           <Route
