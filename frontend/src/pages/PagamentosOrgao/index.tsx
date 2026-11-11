@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AlertCircle, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
+import { AlertCircle, Loader2, Paperclip, Pencil, Plus, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -28,7 +28,8 @@ import type { DocumentoFiscal, MeioPagamento, Pagamento, PagamentoPayload } from
 type ModalState =
   | { tipo: 'fechado' }
   | { tipo: 'form'; item: Pagamento | null }
-  | { tipo: 'excluir'; item: Pagamento };
+  | { tipo: 'excluir'; item: Pagamento }
+  | { tipo: 'anexos'; item: Pagamento };
 
 const COLUNAS: ColunaDef[] = [
   { key: 'acoes', label: 'Ações', width: 110, minWidth: 100, align: 'center', movivel: false },
@@ -151,6 +152,17 @@ export function PagamentosOrgao() {
             case 'acoes':
               return (
                 <AcoesGrade recurso="EXECUCAO_PAGAMENTOS">
+                  {/*
+                    O comprovante, alcançável da própria lista.
+                    Ele vivia só dentro do formulário de edição, e com isso
+                    quem só confere — que é quem mais precisa do arquivo — não
+                    chegava nele: o botão de editar exige Edição. Aqui o
+                    anexo abre para qualquer um que enxergue a grade, e só
+                    quem pode editar recebe o botão de anexar.
+                  */}
+                  <IconBtn title="Comprovante" onClick={() => setModal({ tipo: 'anexos', item: p })}>
+                    <Paperclip className="h-4 w-4" />
+                  </IconBtn>
                   <IconBtn exige="EDICAO" title="Editar" onClick={() => setModal({ tipo: 'form', item: p })}>
                     <Pencil className="h-4 w-4" />
                   </IconBtn>
@@ -202,6 +214,27 @@ export function PagamentosOrgao() {
             pagamentos={lista}
             onSuccess={recarregar}
             onCancel={() => setModal({ tipo: 'fechado' })}
+          />
+        )}
+      </Modal>
+
+      <Modal
+        open={modal.tipo === 'anexos'}
+        onClose={() => setModal({ tipo: 'fechado' })}
+        title="Comprovante do pagamento"
+        subtitle={
+          modal.tipo === 'anexos'
+            ? `${dataBr(modal.item.dataPagamento)} · ${formatarMoeda(modal.item.valor)}${modal.item.documentoNumero ? ` · doc. nº ${modal.item.documentoNumero}` : ' · folha'}`
+            : undefined
+        }
+        size="lg"
+      >
+        {modal.tipo === 'anexos' && (
+          <Anexos
+            dono="PAGAMENTO"
+            donoId={modal.item.id}
+            tipos={['COMPROVANTE_PAGAMENTO']}
+            somenteLeitura={!podeEditar}
           />
         )}
       </Modal>
@@ -371,7 +404,7 @@ function PagamentoOrgaoForm({
 
     setRateando(true);
     try {
-      await pagamentosOrgaoApi.ratear({
+      const criados = await pagamentosOrgaoApi.ratear({
         documentoFiscalId: vinculo,
         dataPagamento,
         fonteRecursoTipo: Number(apenasDigitos(fonte)),
@@ -381,6 +414,30 @@ function PagamentoOrgaoForm({
         contaCorrente: meio === 'BANCO' ? conta.trim() || null : null,
         numeroTransacao: transacao.trim() || null,
       });
+
+      /*
+       * O comprovante vai para **cada** pagamento criado.
+       *
+       * O rateio é um débito só no banco, mas vira um lançamento por parceria,
+       * e cada prestação só enxerga o seu: o arquivo preso a um deles deixaria
+       * as outras sem comprovante. Antes nem isso acontecia — a fila de
+       * pendentes era descartada em silêncio quando o formulário fechava, e o
+       * usuário via o arquivo escolhido sumir sem uma palavra.
+       */
+      if (pendentes.length) {
+        const falhas: string[] = [];
+        for (const criado of criados) {
+          const r = await enviarPendentes('PAGAMENTO', criado.id, pendentes);
+          falhas.push(...r.falhas.map((f) => f.motivo));
+        }
+        if (falhas.length) {
+          setPendentes([]);
+          return setErro(
+            `Os ${criados.length} pagamentos foram lançados, mas o comprovante não subiu em todos (${falhas[0]}). Anexe pelo clipe na grade.`,
+          );
+        }
+      }
+
       onSuccess();
     } catch (e) {
       setErro(extrairMensagemErro(e, 'Não foi possível lançar o pagamento rateado.'));

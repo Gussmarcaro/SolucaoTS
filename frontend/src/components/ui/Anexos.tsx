@@ -88,6 +88,7 @@ export function Anexos({
   tipos,
   pendentes,
   onPendentes,
+  somenteLeitura,
 }: {
   dono: DonoAnexo;
   /** Ausente enquanto o lançamento não foi criado. */
@@ -102,6 +103,14 @@ export function Anexos({
    * simplesmente some.
    */
   onPendentes?: (p: AnexoPendente[]) => void;
+  /**
+   * Mostra os arquivos sem oferecer anexar nem remover.
+   *
+   * Quem tem só Consulta precisa **ver** o comprovante — é metade do trabalho
+   * de quem confere —, mas oferecer-lhe o botão de anexar seria prometer o que
+   * o servidor recusa com 403.
+   */
+  somenteLeitura?: boolean;
 }) {
   const [lista, setLista] = useState<Anexo[]>([]);
   const [carregando, setCarregando] = useState(false);
@@ -286,27 +295,29 @@ export function Anexos({
                 <span className="text-sm font-medium text-ink-700 dark:text-ink-300">
                   {TIPO_ANEXO_LABEL[tipo]}
                 </span>
-                <label className="focus-ring inline-flex cursor-pointer items-center gap-1.5 rounded text-xs text-brand-600 hover:underline dark:text-brand-400">
-                  {enviando === tipo ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Upload className="h-3.5 w-3.5" />
-                  )}
-                  anexar
-                  <input
-                    type="file"
-                    accept="application/pdf,image/*"
-                    className="sr-only"
-                    disabled={enviando !== null}
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      // Limpa o input: sem isso, anexar o mesmo arquivo duas
-                      // vezes seguidas não dispara o evento na segunda.
-                      e.target.value = '';
-                      if (f) enviar(tipo, f);
-                    }}
-                  />
-                </label>
+                {!somenteLeitura && (
+                  <label className="focus-ring inline-flex cursor-pointer items-center gap-1.5 rounded text-xs text-brand-600 hover:underline dark:text-brand-400">
+                    {enviando === tipo ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Upload className="h-3.5 w-3.5" />
+                    )}
+                    anexar
+                    <input
+                      type="file"
+                      accept="application/pdf,image/*"
+                      className="sr-only"
+                      disabled={enviando !== null}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        // Limpa o input: sem isso, anexar o mesmo arquivo duas
+                        // vezes seguidas não dispara o evento na segunda.
+                        e.target.value = '';
+                        if (f) enviar(tipo, f);
+                      }}
+                    />
+                  </label>
+                )}
               </div>
 
               {arquivos.length === 0 ? (
@@ -340,14 +351,16 @@ export function Anexos({
                       >
                         <ExternalLink className="h-4 w-4" />
                       </button>
-                      <button
-                        type="button"
-                        title="Remover"
-                        onClick={() => excluir(a.id)}
-                        className="focus-ring rounded-lg p-1 text-ink-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      {!somenteLeitura && (
+                        <button
+                          type="button"
+                          title="Remover"
+                          onClick={() => excluir(a.id)}
+                          className="focus-ring rounded-lg p-1 text-ink-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
                     </li>
                   ))}
                 </ul>

@@ -701,6 +701,15 @@ Dois atalhos pedidos pela operação, ambos **só de tela** — nenhuma rota nov
 - **A conferência do pagamento roda antes de a nota ser criada.** Deixá-la para o servidor recusaria depois de a despesa já existir, e o usuário teria de ir a outra tela terminar o que começou aqui.
 - **Falha no pagamento não desfaz a despesa**, e a tela não diz que desfez: a mensagem separa o que foi salvo do que não foi e aponta Execução → Pagamentos. O formulário fica apontando para o registro criado (`idSalvo`), que é o que impede o segundo clique em Salvar de criar uma **nota duplicada** — mesmo cuidado dos anexos, e pela mesma razão: duas notas do mesmo gasto ninguém percebe olhando.
 
+### O comprovante não era alcançável da lista
+
+O campo existia — no formulário, e só nele. Quem **confere** um pagamento não abre o formulário: o botão de editar exige faixa **Edição**, então o fiscal com Consulta não chegava ao arquivo que ele é o primeiro a procurar. E quem lança abria o formulário inteiro para anexar um PDF.
+
+- **Clipe na grade**, ao lado de editar, abrindo só os anexos daquele pagamento. **Sem `exige`**: ver o comprovante é atividade de consulta.
+- **`Anexos` ganhou `somenteLeitura`**, e é o par necessário do item acima: oferecer "anexar" a quem o servidor responde 403 seria prometer o que não se cumpre. Esconde anexar e remover; a lista e o abrir continuam.
+- **O rateio descartava o arquivo em silêncio.** `ratearPagamento` fecha o formulário assim que a API responde, e a fila de pendentes morria ali — o usuário escolhia o PDF, clicava em Ratear e o arquivo sumia sem uma palavra. Agora ele sobe para **cada** pagamento criado: o rateio é um débito só no banco, mas vira um lançamento por parceria, e cada prestação enxerga apenas o seu — preso a um deles, os outros ficariam sem comprovante.
+- Falha no envio depois do rateio **não desfaz os pagamentos**, e a mensagem diz quantos nasceram e manda anexar pelo clipe. Mesma decisão do `idSalvo`.
+
 ## Lançamento de Receita — a conta bancária traz a fonte
 
 `Execução → Financeiro → Receitas`. O formulário perguntava a **fonte de recurso** e, num grupo separado, **banco, agência e conta**. Os quatro campos saíram e deram lugar a um só: **Conta bancária**, escolhida do cadastro.
