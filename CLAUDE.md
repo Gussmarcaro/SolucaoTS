@@ -592,6 +592,7 @@ O sistema fazia o **pagamento** certo (a opção *Folha de pagamento (nº 9999)*
 - **O que se grava é a ausência**: `credorNumeroDoc` vazio, que é a verdade. O `credorTipoDoc` fica com um valor inerte porque a coluna é obrigatória, e nada o lê na folha — o montador nem chega perto dela. A chave de duplicidade continua útil: duas folhas com o mesmo número no mesmo órgão ainda colidem.
 - **`credorNome` vira "Folha de pagamento"** quando não informado: a grade mostra essa coluna, e vazia faria a linha parecer cadastro pela metade.
 - Na lista de vínculos do Pagamento ela se chama **"Folha — …"**, não "Doc. nº …": chamá-la de documento é o que levou a inventar um número de nota.
+- **A conferência deixa de acusar "nenhum documento fiscal" quando tudo é folha.** O bloco vazio passou a ser possível e **correto** numa entidade cuja despesa é toda de pessoal; acusá-lo mandaria lançar uma nota que não existe — o costume que a marca veio desfazer. A pergunta é feita aos **pagamentos**, que é onde a folha aparece: há pagamento e todos são folha, o vazio se explica. Basta um pagamento de nota para a pendência voltar, e `verificar:conferencia` trava os dois lados.
 
 **Falta, e é da operação:** as folhas já lançadas como nota precisam ser remarcadas (ou reexcluídas e relançadas). Enquanto não forem, vão ao Tribunal como documento fiscal com número inventado e a entidade como credora.
 

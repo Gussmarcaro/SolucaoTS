@@ -146,6 +146,83 @@ console.log('\nConferência da prestação\n');
   );
 }
 
+/*
+ * A parceria cuja despesa é toda de pessoal.
+ *
+ * A folha não é documento fiscal: ela é excluída do bloco de propósito e sai
+ * só nos pagamentos, com nº 9999. Numa entidade assim o bloco vazio é o
+ * documento **correto**, e acusá-lo mandaria lançar uma nota que não existe —
+ * que é o costume que a marca de folha veio desfazer.
+ */
+{
+  const d = vazia();
+  d.pagamentos = [
+    {
+      folha: true,
+      docNumero: null,
+      docCredorTipo: null,
+      docCredorNumero: null,
+      dataPagamento: '2025-03-10',
+      valor: 12000,
+      fonteRecursoTipo: 1,
+      meioPagamento: 'BANCO',
+      banco: 341,
+      agencia: 1234,
+      contaCorrente: '56789-0',
+      numeroTransacao: null,
+    },
+  ];
+  const p = conferirPrestacao(d, ctxPadrao);
+  conferir(
+    'só folha não acusa documento fiscal vazio',
+    !tem(p, 'documentosFiscais', 'Nenhum documento'),
+  );
+  conferir('e também não acusa pagamento', !tem(p, 'pagamentos', 'Nenhum pagamento'));
+}
+
+/*
+ * Mas basta **um** pagamento de nota para o bloco vazio voltar a ser
+ * pendência: aí falta mesmo a nota daquele pagamento.
+ */
+{
+  const d = vazia();
+  d.pagamentos = [
+    {
+      folha: true,
+      docNumero: null,
+      docCredorTipo: null,
+      docCredorNumero: null,
+      dataPagamento: '2025-03-10',
+      valor: 12000,
+      fonteRecursoTipo: 1,
+      meioPagamento: 'BANCO',
+      banco: 341,
+      agencia: 1234,
+      contaCorrente: '56789-0',
+      numeroTransacao: null,
+    },
+    {
+      folha: false,
+      docNumero: '1234',
+      docCredorTipo: 'CNPJ',
+      docCredorNumero: '11222333000181',
+      dataPagamento: '2025-04-10',
+      valor: 500,
+      fonteRecursoTipo: 1,
+      meioPagamento: 'BANCO',
+      banco: 341,
+      agencia: 1234,
+      contaCorrente: '56789-0',
+      numeroTransacao: null,
+    },
+  ];
+  const p = conferirPrestacao(d, ctxPadrao);
+  conferir(
+    'um pagamento de nota faz o bloco vazio voltar a acusar',
+    tem(p, 'documentosFiscais', 'Nenhum documento'),
+  );
+}
+
 // --- o que NÃO pode virar pendência -----------------------------------------
 {
   const p = conferirPrestacao(completa(), ctxPadrao);

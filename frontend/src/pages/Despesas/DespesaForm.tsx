@@ -394,7 +394,8 @@ export function DespesaForm({
     // O credor é copiado do cadastro para a nota — fotografia, não vínculo: o
     // que o TCESP recebe precisa ser o credor na data da emissão.
     const escolhido = fornecedores.find((f) => f.id === credorId);
-    if (!escolhido && credorId !== PRESERVADO)
+    // Na folha não há credor a escolher, e o servidor grava a ausência dele.
+    if (!folha && !escolhido && credorId !== PRESERVADO)
       return setErro('Selecione o credor (Fornecedor / Prestador).');
 
     const payload: DocumentoFiscalPayload = {
@@ -402,9 +403,16 @@ export function DespesaForm({
       // descarta: ela é de vários ajustes, e quem diz de quais é o quadro.
       ajusteId: ajusteId ?? null,
       numero: numero.trim(),
-      credorTipoDoc: escolhido ? escolhido.documentoTipo : item!.credorTipoDoc,
-      credorNumeroDoc: escolhido ? escolhido.documento : item!.credorNumeroDoc,
-      credorNome: escolhido ? escolhido.nome : item!.credorNome,
+      /*
+       * O credor é copiado do cadastro — fotografia, não vínculo.
+       *
+       * Na folha não há nenhum, e o servidor grava a ausência: mandar o do
+       * registro anterior (`item!`) devolveria o CNPJ da entidade que a
+       * marca veio justamente eliminar.
+       */
+      credorTipoDoc: folha ? 'CNPJ' : escolhido ? escolhido.documentoTipo : item!.credorTipoDoc,
+      credorNumeroDoc: folha ? '' : escolhido ? escolhido.documento : item!.credorNumeroDoc,
+      credorNome: folha ? null : escolhido ? escolhido.nome : item!.credorNome,
       contratoNumero: contratoNumero.trim() || null,
       contratoFirmadoId: contratoFirmadoId || null,
       descricao: descricao.trim(),

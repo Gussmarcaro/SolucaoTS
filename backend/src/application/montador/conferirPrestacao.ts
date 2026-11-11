@@ -73,7 +73,22 @@ export function conferirPrestacao(d: DadosMontagem, ctx: ContextoConferencia): P
    * Estes cinco são a substância do documento. Nenhum deles vazio é situação
    * normal numa prestação que se vai transmitir — e todos passam no schema.
    */
-  if (!d.documentosFiscais.length) impede('documentosFiscais', 'Nenhum documento fiscal lançado.');
+  /*
+   * O bloco de documentos fiscais vazio é pendência — **menos** quando tudo
+   * que a parceria gastou foi folha de pagamento.
+   *
+   * A folha não é documento fiscal: ela é excluída do bloco de propósito, e
+   * sai só nos pagamentos, com número 9999. Numa entidade cuja despesa é toda
+   * de pessoal, o bloco vazio é o documento **correto** — e acusá-lo seria
+   * mandar o usuário lançar uma nota que não existe, que é exatamente o
+   * costume que a marca de folha veio desfazer.
+   *
+   * A pergunta é feita aos pagamentos porque é lá que a folha aparece: se há
+   * pagamento e **todos** são folha, o vazio se explica sozinho.
+   */
+  const soFolha = d.pagamentos.length > 0 && d.pagamentos.every((x) => x.folha);
+  if (!d.documentosFiscais.length && !soFolha)
+    impede('documentosFiscais', 'Nenhum documento fiscal lançado.');
   if (!d.pagamentos.length) impede('pagamentos', 'Nenhum pagamento lançado.');
   if (!d.receitas.length) impede('receitas', 'Nenhuma receita ou repasse lançado.');
   if (!d.disponibilidades.length)
