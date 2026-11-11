@@ -1,6 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
-import type { IPlanoAplicacaoRepository } from '@/application/planoAplicacao/IPlanoAplicacaoRepository';
+import type { RubricaDoPlano, IPlanoAplicacaoRepository } from '@/application/planoAplicacao/IPlanoAplicacaoRepository';
 import type { DadosPlanoItem } from '@/application/planoAplicacao/dtos';
 import type { PlanoAplicacaoItem } from '@/core/planoAplicacao/PlanoAplicacaoItem';
 import { numerarRubricas } from '@/core/planoAplicacao/ordemRubricas';
@@ -80,15 +80,21 @@ export class PrismaPlanoAplicacaoRepository implements IPlanoAplicacaoRepository
    * cuidado dos relatórios: pega-se os ajustes (filtrados) e só então os
    * filhos deles.
    */
-  async rubricasDoOrgao(): Promise<{ categoria: string; subcategoria: string }[]> {
-    const ajustes = await prisma.ajuste.findMany({ select: { id: true } });
+  async rubricasDoOrgao(ajusteId?: string): Promise<RubricaDoPlano[]> {
+    // Parte dos ajustes (raiz de tenant, recortada pela extension) mesmo
+    // quando o id vem de fora: é isso que garante que um ajuste de outro
+    // órgão simplesmente não exista.
+    const ajustes = await prisma.ajuste.findMany({
+      where: ajusteId ? { id: ajusteId } : undefined,
+      select: { id: true },
+    });
     if (!ajustes.length) return [];
 
     const linhas = await prisma.planoAplicacaoItem.findMany({
       where: { ajusteId: { in: ajustes.map((a) => a.id) } },
-      select: { categoria: true, subcategoria: true },
+      select: { categoria: true, subcategoria: true, categoriaDespesaTipo: true },
       distinct: ['categoria', 'subcategoria'],
-      orderBy: [{ categoria: 'asc' }, { subcategoria: 'asc' }],
+      orderBy: [{ ordem: 'asc' }, { categoria: 'asc' }, { subcategoria: 'asc' }],
     });
     return linhas;
   }

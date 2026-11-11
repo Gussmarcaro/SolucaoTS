@@ -1,5 +1,5 @@
 import { useAjusteExecucao } from '@/contexts/AjusteExecucaoContext';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -22,6 +22,7 @@ import { Anexos, enviarPendentes, type AnexoPendente } from '@/components/ui/Ane
 import { Modal } from '@/components/ui/Modal';
 import { FornecedorForm } from '@/pages/Fornecedores/FornecedorForm';
 import { contasApi } from '@/services/contasBancarias.service';
+import type { RubricaDoPlano } from '@/services/despesas.service';
 import { pagamentosOrgaoApi } from '@/services/pagamentosOrgao.service';
 import { BANCO } from '@/lib/dominiosFaseV';
 import type { ContaBancaria } from '@/types/contaBancaria';
@@ -90,7 +91,7 @@ export function DespesaForm({
   const [categoria, setCategoria] = useState(item ? String(item.categoriaDespesaTipo) : '');
   const [propostaCategoria, setPropostaCategoria] = useState(item?.propostaCategoria ?? '');
   const [propostaSubcategoria, setPropostaSubcategoria] = useState(item?.propostaSubcategoria ?? '');
-  const [rubricas, setRubricas] = useState<{ categoria: string; subcategoria: string }[]>([]);
+  const [rubricas, setRubricas] = useState<RubricaDoPlano[]>([]);
   /*
    * O contrato vem do cadastro, não da digitação.
    *
@@ -161,7 +162,7 @@ export function DespesaForm({
       .then((r) => vivo && setContratos(r.data))
       .catch(() => undefined);
     despesasApi
-      .rubricas()
+      .rubricas(ajusteId ?? undefined)
       .then((r) => vivo && setRubricas(r))
       .catch(() => undefined);
     // Só as contas **declaradas no ajuste em execução** — o mesmo recorte da
@@ -301,6 +302,35 @@ export function DespesaForm({
       )
     : [];
   const ajusteNoQuadro = !!rateioEscolhido?.participantes.some((p) => p.ajusteId === ajusteId);
+
+  /*
+   * A Categoria AUDESP sai do Plano de Aplicação desta parceria.
+   *
+   * A entidade só pode executar o que o plano prevê, e o servidor já recusa a
+   * nota fora dele — mas só na **apropriação**, meses depois de alguém ter
+   * escolhido uma das 88 opções. Oferecer as 88 era convidar ao erro que a
+   * conferência depois aponta: aqui a lista já nasce recortada.
+   *
+   * **Plano sem categoria declarada oferece todas**, pelo mesmo critério do
+   * `conferirNoPlano`: plano importado antes do campo não tem nenhuma, e
+   * barrar tudo trancaria quem já opera para proteger de um erro que não se
+   * sabe se existe.
+   *
+   * **A categoria já gravada permanece**, mesmo fora do plano — abrir uma nota
+   * antiga com o campo em branco e salvá-la trocaria a classificação em
+   * silêncio. É a mesma decisão da conta bancária inativada.
+   */
+  const categoriasDoPlano = useMemo(
+    () => [...new Set(rubricas.map((r) => r.categoriaDespesaTipo).filter((c): c is number => c != null))],
+    [rubricas],
+  );
+
+  const opcoesCategoria = useMemo(() => {
+    if (!categoriasDoPlano.length) return CATEGORIA_DESPESA;
+    const atual = apenasDigitos(categoria);
+    const permitidas = new Set(categoriasDoPlano.map(String));
+    return CATEGORIA_DESPESA.filter((o) => permitidas.has(o.value) || (!!atual && o.value === atual));
+  }, [categoriasDoPlano, categoria]);
 
   /** Pagar junto só na nota **nova** e **não rateada** — ver o comentário do estado. */
   const podePagarAgora = !item && !rateioProveniente;
@@ -556,7 +586,18 @@ export function DespesaForm({
         </div>
 
         <div className="sm:col-span-12">
-          <SelectDominio label="Categoria de Despesa AUDESP *" name="categoria" value={apenasDigitos(categoria)} onChange={setCategoria} options={CATEGORIA_DESPESA} />
+          <SelectDominio
+            label="Categoria de Despesa AUDESP *"
+            name="categoria"
+            value={apenasDigitos(categoria)}
+            onChange={setCategoria}
+            options={opcoesCategoria}
+            hint={
+              categoriasDoPlano.length
+                ? `Só as ${categoriasDoPlano.length} categorias do Plano de Aplicação desta parceria. A entidade só pode executar o que o plano prevê.`
+                : 'O Plano de Aplicação desta parceria não declara categorias AUDESP — por isso a lista traz todas. Declare-as no plano para a tela conferir sozinha.'
+            }
+          />
         </div>
 
         {/* Item da Proposta — a rubrica do Plano de Aplicação.
@@ -572,7 +613,7 @@ export function DespesaForm({
             onChange={(e) => setPropostaCategoria(e.target.value)}
             list="rubricas-categoria"
             placeholder="ex.: Recursos Humanos"
-            hint="Conforme o Plano de Aplicação. Sugestões vêm dos planos já cadastrados."
+            hint="Conforme o Plano de Aplicação desta parceria."
           />
           <datalist id="rubricas-categoria">
             {[...new Set(rubricas.map((r) => r.categoria))].map((c) => (

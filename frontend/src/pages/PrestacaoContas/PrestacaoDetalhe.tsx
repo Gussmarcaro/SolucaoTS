@@ -295,7 +295,21 @@ export function PrestacaoDetalhe() {
           <Campo label="Tipo documento" valor={TIPO_AJUSTE_LABEL[prestacao.ajusteTipo] ?? prestacao.tipoDocumento} />
           <Campo label="Código do ajuste" valor={prestacao.ajusteCodigo} />
           <Campo label="Ano" valor={String(prestacao.ano)} />
-          <Campo label="Mês" valor={String(prestacao.mes)} />
+          {/*
+            O "mês 12" não é dezembro: é o descritor da prestação **anual e
+            consolidada**, a única que a Fase V recebe. Ele aparecia sozinho e
+            fazia procurar onde escolher o período de envio — procurar algo
+            que o Tribunal não oferece. Dizer o que significa, e qual período
+            a prestação cobre, resolve a dúvida onde ela nasce.
+          */}
+          <Campo
+            label="Mês"
+            valor={prestacao.mes === 12 ? '12 — anual (consolidada)' : String(prestacao.mes)}
+          />
+          <Campo
+            label="Período coberto"
+            valor={'01/01/' + prestacao.ano + ' a 31/12/' + prestacao.ano}
+          />
           <Campo label="Protocolo" valor={prestacao.protocolo ?? '—'} />
           <Campo label="Data de envio" valor={prestacao.dataEnvio ? new Date(prestacao.dataEnvio).toLocaleString('pt-BR') : '—'} />
         </dl>
@@ -361,7 +375,7 @@ export function PrestacaoDetalhe() {
               </section>
             </div>
           ) : blocoAtivo === 'disponibilidades' ? (
-            <DisponibilidadesTab prestacaoId={prestacao.id} />
+            <DisponibilidadesTab prestacaoId={prestacao.id} ajusteId={prestacao.ajusteId} exercicio={prestacao.ano} />
           ) : blocoAtivo === 'descontos' ? (
             <DescontosTab prestacaoId={prestacao.id} />
           ) : blocoAtivo === 'devolucoes' ? (

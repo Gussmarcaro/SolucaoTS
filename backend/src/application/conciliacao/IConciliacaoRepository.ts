@@ -28,6 +28,14 @@ export interface IConciliacaoRepository {
    */
   contasDoAjuste(ajusteId: string): Promise<ContaBancariaChave[]>;
   /**
+   * Uma conta do cadastro, pela chave de comparação.
+   *
+   * É o que permite conciliar **uma conta de cada vez**: um ajuste costuma ter
+   * várias, e o extrato é sempre de uma só. Sem isto, a tela misturava o
+   * movimento das três contas do convênio contra o extrato de uma delas.
+   */
+  contaPorId(contaBancariaId: string): Promise<ContaBancariaChave | null>;
+  /**
    * As contas que **o extrato importado** tem, com quantas linhas cada uma.
    *
    * Existe para a tela poder explicar a lista vazia. Dentro de um ajuste as
@@ -41,10 +49,25 @@ export interface IConciliacaoRepository {
    * Pagamentos e receitas ainda sem conciliação, para casar e para escolher à mão.
    *
    * Com `ajusteId`, só os daquela parceria — um débito do banco não pode ser
-   * sugerido contra o pagamento de outro ajuste.
+   * sugerido contra o pagamento de outro ajuste. Com `conta`, só os que saíram
+   * ou entraram **naquela** conta: a comparação é por dígitos (`chaveDaConta`),
+   * porque o cadastro grava `1236559` onde o lançamento gravou `123655-9`.
+   *
+   * O pagamento em **fundo fixo** não tem conta, e por isso fica de fora do
+   * recorte por conta — ele nunca apareceria num extrato bancário.
    */
-  candidatosPagamento(de: string, ate: string, ajusteId?: string): Promise<Candidato[]>;
-  candidatosReceita(de: string, ate: string, ajusteId?: string): Promise<Candidato[]>;
+  candidatosPagamento(
+    de: string,
+    ate: string,
+    ajusteId?: string,
+    conta?: ContaBancariaChave,
+  ): Promise<Candidato[]>;
+  candidatosReceita(
+    de: string,
+    ate: string,
+    ajusteId?: string,
+    conta?: ContaBancariaChave,
+  ): Promise<Candidato[]>;
   /** Descrição legível dos candidatos — só para exibir a sugestão. */
   descreverLancamentos(
     ids: { pagamentos: string[]; receitas: string[] },

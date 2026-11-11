@@ -27,10 +27,17 @@ const casos = new DocumentoFiscalUseCases(
 );
 
 export class DespesaController {
-  /** As rubricas dos planos do orgao, para o campo Item da Proposta. */
-  async rubricas(_req: Request, res: Response, next: NextFunction) {
+  /**
+   * As rubricas do plano, para o Item da Proposta e para a Categoria AUDESP.
+   *
+   * Com `ajusteId` responde só o plano daquela parceria. A tela de Despesas
+   * sempre o envia, porque vive dentro do portão da Execução — sem o recorte,
+   * ela oferecia a rubrica de qualquer convênio do órgão.
+   */
+  async rubricas(req: Request, res: Response, next: NextFunction) {
     try {
-      return res.json(await planos.rubricasDoOrgao());
+      const ajusteId = typeof req.query.ajusteId === 'string' ? req.query.ajusteId : undefined;
+      return res.json(await planos.rubricasDoOrgao(ajusteId || undefined));
     } catch (e) {
       return next(e);
     }

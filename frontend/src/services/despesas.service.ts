@@ -1,3 +1,11 @@
+/** Uma rubrica do Plano de Aplicação e a Categoria de Despesa AUDESP dela. */
+export interface RubricaDoPlano {
+  categoria: string;
+  subcategoria: string;
+  /** Nula nos planos importados antes de o campo existir. */
+  categoriaDespesaTipo: number | null;
+}
+
 import { http } from './http';
 import type { DocumentoFiscal, DocumentoFiscalPayload } from '@/types/prestacaoBlocos';
 
@@ -28,15 +36,17 @@ export const despesasApi = {
     await http.delete(`/despesas/${id}`);
   },
   /**
-   * As rubricas dos Planos de Aplicação do órgão — o "item da proposta".
+   * As rubricas do Plano de Aplicação, com a Categoria AUDESP de cada uma.
    *
-   * Vem de todos os ajustes, não de um: a despesa é lançada antes de se saber
-   * a qual prestação vai. É sugestão, não lista fechada.
+   * **Com o ajuste, vem só o plano daquela parceria.** Sem ele era o órgão
+   * inteiro: a tela oferecia a rubrica de qualquer convênio, mesma família de
+   * erro que a lista de contas bancárias já teve. A tela de Despesas sempre o
+   * envia, porque vive dentro do portão da Execução.
    */
-  rubricas: async (): Promise<{ categoria: string; subcategoria: string }[]> => {
-    const { data } = await http.get<{ categoria: string; subcategoria: string }[]>(
-      '/despesas/rubricas',
-    );
+  rubricas: async (ajusteId?: string): Promise<RubricaDoPlano[]> => {
+    const { data } = await http.get<RubricaDoPlano[]>('/despesas/rubricas', {
+      params: ajusteId ? { ajusteId } : undefined,
+    });
     return data;
   },
 };

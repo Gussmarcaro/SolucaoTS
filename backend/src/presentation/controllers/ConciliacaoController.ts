@@ -23,6 +23,9 @@ export class ConciliacaoController {
           ate: req.query.ate as string | undefined,
           // Dentro de um ajuste, só as linhas das contas dele.
           ajusteId: (req.query.ajusteId as string | undefined) || undefined,
+          // E, dentro do ajuste, uma conta de cada vez: o extrato é sempre de
+          // uma só, e a parceria costuma ter uma por fonte de recurso.
+          contaBancariaId: (req.query.contaBancariaId as string | undefined) || undefined,
         }),
       );
     } catch (e) {
@@ -64,7 +67,8 @@ export class ConciliacaoController {
       if (!de || !ate)
         throw new BusinessError('Informe o período (de/até) para listar os lançamentos pendentes.');
       const ajusteId = (req.query.ajusteId as string | undefined) || undefined;
-      return res.json(await casos.pendentes({ de, ate, ajusteId }));
+      const contaBancariaId = (req.query.contaBancariaId as string | undefined) || undefined;
+      return res.json(await casos.pendentes({ de, ate, ajusteId, contaBancariaId }));
     } catch (e) {
       return next(e);
     }

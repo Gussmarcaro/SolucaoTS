@@ -6,6 +6,7 @@ import type { ConciliarDTO, ContaDoExtrato, LinhaExtrato } from '@/application/c
 import type { LancamentoOfx, TipoLancamentoExtrato } from '@/infrastructure/parsers/parseOfx';
 import type { Candidato } from '@/core/conciliacao/sugerir';
 import { paraDataISO, parseDataISO } from '@/shared/datas';
+import { chaveDaConta, type ContaBancariaChave } from '@/core/conciliacao/contas';
 
 const selecao = {
   id: true,
@@ -45,6 +46,20 @@ function toDomain(row: Row): LinhaExtrato {
     sugestao: null,
   };
 }
+
+/**
+ * O lançamento saiu (ou entrou) nesta conta?
+ *
+ * Sem conta escolhida, todo lançamento serve. Com ela, a comparação é por
+ * digitos -- o cadastro grava 1236559 onde o lancamento gravou 123655-9, e a
+ * agencia vem 0001 de um lado e 1 do outro. Comparacao literal perderia
+ * exatamente as linhas que a conciliacao existe para encontrar.
+ *
+ * O pagamento em fundo fixo nao tem conta, e cai fora: ele nunca apareceria
+ * num extrato bancario.
+ */
+const daConta = (alvo: ContaBancariaChave | undefined, lancamento: ContaBancariaChave): boolean =>
+  !alvo || chaveDaConta(alvo) === chaveDaConta(lancamento);
 
 export class PrismaConciliacaoRepository implements IConciliacaoRepository {
   /**
@@ -103,6 +118,20 @@ export class PrismaConciliacaoRepository implements IConciliacaoRepository {
    * banco. O volume permite — um período de extrato são dezenas de linhas, e a
    * consulta já é recortada por data e por órgão.
    */
+  /**
+   * A conta do cadastro, para conciliar uma de cada vez.
+   *
+   * Parte de `contaBancaria`, que é raiz de tenant e sai recortada pela
+   * extension: id de outro órgão simplesmente não existe.
+   */
+  async contaPorId(contaBancariaId: string): Promise<ContaBancariaChave | null> {
+    const c = await prisma.contaBancaria.findFirst({
+      where: { id: contaBancariaId },
+      select: { banco: true, agencia: true, conta: true },
+    });
+    return c ? { banco: c.banco, agencia: c.agencia, conta: c.conta } : null;
+  }
+
   async contasDoAjuste(ajusteId: string) {
     const rows = await prisma.ajusteContaBancaria.findMany({
       where: { ajusteId },
@@ -165,7 +194,12 @@ export class PrismaConciliacaoRepository implements IConciliacaoRepository {
    * pagamento em importações diferentes — sem ele, o mesmo dinheiro seria
    * conciliado em dois meses seguidos e a conta fecharia por engano.
    */
-  async candidatosPagamento(de: string, ate: string, ajusteId?: string): Promise<Candidato[]> {
+  async candidatosPagamento(
+    de: string,
+    ate: string,
+    ajusteId?: string,
+    conta?: ContaBancariaChave,
+  ): Promise<Candidato[]> {
     const rows = await prisma.pagamento.findMany({
       where: {
         dataPagamento: { gte: parseDataISO(de), lte: parseDataISO(ate) },
@@ -174,22 +208,41 @@ export class PrismaConciliacaoRepository implements IConciliacaoRepository {
         // **daquela** parceria: sugerir o de outra concilia dinheiro alheio.
         ...(ajusteId ? { ajusteId } : {}),
       },
-      select: { id: true, valor: true, dataPagamento: true },
+      select: {
+        id: true,
+        valor: true,
+        dataPagamento: true,
+        banco: true,
+        agencia: true,
+        contaCorrente: true,
+      },
     });
-    return rows.map((r) => ({ id: r.id, valor: Number(r.valor), data: paraDataISO(r.dataPagamento) }));
+    return rows
+      // O recorte por conta é **em memória**, de propósito: o cadastro grava
+      // "1236559" onde o lançamento gravou "123655-9", e a agência vem "0001"
+      // de um lado e "1" do outro. Um "where" literal perderia exatamente as
+      // linhas que a conciliação existe para encontrar.
+      .filter((r) => daConta(conta, { banco: r.banco, agencia: r.agencia, conta: r.contaCorrente }))
+      .map((r) => ({ id: r.id, valor: Number(r.valor), data: paraDataISO(r.dataPagamento) }));
   }
 
-  async candidatosReceita(de: string, ate: string, ajusteId?: string): Promise<Candidato[]> {
+  async candidatosReceita(
+    de: string,
+    ate: string,
+    ajusteId?: string,
+    conta?: ContaBancariaChave,
+  ): Promise<Candidato[]> {
     const rows = await prisma.receita.findMany({
       where: {
         dataRepasse: { gte: parseDataISO(de), lte: parseDataISO(ate) },
         lancamentosExtrato: { none: {} },
         ...(ajusteId ? { ajusteId } : {}),
       },
-      select: { id: true, valor: true, dataRepasse: true },
+      select: { id: true, valor: true, dataRepasse: true, banco: true, agencia: true, contaCorrente: true },
     });
     return rows
       .filter((r) => r.dataRepasse)
+      .filter((r) => daConta(conta, { banco: r.banco, agencia: r.agencia, conta: r.contaCorrente }))
       .map((r) => ({ id: r.id, valor: Number(r.valor), data: paraDataISO(r.dataRepasse!) }));
   }
 

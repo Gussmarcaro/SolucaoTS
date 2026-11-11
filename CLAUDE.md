@@ -547,6 +547,34 @@ O que liga uma coisa à outra é a definição do próprio TCESP: o **Desconto**
 - **Lista vazia não quer dizer "nenhuma conta cadastrada".** As duas telas diziam isso, e era mentira: a lista é recortada pelo ajuste, então vazia significa que *aquela parceria* não declara conta nenhuma do cadastro. A frase antiga mandava cadastrar de novo uma conta que já existe — e a lista continuaria vazia depois disso. Hoje as duas apontam para o dossiê do Ajuste, que é onde se conserta. Encontrado em dado real: um ajuste declarando quatro contas de agência `9999` que não existem no cadastro, ao lado de outro cujas três declaradas casavam certinho.
 - A conta já gravada no lançamento **continua na lista** mesmo fora do recorte, pela mesma razão de sempre: abrir um registro antigo mostraria o campo em branco e salvar apagaria o vínculo em silêncio.
 
+### A classificação da despesa sai do plano da parceria
+
+O campo **Categoria de Despesa AUDESP** oferecia as **88** categorias da tabela oficial, e a entidade só pode executar as que o Plano de Aplicação prevê. O servidor já recusa a nota fora do plano (`conferirNoPlano`) — mas só na **apropriação**, meses depois de alguém ter escolhido uma das 88. Oferecer todas era convidar ao erro que a conferência depois aponta.
+
+- **A lista nasce recortada pelo plano daquela parceria.** Mesmo princípio do "Item da Proposta", que o usuário já reconhecia como filtrado.
+- **Plano sem categoria AUDESP declarada oferece todas**, pelo mesmo critério do `conferirNoPlano`: plano importado antes de o campo existir não tem nenhuma, e barrar tudo trancaria quem já opera para proteger de um erro que não se sabe se existe. A dica diz qual dos dois casos é.
+- **A categoria já gravada permanece na lista**, mesmo fora do plano — abrir uma nota antiga com o campo em branco e salvá-la trocaria a classificação em silêncio. Mesma decisão da conta bancária inativada.
+- **Quem barra de fato continua sendo o servidor.** O recorte da tela é prevenção; a nota rateada não tem ajuste único, e é na apropriação que a regra se aplica com a prestação à vista.
+
+**E o "Item da Proposta" não era filtrado coisa nenhuma.** `rubricasDoOrgao()` varria **todos** os ajustes do órgão: lançando no convênio 01 apareciam as rubricas do 02. Era a mesma família de erro da lista de contas bancárias, e passou despercebida porque a tela *parecia* recortada. `GET /despesas/rubricas` passou a aceitar `ajusteId` — que a tela sempre envia, porque vive dentro do portão — e a devolver a categoria AUDESP de cada rubrica, que é o que alimenta o recorte acima. A consulta parte do `Ajuste`, raiz de tenant, pela razão de sempre.
+
+### O recorte por conta chegou à conciliação e à disponibilidade
+
+Uma parceria costuma ter **uma conta por fonte de recurso**, e o extrato é sempre de **uma só**.
+
+- **`GET /conciliacao` aceita `contaBancariaId`.** Sem ele, o movimento das três contas do convênio era confrontado com o extrato de uma delas, e o que não casava parecia pendência. "Todas" continua sendo o padrão, porque é o que responde *"sobrou alguma coisa em qualquer conta?"*.
+- **O recorte vale também para os candidatos e para os pendentes** — a sugestão de conciliação e a lista "lancei e o banco não confirmou". Recortar só as linhas do extrato deixaria a outra metade da tela respondendo a outra pergunta.
+- **A comparação é por dígitos**, pela mesma `chaveDaConta` do `ehDoAjuste`: o cadastro grava `1236559` onde o lançamento gravou `123655-9`, e a agência vem `0001` de um lado e `1` do outro. É filtro **em memória**, de propósito — um `where` literal perderia exatamente as linhas que a conciliação existe para encontrar.
+- **Pagamento em fundo fixo fica fora do recorte por conta**: ele nunca apareceria num extrato bancário.
+- **Conta inexistente não recorta nada**, como o ajuste sem conta declarada: mostrar demais é recuperável olhando, mostrar de menos não é.
+- **Trocar de parceria limpa a escolha** — a conta da anterior não existe aqui, e manter o id filtraria por algo que a lista não mostra.
+
+Na **Disponibilidade** da prestação, os quatro campos de identificação (banco, agência, conta, tipo) eram digitados à mão, e o schema exige que o saldo seja **único por banco+agência+conta+tipo**: um dígito a mais na agência criava uma segunda "conta" que o Tribunal lê como outra. Um seletor copia os quatro do cadastro da parceria — o mesmo cadastro que o extrato encontra na conciliação, então os números batem. **A digitação continua disponível**: a conta pode ter sido encerrada ou nunca ter entrado no cadastro, e o saldo do exercício precisa ser declarado de qualquer forma. Os dois campos de saldo passaram a dizer **de que data** é o número (31/12 do exercício, como o manual manda) — era a dúvida que levava a lançar o saldo de hoje.
+
+### "Mês 12" não é dezembro
+
+O descritor da prestação mostrava `Ano 2026 · Mês 12` e nada mais, e a leitura natural é que dezembro foi escolhido entre doze opções — então se procurava onde escolher o período de envio. Não há onde: a Fase V recebe **uma prestação anual e consolidada**, e `mes = 12` é o descritor dela. A tela passa a escrever `12 — anual (consolidada)` e a mostrar o **período coberto**. A necessidade real de fechamento mensal é atendida por `Relatórios → Despesas do período`, que já pede de/até.
+
 ### A nota rateada é de vários ajustes
 
 `DocumentoFiscal.ajusteId` é **nulo quando a nota é rateada**, e isso não é omissão: ela pertence a todas as parcerias do quadro, e quem diz quais é o `rateioId`. Gravar uma delas escolheria um dono arbitrário para uma despesa que não tem dono único; duplicar a nota por ajuste faria o mesmo documento fiscal existir várias vezes — o que o `@@unique` de número+credor existe para impedir.

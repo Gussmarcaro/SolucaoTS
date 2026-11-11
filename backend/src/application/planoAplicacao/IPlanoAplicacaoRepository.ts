@@ -1,3 +1,11 @@
+/** Uma rubrica do plano e a Categoria de Despesa AUDESP que ela declara. */
+export interface RubricaDoPlano {
+  categoria: string;
+  subcategoria: string;
+  /** Nula nos planos importados antes do campo existir. */
+  categoriaDespesaTipo: number | null;
+}
+
 import type { PlanoAplicacaoItem } from '@/core/planoAplicacao/PlanoAplicacaoItem';
 import type { DadosPlanoItem } from './dtos';
 
@@ -20,7 +28,15 @@ export interface IPlanoAplicacaoRepository {
    * ainda assim precisa citar o item da proposta. Oferecer o que já existe
    * nos planos evita que a mesma rubrica seja escrita de cinco jeitos.
    */
-  rubricasDoOrgao(): Promise<{ categoria: string; subcategoria: string }[]>;
+  /**
+   * As rubricas do plano, com a categoria AUDESP de cada uma.
+   *
+   * `ajusteId` recorta pelo plano **daquela** parceria — que é o que a tela de
+   * Despesas precisa: oferecer a rubrica de outro convênio é a mesma família
+   * de erro que a lista de contas bancárias já teve. Sem ele, continua sendo o
+   * órgão inteiro, que é o que a busca global usa.
+   */
+  rubricasDoOrgao(ajusteId?: string): Promise<RubricaDoPlano[]>;
   /** Substitui TODO o plano do ajuste pelos itens informados (idempotente). */
   substituir(ajusteId: string, itens: DadosPlanoItem[]): Promise<PlanoAplicacaoItem[]>;
   /**

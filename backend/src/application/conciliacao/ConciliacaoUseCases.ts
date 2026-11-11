@@ -77,8 +77,29 @@ export class ConciliacaoUseCases {
     return this.repo.contasDoExtrato(filtros);
   }
 
-  async listar(filtros: { de?: string; ate?: string; ajusteId?: string }): Promise<LinhaExtrato[]> {
+  async listar(filtros: {
+    de?: string;
+    ate?: string;
+    ajusteId?: string;
+    contaBancariaId?: string;
+  }): Promise<LinhaExtrato[]> {
     const todas = await this.repo.listar(filtros);
+
+    /*
+     * Uma conta de cada vez — quando a tela escolhe uma.
+     *
+     * Um ajuste costuma ter várias contas (uma por fonte de recurso), e o
+     * extrato é sempre de uma só: sem este recorte, o movimento das três
+     * contas do convênio era confrontado com o extrato de uma delas, e o que
+     * não casava parecia pendência.
+     *
+     * Conta que não existe (ou de outro órgão) devolve nulo, e aí **nada é
+     * recortado**: é o mesmo critério do ajuste sem conta declarada — mostrar
+     * demais é recuperável olhando, mostrar de menos não é.
+     */
+    const conta = filtros.contaBancariaId
+      ? ((await this.repo.contaPorId(filtros.contaBancariaId)) ?? undefined)
+      : undefined;
 
     /*
      * Dentro de um ajuste, só as linhas das **contas dele**.
@@ -93,9 +114,11 @@ export class ConciliacaoUseCases {
      * Ajuste sem conta declarada continua vendo tudo: recortar por um conjunto
      * vazio deixaria o usuário sem conciliação e sem explicação.
      */
-    const linhas = filtros.ajusteId
+    const doAjuste = filtros.ajusteId
       ? await this.recortarPorContas(todas, filtros.ajusteId)
       : todas;
+
+    const linhas = conta ? doAjuste.filter((l) => ehDoAjuste(l, [conta])) : doAjuste;
 
     const pendentes = linhas.filter((l) => !l.conciliadoEm && !l.ignorado);
     if (!pendentes.length) return linhas;
@@ -106,8 +129,8 @@ export class ConciliacaoUseCases {
     const ate = deslocar(datas[datas.length - 1], JANELA_DIAS);
 
     const [pagamentos, receitas] = await Promise.all([
-      this.repo.candidatosPagamento(de, ate, filtros.ajusteId),
-      this.repo.candidatosReceita(de, ate, filtros.ajusteId),
+      this.repo.candidatosPagamento(de, ate, filtros.ajusteId, conta),
+      this.repo.candidatosReceita(de, ate, filtros.ajusteId, conta),
     ]);
 
     const descricoes = await this.repo.descreverLancamentos({
@@ -170,10 +193,22 @@ export class ConciliacaoUseCases {
    * respondem exatamente "lançamentos sem conciliação no período", porque é
    * disso que a sugestão precisa. Aqui elas passaram a servir também à tela.
    */
-  async pendentes(filtros: { de: string; ate: string; ajusteId?: string }): Promise<LancamentoPendente[]> {
+  async pendentes(filtros: {
+    de: string;
+    ate: string;
+    ajusteId?: string;
+    contaBancariaId?: string;
+  }): Promise<LancamentoPendente[]> {
+    // O mesmo recorte da listagem: o que esta conta lançou e o banco ainda não
+    // confirmou. Sem ele, a seção mostraria o pagamento de outra conta como se
+    // faltasse no extrato que está à vista.
+    const conta = filtros.contaBancariaId
+      ? ((await this.repo.contaPorId(filtros.contaBancariaId)) ?? undefined)
+      : undefined;
+
     const [pagamentos, receitas] = await Promise.all([
-      this.repo.candidatosPagamento(filtros.de, filtros.ate, filtros.ajusteId),
-      this.repo.candidatosReceita(filtros.de, filtros.ate, filtros.ajusteId),
+      this.repo.candidatosPagamento(filtros.de, filtros.ate, filtros.ajusteId, conta),
+      this.repo.candidatosReceita(filtros.de, filtros.ate, filtros.ajusteId, conta),
     ]);
 
     const descricoes = await this.repo.descreverLancamentos({

@@ -4,8 +4,11 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 import { usePermissoes } from '@/contexts/PermissoesContext';
 import { useAjusteExecucao } from '@/contexts/AjusteExecucaoContext';
+import { contasApi } from '@/services/contasBancarias.service';
+import type { ContaBancaria } from '@/types/contaBancaria';
 import { conciliacaoApi } from '@/services/conciliacao.service';
 import { extrairMensagemErro } from '@/services/http';
 import { dataBr, formatarMoeda } from '@/lib/masks';
@@ -54,6 +57,10 @@ const FILTROS: { key: Filtro; label: string }[] = [
  * A lista abre em **"A conciliar"** de propósito: o que já foi conferido não
  * pede atenção, e uma tela que mostra tudo misturado ensina a ignorá-la.
  */
+/** "341 — Itaú Unibanco" a partir do código da tabela oficial. */
+const rotuloBanco = (codigo: number) =>
+  BANCO.find((b) => b.value === String(codigo))?.label ?? String(codigo);
+
 export function Conciliacao() {
   const { pode } = usePermissoes();
   const podeEditar = pode('EXECUCAO_CONCILIACAO', 'EDICAO');
@@ -99,6 +106,32 @@ export function Conciliacao() {
   // A conciliação acontece dentro de um ajuste: só as contas dele, e só os
   // lançamentos dele. O portão garante que ele existe.
   const { ajusteId } = useAjusteExecucao();
+
+  /*
+   * E **uma conta de cada vez**, quando o usuário escolhe uma.
+   *
+   * A parceria costuma ter uma conta por fonte de recurso, e o extrato é
+   * sempre de uma só: sem escolher, o movimento das três contas do convênio
+   * era confrontado com o extrato de uma delas, e o que não casava parecia
+   * pendência. "Todas" continua sendo o padrão, porque é o que responde
+   * "sobrou alguma coisa em qualquer conta?".
+   */
+  const [contaBancariaId, setContaBancariaId] = useState('');
+  const [contas, setContas] = useState<ContaBancaria[]>([]);
+
+  useEffect(() => {
+    let vivo = true;
+    contasApi
+      .listar(true, ajusteId ?? undefined)
+      .then((r) => vivo && setContas(r))
+      .catch(() => vivo && setContas([]));
+    // Trocar de parceria invalida a escolha: a conta da anterior não existe
+    // aqui, e manter o id filtraria por algo que a lista não mostra.
+    setContaBancariaId('');
+    return () => {
+      vivo = false;
+    };
+  }, [ajusteId]);
   const [enviando, setEnviando] = useState(false);
   const [agindo, setAgindo] = useState<string | null>(null);
   const arquivo = useRef<HTMLInputElement>(null);
@@ -117,14 +150,19 @@ export function Conciliacao() {
     let vivo = true;
     setCarregando(true);
     conciliacaoApi
-      .listar({ de: periodo(de), ate: periodo(ate), ajusteId: ajusteId ?? undefined })
+      .listar({
+        de: periodo(de),
+        ate: periodo(ate),
+        ajusteId: ajusteId ?? undefined,
+        contaBancariaId: contaBancariaId || undefined,
+      })
       .then((r) => vivo && setLinhas(r))
       .catch((e) => vivo && setErro(extrairMensagemErro(e, 'Falha ao carregar o extrato.')))
       .finally(() => vivo && setCarregando(false));
     return () => {
       vivo = false;
     };
-  }, [refreshKey, de, ate, ajusteId]);
+  }, [refreshKey, de, ate, ajusteId, contaBancariaId]);
 
   /*
    * De quais contas é o extrato — carregado **só quando a lista está vazia**.
@@ -163,13 +201,17 @@ export function Conciliacao() {
   useEffect(() => {
     let vivo = true;
     conciliacaoApi
-      .pendentes({ ...janelaPendentes, ajusteId: ajusteId ?? undefined })
+      .pendentes({
+        ...janelaPendentes,
+        ajusteId: ajusteId ?? undefined,
+        contaBancariaId: contaBancariaId || undefined,
+      })
       .then((r) => vivo && setLancamentos(r))
       .catch(() => vivo && setLancamentos([]));
     return () => {
       vivo = false;
     };
-  }, [refreshKey, janelaPendentes.de, janelaPendentes.ate, ajusteId]);
+  }, [refreshKey, janelaPendentes.de, janelaPendentes.ate, ajusteId, contaBancariaId]);
 
   const recarregar = () => setRefreshKey((k) => k + 1);
 
@@ -280,6 +322,25 @@ export function Conciliacao() {
             </button>
           ))}
         </div>
+        {/* A conta vem antes das datas: ela é o recorte principal desta tela,
+            e o período só afina o que já foi recortado. */}
+        {contas.length > 0 && (
+          <div className="w-64">
+            <Select
+              label="Conta bancária"
+              name="contaBancariaId"
+              value={contaBancariaId}
+              onChange={(ev) => setContaBancariaId(ev.target.value)}
+              options={[
+                { value: '', label: 'Todas as contas do ajuste' },
+                ...contas.map((c) => ({
+                  value: c.id,
+                  label: c.apelido || `${c.conta} — ${rotuloBanco(c.banco)}`,
+                })),
+              ]}
+            />
+          </div>
+        )}
         <div className="w-40">
           <Input label="De" name="de" type="date" value={de} onChange={(e) => setDe(e.target.value)} />
         </div>
