@@ -45,6 +45,27 @@ import type { AfericaoMeta, AfericaoMetaPayload } from '@/types/prestacaoBlocos6
 export const receitasApi = crud<Receita, ReceitaPayload>('receitas');
 export const disponibilidadesApi = crud<Disponibilidade, DisponibilidadePayload>('disponibilidades');
 
+/** O saldo contábil que os lançamentos sustentam, conta a conta, em 31/12. */
+export interface SaldoSugerido {
+  banco: number | null;
+  agencia: string | number | null;
+  conta: string | null;
+  entradas: number;
+  saidas: number;
+  saldoContabil: number;
+  /** Quantos lançamentos sustentam o número — zero merece desconfiança. */
+  lancamentos: number;
+}
+
+export const saldosSugeridosApi = {
+  async obter(prestacaoId: string): Promise<SaldoSugerido[]> {
+    const { data } = await http.get<SaldoSugerido[]>(
+      `/prestacoes/${prestacaoId}/disponibilidades-sugeridas`,
+    );
+    return data;
+  },
+};
+
 /**
  * Saldo do fundo fixo — valor único do bloco Disponibilidades (irmão de
  * `saldos` no JSON), obrigatório no schema do TCESP.

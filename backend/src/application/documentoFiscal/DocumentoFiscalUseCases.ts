@@ -32,13 +32,30 @@ function validar(input: DocumentoFiscalDTO): DadosDocumentoFiscal {
   const descricao = input.descricao?.trim() ?? '';
 
   if (!numero) throw new BusinessError('Informe o número do documento fiscal.');
-  if (tipo !== 'CPF' && tipo !== 'CNPJ' && tipo !== 'RNE')
-    throw new BusinessError('Tipo de documento do credor inválido.');
-  if (tipo === 'RNE') {
-    if (!credorNumeroDoc) throw new BusinessError('Informe o RNE do credor.');
-    if (!credorNome) throw new BusinessError('Para RNE, informe o nome do credor.');
-  } else if (!isDocumentoValido(credorNumeroDoc, tipo)) {
-    throw new BusinessError(`${tipo} do credor inválido.`);
+
+  /*
+   * A folha de pagamento não tem credor, e é a única despesa que não tem.
+   *
+   * Ela não é documento fiscal: a norma manda transmiti-la **só** no bloco
+   * Pagamentos, com número 9999. Aqui dentro ela continua sendo despesa —
+   * entra no plano, nos relatórios e na conciliação —, e o número ("Folha
+   * Abril/2026") é identificação interna, não vai ao Tribunal.
+   *
+   * Exigir CPF/CNPJ dela obrigava a inventar um credor, e o que se inventa é
+   * o da própria entidade: foi assim que a folha virou documento fiscal com
+   * a entidade como fornecedora de si mesma.
+   */
+  const folhaPagamento = input.folhaPagamento === true;
+
+  if (!folhaPagamento) {
+    if (tipo !== 'CPF' && tipo !== 'CNPJ' && tipo !== 'RNE')
+      throw new BusinessError('Tipo de documento do credor inválido.');
+    if (tipo === 'RNE') {
+      if (!credorNumeroDoc) throw new BusinessError('Informe o RNE do credor.');
+      if (!credorNome) throw new BusinessError('Para RNE, informe o nome do credor.');
+    } else if (!isDocumentoValido(credorNumeroDoc, tipo)) {
+      throw new BusinessError(`${tipo} do credor inválido.`);
+    }
   }
   if (!descricao) throw new BusinessError('Informe a descrição.');
 
@@ -136,9 +153,23 @@ function validar(input: DocumentoFiscalDTO): DadosDocumentoFiscal {
      */
     ajusteId: rateioProveniente ? null : input.ajusteId?.trim() || null,
     numero,
-    credorTipoDoc: tipo,
-    credorNumeroDoc,
-    credorNome,
+    folhaPagamento,
+    /*
+     * A folha não tem credor, e o que se grava é a **ausência** dele.
+     *
+     * `credorNumeroDoc` vazio é a verdade: não há CPF nem CNPJ. O
+     * `credorTipoDoc` continua obrigatório na coluna e fica com um valor
+     * inerte — nada o lê na folha, e o montador nem chega perto dela, porque
+     * ela é excluída do bloco `documentos_fiscais`.
+     *
+     * Isto também mantém a chave de duplicidade útil: duas folhas com o mesmo
+     * número no mesmo órgão continuam colidindo, que é o certo.
+     */
+    credorTipoDoc: folhaPagamento ? "CNPJ" : tipo,
+    credorNumeroDoc: folhaPagamento ? "" : credorNumeroDoc,
+    // Na folha, o nome descreve o que a despesa é: a grade mostra esta
+    // coluna, e deixá-la vazia faria a linha parecer cadastro incompleto.
+    credorNome: folhaPagamento ? (credorNome ?? 'Folha de pagamento') : credorNome,
     contratoNumero: input.contratoNumero?.trim() || null,
     contratoFirmadoId: input.contratoFirmadoId?.trim() || null,
     contratoId: input.contratoId?.trim() || null,

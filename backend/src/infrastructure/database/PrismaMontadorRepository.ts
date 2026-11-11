@@ -65,7 +65,7 @@ export class PrismaMontadorRepository implements IMontadorRepository {
             },
           },
         }),
-        prisma.pagamento.findMany({ where: { prestacaoId }, include: { documentoFiscal: { select: { numero: true, credorTipoDoc: true, credorNumeroDoc: true } } } }),
+        prisma.pagamento.findMany({ where: { prestacaoId }, include: { documentoFiscal: { select: { numero: true, credorTipoDoc: true, credorNumeroDoc: true, folhaPagamento: true } } } }),
         prisma.receita.findMany({ where: { prestacaoId } }),
         prisma.disponibilidade.findMany({ where: { prestacaoId } }),
         prisma.desconto.findMany({ where: { prestacaoId } }),
@@ -125,7 +125,19 @@ export class PrismaMontadorRepository implements IMontadorRepository {
         valor: n(b.valor),
       })),
 
-      documentosFiscais: documentosFiscais.map((ligacao) => {
+      /*
+       * A folha de pagamento **não entra** em `documentos_fiscais`.
+       *
+       * Ela não é documento fiscal, e a norma é expressa: vai só no bloco
+       * Pagamentos, com número 9999. Aqui dentro ela é despesa de verdade —
+       * entra no plano, nos relatórios e na conciliação —, e é justamente por
+       * isso que a exclusão acontece **na montagem**, e não deixando de
+       * lançá-la: o documento que vai ao Tribunal é o único lugar em que ela
+       * não deve existir.
+       */
+      documentosFiscais: documentosFiscais
+        .filter((ligacao) => !ligacao.documentoFiscal.folhaPagamento)
+        .map((ligacao) => {
         const f = ligacao.documentoFiscal;
         const percentual = Number(ligacao.percentual);
         return {
@@ -159,7 +171,11 @@ export class PrismaMontadorRepository implements IMontadorRepository {
       }),
 
       pagamentos: pagamentos.map((p) => ({
-        folha: p.documentoFiscalId == null,
+        // Folha é tanto o pagamento sem nota (lançado direto como "Folha
+        // (9999)") quanto o que aponta para uma despesa marcada como folha:
+        // os dois são a mesma coisa para o Tribunal, e os dois saem com
+        // número 9999 e sem credor.
+        folha: p.documentoFiscalId == null || p.documentoFiscal?.folhaPagamento === true,
         docNumero: p.documentoFiscal?.numero ?? null,
         docCredorTipo: p.documentoFiscal?.credorTipoDoc ?? null,
         docCredorNumero: p.documentoFiscal?.credorNumeroDoc ?? null,

@@ -105,6 +105,7 @@ prestacaoRoutes.delete('/:prestacaoId/receitas/:id/apropriar', (req, res, next) 
 bloco('receitas', receitas);
 bloco('disponibilidades', disponibilidades);
 // Valor único do bloco Disponibilidades (não é um item da lista de saldos).
+prestacaoRoutes.get('/:prestacaoId/disponibilidades-sugeridas', (req, res, next) => disponibilidades.saldosSugeridos(req, res, next));
 prestacaoRoutes.get('/:prestacaoId/saldo-fundo-fixo', (req, res, next) => disponibilidades.obterSaldoFundoFixo(req, res, next));
 prestacaoRoutes.put('/:prestacaoId/saldo-fundo-fixo', (req, res, next) => disponibilidades.definirSaldoFundoFixo(req, res, next));
 bloco('descontos', descontos);

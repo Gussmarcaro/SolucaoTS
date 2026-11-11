@@ -9,6 +9,7 @@ import { enterComoTab } from '@/lib/enterComoTab';
 import { SelectDominio } from '@/components/ui/SelectDominio';
 import { Select } from '@/components/ui/Select';
 import { contasApi } from '@/services/contasBancarias.service';
+import { saldosSugeridosApi, type SaldoSugerido } from '@/services/prestacaoBlocos2.service';
 import type { ContaBancaria } from '@/types/contaBancaria';
 import { BANCO, CONTA_TIPO, rotulo } from '@/lib/dominiosFaseV';
 import { apenasDigitos, formatarMoeda, mascaraMoeda, moedaParaNumero, numeroParaMascaraMoeda } from '@/lib/masks';
@@ -234,6 +235,38 @@ function DispForm({
     };
   }, [ajusteId]);
 
+  /*
+   * O saldo contábil que os nossos lançamentos sustentam, conta a conta.
+   *
+   * O manual fixa o saldo na **data final do período** — 31/12 do exercício —,
+   * e o número já existe aqui dentro: o que entrou pela conta menos o que saiu
+   * por ela. Era digitado de cabeça, e o erro típico é lançar o saldo de hoje.
+   *
+   * **É sugestão, não preenchimento.** Aparece ao lado do campo com um botão
+   * que o aplica. O saldo **bancário** continua sendo digitado do extrato: ele
+   * vem de fora, e preencher os dois com o mesmo número faria o documento
+   * afirmar uma conciliação que ninguém fez.
+   */
+  const [sugestoes, setSugestoes] = useState<SaldoSugerido[]>([]);
+  useEffect(() => {
+    let vivo = true;
+    saldosSugeridosApi
+      .obter(prestacaoId)
+      .then((r) => vivo && setSugestoes(r))
+      .catch(() => vivo && setSugestoes([]));
+    return () => {
+      vivo = false;
+    };
+  }, [prestacaoId]);
+
+  /** A sugestão da conta que está no formulário, se houver movimento dela. */
+  const sugestao = sugestoes.find(
+    (x) =>
+      String(x.banco ?? '') === apenasDigitos(banco) &&
+      apenasDigitos(String(x.agencia ?? '')) === apenasDigitos(agencia) &&
+      apenasDigitos(String(x.conta ?? '')) === apenasDigitos(conta),
+  );
+
   const escolherConta = (id: string) => {
     const c = contas.find((x) => x.id === id);
     if (!c) return;
@@ -314,6 +347,23 @@ function DispForm({
           inputMode="numeric"
           hint={`Saldo dos registros em 31/12/${exercicio}.`}
         />
+        {sugestao && (
+          <div className="sm:col-span-2 -mt-2 text-xs text-ink-500 dark:text-ink-400">
+            Pelos lançamentos desta conta até 31/12/{exercicio}:{' '}
+            <strong className="text-ink-700 dark:text-ink-200">
+              {formatarMoeda(sugestao.saldoContabil)}
+            </strong>{' '}
+            ({formatarMoeda(sugestao.entradas)} entraram, {formatarMoeda(sugestao.saidas)} saíram,{' '}
+            {sugestao.lancamentos} lançamento{sugestao.lancamentos === 1 ? '' : 's'}){' '}
+            <button
+              type="button"
+              onClick={() => setSaldoCont(numeroParaMascaraMoeda(sugestao.saldoContabil))}
+              className="font-semibold text-brand-600 underline hover:text-brand-700 dark:text-brand-400"
+            >
+              usar este valor
+            </button>
+          </div>
+        )}
       </div>
       <div className="flex items-center justify-end gap-2 pt-1">
         <Button type="button" variant="secondary" onClick={onCancel} disabled={salvando}>Cancelar</Button>

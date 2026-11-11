@@ -106,6 +106,20 @@ export function DespesaForm({
   const [contratoNumero, setContratoNumero] = useState(item?.contratoNumero ?? '');
   const [contratos, setContratos] = useState<Contrato[]>([]);
 
+  /*
+   * Esta despesa é uma **folha de pagamento**.
+   *
+   * A folha não é documento fiscal: a norma manda transmiti-la só no bloco
+   * Pagamentos, com número 9999, e proíbe registrá-la em Documentos Fiscais.
+   * Mas ela é despesa — entra no plano, nos relatórios e na conciliação —, e
+   * era por isso que acabava lançada aqui com um número inventado e o CNPJ da
+   * própria entidade como credor.
+   *
+   * Com a marca, as duas coisas passam a ser verdade: a despesa existe aqui
+   * dentro com o número que o operador reconhece ("Folha Abril/2026"), e o
+   * documento que vai ao Tribunal não a traz — só o pagamento dela, com 9999.
+   */
+  const [folha, setFolha] = useState(item?.folhaPagamento ?? false);
   const [credorId, setCredorId] = useState('');
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
 
@@ -346,7 +360,9 @@ export function DespesaForm({
     setErro(null);
 
     if (!numero.trim()) return setErro('Informe o número do documento.');
-    if (!credorId) return setErro('Selecione o credor (Fornecedor / Prestador).');
+    // Na folha não há credor a selecionar — e é justamente exigi-lo que fazia
+    // inventar um, sempre o da própria entidade.
+    if (!folha && !credorId) return setErro('Selecione o credor (Fornecedor / Prestador).');
     if (!descricao.trim()) return setErro('Informe a descrição.');
     if (!dataEmissao) return setErro('Informe a data de emissão.');
 
@@ -401,6 +417,7 @@ export function DespesaForm({
       retencoes: retencoes.flatMap((r) =>
         r.tipo && r.valor ? [{ tipo: r.tipo, valor: moedaParaNumero(r.valor) }] : [],
       ),
+      folhaPagamento: folha,
       tipoDocumento: tipoDoc || null,
       categoriaDespesaTipo: Number(apenasDigitos(categoria)),
       propostaCategoria: propostaCategoria.trim() || null,
@@ -500,6 +517,28 @@ export function DespesaForm({
         </div>
       )}
 
+      {/*
+        A folha é a única despesa sem documento fiscal, e precisa se declarar
+        antes de tudo: ela muda o que o formulário pede (não há credor) e o que
+        o Tribunal recebe (o bloco documentos_fiscais não a traz).
+      */}
+      <label className="flex items-start gap-2 rounded-xl border border-ink-200 px-3 py-2 text-sm text-ink-700 dark:border-ink-700 dark:text-ink-200">
+        <input
+          type="checkbox"
+          checked={folha}
+          onChange={(e) => setFolha(e.target.checked)}
+          className="mt-0.5 h-4 w-4 rounded border-ink-300 text-brand-500 focus:ring-brand-400 dark:border-ink-600 dark:bg-ink-800"
+        />
+        <span>
+          Esta despesa é uma <strong>folha de pagamento</strong>
+          <span className="block text-xs font-normal text-ink-400">
+            A folha não tem documento fiscal nem credor. Ela conta no plano, nos relatórios e na
+            conciliação, mas <strong>não é enviada</strong> em Documentos Fiscais — o pagamento
+            dela vai ao Tribunal com o nº 9999, como o manual manda.
+          </span>
+        </span>
+      </label>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-12">
         <div className="sm:col-span-4">
           <Select
@@ -515,7 +554,13 @@ export function DespesaForm({
           />
         </div>
         <div className="sm:col-span-3">
-          <Input label="Nº do documento *" name="numero" value={numero} onChange={(e) => setNumero(e.target.value)} />
+          <Input
+            label={folha ? 'Identificação da folha *' : 'Nº do documento *'}
+            name="numero"
+            value={numero}
+            onChange={(e) => setNumero(e.target.value)}
+            hint={folha ? 'Só para você: não vai ao Tribunal.' : undefined}
+          />
         </div>
         <div className="sm:col-span-3">
           <Input label="Data de emissão *" name="dataEmissao" type="date" value={dataEmissao} onChange={(e) => setDataEmissao(e.target.value)} />
@@ -524,6 +569,14 @@ export function DespesaForm({
           <SelectDominio label="UF emissor" name="estadoEmissor" value={apenasDigitos(estadoEmissor)} onChange={setEstadoEmissor} options={ESTADO_EMISSOR} />
         </div>
 
+        {folha ? (
+          <div className="sm:col-span-8">
+            <p className="rounded-xl border border-dashed border-ink-300 px-3 py-2 text-sm text-ink-500 dark:border-ink-600 dark:text-ink-400">
+              Folha de pagamento não tem credor — os empregados vão no bloco{' '}
+              <strong>Relação de Empregados</strong> da prestação.
+            </p>
+          </div>
+        ) : (
         <div className="sm:col-span-8">
           <Combobox
             label="Credor (Fornecedor / Prestador) *"
@@ -557,6 +610,7 @@ export function DespesaForm({
             }
           />
         </div>
+        )}
         <div className="sm:col-span-4">
           <Combobox
             label="Contrato (opcional)"

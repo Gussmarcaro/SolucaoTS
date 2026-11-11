@@ -474,7 +474,11 @@ function PagamentoOrgaoForm({
       const resta = Math.round((d.valorBruto - pagoDaNota(d.id)) * 100) / 100;
       return {
         value: d.id,
-        label: `Doc. nº ${d.numero}${d.credorNome ? ` — ${d.credorNome}` : ''}`,
+        // A folha não é "documento nº": ela não tem documento fiscal, e
+        // chamá-la assim é o que levou a inventar um número de nota.
+        label: d.folhaPagamento
+          ? `Folha — ${d.numero}`
+          : `Doc. nº ${d.numero}${d.credorNome ? ` — ${d.credorNome}` : ''}`,
         // O que falta entra no rótulo: é o número que decide qual nota pagar,
         // e vê-lo antes de escolher poupa abrir uma a uma.
         /*

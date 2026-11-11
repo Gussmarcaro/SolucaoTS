@@ -575,6 +575,36 @@ Na **Disponibilidade** da prestação, os quatro campos de identificação (banc
 
 O descritor da prestação mostrava `Ano 2026 · Mês 12` e nada mais, e a leitura natural é que dezembro foi escolhido entre doze opções — então se procurava onde escolher o período de envio. Não há onde: a Fase V recebe **uma prestação anual e consolidada**, e `mes = 12` é o descritor dela. A tela passa a escrever `12 — anual (consolidada)` e a mostrar o **período coberto**. A necessidade real de fechamento mensal é atendida por `Relatórios → Despesas do período`, que já pede de/até.
 
+### A folha de pagamento é despesa aqui dentro e não é documento fiscal lá fora
+
+A síntese das regras é expressa:
+
+> **Folha de pagamento:** não tem documento fiscal. Vai **só no bloco Pagamentos**, pelo valor líquido, com número `9999`. **Não** registrar folha em Documentos Fiscais nem inventar número fictício.
+
+O sistema fazia o **pagamento** certo (a opção *Folha de pagamento (nº 9999)* existe desde sempre) e não tinha onde pôr a **despesa** — que existe: ela consome o plano, aparece nos relatórios e sai do extrato. O resultado em produção foi o previsível: a folha lançada como nota com número inventado (`Folha Abril 2026`) e **o CNPJ da própria entidade como credor**, porque o formulário exigia um. E, como o pagamento era feito pela opção 9999, a despesa ficava eternamente em aberto — o sintoma que o usuário relatou.
+
+`DocumentoFiscal.folhaPagamento` faz as duas coisas serem verdade ao mesmo tempo:
+
+- **Aqui dentro ela é despesa**, com o número que o operador reconhece, entrando no plano, nos relatórios e na conciliação como qualquer outra.
+- **Lá fora ela não existe como documento fiscal**: o montador a **filtra** de `documentos_fiscais`. A exclusão acontece na montagem, e não deixando de lançá-la — o documento transmitido é o único lugar em que ela não deve aparecer.
+- **O pagamento dela sai com `9999` e sem credor.** `folha` deixou de ser "pagamento sem nota" e passou a ser "sem nota **ou** nota marcada como folha": para o Tribunal os dois são a mesma coisa.
+- **O credor deixa de ser exigido, e só nela.** Exigi-lo era o que obrigava a inventar um — e o que se inventa é sempre o da própria entidade, que é a pior resposta possível: a entidade vira fornecedora de si mesma.
+- **O que se grava é a ausência**: `credorNumeroDoc` vazio, que é a verdade. O `credorTipoDoc` fica com um valor inerte porque a coluna é obrigatória, e nada o lê na folha — o montador nem chega perto dela. A chave de duplicidade continua útil: duas folhas com o mesmo número no mesmo órgão ainda colidem.
+- **`credorNome` vira "Folha de pagamento"** quando não informado: a grade mostra essa coluna, e vazia faria a linha parecer cadastro pela metade.
+- Na lista de vínculos do Pagamento ela se chama **"Folha — …"**, não "Doc. nº …": chamá-la de documento é o que levou a inventar um número de nota.
+
+**Falta, e é da operação:** as folhas já lançadas como nota precisam ser remarcadas (ou reexcluídas e relançadas). Enquanto não forem, vão ao Tribunal como documento fiscal com número inventado e a entidade como credora.
+
+### O saldo da disponibilidade sai dos lançamentos
+
+O manual fixa o saldo na **data final do período** — 31/12 do exercício, não o de hoje —, e os quatro campos de identificação mais os dois saldos eram digitados de cabeça. O número do **contábil** já existe no sistema: o que entrou pela conta menos o que saiu por ela.
+
+- **É sugestão, não preenchimento.** Aparece ao lado do campo, com um botão que a aplica, e mostra de que ela é feita (entradas, saídas, quantos lançamentos). Preencher sozinho um número que vai para documento assinado pelo dirigente seria trocar o erro de digitação por um erro sem autor.
+- **O bancário continua vindo do extrato**, e de propósito. Os dois são campos distintos no schema justamente porque podem divergir, e a diferença é o que a conciliação existe para explicar: preencher os dois com o mesmo número faria o documento afirmar uma conciliação que ninguém fez. (Capturar o saldo do OFX segue na fila — é o item do CONCILIANDO.)
+- **A lista parte das contas declaradas no ajuste**, não dos lançamentos: conta sem movimento precisa aparecer com zero, porque saldo zero é informação e conta que some do quadro parece esquecimento.
+- **O agrupamento é por `chaveDaConta`**, a mesma da conciliação — agrupar por texto cru partiria a mesma conta em duas, porque o lançamento grava `123655-9` onde o cadastro grava `1236559`.
+- **O ponto de partida é zero**, e isso é uma suposição: a conta de uma parceria nasce para ela e recebe o primeiro repasse zerada. Numa conta que já tinha saldo o número sai menor que o real — mais uma razão para ser sugestão, e não preenchimento.
+
 ### A nota rateada é de vários ajustes
 
 `DocumentoFiscal.ajusteId` é **nulo quando a nota é rateada**, e isso não é omissão: ela pertence a todas as parcerias do quadro, e quem diz quais é o `rateioId`. Gravar uma delas escolheria um dono arbitrário para uma despesa que não tem dono único; duplicar a nota por ajuste faria o mesmo documento fiscal existir várias vezes — o que o `@@unique` de número+credor existe para impedir.

@@ -100,6 +100,8 @@ export interface DocumentoFiscal {
   arquivoEnviadoEm: string | null;
   /** Parceria da despesa. Nula na rateada: ela é de várias — ver o schema. */
   ajusteId: string | null;
+  /** `true` quando esta "nota" é uma folha de pagamento — ver o schema. */
+  folhaPagamento: boolean;
   rateioProveniente: boolean;
   /** Método de rateio aplicado — um só, garantido pela chave estrangeira. */
   rateioId: string | null;

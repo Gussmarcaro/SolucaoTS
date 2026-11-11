@@ -17,6 +17,15 @@ export class DisponibilidadeController {
     }
   }
 
+  /** O saldo contábil que os lançamentos sustentam — sugestão para a tela. */
+  async saldosSugeridos(req: Request, res: Response, next: NextFunction) {
+    try {
+      return res.json(await casos.saldosSugeridos(req.params.prestacaoId));
+    } catch (e) {
+      return next(e);
+    }
+  }
+
   async criar(req: Request, res: Response, next: NextFunction) {
     try {
       return res.status(201).json(await casos.criar(req.params.prestacaoId, req.body));

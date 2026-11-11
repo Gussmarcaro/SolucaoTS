@@ -46,6 +46,18 @@ export class DisponibilidadeUseCases {
     return d;
   }
 
+  /**
+   * O saldo contábil sugerido de cada conta da parceria, em 31/12.
+   *
+   * Só sugestão: o campo não é preenchido sozinho. O número sai dos nossos
+   * lançamentos e o saldo bancário sai do extrato — se os dois coincidissem
+   * por construção, o documento afirmaria uma conciliação que ninguém fez.
+   */
+  async saldosSugeridos(prestacaoId: string) {
+    await this.garantirPrestacao(prestacaoId);
+    return this.repo.saldosSugeridos(prestacaoId);
+  }
+
   async listar(prestacaoId: string): Promise<Disponibilidade[]> {
     await this.garantirPrestacao(prestacaoId);
     return this.repo.listarPorPrestacao(prestacaoId);

@@ -1486,6 +1486,24 @@ model DocumentoFiscal {
   // alteração. Não é dado que o TCESP cobre.
   tipoDocumento        TipoDocumentoFiscal?
   categoriaDespesaTipo Int
+
+  /// Esta "nota" é uma **folha de pagamento**.
+  ///
+  /// A folha não tem documento fiscal: a síntese das regras é explícita em
+  /// que ela vai **só no bloco Pagamentos**, pelo líquido, com número 9999, e
+  /// que não se deve registrá-la em Documentos Fiscais nem inventar número
+  /// fictício. Era o que acontecia na prática — a folha era lançada como
+  /// despesa com um número inventado ("Folha Abril 2026") e o CNPJ da própria
+  /// entidade como credor, porque é despesa e precisa existir no plano, nos
+  /// relatórios e na conciliação.
+  ///
+  /// Com a marca, as duas coisas passam a ser verdade ao mesmo tempo: a
+  /// despesa existe aqui dentro, com o número que o operador reconhece, e
+  /// **não é emitida** no bloco `documentos_fiscais`; o pagamento dela sai
+  /// com número 9999 e sem credor, como a folha avulsa.
+  ///
+  /// Por isso o credor é dispensado quando ela é `true` — e só então.
+  folhaPagamento       Boolean @default(false)
   // Rubrica do Plano de Aplicação do ajuste — CONTROLE INTERNO, não transmitida.
   //
   // Guardada como TEXTO, e não como chave para PlanoAplicacaoItem, porque a

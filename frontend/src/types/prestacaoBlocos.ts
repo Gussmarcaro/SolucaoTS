@@ -83,6 +83,8 @@ export interface DocumentoFiscal {
   arquivoNome: string | null;
   arquivoTamanho: number | null;
   arquivoEnviadoEm: string | null;
+  /** Verdadeiro quando esta despesa é uma folha de pagamento. */
+  folhaPagamento: boolean;
   rateioProveniente: boolean;
   /** Parceria da despesa. Nula na rateada: ela é de várias. */
   ajusteId: string | null;
@@ -112,6 +114,7 @@ export interface DocumentoFiscalPayload {
   categoriaDespesaTipo: number;
   propostaCategoria?: string | null;
   propostaSubcategoria?: string | null;
+  folhaPagamento?: boolean;
   rateioProveniente?: boolean;
   rateioId?: string | null;
   rateioPercentual?: number | null;

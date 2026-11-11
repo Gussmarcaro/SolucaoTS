@@ -8,6 +8,8 @@ import type {
 
 export interface DocumentoFiscalDTO {
   numero: string;
+  /** `true` quando esta "nota" é uma folha de pagamento — ver o schema. */
+  folhaPagamento?: boolean;
   credorTipoDoc: TipoDocumento;
   credorNumeroDoc: string;
   credorNome?: string | null;
@@ -35,6 +37,7 @@ export interface DocumentoFiscalDTO {
 /** Dados normalizados/validados prontos para persistência. */
 export interface DadosDocumentoFiscal {
   numero: string;
+  folhaPagamento: boolean;
   credorTipoDoc: TipoDocumento;
   credorNumeroDoc: string;
   credorNome: string | null;
