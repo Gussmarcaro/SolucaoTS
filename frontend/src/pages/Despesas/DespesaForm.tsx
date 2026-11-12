@@ -150,6 +150,18 @@ export function DespesaForm({
   const [pgtoContaId, setPgtoContaId] = useState('');
   const [pgtoValor, setPgtoValor] = useState('');
   const [pgtoTransacao, setPgtoTransacao] = useState('');
+
+  /*
+   * O comprovante do pagamento, escolhido aqui e enviado ao **pagamento**.
+   *
+   * Fila separada da dos anexos da nota, e não é detalhe: o documento fiscal
+   * e o comprovante têm donos diferentes. A nota comprova o que foi
+   * contratado; o comprovante, que o dinheiro saiu — e é no lançamento do
+   * pagamento que a fiscalização o procura. Misturar os dois faria o
+   * comprovante subir como anexo da despesa, e ele sumiria da tela de
+   * Pagamentos, que é onde se pergunta por ele.
+   */
+  const [pgtoPendentes, setPgtoPendentes] = useState<AnexoPendente[]>([]);
   const [contas, setContas] = useState<ContaBancaria[]>([]);
   const [pendentes, setPendentes] = useState<AnexoPendente[]>([]);
 
@@ -459,7 +471,7 @@ export function DespesaForm({
           if (!conta) throw new Error('Selecione a conta que pagou.');
           if (conta.fonteRecursoTipo == null)
             throw new Error('Esta conta está sem fonte de recurso no cadastro.');
-          await pagamentosOrgaoApi.criar({
+          const pagamento = await pagamentosOrgaoApi.criar({
             // A parceria vem do portão, como no lançamento avulso.
             ajusteId: ajusteId ?? null,
             documentoFiscalId: id,
@@ -474,6 +486,28 @@ export function DespesaForm({
             contaCorrente: conta.conta,
             numeroTransacao: pgtoTransacao.trim() || null,
           });
+
+          /*
+           * O comprovante sobe agora, porque o envio precisa do id do
+           * pagamento — que só existe depois desta linha.
+           *
+           * Falha aqui **não** desfaz nada: a despesa e o pagamento estão
+           * gravados, e dizer o contrário seria mentir. O arquivo é o único
+           * que se perde, e a mensagem diz exatamente isso e onde retomar.
+           */
+          if (pgtoPendentes.length) {
+            const r = await enviarPendentes('PAGAMENTO', pagamento.id, pgtoPendentes);
+            if (r.falhas.length) {
+              setIdSalvo(id);
+              setPagarAgora(false);
+              setPgtoPendentes([]);
+              setErro(
+                `A despesa e o pagamento foram salvos, mas o comprovante não subiu: ${r.falhas[0].motivo}. ` +
+                  'Anexe pelo clipe da grade em Execução → Pagamentos.',
+              );
+              return;
+            }
+          }
         } catch (e) {
           setIdSalvo(id);
           setPagarAgora(false);
@@ -823,6 +857,12 @@ export function DespesaForm({
                   if (!pgtoData) setPgtoData(new Date().toISOString().slice(0, 10));
                   if (!pgtoValor && liquidoDaNota > 0)
                     setPgtoValor(numeroParaMascaraMoeda(liquidoDaNota));
+                } else {
+                  // Desmarcou: não haverá pagamento, e sem ele o comprovante
+                  // não tem dono. Guardá-lo na memória da tela o faria sumir
+                  // em silêncio — o defeito que a escolha antecipada existe
+                  // justamente para não cometer.
+                  setPgtoPendentes([]);
                 }
               }}
               className="h-4 w-4 rounded border-ink-300 text-brand-500 focus:ring-brand-400 dark:border-ink-600 dark:bg-ink-800"
@@ -884,6 +924,27 @@ export function DespesaForm({
                     value={pgtoTransacao}
                     onChange={(e) => setPgtoTransacao(e.target.value)}
                   />
+                </div>
+
+                {/*
+                  O comprovante, no bloco do pagamento e não no da nota.
+                  É o arquivo que a fiscalização pede quando pergunta se o
+                  dinheiro de fato saiu, e ele vai para o **pagamento**: é lá
+                  que ela o procura. Escolhido aqui, sobe sozinho assim que o
+                  pagamento nasce.
+                */}
+                <div className="sm:col-span-12">
+                  <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700">
+                    <legend className="px-1 text-[13px] font-normal text-ink-600 dark:text-ink-300">
+                      Comprovante do pagamento
+                    </legend>
+                    <Anexos
+                      dono="PAGAMENTO"
+                      tipos={['COMPROVANTE_PAGAMENTO']}
+                      pendentes={pgtoPendentes}
+                      onPendentes={setPgtoPendentes}
+                    />
+                  </fieldset>
                 </div>
               </div>
             ))}
