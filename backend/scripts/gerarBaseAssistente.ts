@@ -138,6 +138,15 @@ function main(): void {
   copyFileSync(join(DOCS, 'REGRAS_NEGOCIO_FASE_V.md'), join(DESTINO, 'regras-negocio-fase-v.md'));
   console.log('  regras-negocio-fase-v.md  (cópia da síntese de regras)');
 
+  // Síntese da formação do TCESP: orientação e jurisprudência, escritas à mão
+  // a partir da transcrição. Entra por cópia, como a síntese de regras — não há
+  // PDF de origem, e o `pdftotext` não tem o que fazer aqui.
+  copyFileSync(
+    join(DOCS, 'FORMACAO_TCESP_2026_TERCEIRO_SETOR.md'),
+    join(DESTINO, 'formacao-tcesp-2026.md'),
+  );
+  console.log('  formacao-tcesp-2026.md    (cópia da síntese da formação)');
+
   gerarMapaNavegacao();
   console.log('\nPronto. Não edite os arquivos gerados à mão — rode este script.');
 }

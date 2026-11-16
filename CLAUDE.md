@@ -25,6 +25,7 @@ Checagem automatizada em duas camadas: os scripts **`verificar:*`** (regras pura
 
 - **`REGRAS_DESENVOLVIMENTO.md`** — convenções e padrões obrigatórios de código (arquitetura, Prisma, validações, parsers, multi-tenant, testes). Siga-o em todo o código.
 - **`Documentação/REGRAS_NEGOCIO_FASE_V.md`** — síntese das regras de negócio da Fase V (fluxo, API REST do TCESP, prazos, os ~30 blocos da prestação de contas com a regra-chave de cada um, validações transversais). É a referência canônica; **consulte antes** de implementar qualquer validação ou bloco.
+- **`Documentação/FORMACAO_TCESP_2026_TERCEIRO_SETOR.md`** — síntese da formação do TCESP (sessão da manhã: planejamento, seleção, contratualização). É **orientação e jurisprudência**, não norma: onde divergir da lei ou do manual, vale a norma. Traz o que o manual não traz — o nível de detalhamento de custo que o Tribunal exige (TC-019.869/2025), as condições para aceitar o rateio administrativo, e os erros de redação de meta que ele reprova.
 - `Documentação/Prompt Finalizado.docx` — documento de arquitetura original (visão de stack e camadas). **Atenção:** seu modelo de dados é simplificado demais (só `Convenio`/`Empenho`) e foi superado pelo `schema.prisma`.
 - `Documentação/empenho_schema.json` — JSON Schema de um bloco (empenho). Lembrar que a prestação de contas real tem muitos outros blocos.
 - Arquivos `*.csv` de exemplo — formatos de importação (ver "Parsers de CSV" abaixo).
@@ -315,7 +316,11 @@ No `frontend/`, **`npm test`** (vitest) cobre a lógica pura que erra em silênc
 
 Ícone ao lado da lupa na barra superior. Responde sobre a Fase V e sobre o uso do sistema **ancorado na documentação embarcada** — não no conhecimento geral do modelo. Backend: `POST /assistente` (streaming SSE) e `GET /assistente/status`.
 
-A base é gerada por `npm run assistente:base` e **versionada** em `backend/src/infrastructure/assistente/base/` (~239 KB), como as tabelas de domínio: produção não precisa do `pdftotext` nem dos PDFs. Fontes: 5 manuais do TCESP, a síntese `REGRAS_NEGOCIO_FASE_V.md` e o **mapa de navegação extraído do `navigation.ts` do frontend** — é ele que impede o assistente de inventar caminho de tela.
+A base é gerada por `npm run assistente:base` e **versionada** em `backend/src/infrastructure/assistente/base/` (~253 KB), como as tabelas de domínio: produção não precisa do `pdftotext` nem dos PDFs. Fontes: 5 manuais do TCESP, a síntese `REGRAS_NEGOCIO_FASE_V.md`, a síntese da **Formação Qualificação 2026** e o **mapa de navegação extraído do `navigation.ts` do frontend** — é ele que impede o assistente de inventar caminho de tela.
+
+- **A formação entra como orientação e jurisprudência, não como norma**, e o título do documento diz isso — é com ele que o assistente cita a fonte. Confundir uma decisão de plenário com o texto do manual faria o usuário defender em processo algo que a lei não diz. Ela responde o que o manual não responde: *"posso ratear a despesa da matriz?"*, *"que nível de detalhe o Tribunal quer no custo?"*, *"'em até 90%' serve como meta?"*.
+- **A síntese e a formação vêm antes dos manuais na ordem do corpus.** As duas são curtas e dizem o que a regra significa na prática; o manual diz o que o campo aceita.
+- Os dois arquivos entram por **cópia**, não por `pdftotext`: não há PDF de origem. Editar `Documentação/FORMACAO_TCESP_2026_TERCEIRO_SETOR.md` exige rodar o gerador (ou copiar à mão) — senão a base fica com a versão antiga, e nada acusa.
 
 - O corpus inteiro vai no prompt a cada pergunta, sem busca por trechos: a regra que responde costuma estar numa tabela que não repete as palavras da pergunta, e o que o modelo não recebe ele não cita — supõe. Com o manual todo à vista, "não encontrei na documentação" passa a ser verdade verificável.
 - O corpus entra com `cache_control` (TTL 1h) antes de qualquer conteúdo volátil — a partir da 2ª pergunta custa ~1/10. Não coloque data, usuário ou id de requisição antes dele: invalida o cache inteiro.

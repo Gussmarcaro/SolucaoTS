@@ -15,10 +15,20 @@ interface Documento {
  * A ordem importa: o modelo lê de cima para baixo, e o mapa de navegação vem
  * primeiro porque é o que responde "onde fica isso no sistema" — a pergunta
  * mais frequente e a mais fácil de responder errado.
+ *
+ * A síntese e a formação vêm **antes** dos manuais, e de propósito: as duas
+ * são curtas e dizem o que a regra significa na prática, enquanto o manual diz
+ * o que o campo aceita. Perguntado sobre "posso ratear a despesa da matriz?",
+ * o que responde é a orientação do Tribunal, não a tabela de domínio.
+ *
+ * **A formação é orientação e jurisprudência, não norma.** O título diz isso
+ * porque é com ele que o assistente cita a fonte: confundir uma decisão com o
+ * texto do manual faria o usuário defender em processo algo que a lei não diz.
  */
 const DOCUMENTOS: Documento[] = [
   { arquivo: 'sistema-navegacao.md', titulo: 'Mapa de navegação do sistema Solução TS' },
   { arquivo: 'regras-negocio-fase-v.md', titulo: 'Síntese das regras de negócio da Fase V' },
+  { arquivo: 'formacao-tcesp-2026.md', titulo: 'Formação Qualificação 2026 — Repasses ao Terceiro Setor (TCESP): orientação e jurisprudência' },
   { arquivo: 'manual-prestacao-v1.19.txt', titulo: 'Manual da Prestação de Contas dos Repasses ao Terceiro Setor — v1.19 (TCESP)' },
   { arquivo: 'manual-cadastro-ajustes.txt', titulo: 'Manual do Sistema Audesp — Cadastro de Ajustes, Fase V (TCESP)' },
   { arquivo: 'manual-declaracao-negativa.txt', titulo: 'Manual da Declaração Negativa — Fase V (TCESP)' },
