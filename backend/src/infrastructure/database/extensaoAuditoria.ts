@@ -49,6 +49,7 @@ export const NAO_AUDITAR = new Set([
   'Cbo',
   'ClassificacaoEconomica',
   'ComponenteDespesa',
+  'EntidadeAudesp',
   'RegistroAuditoria',
   'SessaoAcesso',
 ]);

@@ -56,3 +56,25 @@ export interface ComponenteDespesa {
   codigo: string;
   nome: string;
 }
+
+/**
+ * Entidade cadastrada no Sistema Audesp.
+ *
+ * O par (código do município, código da entidade) identifica o órgão no
+ * descritor de todo documento transmitido. Não são o código IBGE nem derivam
+ * do CNPJ: só existem na tabela publicada pelo TCESP, e errá-los faz o TCESP
+ * recusar o envio inteiro.
+ *
+ * Os dois códigos valem **juntos**: o da entidade é pequeno (1 = Prefeitura,
+ * 2 = Câmara) e só é único dentro do município.
+ */
+export interface EntidadeAudesp {
+  codigoMunicipio: number;
+  codigoEntidade: number;
+  nomeMunicipio: string;
+  nomeEntidade: string;
+  /** Nulo onde a lista oficial da Fase V não alcança — ver o seed. */
+  tipoOrgao: string | null;
+  /** Periodicidade da Declaração Negativa. Nula pelo mesmo motivo. */
+  periodicidade: string | null;
+}

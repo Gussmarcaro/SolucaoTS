@@ -1,14 +1,16 @@
-import { useState } from 'react';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AlertCircle, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { SlideButton } from '@/components/ui/SlideButton';
 import { Button } from '@/components/ui/Button';
+import { BuscaDominio, type ItemDominio } from '@/components/ui/BuscaDominio';
 import { FormularioNovo } from '@/components/ui/LabelCampo';
 import { apenasDigitos, mascaraCpfCnpj } from '@/lib/masks';
 import { isCnpjValido } from '@/lib/validators';
 import { capitalizarNome } from '@/lib/nomeProprio';
 import { atualizarOrgao, criarOrgao } from '@/services/orgaos.service';
+import { dominiosApi, type EntidadeAudespItem } from '@/services/dominios.service';
 import { extrairCodigoErro, extrairMensagemErro } from '@/services/http';
 import {
   TIPO_ORGAO_LABEL,
@@ -38,6 +40,21 @@ type Campos = {
   cnpj: string;
 };
 
+/** Espera antes de conferir o par digitado, para não consultar a cada tecla. */
+const ATRASO_CONFERENCIA_MS = 300;
+
+/**
+ * O par de códigos vira um código só para a busca ('6539-1'), porque o
+ * autocomplete trabalha com um valor. Ele nunca é gravado: o que vai para o
+ * banco continua sendo os dois números.
+ */
+const comoCodigo = (municipio: number, entidade: number) => `${municipio}-${entidade}`;
+
+function doCodigo(codigo: string): { municipio: number; entidade: number } | null {
+  const [m, e] = codigo.split('-').map(Number);
+  return Number.isInteger(m) && Number.isInteger(e) ? { municipio: m, entidade: e } : null;
+}
+
 export function OrgaoForm({ orgao, onSuccess, onCancel }: Props) {
   const editando = !!orgao;
   const [form, setForm] = useState<Campos>({
@@ -53,11 +70,111 @@ export function OrgaoForm({ orgao, onSuccess, onCancel }: Props) {
   const [alerta, setAlerta] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
+  /** Entidade da tabela oficial que corresponde ao par digitado (null = não há). */
+  const [oficial, setOficial] = useState<EntidadeAudespItem | null>(null);
+  const [conferindo, setConferindo] = useState(false);
+  /**
+   * Liga quando a escolha veio da busca, e só então os demais campos são
+   * preenchidos. Sem isso, abrir um órgão já cadastrado sobrescreveria o nome
+   * que o usuário deu com o nome oficial — que pode ser outro de propósito.
+   */
+  const preencherDaTabela = useRef(false);
+
   const set = (campo: keyof Campos, valor: string) => {
     setForm((prev) => ({ ...prev, [campo]: valor }));
     setErros((prev) => ({ ...prev, [campo]: undefined }));
     setAlerta(null);
   };
+
+  const municipio = Number(form.codigoMunicipio);
+  const entidade = Number(form.codigoEntidade);
+  const parCompleto =
+    !!form.codigoMunicipio && !!form.codigoEntidade && Number.isInteger(municipio) && Number.isInteger(entidade);
+
+  /*
+   * Confere o par contra a tabela oficial sempre que ele muda — digitado ou
+   * escolhido na busca. É a rede que pega o código montado à mão: o código da
+   * entidade é pequeno (1 = Prefeitura, 2 = Câmara) e **não** é o do município
+   * com um dígito colado, erro que só apareceria na recusa do envio.
+   */
+  useEffect(() => {
+    if (!parCompleto) {
+      setOficial(null);
+      setConferindo(false);
+      preencherDaTabela.current = false;
+      return;
+    }
+    let ativo = true;
+    setConferindo(true);
+    const id = setTimeout(() => {
+      void dominiosApi
+        .obterEntidadeAudesp(municipio, entidade)
+        .then((item) => {
+          if (!ativo) return;
+          setOficial(item);
+          if (item && preencherDaTabela.current) {
+            setForm((f) => ({
+              ...f,
+              nome: item.nomeEntidade,
+              // Tipo e periodicidade só vêm junto quando a tabela os tem; nas
+              // entidades em que a lista oficial não alcança, a escolha fica
+              // com quem cadastra.
+              tipoOrgao: item.tipoOrgao ?? f.tipoOrgao,
+              periodicidade: item.periodicidade ?? f.periodicidade,
+            }));
+            setErros((prev) => ({
+              ...prev,
+              nome: undefined,
+              tipoOrgao: item.tipoOrgao ? undefined : prev.tipoOrgao,
+              periodicidade: item.periodicidade ? undefined : prev.periodicidade,
+            }));
+          }
+          preencherDaTabela.current = false;
+        })
+        .finally(() => {
+          if (ativo) setConferindo(false);
+        });
+    }, ATRASO_CONFERENCIA_MS);
+    return () => {
+      ativo = false;
+      clearTimeout(id);
+    };
+  }, [parCompleto, municipio, entidade]);
+
+  const buscarEntidades = useCallback(async (termo: string): Promise<ItemDominio[]> => {
+    const itens = await dominiosApi.buscarEntidadesAudesp(termo);
+    return itens.map((e) => ({
+      codigo: comoCodigo(e.codigoMunicipio, e.codigoEntidade),
+      descricao: e.nomeEntidade,
+      detalhe: `· ${e.nomeMunicipio}`,
+    }));
+  }, []);
+
+  const resolverEntidade = useCallback(async (codigo: string): Promise<ItemDominio | null> => {
+    const par = doCodigo(codigo);
+    if (!par) return null;
+    const e = await dominiosApi.obterEntidadeAudesp(par.municipio, par.entidade);
+    return e
+      ? { codigo, descricao: e.nomeEntidade, detalhe: `· ${e.nomeMunicipio}` }
+      : null;
+  }, []);
+
+  function escolherEntidade(codigo: string) {
+    const par = doCodigo(codigo);
+    if (!par) {
+      // Limpou a busca: os códigos vão junto, senão ficariam órfãos na tela.
+      setForm((f) => ({ ...f, codigoMunicipio: '', codigoEntidade: '' }));
+      return;
+    }
+    preencherDaTabela.current = true;
+    setErros((prev) => ({ ...prev, codigoMunicipio: undefined, codigoEntidade: undefined }));
+    setAlerta(null);
+    setForm((f) => ({
+      ...f,
+      codigoMunicipio: String(par.municipio),
+      codigoEntidade: String(par.entidade),
+    }));
+  }
 
   function validar(): boolean {
     const novos: Partial<Record<keyof Campos, string>> = {};
@@ -114,6 +231,20 @@ export function OrgaoForm({ orgao, onSuccess, onCancel }: Props) {
           </div>
         )}
 
+        {/* A busca vem antes de tudo porque é o caminho curto: escolher aqui
+            preenche o nome, os dois códigos e — quando a lista oficial da Fase V
+            alcança a entidade — também o tipo e a periodicidade. */}
+        <BuscaDominio
+          label="Localizar na tabela oficial do Audesp"
+          name="entidadeAudesp"
+          value={oficial ? comoCodigo(oficial.codigoMunicipio, oficial.codigoEntidade) : ''}
+          onChange={escolherEntidade}
+          buscar={buscarEntidades}
+          resolver={resolverEntidade}
+          placeholder="Digite a cidade ou o nome do órgão — ex.: itajobi"
+          hint="Os códigos do TCESP não são o código IBGE nem saem do CNPJ: escolher aqui evita digitá-los."
+        />
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <Input label="Nome do Órgão Concessor *" name="nome" value={form.nome} onChange={(e) => set('nome', capitalizarNome(e.target.value))} error={erros.nome} placeholder="ex.: PREFEITURA MUNICIPAL DE ADAMANTINA" autoFocus />
@@ -143,6 +274,35 @@ export function OrgaoForm({ orgao, onSuccess, onCancel }: Props) {
 
           <Input label="Código Município *" name="codigoMunicipio" value={form.codigoMunicipio} onChange={(e) => set('codigoMunicipio', apenasDigitos(e.target.value).slice(0, 4))} error={erros.codigoMunicipio} placeholder="1–9999" inputMode="numeric" />
           <Input label="Código Entidade *" name="codigoEntidade" value={form.codigoEntidade} onChange={(e) => set('codigoEntidade', apenasDigitos(e.target.value).slice(0, 5))} error={erros.codigoEntidade} placeholder="1–99999" inputMode="numeric" />
+
+          {/* O resultado da conferência fica junto dos dois campos, não no topo:
+              é deles que ele fala. */}
+          {parCompleto && (
+            <div className="sm:col-span-2 -mt-2">
+              {conferindo ? (
+                <p className="flex items-center gap-1.5 text-xs text-ink-400">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Conferindo na tabela oficial do Audesp...
+                </p>
+              ) : oficial ? (
+                <p className="flex items-start gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="mt-px h-3.5 w-3.5 shrink-0" />
+                  <span>
+                    Confere com a tabela oficial: <strong>{oficial.nomeEntidade}</strong> · {oficial.nomeMunicipio}.
+                  </span>
+                </p>
+              ) : (
+                <p className="flex items-start gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                  <AlertTriangle className="mt-px h-3.5 w-3.5 shrink-0" />
+                  <span>
+                    Esse par de códigos não está na tabela oficial do Audesp carregada no sistema.
+                    Confira pela busca acima: o par errado faz o TCESP recusar o envio inteiro. Se a
+                    entidade foi criada depois da última edição da tabela, pode seguir.
+                  </span>
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="sm:col-span-2">
             <Input label="CNPJ *" name="cnpj" value={form.cnpj} onChange={(e) => set('cnpj', mascaraCpfCnpj(e.target.value))} error={erros.cnpj} placeholder="00.000.000/0000-00" inputMode="numeric" />

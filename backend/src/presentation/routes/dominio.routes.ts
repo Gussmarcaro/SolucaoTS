@@ -11,5 +11,9 @@ dominioRoutes.get('/classificacao-economica', (req, res, next) => c.buscarClassi
 dominioRoutes.get('/classificacao-economica/exercicios', (req, res, next) => c.exercicios(req, res, next));
 dominioRoutes.get('/classificacao-economica/:codigo', (req, res, next) => c.obterClassificacao(req, res, next));
 dominioRoutes.get('/componentes-despesa', (req, res, next) => c.listarComponentes(req, res, next));
+dominioRoutes.get('/entidades-audesp', (req, res, next) => c.buscarEntidadesAudesp(req, res, next));
+dominioRoutes.get('/entidades-audesp/:municipio/:entidade', (req, res, next) =>
+  c.obterEntidadeAudesp(req, res, next),
+);
 
 export { dominioRoutes };

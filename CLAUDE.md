@@ -90,8 +90,15 @@ Códigos publicados pelo TCESP/MTE, carregados no banco por seed e **somente lid
 | CBO 2002 (campo `cbo`) | `Cbo` | `cbo2002-ocupacao.csv` |
 | Classificação econômica da despesa (campo `classificacao_economica_tipo`) | `ClassificacaoEconomica` | `TABELA-NATUREZA-DA-DESPESA-<ano>.xlsx`, aba `ND <ano>` |
 | Categoria econômica / grupo / modalidade / elemento | `ComponenteDespesa` | mesmas abas auxiliares do xlsx |
+| Entidades do Audesp (descritor: `municipio` + `entidade`) | `EntidadeAudesp` | `codigos_audesp_-_municipios_e_entidades_-<data>.xlsx` + `Fase_V_entidades.pdf` |
 
 Fluxo: `npm run dominios:gerar` lê as publicações originais e escreve NDJSON **versionado** em `backend/prisma/seeds/data/`; `npm run dominios:seed` (ou o startup da API, se as tabelas estiverem vazias) carrega no banco. O leitor de .xlsx é próprio (`infrastructure/parsers/xlsx.ts`, ZIP via `zlib.inflateRaw`) — sem dependência externa.
+
+**Entidades do Audesp** (`BuscaDominio` no cadastro do Órgão Concessor). O par (`codigoMunicipio`, `codigoEntidade`) identifica o órgão no descritor de **todo** documento transmitido, e errá-lo recusa o envio inteiro. Os dois números não são dedutíveis: não são o código IBGE, não saem do CNPJ, e **não há regra por tipo de órgão** — a prefeitura e a câmara ocupam os códigos 1 e 2 do município, mas em 25 dos 644 municípios a ordem é invertida (Araçatuba: câmara 1, prefeitura 2). São 645 códigos de município e 3.320 entidades; a capital não tem prefeitura na tabela porque é jurisdicionada ao **TCM-SP**.
+
+O gerador cruza duas publicações porque nenhuma basta: a planilha de códigos (página do Coletor) tem os números e nada mais; a lista da Fase V (`Fase_V_entidades.pdf`, página de Manuais) tem o **tipo de órgão** e a **periodicidade da Declaração Negativa** e nenhum código. Onde o cruzamento falha, o tipo sai do nome — mas só por três regras que a geração **confere contra a lista oficial a cada execução e que falham a geração se divergirem** (prefeitura → Quadrimestral, câmara → Anual, consórcio → Anual; conferidas em 609/612/91 casos na edição de 2026). Padrões tentadores como "SAAE", "previdência", "fundação" e "S.A." ficaram de fora por não serem puros: entidade sem tipo é melhor do que periodicidade errada, que é prazo de entrega errado. `npm run verificar:entidades` confere a carga sem banco.
+
+O cadastro **avisa, não impede**: par fora da tabela mostra alerta, porque a tabela é uma edição datada e entidade nova ainda não aparece nela.
 
 A classificação econômica vale **por exercício e por esfera do ente** (E/M/C): o exercício do empenho é o ano da **emissão**, não o da prestação (§17 #2). `MontarPrestacaoUseCase` confronta CBO e classificação com as tabelas e transforma código inexistente em **erro bloqueante** antes de transmitir.
 
@@ -187,7 +194,7 @@ A trilha é gravada por uma **extension do Prisma Client** (`extensaoAuditoria.t
 - `ALTERACAO` guarda **só o diff** (`{ campo: { de, para } }`); `EXCLUSAO` guarda o registro inteiro (última chance de saber o que havia). Soft delete (`definirAtivo`) vira `INATIVACAO`/`REATIVACAO`.
 - Operações em lote (a reimportação de CSV apaga e recria tudo) viram **uma** linha com a quantidade, não centenas.
 - **Nunca logar** `senhaHash`, `resetTokenHash`, `resetTokenExpiresAt`; `buscaTexto` e `atualizadoEm` também ficam de fora, por serem derivados que mudam a cada gravação e só poluiriam o diff.
-- Fora da trilha: tabelas de domínio (`Cbo`, `ClassificacaoEconomica`, `ComponenteDespesa`) e a própria `RegistroAuditoria` — que é **append-only** e se auditar-se-ia em laço infinito.
+- Fora da trilha: tabelas de domínio (`Cbo`, `ClassificacaoEconomica`, `ComponenteDespesa`, `EntidadeAudesp`) e a própria `RegistroAuditoria` — que é **append-only** e se auditar-se-ia em laço infinito.
 - **A trilha é recortada por órgão** (`RegistroAuditoria.clienteId`). Sem essa coluna ela seria a única listagem do sistema a atravessar o isolamento: não tem pai de onde herdar o órgão, e um Administrador enxergaria quem alterou o quê nos outros órgãos, com `registroDescricao` (razão social, nome) e o diff inteiro junto. O campo é preenchido **explicitamente** em `registrar()`, porque essa gravação usa o client sem extensions (para não se auditar em laço) e o carimbo automático não roda ali.
 - Falha ao gravar a trilha **não derruba** a operação de negócio; vai para o log do servidor.
 
@@ -256,7 +263,8 @@ No `backend/`:
 - `npm test` — testes de integração (precisa de `DATABASE_URL_TEST`; sem ela, pula).
 - `npx prisma format` / `npx prisma generate` — formatar o schema / gerar o client tipado.
 - `npm run db:push` — aplicar o schema no banco (é o que o Render roda no deploy).
-- `npm run dominios:gerar` / `npm run dominios:seed` — regerar e carregar CBO e classificação econômica (tabelas grandes, no banco).
+- `npm run dominios:gerar` / `npm run dominios:seed` — regerar e carregar CBO, classificação econômica e entidades do Audesp (tabelas grandes, no banco).
+- `npm run verificar:entidades` — confere a tabela de entidades do Audesp (sem banco).
 - `npm run dominios:fase-v` — regerar as tabelas de domínio do JSON Schema (front + back).
 - `npm run verificar:montador` — conferir o montador contra o schema e as regras de negócio (sem banco).
 - `npm run verificar:auditoria` — conferir as regras da trilha de auditoria (sem banco).

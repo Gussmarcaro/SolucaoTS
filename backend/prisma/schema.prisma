@@ -2291,6 +2291,32 @@ model ClassificacaoEconomica {
   @@index([buscaTexto])
 }
 
+// Entidades cadastradas no Sistema Audesp — o par (município, entidade) que
+// identifica o órgão em **todo** documento transmitido, inclusive no descritor
+// da prestação. Fonte: planilha "Códigos de Municípios e Entidades no Audesp"
+// (página do Coletor), cruzada com a lista da Fase V, de onde vêm o tipo de
+// órgão e a periodicidade da Declaração Negativa.
+//
+// Errar o par derruba o envio inteiro ("ajuste não encontrado"), e os dois
+// números não são dedutíveis — não são o código IBGE nem saem do CNPJ. Por
+// isso o cadastro do Órgão Concessor escolhe daqui.
+//
+// `tipoOrgao` e `periodicidade` são nulos onde a lista da Fase V não alcança
+// (sobretudo unidades estaduais): em branco é melhor do que adivinhado, porque
+// periodicidade errada é prazo de entrega errado.
+model EntidadeAudesp {
+  codigoMunicipio Int
+  codigoEntidade  Int
+  nomeMunicipio   String
+  nomeEntidade    String
+  tipoOrgao       TipoOrgao?
+  periodicidade   Periodicidade?
+  buscaTexto      String // município + entidade normalizados, para o autocomplete
+
+  @@id([codigoMunicipio, codigoEntidade])
+  @@index([buscaTexto])
+}
+
 // Tabelas auxiliares que compõem a classificação econômica (mesmas planilhas).
 // `tipo` distingue: CATEGORIA_ECONOMICA, GRUPO_NATUREZA, MODALIDADE_APLICACAO,
 // ELEMENTO_DESPESA.

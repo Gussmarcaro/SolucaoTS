@@ -1,3 +1,4 @@
+import type { Periodicidade, TipoOrgao } from '@/types/orgao';
 import { http } from './http';
 
 /**
@@ -28,6 +29,22 @@ export interface ClassificacaoEconomicaItem {
   /** Entes que utilizam o código (combinação de E/M/C). */
   entes: string;
   situacao: string | null;
+}
+
+/**
+ * Entidade cadastrada no Sistema Audesp — o par de códigos que identifica o
+ * órgão no descritor de tudo que é transmitido.
+ *
+ * `tipoOrgao` e `periodicidade` vêm nulos nas entidades que a lista oficial da
+ * Fase V não alcança; nesse caso o formulário deixa quem cadastra escolher.
+ */
+export interface EntidadeAudespItem {
+  codigoMunicipio: number;
+  codigoEntidade: number;
+  nomeMunicipio: string;
+  nomeEntidade: string;
+  tipoOrgao: TipoOrgao | null;
+  periodicidade: Periodicidade | null;
 }
 
 export interface ComponenteDespesaItem {
@@ -78,6 +95,28 @@ export const dominiosApi = {
       params: { tipo },
     });
     return data.itens;
+  },
+
+  async buscarEntidadesAudesp(busca: string, limite = 20): Promise<EntidadeAudespItem[]> {
+    const { data } = await http.get<{ itens: EntidadeAudespItem[] }>('/dominios/entidades-audesp', {
+      params: { busca, limite },
+    });
+    return data.itens;
+  },
+
+  /** Retorna null quando o par de códigos não está na tabela oficial. */
+  async obterEntidadeAudesp(
+    codigoMunicipio: number,
+    codigoEntidade: number,
+  ): Promise<EntidadeAudespItem | null> {
+    try {
+      const { data } = await http.get<EntidadeAudespItem>(
+        `/dominios/entidades-audesp/${codigoMunicipio}/${codigoEntidade}`,
+      );
+      return data;
+    } catch {
+      return null;
+    }
   },
 
   async exerciciosClassificacao(): Promise<number[]> {

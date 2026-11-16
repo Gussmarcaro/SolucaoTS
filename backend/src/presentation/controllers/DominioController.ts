@@ -65,6 +65,36 @@ export class DominioController {
     }
   }
 
+  async buscarEntidadesAudesp(req: Request, res: Response, next: NextFunction) {
+    try {
+      const itens = await consultar.buscarEntidadesAudesp({
+        busca: req.query.busca as string | undefined,
+        limite: numero(req.query.limite),
+      });
+      return res.json({ itens });
+    } catch (e) {
+      return next(e);
+    }
+  }
+
+  /**
+   * 404 aqui quer dizer "esse par não está na edição carregada da tabela", e é
+   * uma resposta útil: é com ela que o cadastro avisa quem digitou os códigos à
+   * mão. Não é erro de servidor nem impedimento.
+   */
+  async obterEntidadeAudesp(req: Request, res: Response, next: NextFunction) {
+    try {
+      const item = await consultar.obterEntidadeAudesp(
+        Number(req.params.municipio),
+        Number(req.params.entidade),
+      );
+      if (!item) return res.status(404).json({ message: 'Entidade não encontrada na tabela oficial do Audesp.' });
+      return res.json(item);
+    } catch (e) {
+      return next(e);
+    }
+  }
+
   async exercicios(_req: Request, res: Response, next: NextFunction) {
     try {
       return res.json({ itens: await consultar.exerciciosDisponiveis() });

@@ -1,12 +1,14 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import type { Periodicidade, TipoOrgao } from '@prisma/client';
 import { prisma } from './prisma';
 import { normalizarTexto } from '@/shared/normalizar';
 
 /**
- * Carga das tabelas de domínio oficiais (CBO e Classificação Econômica da
- * Despesa) a partir dos arquivos versionados em `prisma/seeds/data/`.
+ * Carga das tabelas de domínio oficiais (CBO, Classificação Econômica da
+ * Despesa e Entidades do Audesp) a partir dos arquivos versionados em
+ * `prisma/seeds/data/`.
  *
  * Esses arquivos são gerados das publicações originais em `Documentação/` por
  * `scripts/gerarDominios.ts` (`npm run dominios:gerar`); aqui só há carga.
@@ -26,6 +28,9 @@ function lerNdjson<T>(nome: string): T[] {
     .filter((l) => l.trim().length > 0)
     .map((l) => JSON.parse(l) as T);
 }
+
+/** [município, entidade, nome do município, nome da entidade, tipo, periodicidade] */
+type LinhaEntidadeAudesp = [number, number, string, string, TipoOrgao | null, Periodicidade | null];
 
 type LinhaClassificacao = [
   string, string, string, string, string, string, string, string | null, string, string | null,
@@ -87,6 +92,23 @@ export async function seedDominios(): Promise<void> {
     ([tipo, codigo, nome]) => ({ tipo, codigo, nome, buscaTexto: `${codigo} ${normalizarTexto(nome)}` }),
   );
 
+  /*
+   * O texto de busca junta município e entidade porque é assim que se procura:
+   * quem cadastra sabe a cidade e o nome do órgão, nunca os dois números. Os
+   * códigos entram junto para que "6539" também encontre.
+   */
+  const entidades = lerNdjson<LinhaEntidadeAudesp>('entidades-audesp.ndjson').map(
+    ([codigoMunicipio, codigoEntidade, nomeMunicipio, nomeEntidade, tipoOrgao, periodicidade]) => ({
+      codigoMunicipio,
+      codigoEntidade,
+      nomeMunicipio,
+      nomeEntidade,
+      tipoOrgao,
+      periodicidade,
+      buscaTexto: `${codigoMunicipio} ${codigoEntidade} ${normalizarTexto(nomeMunicipio)} ${normalizarTexto(nomeEntidade)}`,
+    }),
+  );
+
   await prisma.$transaction([
     prisma.cbo.deleteMany(),
     prisma.cbo.createMany({ data: cbos }),
@@ -98,10 +120,12 @@ export async function seedDominios(): Promise<void> {
     prisma.classificacaoEconomica.createMany({ data: classificacoes }),
     prisma.componenteDespesa.deleteMany(),
     prisma.componenteDespesa.createMany({ data: componentes }),
+    prisma.entidadeAudesp.deleteMany(),
+    prisma.entidadeAudesp.createMany({ data: entidades }),
   ]);
 
   console.log(
-    `[dominios] carregados: ${cbos.length} CBO(s), ${classificacoes.length} classificação(ões) econômica(s) de ${arquivosPorExercicio.map((a) => a.exercicio).join(", ")}, ${componentes.length} componente(s) de despesa.`,
+    `[dominios] carregados: ${cbos.length} CBO(s), ${classificacoes.length} classificação(ões) econômica(s) de ${arquivosPorExercicio.map((a) => a.exercicio).join(", ")}, ${componentes.length} componente(s) de despesa, ${entidades.length} entidade(s) do Audesp.`,
   );
 }
 
@@ -122,8 +146,9 @@ export async function seedDominiosSeVazio(): Promise<void> {
      * não é reconhecido.
      */
     const esperados = arquivosDeClassificacao().map((a) => a.exercicio);
-    const [cbos, presentes] = await Promise.all([
+    const [cbos, entidades, presentes] = await Promise.all([
       prisma.cbo.count(),
+      prisma.entidadeAudesp.count(),
       prisma.classificacaoEconomica.findMany({
         where: { exercicio: { in: esperados } },
         distinct: ['exercicio'],
@@ -131,7 +156,7 @@ export async function seedDominiosSeVazio(): Promise<void> {
       }),
     ]);
     const faltando = esperados.filter((e) => !presentes.some((p) => p.exercicio === e));
-    if (cbos > 0 && !faltando.length) return;
+    if (cbos > 0 && entidades > 0 && !faltando.length) return;
     console.log('[dominios] tabelas de domínio vazias — carregando...');
     await seedDominios();
   } catch (err) {

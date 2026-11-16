@@ -3,6 +3,7 @@ import type {
   ClassificacaoEconomica,
   ComponenteDespesa,
   EnteDespesa,
+  EntidadeAudesp,
 } from '@/core/dominio/Dominio';
 
 export interface BuscaDominioParams {
@@ -26,6 +27,9 @@ export interface IDominioRepository {
   obterClassificacao(exercicio: number, codigo: string): Promise<ClassificacaoEconomica | null>;
 
   listarComponentes(tipo?: string): Promise<ComponenteDespesa[]>;
+
+  buscarEntidadesAudesp(params: BuscaDominioParams): Promise<EntidadeAudesp[]>;
+  obterEntidadeAudesp(codigoMunicipio: number, codigoEntidade: number): Promise<EntidadeAudesp | null>;
 
   /** Exercícios com tabela de classificação econômica carregada. */
   exerciciosDisponiveis(): Promise<number[]>;

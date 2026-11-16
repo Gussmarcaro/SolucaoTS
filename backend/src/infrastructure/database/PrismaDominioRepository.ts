@@ -5,7 +5,12 @@ import type {
   BuscaDominioParams,
   IDominioRepository,
 } from '@/application/dominio/IDominioRepository';
-import type { Cbo, ClassificacaoEconomica, ComponenteDespesa } from '@/core/dominio/Dominio';
+import type {
+  Cbo,
+  ClassificacaoEconomica,
+  ComponenteDespesa,
+  EntidadeAudesp,
+} from '@/core/dominio/Dominio';
 
 const selecaoCbo = { codigo: true, titulo: true } satisfies Prisma.CboSelect;
 
@@ -24,6 +29,15 @@ const selecaoClassificacao = {
 } satisfies Prisma.ClassificacaoEconomicaSelect;
 
 const selecaoComponente = { tipo: true, codigo: true, nome: true } satisfies Prisma.ComponenteDespesaSelect;
+
+const selecaoEntidade = {
+  codigoMunicipio: true,
+  codigoEntidade: true,
+  nomeMunicipio: true,
+  nomeEntidade: true,
+  tipoOrgao: true,
+  periodicidade: true,
+} satisfies Prisma.EntidadeAudespSelect;
 
 /** Todos os termos devem aparecer no campo de busca já normalizado. */
 function filtroTermos(termos: string[]): { buscaTexto: { contains: string } }[] | undefined {
@@ -75,6 +89,25 @@ export class PrismaDominioRepository implements IDominioRepository {
       where: { tipo },
       select: selecaoComponente,
       orderBy: [{ tipo: 'asc' }, { codigo: 'asc' }],
+    });
+  }
+
+  buscarEntidadesAudesp({ termos, limite }: BuscaDominioParams): Promise<EntidadeAudesp[]> {
+    return prisma.entidadeAudesp.findMany({
+      where: { AND: filtroTermos(termos) },
+      select: selecaoEntidade,
+      // Município primeiro, e dentro dele o código menor: a Prefeitura (1) e a
+      // Câmara (2) aparecem antes dos fundos e autarquias, que é a ordem em
+      // que quem cadastra procura.
+      orderBy: [{ nomeMunicipio: 'asc' }, { codigoEntidade: 'asc' }],
+      take: limite,
+    });
+  }
+
+  obterEntidadeAudesp(codigoMunicipio: number, codigoEntidade: number): Promise<EntidadeAudesp | null> {
+    return prisma.entidadeAudesp.findUnique({
+      where: { codigoMunicipio_codigoEntidade: { codigoMunicipio, codigoEntidade } },
+      select: selecaoEntidade,
     });
   }
 

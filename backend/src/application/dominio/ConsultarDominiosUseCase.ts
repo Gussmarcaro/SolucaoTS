@@ -1,4 +1,10 @@
-import type { Cbo, ClassificacaoEconomica, ComponenteDespesa, EnteDespesa } from '@/core/dominio/Dominio';
+import type {
+  Cbo,
+  ClassificacaoEconomica,
+  ComponenteDespesa,
+  EnteDespesa,
+  EntidadeAudesp,
+} from '@/core/dominio/Dominio';
 import { normalizarTexto } from '@/shared/normalizar';
 import type { IDominioRepository } from './IDominioRepository';
 
@@ -62,6 +68,30 @@ export class ConsultarDominiosUseCase {
     const ano = await this.resolverExercicio(exercicio);
     if (ano == null) return null;
     return this.repo.obterClassificacao(ano, limpo);
+  }
+
+  /**
+   * Entidades do Audesp para o cadastro do Órgão Concessor.
+   *
+   * Sem termo não devolve nada: são 3.300 entidades e a primeira página seria
+   * sempre a mesma cidade do alfabeto, o que não ajuda ninguém.
+   */
+  async buscarEntidadesAudesp(params: { busca?: string; limite?: number }): Promise<EntidadeAudesp[]> {
+    const termos = this.termos(params.busca);
+    if (termos.length === 0) return [];
+    return this.repo.buscarEntidadesAudesp({ termos, limite: this.limite(params.limite) });
+  }
+
+  /**
+   * Confere um par de códigos já digitado. Devolver `null` **não** significa
+   * que o cadastro está errado: a tabela é uma edição datada, e uma entidade
+   * criada depois dela ainda não aparece aqui. Quem decide é quem cadastra —
+   * a tela avisa, não impede.
+   */
+  async obterEntidadeAudesp(codigoMunicipio: number, codigoEntidade: number): Promise<EntidadeAudesp | null> {
+    if (!Number.isInteger(codigoMunicipio) || codigoMunicipio < 1 || codigoMunicipio > 9999) return null;
+    if (!Number.isInteger(codigoEntidade) || codigoEntidade < 1 || codigoEntidade > 99999) return null;
+    return this.repo.obterEntidadeAudesp(codigoMunicipio, codigoEntidade);
   }
 
   async listarComponentes(tipo?: string): Promise<ComponenteDespesa[]> {
