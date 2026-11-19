@@ -123,6 +123,7 @@ async function main(): Promise<void> {
 
   const avisos: Aviso[] = [];
   let conferem = 0;
+  let observacoes = 0;
 
   for (const c of clientes) {
     const par = `${c.codigoMunicipio}/${c.codigoEntidade}`;
@@ -143,9 +144,29 @@ async function main(): Promise<void> {
         );
       }
 
-      if (divergencias.length === 0) {
+      /*
+       * Par válido **de outro município**.
+       *
+       * Conferir só o par deixa passar o pior caso de todos: dois números que
+       * existem, mas apontam para outra cidade. O TCESP aceita o envio — e
+       * credita a prestação à entidade errada. Nada no caminho acusa.
+       *
+       * O sinal é o nome: se o município da tabela não aparece no nome do
+       * órgão, vale confirmar. É **observação, não erro** — um órgão pode se
+       * chamar "SAAE" ou "Autarquia de Água e Esgotos", sem cidade no nome.
+       */
+      const semCidadeNoNome = !chave(c.nome).includes(chave(oficial.nomeMunicipio));
+
+      if (divergencias.length === 0 && !semCidadeNoNome) {
         conferem++;
         console.log(`  ok   ${rotulo}  ·  ${par}  ·  ${oficial.nomeEntidade}`);
+      } else if (divergencias.length === 0) {
+        observacoes++;
+        console.log(`  ?    ${rotulo}  ·  ${par}`);
+        console.log(`         esse par é de ${oficial.nomeMunicipio}: ${oficial.nomeEntidade}`);
+        console.log(
+          `         o nome cadastrado não cita ${oficial.nomeMunicipio} — confirme que é o município certo`,
+        );
       } else {
         console.log(`  !    ${rotulo}  ·  ${par}`);
         for (const d of divergencias) console.log(`         ${d}`);
@@ -193,8 +214,9 @@ async function main(): Promise<void> {
     avisos.push({ orgao: rotulo, par, problema: 'par inexistente na tabela oficial', sugestao, comoCorrigir });
   }
 
+  const confirmar = observacoes > 0 ? ` ${observacoes} para confirmar.` : '';
   console.log(
-    `\n${conferem} órgão(s) conferem. ${avisos.length} com divergência.\n`,
+    `\n${conferem} órgão(s) conferem. ${avisos.length} com divergência.${confirmar}\n`,
   );
 
   if (avisos.length > 0) {
