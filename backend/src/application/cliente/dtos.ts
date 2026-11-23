@@ -8,6 +8,13 @@ export interface CriarClienteDTO {
   empenhaRepasse?: boolean;
   periodicidade: string;
   cnpj: string;
+  /** Signatários do órgão nos documentos do TCESP — todos opcionais. */
+  autoridadeNome?: string | null;
+  autoridadeCargo?: string | null;
+  autoridadeCpf?: string | null;
+  ordenadorNome?: string | null;
+  ordenadorCargo?: string | null;
+  ordenadorCpf?: string | null;
 }
 
 export type AtualizarClienteDTO = CriarClienteDTO;
@@ -21,6 +28,12 @@ export interface DadosCliente {
   empenhaRepasse: boolean;
   periodicidade: Periodicidade;
   cnpj: string;
+  autoridadeNome: string | null;
+  autoridadeCargo: string | null;
+  autoridadeCpf: string | null;
+  ordenadorNome: string | null;
+  ordenadorCargo: string | null;
+  ordenadorCpf: string | null;
 }
 
 export interface FiltrosCliente {

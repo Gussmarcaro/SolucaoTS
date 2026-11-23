@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { AjusteController } from '@/presentation/controllers/AjusteController';
+import { DocumentoController } from '@/presentation/controllers/DocumentoController';
 import { TermoAditivoController } from '@/presentation/controllers/TermoAditivoController';
 import { EmpenhoController } from '@/presentation/controllers/EmpenhoController';
 import { ExecucaoPlanoController } from '@/presentation/controllers/ExecucaoPlanoController';
@@ -23,6 +24,17 @@ ajusteRoutes.get('/', (req, res, next) => c.listar(req, res, next));
 ajusteRoutes.post('/', (req, res, next) => c.criar(req, res, next));
 ajusteRoutes.get('/:id', (req, res, next) => c.buscar(req, res, next));
 ajusteRoutes.put('/:id', (req, res, next) => c.atualizar(req, res, next));
+
+/*
+ * O Termo de Ciência e de Notificação **gerado** — o anexo RP-05/07/09/11
+ * preenchido com o cadastro, para imprimir e assinar.
+ *
+ * Irmão das três rotas abaixo, e não concorrente delas: estas guardam o PDF
+ * já assinado; esta produz o que se vai assinar. O caminho é outro de
+ * propósito (`/documentos/`), porque `/termo-ciencia` já é o arquivo.
+ */
+const documentos = new DocumentoController();
+ajusteRoutes.get('/:id/documentos/termo-ciencia', (req, res, next) => documentos.termoCiencia(req, res, next));
 
 // --- Termo de Ciência e Notificação (PDF) ---
 // Os dois anexos do ajuste seguem o mesmo trio de rotas; o que muda é só qual

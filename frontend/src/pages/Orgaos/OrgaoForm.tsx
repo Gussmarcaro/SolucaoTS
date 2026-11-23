@@ -6,8 +6,8 @@ import { SlideButton } from '@/components/ui/SlideButton';
 import { Button } from '@/components/ui/Button';
 import { BuscaDominio, type ItemDominio } from '@/components/ui/BuscaDominio';
 import { FormularioNovo } from '@/components/ui/LabelCampo';
-import { apenasDigitos, mascaraCpfCnpj } from '@/lib/masks';
-import { isCnpjValido } from '@/lib/validators';
+import { apenasDigitos, mascaraCpf, mascaraCpfCnpj } from '@/lib/masks';
+import { isCnpjValido, isCpfValido } from '@/lib/validators';
 import { capitalizarNome } from '@/lib/nomeProprio';
 import { atualizarOrgao, criarOrgao } from '@/services/orgaos.service';
 import { dominiosApi, type EntidadeAudespItem } from '@/services/dominios.service';
@@ -38,6 +38,12 @@ type Campos = {
   codigoMunicipio: string;
   codigoEntidade: string;
   cnpj: string;
+  autoridadeNome: string;
+  autoridadeCargo: string;
+  autoridadeCpf: string;
+  ordenadorNome: string;
+  ordenadorCargo: string;
+  ordenadorCpf: string;
 };
 
 /** Espera antes de conferir o par digitado, para não consultar a cada tecla. */
@@ -65,6 +71,12 @@ export function OrgaoForm({ orgao, onSuccess, onCancel }: Props) {
     codigoMunicipio: orgao ? String(orgao.codigoMunicipio) : '',
     codigoEntidade: orgao ? String(orgao.codigoEntidade) : '',
     cnpj: orgao ? mascaraCpfCnpj(orgao.cnpj) : '',
+    autoridadeNome: orgao?.autoridadeNome ?? '',
+    autoridadeCargo: orgao?.autoridadeCargo ?? '',
+    autoridadeCpf: orgao?.autoridadeCpf ? mascaraCpf(orgao.autoridadeCpf) : '',
+    ordenadorNome: orgao?.ordenadorNome ?? '',
+    ordenadorCargo: orgao?.ordenadorCargo ?? '',
+    ordenadorCpf: orgao?.ordenadorCpf ? mascaraCpf(orgao.ordenadorCpf) : '',
   });
   const [erros, setErros] = useState<Partial<Record<keyof Campos, string>>>({});
   const [alerta, setAlerta] = useState<string | null>(null);
@@ -186,6 +198,11 @@ export function OrgaoForm({ orgao, onSuccess, onCancel }: Props) {
     const ent = Number(form.codigoEntidade);
     if (!Number.isInteger(ent) || ent < 1 || ent > 99999) novos.codigoEntidade = 'Código inválido (1–99999).';
     if (!isCnpjValido(apenasDigitos(form.cnpj))) novos.cnpj = 'CNPJ inválido.';
+    // Os signatários são opcionais; o CPF, se digitado, tem de ser válido.
+    for (const campo of ['autoridadeCpf', 'ordenadorCpf'] as const) {
+      const d = apenasDigitos(form[campo]);
+      if (d && !isCpfValido(d)) novos[campo] = 'CPF inválido.';
+    }
     setErros(novos);
     return Object.keys(novos).length === 0;
   }
@@ -203,6 +220,12 @@ export function OrgaoForm({ orgao, onSuccess, onCancel }: Props) {
       codigoMunicipio: Number(form.codigoMunicipio),
       codigoEntidade: Number(form.codigoEntidade),
       cnpj: apenasDigitos(form.cnpj),
+      autoridadeNome: form.autoridadeNome.trim() || null,
+      autoridadeCargo: form.autoridadeCargo.trim() || null,
+      autoridadeCpf: apenasDigitos(form.autoridadeCpf) || null,
+      ordenadorNome: form.ordenadorNome.trim() || null,
+      ordenadorCargo: form.ordenadorCargo.trim() || null,
+      ordenadorCpf: apenasDigitos(form.ordenadorCpf) || null,
     };
 
     setSalvando(true);
@@ -306,6 +329,35 @@ export function OrgaoForm({ orgao, onSuccess, onCancel }: Props) {
 
           <div className="sm:col-span-2">
             <Input label="CNPJ *" name="cnpj" value={form.cnpj} onChange={(e) => set('cnpj', mascaraCpfCnpj(e.target.value))} error={erros.cnpj} placeholder="00.000.000/0000-00" inputMode="numeric" />
+          </div>
+        </div>
+
+        {/* Quem assina pelo órgão nos anexos do TCESP. Opcional para operar;
+            necessário para os documentos saírem preenchidos — sem isso a folha
+            sai com a linha em branco e a tela diz o que falta. */}
+        <div>
+          <p className="mb-2 text-sm font-medium text-ink-700 dark:text-ink-200">Signatários nos documentos do TCESP</p>
+          <p className="mb-3 text-xs text-ink-500 dark:text-ink-400">
+            Usados no Termo de Ciência e de Notificação e no Termo de Consentimento (PC-02). O
+            ordenador de despesa pode ser outra pessoa — na Prefeitura, costuma ser o secretário da pasta.
+          </p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700">
+              <legend className="px-1 text-[13px] font-normal text-ink-600 dark:text-ink-300">Autoridade máxima do órgão</legend>
+              <div className="space-y-3">
+                <Input label="Nome" name="autoridadeNome" value={form.autoridadeNome} onChange={(e) => set('autoridadeNome', capitalizarNome(e.target.value))} />
+                <Input label="Cargo" name="autoridadeCargo" value={form.autoridadeCargo} onChange={(e) => set('autoridadeCargo', e.target.value)} />
+                <Input label="CPF" name="autoridadeCpf" value={form.autoridadeCpf} onChange={(e) => set('autoridadeCpf', mascaraCpf(e.target.value))} error={erros.autoridadeCpf} placeholder="000.000.000-00" inputMode="numeric" />
+              </div>
+            </fieldset>
+            <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700">
+              <legend className="px-1 text-[13px] font-normal text-ink-600 dark:text-ink-300">Ordenador de despesa</legend>
+              <div className="space-y-3">
+                <Input label="Nome" name="ordenadorNome" value={form.ordenadorNome} onChange={(e) => set('ordenadorNome', capitalizarNome(e.target.value))} />
+                <Input label="Cargo" name="ordenadorCargo" value={form.ordenadorCargo} onChange={(e) => set('ordenadorCargo', e.target.value)} />
+                <Input label="CPF" name="ordenadorCpf" value={form.ordenadorCpf} onChange={(e) => set('ordenadorCpf', mascaraCpf(e.target.value))} error={erros.ordenadorCpf} placeholder="000.000.000-00" inputMode="numeric" />
+              </div>
+            </fieldset>
           </div>
         </div>
 

@@ -46,6 +46,7 @@
     "verificar:sessoes": "tsx scripts/verificarSessoes.ts",
     "verificar:entidades": "tsx scripts/verificarEntidadesAudesp.ts",
     "conferir:orgaos": "tsx scripts/conferirOrgaos.ts",
+    "verificar:documentos": "tsx scripts/verificarDocumentos.ts",
     "plano:ordem": "tsx scripts/backfillOrdemPlano.ts",
     "typecheck:scripts": "tsc -p tsconfig.scripts.json --noEmit"
   },

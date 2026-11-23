@@ -36,6 +36,13 @@ export interface Orgao {
   empenhaRepasse: boolean;
   periodicidade: Periodicidade;
   cnpj: string;
+  /** Quem assina pelo órgão nos documentos do TCESP. CPF só com dígitos. */
+  autoridadeNome: string | null;
+  autoridadeCargo: string | null;
+  autoridadeCpf: string | null;
+  ordenadorNome: string | null;
+  ordenadorCargo: string | null;
+  ordenadorCpf: string | null;
   ativo: boolean;
   criadoEm: string;
   atualizadoEm: string;
@@ -50,6 +57,13 @@ export interface OrgaoPayload {
   empenhaRepasse: boolean;
   periodicidade: Periodicidade;
   cnpj: string;
+  /** Quem assina pelo órgão nos documentos do TCESP. CPF só com dígitos. */
+  autoridadeNome: string | null;
+  autoridadeCargo: string | null;
+  autoridadeCpf: string | null;
+  ordenadorNome: string | null;
+  ordenadorCargo: string | null;
+  ordenadorCpf: string | null;
 }
 
 export interface FiltrosOrgao {

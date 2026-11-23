@@ -1,6 +1,6 @@
 import type { TipoOrgao, Periodicidade } from '@prisma/client';
 import { BusinessError } from '@/shared/errors';
-import { apenasDigitos, isCNPJValido } from '@/shared/validators/documento';
+import { apenasDigitos, isCNPJValido, isCPFValido } from '@/shared/validators/documento';
 import type { CriarClienteDTO, DadosCliente } from './dtos';
 
 const TIPOS_ORGAO = [
@@ -35,6 +35,21 @@ export function normalizarEValidarCliente(input: CriarClienteDTO): DadosCliente 
     throw new BusinessError('Periodicidade inválida.');
   if (!isCNPJValido(cnpj)) throw new BusinessError('CNPJ inválido.');
 
+  /*
+   * Os signatários são opcionais — o órgão opera sem eles —, mas o CPF, quando
+   * informado, tem de ser válido: ele vai impresso num documento que se assina
+   * perante o Tribunal, e é por ele que o CadTCESP identifica a pessoa.
+   */
+  const texto = (v: string | null | undefined) => v?.trim() || null;
+  const cpf = (v: string | null | undefined, quem: string) => {
+    const d = apenasDigitos(v ?? '');
+    if (!d) return null;
+    if (!isCPFValido(d)) throw new BusinessError(`CPF ${quem} inválido.`);
+    return d;
+  };
+  const autoridadeCpf = cpf(input.autoridadeCpf, 'da autoridade máxima');
+  const ordenadorCpf = cpf(input.ordenadorCpf, 'do ordenador de despesa');
+
   return {
     nome,
     codigoMunicipio,
@@ -45,5 +60,11 @@ export function normalizarEValidarCliente(input: CriarClienteDTO): DadosCliente 
     empenhaRepasse: input.empenhaRepasse !== false,
     periodicidade: periodicidade as Periodicidade,
     cnpj,
+    autoridadeNome: texto(input.autoridadeNome),
+    autoridadeCargo: texto(input.autoridadeCargo),
+    autoridadeCpf,
+    ordenadorNome: texto(input.ordenadorNome),
+    ordenadorCargo: texto(input.ordenadorCargo),
+    ordenadorCpf,
   };
 }

@@ -1,5 +1,6 @@
 import { Autoria } from '@/components/ui/Autoria';
-import { ExternalLink, FileText } from 'lucide-react';
+import { ExternalLink, FilePen, FileText } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/Badge';
 import { dataBr, formatarMoeda, mascaraCelular, mascaraCep, mascaraCpf } from '@/lib/masks';
 import { abrirDocumentoAjuste, type DocumentoAjuste } from '@/services/ajustes.service';
@@ -177,6 +178,15 @@ export function AjusteView({ ajuste }: { ajuste: Ajuste }) {
               documento="termo-ciencia"
               nome={ajuste.termoCienciaArquivoNome}
             />
+            {/* O arquivo acima é o termo já assinado; este gera o que se vai
+                assinar — o anexo do TCESP preenchido com o cadastro. */}
+            <Link
+              to={`/cadastro/ajustes/${ajuste.id}/termo-ciencia`}
+              className="mt-1 inline-flex items-center gap-1 text-xs text-brand-600 hover:underline dark:text-brand-400"
+            >
+              <FilePen className="h-3.5 w-3.5" />
+              Gerar o termo para assinatura (modelo do TCESP preenchido)
+            </Link>
           </dd>
         </div>
 

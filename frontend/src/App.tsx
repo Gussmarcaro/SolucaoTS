@@ -52,6 +52,9 @@ const Empresas = pagina(() => import('@/pages/Empresas'), 'Empresas');
 const PrestacaoContas = pagina(() => import('@/pages/PrestacaoContas'), 'PrestacaoContas');
 const PrestacaoDetalhe = pagina(() => import('@/pages/PrestacaoContas/PrestacaoDetalhe'), 'PrestacaoDetalhe');
 const Espelho = pagina(() => import('@/pages/PrestacaoContas/Espelho'), 'Espelho');
+const DocumentoOficial = lazy(() =>
+  import('@/pages/Documentos').then((m) => ({ default: m.DocumentoOficial })),
+);
 
 const Despesas = pagina(() => import('@/pages/Despesas'), 'Despesas');
 const ReceitasOrgao = pagina(() => import('@/pages/ReceitasOrgao'), 'ReceitasOrgao');
@@ -153,6 +156,24 @@ export default function App() {
             element={
               <RequerPermissao recurso="CADASTRO_AJUSTES">
                 <AjusteDetalhe />
+              </RequerPermissao>
+            }
+          />
+          {/* Documentos gerados para assinatura. Cada um sob a permissão da
+              família a que pertence — a mesma que o servidor exige. */}
+          <Route
+            path="/cadastro/ajustes/:id/termo-ciencia"
+            element={
+              <RequerPermissao recurso="CADASTRO_AJUSTES">
+                <DocumentoOficial tipo="termo-ciencia" />
+              </RequerPermissao>
+            }
+          />
+          <Route
+            path="/orgaos/termo-consentimento"
+            element={
+              <RequerPermissao recurso="CONFIG_ORGAOS">
+                <DocumentoOficial tipo="termo-consentimento" />
               </RequerPermissao>
             }
           />

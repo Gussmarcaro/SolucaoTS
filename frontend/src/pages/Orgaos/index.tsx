@@ -1,6 +1,7 @@
 import { usePermissoes } from '@/contexts/PermissoesContext';
 import { useState } from 'react';
-import { Plus, Loader2, Power } from 'lucide-react';
+import { FilePen, Plus, Loader2, Power } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
@@ -21,6 +22,7 @@ type ModalState =
 export function Orgaos() {
   // Esconder o botão é conveniência; quem barra a gravação é o servidor.
   const podeEditar = usePermissoes().pode('CONFIG_ORGAOS', 'EDICAO');
+  const navigate = useNavigate();
   const [modal, setModal] = useState<ModalState>({ tipo: 'fechado' });
   const [refreshKey, setRefreshKey] = useState(0);
   const [processando, setProcessando] = useState(false);
@@ -53,12 +55,19 @@ export function Orgaos() {
         title="Órgãos Concessores"
         subtitle="Órgãos que concedem o repasse (Prefeitura, Câmara, Autarquia…) com seus códigos de município e entidade no TCESP."
         actions={
-          podeEditar && (
-          <Button variant="success" onClick={() => setModal({ tipo: 'novo' })}>
-            <Plus className="h-4 w-4" />
-            Novo Órgão Concessor
-          </Button>
-          )
+          <div className="flex flex-wrap gap-2">
+            {/* PC-02: termo do órgão logado, não de um órgão da lista. */}
+            <Button variant="secondary" onClick={() => navigate('/orgaos/termo-consentimento')}>
+              <FilePen className="h-4 w-4" />
+              Termo de Consentimento (PC-02)
+            </Button>
+            {podeEditar && (
+              <Button variant="success" onClick={() => setModal({ tipo: 'novo' })}>
+                <Plus className="h-4 w-4" />
+                Novo Órgão Concessor
+              </Button>
+            )}
+          </div>
         }
       />
 

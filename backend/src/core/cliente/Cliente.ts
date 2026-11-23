@@ -11,6 +11,13 @@ export interface Cliente {
   empenhaRepasse: boolean;
   periodicidade: Periodicidade;
   cnpj: string; // apenas dígitos
+  /** Quem assina pelo órgão nos documentos do TCESP. CPFs só com dígitos. */
+  autoridadeNome: string | null;
+  autoridadeCargo: string | null;
+  autoridadeCpf: string | null;
+  ordenadorNome: string | null;
+  ordenadorCargo: string | null;
+  ordenadorCpf: string | null;
   ativo: boolean;
   criadoEm: Date;
   atualizadoEm: Date;

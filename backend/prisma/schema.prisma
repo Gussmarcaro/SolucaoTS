@@ -262,11 +262,29 @@ model Cliente {
   empenhaRepasse  Boolean       @default(true)
   periodicidade   Periodicidade
   cnpj            String        @unique @db.VarChar(14)
-  buscaTexto      String        @default("") // texto normalizado (sem acento/caixa) para busca global
-  ativo           Boolean       @default(true)
-  criadoPor       String?       @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
-  criadoEm        DateTime      @default(now())
-  atualizadoEm    DateTime      @updatedAt
+
+  // Quem assina pelo órgão nos documentos do TCESP.
+  //
+  // Os anexos oficiais (Termo de Ciência e de Notificação, Termo de
+  // Consentimento de contas bancárias) pedem sempre as mesmas duas pessoas,
+  // com nome, cargo e CPF: a autoridade máxima e o ordenador de despesa. Não
+  // são a mesma pessoa em todo órgão — na Prefeitura o ordenador pode ser o
+  // secretário da pasta —, e por isso são dois conjuntos, não um.
+  //
+  // Opcionais porque o órgão opera sem eles: quem nunca gerar documento não
+  // precisa preenchê-los, e a geração diz qual campo falta em vez de recusar.
+  autoridadeNome  String?
+  autoridadeCargo String?
+  autoridadeCpf   String? @db.VarChar(11) // só dígitos
+  ordenadorNome   String?
+  ordenadorCargo  String?
+  ordenadorCpf    String? @db.VarChar(11) // só dígitos
+
+  buscaTexto   String   @default("") // texto normalizado (sem acento/caixa) para busca global
+  ativo        Boolean  @default(true)
+  criadoPor    String?  @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
 
   usuarios              Usuario[]
   grupos                GrupoUsuario[]
