@@ -427,6 +427,9 @@ export class PrismaMontadorRepository implements IMontadorRepository {
         ano: true,
         ajuste: {
           select: {
+            // Para buscar as certidões de regularidade da beneficiária — a
+            // pergunta "ela estava regular no dia do repasse?".
+            entidadeBeneficiariaId: true,
             // O valor do ajuste e os aditivos que o alteram: é contra o valor
             // **de hoje** que o Plano de Aplicação tem de fechar.
             valorGlobal: true,
@@ -442,8 +445,14 @@ export class PrismaMontadorRepository implements IMontadorRepository {
     });
     if (!prestacao) return null;
 
-    const [categorias, metasPrevistas, notasSemAnexo, pagamentosSemComprovante, somaPlano] =
-      await Promise.all([
+    const [
+      categorias,
+      metasPrevistas,
+      notasSemAnexo,
+      pagamentosSemComprovante,
+      somaPlano,
+      certidoes,
+    ] = await Promise.all([
         prisma.planoAplicacaoItem.findMany({
           where: { ajusteId: prestacao.ajusteId, categoriaDespesaTipo: { not: null } },
           select: { categoriaDespesaTipo: true },
@@ -478,6 +487,18 @@ export class PrismaMontadorRepository implements IMontadorRepository {
           where: { ajusteId: prestacao.ajusteId },
           _sum: { valor: true },
         }),
+        /*
+         * As certidões de regularidade da beneficiária.
+         *
+         * Só tipo e vencimento: o arquivo é `Bytes` e não entra em select
+         * nenhum fora do download. Sem filtro de tipo porque a regra é que
+         * decide quais tipos condicionam repasse — mantê-la como a única
+         * dona dessa lista evita que a consulta e a regra divirjam.
+         */
+        prisma.documentoRegularidade.findMany({
+          where: { entidadeBeneficiariaId: prestacao.ajuste.entidadeBeneficiariaId },
+          select: { tipo: true, dataVencimento: true },
+        }),
       ]);
 
     return {
@@ -499,6 +520,10 @@ export class PrismaMontadorRepository implements IMontadorRepository {
       pagamentosSemComprovante,
       orgaoEmpenha: prestacao.ajuste?.cliente?.empenhaRepasse ?? true,
       apuracaoMetas: await this.apurarMetas(prestacaoId, prestacao.ajusteId, prestacao.ano),
+      certidoesRegularidade: certidoes.map((c) => ({
+        tipo: c.tipo,
+        dataVencimento: dISO(c.dataVencimento),
+      })),
     };
   }
 

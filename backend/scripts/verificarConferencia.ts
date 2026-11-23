@@ -11,6 +11,7 @@
 import { conferirPrestacao } from '../src/application/montador/conferirPrestacao';
 import type { ContextoConferencia, DadosMontagem } from '../src/application/montador/tipos';
 import type { ApuracaoMetas } from '../src/core/meta/apuracao';
+import { REGULARIDADE_DO_REPASSE } from '../src/core/entidade/regularidadeNosRepasses';
 
 const falhas: string[] = [];
 const conferir = (descricao: string, ok: boolean, detalhe = '') => {
@@ -125,6 +126,12 @@ const ctxPadrao: ContextoConferencia = {
   fontesSemConta: [],
   totalDoPlano: 1_000_000,
   valorDoAjuste: 1_000_000,
+  // O caso normal: a beneficiária tem as cinco certidões em dia. Os cenários
+  // que divergem o fazem explicitamente, abaixo.
+  certidoesRegularidade: REGULARIDADE_DO_REPASSE.map((tipo) => ({
+    tipo,
+    dataVencimento: '2030-12-31',
+  })),
 };
 
 const tem = (ps: ReturnType<typeof conferirPrestacao>, bloco: string | null, trecho: string) =>
@@ -522,6 +529,271 @@ console.log('\n--- metas não atingidas e o Desconto ---');
   conferir(
     'com todas cobertas não aparece',
     !conferirPrestacao(completa(), ctxPadrao).some((x) => x.titulo.includes('conta bancária')),
+  );
+}
+
+
+// ------- a beneficiária estava regular no dia em que o dinheiro saiu?
+console.log('\n--- regularidade da beneficiária nas datas de repasse ---');
+{
+  const comRepasse = (datas: string[]) => {
+    const d = completa();
+    d.repasses = datas.map((dataRepasse) => ({
+      empenhoNumero: null,
+      empenhoDataEmissao: null,
+      dataPrevista: dataRepasse,
+      dataRepasse,
+      valorPrevisto: 1000,
+      valorRepasse: 1000,
+      justificativaDiferenca: null,
+      tipoDocumentoBancario: null,
+      descricaoOutros: null,
+      numeroDocumento: null,
+      banco: null,
+      agencia: null,
+      conta: null,
+    }));
+    return d;
+  };
+  /** As cinco certidões em dia, menos as que o cenário resolver mexer. */
+  const certidoes = (
+    over: Record<string, string | null> = {},
+  ): ContextoConferencia['certidoesRegularidade'] =>
+    REGULARIDADE_DO_REPASSE.map((tipo) => ({
+      tipo,
+      dataVencimento: tipo in over ? over[tipo] : '2030-12-31',
+    }));
+  const rodar = (datas: string[], over?: Record<string, string | null>, lista = certidoes(over)) =>
+    conferirPrestacao(comRepasse(datas), { ...ctxPadrao, certidoesRegularidade: lista });
+
+  conferir(
+    'certidões em dia: nada é apontado',
+    !rodar(['2026-03-10', '2026-06-10']).some((x) => /regularidade/i.test(x.titulo)),
+  );
+
+  const vencida = rodar(['2026-03-10', '2026-06-10'], { FGTS: '2026-04-30' });
+  conferir(
+    'FGTS vencido antes de um repasse é apontado',
+    vencida.some((x) => x.titulo.includes('FGTS (venceu em 30/04/2026)')),
+  );
+  conferir(
+    'diz quantos repasses ficaram descobertos e até quando',
+    vencida.some((x) => x.titulo.includes('1 repasse') && x.titulo.includes('10/06/2026')),
+  );
+  conferir(
+    'avisa, mas NÃO impede a transmissão',
+    !vencida.some((x) => x.severidade === 'IMPEDE' && /regularidade/i.test(x.titulo)),
+    'o documento continua verdadeiro; o que fazer com o repasse já feito é decisão do órgão',
+  );
+
+  /*
+   * A regra que salva o painel. O vencimento é o último dia de validade: o
+   * repasse feito NO dia está coberto. Errar isso apontaria por um dia de
+   * diferença, que é a pior espécie de falso positivo — parece bug.
+   */
+  conferir(
+    'repasse no próprio dia do vencimento está coberto',
+    !rodar(['2026-04-30'], { FGTS: '2026-04-30' }).some((x) => x.titulo.includes('FGTS')),
+  );
+
+  /*
+   * **A outra regra que salva o painel.** A aba guarda o conjunto ATUAL de
+   * certidões, não o histórico: quem renovou tem só a vigente, cujo vencimento
+   * é futuro. Se a regra exigisse prova de cobertura na data, apontaria toda
+   * prestação do sistema.
+   */
+  conferir(
+    'certidão vigente hoje cobre repasse antigo',
+    !rodar(['2024-01-15'], { FGTS: '2030-12-31' }).some((x) => /regularidade/i.test(x.titulo)),
+    'a aba guarda o conjunto atual, não o histórico — exigir a prova apontaria todo mundo',
+  );
+
+  conferir(
+    'sem repasse nenhum, a pergunta não é feita',
+    !conferirPrestacao(completa(), { ...ctxPadrao, certidoesRegularidade: [] }).some((x) =>
+      /regularidade/i.test(x.titulo),
+    ),
+    'repasse vazio pode ser legítimo; cobrar certidão sem repasse seria ruído',
+  );
+
+  const semNada = rodar(['2026-03-10'], undefined, []);
+  conferir(
+    'nenhuma certidão cadastrada: uma linha só, não cinco',
+    semNada.filter((x) => /certid/i.test(x.titulo)).length === 1,
+    'uma por tipo encheria o painel de linhas quase iguais',
+  );
+  conferir(
+    'e diz onde se resolve',
+    semNada.some((x) => x.titulo.includes('Regularidade Fiscal')),
+  );
+
+  const semDuas = rodar(['2026-03-10'], undefined, [
+    { tipo: 'FEDERAL', dataVencimento: '2030-12-31' },
+    { tipo: 'ESTADUAL', dataVencimento: '2030-12-31' },
+    { tipo: 'MUNICIPAL', dataVencimento: '2030-12-31' },
+  ]);
+  conferir(
+    'faltando parte, nomeia só o que falta',
+    semDuas.some((x) => x.titulo.includes('FGTS, Trabalhista (CNDT)')),
+  );
+
+  conferir(
+    'certidão cadastrada SEM vencimento conta como ausente',
+    rodar(['2026-03-10'], { FGTS: null }).some((x) => x.titulo.includes('FGTS')),
+    'sem a data não há o que comparar — tratá-la como cobertura esconderia o cadastro pela metade',
+  );
+
+  /*
+   * CEBAS e Utilidade Pública são títulos de HABILITAÇÃO, não condição de
+   * liberação de parcela. Cobrá-los aqui pediria CEBAS de quem não precisa.
+   */
+  conferir(
+    'CEBAS vencido não é apontado por esta regra',
+    !rodar(['2026-03-10'], undefined, [
+      ...certidoes(),
+      { tipo: 'CEBAS', dataVencimento: '2020-01-01' },
+    ]).some((x) => x.titulo.includes('CEBAS')),
+  );
+}
+
+
+// ------------- o parecer conclusivo contra o resto da prestação
+console.log('\n--- coerência do parecer conclusivo ---');
+{
+  type Dec = { tipoDeclaracao: number; declaracao: number | null; justificativa: string | null };
+  const todasSim = (): Dec[] =>
+    [1, 2, 3, 4, 5, 6, 7].map((t) => ({
+      tipoDeclaracao: t,
+      // A 7 é a única em que "Sim" é má notícia (houve sanção): o caso normal
+      // dela é "Não".
+      declaracao: t === 7 ? 2 : 1,
+      justificativa: null,
+    }));
+  const comParecer = (conclusao: number | null, mexer?: (d: Dec[]) => void, base = completa()) => {
+    const declaracoes = todasSim();
+    mexer?.(declaracoes);
+    base.parecer = {
+      identificacaoParecer: '0000000001',
+      conclusaoParecer: conclusao,
+      consideracoesParecer: null,
+      declaracoes,
+    };
+    return base;
+  };
+  const rodar = (...args: Parameters<typeof comParecer>) =>
+    conferirPrestacao(comParecer(...args), ctxPadrao);
+
+  conferir(
+    'parecer favorável e tudo "Sim": nada é apontado',
+    !rodar(1).some((x) => x.bloco === 'parecerConclusivo'),
+  );
+
+  const contradiz = rodar(1, (ds) => {
+    ds[0].declaracao = 2;
+  });
+  conferir(
+    'favorável com declaração 1 respondida "Não" IMPEDE',
+    contradiz.some(
+      (x) => x.bloco === 'parecerConclusivo' && x.severidade === 'IMPEDE' && x.titulo.includes('contraditório'),
+    ),
+    'dava para dizer "não houve cumprimento das cláusulas" e concluir favorável, sem um aviso',
+  );
+  conferir('e nomeia qual declaração', contradiz.some((x) => x.titulo.includes('declaração 1')));
+  conferir(
+    'lista todas as declarações negativas',
+    rodar(1, (ds) => {
+      ds[1].declaracao = 2;
+      ds[4].declaracao = 2;
+    }).some((x) => x.titulo.includes('declaração 2, 5')),
+  );
+
+  conferir(
+    '"Favorável com ressalvas" com declaração "Não" NÃO é contradição',
+    !rodar(2, (ds) => {
+      ds[0].declaracao = 2;
+    }).some((x) => x.titulo.includes('contraditório')),
+    'é exatamente para isso que a ressalva existe',
+  );
+  conferir(
+    'desfavorável com declaração "Não" é coerente',
+    !rodar(3, (ds) => {
+      ds[0].declaracao = 2;
+    }).some((x) => x.titulo.includes('contraditório')),
+  );
+
+  /*
+   * "Prejudicado" na declaração 4 é a resposta CERTA de quem não teve gasto com
+   * pessoal. Tratá-lo como defeito transformaria a regra em ruído para toda
+   * parceria sem folha.
+   */
+  conferir(
+    '"Prejudicado" não é defeito',
+    !rodar(1, (ds) => {
+      ds[3].declaracao = 3;
+    }).some((x) => x.titulo.includes('contraditório')),
+  );
+
+  /*
+   * A 6 é "houve visita in loco": "Não" ali é omissão do concessor, não defeito
+   * da entidade, e não contradiz a conclusão.
+   */
+  conferir(
+    'visita in loco não realizada não contradiz a conclusão',
+    !rodar(1, (ds) => {
+      ds[5].declaracao = 2;
+    }).some((x) => x.titulo.includes('contraditório')),
+  );
+
+  const comSancao = rodar(1, (ds) => {
+    ds[6].declaracao = 1;
+  });
+  conferir(
+    'sanção aplicada com parecer favorável sem ressalvas é aviso',
+    comSancao.some((x) => x.bloco === 'parecerConclusivo' && x.titulo.includes('sanções')),
+  );
+  conferir(
+    'mas não impede',
+    !comSancao.some((x) => x.severidade === 'IMPEDE' && x.titulo.includes('sanções')),
+    'a sanção pode ter sido aplicada e cumprida',
+  );
+
+  // --- o parecer contra o próprio painel
+  const sobreOca = conferirPrestacao(comParecer(1, undefined, vazia()), ctxPadrao);
+  conferir(
+    'parecer favorável sobre prestação oca avisa, citando a contagem',
+    sobreOca.some(
+      (x) => x.bloco === 'parecerConclusivo' && /item\(ns\) que impede/.test(x.titulo),
+    ),
+  );
+  conferir(
+    'a contagem NÃO inclui o próprio parecer',
+    (() => {
+      const texto = sobreOca.find((x) => /item\(ns\) que impede/.test(x.titulo))?.titulo ?? '';
+      const citado = Number(texto.match(/aponta (\d+) item/)?.[1] ?? -1);
+      const reais = conferirPrestacao(vazia(), ctxPadrao).filter(
+        (x) => x.severidade === 'IMPEDE',
+      ).length;
+      return citado === reais;
+    })(),
+    'senão o parecer contraditório entraria na conta como justificativa de si mesmo',
+  );
+  conferir(
+    'parecer desfavorável sobre prestação oca não é incoerente',
+    !conferirPrestacao(comParecer(3, undefined, vazia()), ctxPadrao).some((x) =>
+      /item\(ns\) que impede/.test(x.titulo),
+    ),
+    'quem concluiu desfavorável já disse o que a conferência diz',
+  );
+
+  conferir(
+    'prestação sem parecer preenchido não gera pendência de coerência',
+    !conferirPrestacao(completa(), ctxPadrao).some((x) => x.bloco === 'parecerConclusivo'),
+    'parecer ausente já é erro de schema — o bloco é obrigatório; repetir aqui seria duplicar',
+  );
+  conferir(
+    'conclusão ainda em branco também não',
+    !rodar(null).some((x) => x.bloco === 'parecerConclusivo'),
+    'quem não respondeu ainda não se contradisse',
   );
 }
 

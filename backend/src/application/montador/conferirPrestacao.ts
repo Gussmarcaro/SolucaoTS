@@ -1,6 +1,10 @@
 import type { ContextoConferencia, DadosMontagem, Pendencia } from './tipos';
 import { conferirTotalDoPlano, explicarPlano } from '@/core/planoAplicacao/totalDoPlano';
 import { explicarFontesSemConta } from '@/core/ajuste/fontesSemConta';
+import {
+  conferirRegularidadeNosRepasses,
+  explicarRegularidadeNosRepasses,
+} from '@/core/entidade/regularidadeNosRepasses';
 
 /**
  * O que ainda falta nesta prestação.
@@ -255,6 +259,112 @@ export function conferirPrestacao(d: DadosMontagem, ctx: ContextoConferencia): P
       'disponibilidades',
       `${divergentes} conta(s) com saldo bancário diferente do contábil — confira a conciliação.`,
     );
+
+  /*
+   * 6. A beneficiária estava regular quando o dinheiro saiu?
+   *
+   * A certidão **não vai no envio** — como o anexo, o TCESP recebe os dados. E
+   * como o anexo, é o que a fiscalização pede primeiro. A diferença é de quem
+   * responde: nota sem PDF é falha de arquivo; parcela liberada com certidão
+   * vencida é responsabilidade pessoal de quem autorizou o repasse, e o
+   * ressarcimento é do valor liberado.
+   *
+   * Avisa, não impede, e por dois motivos. O documento transmitido continua
+   * verdadeiro — travá-lo seria esconder do Tribunal uma execução que de fato
+   * aconteceu. E o que fazer com um repasse já liberado é decisão jurídica do
+   * órgão, não conta que o sistema saiba fechar.
+   *
+   * Pergunta aos **repasses**, e não às receitas: o repasse é o ato do próprio
+   * concessor, que é exatamente o ato que a verificação prévia condiciona.
+   */
+  for (const frase of explicarRegularidadeNosRepasses(
+    conferirRegularidadeNosRepasses(
+      ctx.certidoesRegularidade,
+      d.repasses.map((r) => r.dataRepasse),
+    ),
+  ))
+    // Sem bloco: a correção é na aba Regularidade Fiscal da **entidade**, não
+    // numa aba da prestação — a mesma convenção do Plano e das fontes.
+    atencao(null, frase);
+
+  /** Quantos itens impedem a transmissão **sem contar** o próprio parecer. */
+  const impeditivosAntesDoParecer = p.filter((x) => x.severidade === 'IMPEDE').length;
+
+  /*
+   * 7. O parecer conclusivo diz o mesmo que o resto da prestação?
+   *
+   * Esta é a única regra do painel que confere um bloco **contra o próprio
+   * painel** — e é a que faltava. As sete declarações e a conclusão já eram
+   * validadas uma a uma: todas respondidas, justificativa quando "Não". O que
+   * ninguém conferia era a coerência entre elas, e entre o parecer e a
+   * prestação que ele atesta. Dava para responder "Não houve cumprimento das
+   * cláusulas" e concluir "Favorável", sem um aviso em todo o caminho.
+   *
+   * Importa porque o parecer não é mais um bloco: é a peça que o órgão
+   * **assina**, afirmando ao Tribunal que examinou a execução. Parecer
+   * favorável sobre prestação defeituosa é o fato que transfere ao signatário
+   * o que seria responsabilidade da entidade.
+   */
+  if (d.parecer?.conclusaoParecer != null) {
+    const { conclusaoParecer: conclusao, declaracoes } = d.parecer;
+    const resposta = (tipo: number) => declaracoes.find((x) => x.tipoDeclaracao === tipo)?.declaracao;
+
+    /*
+     * Declarações 1 a 5 são achados sobre a execução: cumprimento das
+     * cláusulas, regularidade dos gastos, identificação nos comprovantes,
+     * encargos trabalhistas e princípios da administração. "Não" em qualquer
+     * delas é defeito apontado pelo próprio órgão.
+     *
+     * A 6 (visita in loco) fica fora: "Não" ali é omissão do concessor, não
+     * defeito da entidade, e não contradiz conclusão nenhuma. A 7 (sanções)
+     * fica fora deste grupo e vale por si, mais abaixo: sanção aplicada e
+     * cumprida pode conviver com parecer favorável.
+     *
+     * "Prejudicado" (3) também não entra: na declaração 4 ele é a resposta
+     * **certa** de quem não teve gasto com pessoal.
+     */
+    const APONTAM_DEFEITO = [1, 2, 3, 4, 5];
+    const negativas = APONTAM_DEFEITO.filter((t) => resposta(t) === 2);
+
+    if (conclusao === 1 && negativas.length) {
+      impede(
+        'parecerConclusivo',
+        `Parecer conclusivo contraditório: a conclusão é "Favorável" e a declaração ` +
+          `${negativas.join(', ')} responde "Não" — ` +
+          'defeito apontado pede ao menos "Favorável com ressalvas".',
+      );
+    }
+
+    /*
+     * O parecer contra o resto do painel.
+     *
+     * A contagem foi tirada **antes** de qualquer regra do parecer: senão o
+     * parecer contraditório entraria na conta como justificativa de si mesmo.
+     *
+     * Avisa em vez de impedir: os itens que impedem já estão na lista e já
+     * deixam a prestação "não pronta". Repetir a gravidade não acrescenta
+     * bloqueio — acrescenta a informação de que o documento que se vai assinar
+     * discorda da conferência, e é o signatário quem decide o que fazer com
+     * isso.
+     */
+    if ((conclusao === 1 || conclusao === 2) && impeditivosAntesDoParecer > 0) {
+      atencao(
+        'parecerConclusivo',
+        `A conferência aponta ${impeditivosAntesDoParecer} item(ns) que impede(m) a transmissão, ` +
+          `e o parecer conclui "${conclusao === 1 ? 'Favorável' : 'Favorável com ressalvas'}". ` +
+          'Resolva as pendências ou reveja o parecer antes de assiná-lo.',
+      );
+    }
+
+    // Sanção aplicada e parecer favorável **sem ressalvas** é combinação que
+    // merece um olhar: não é irregular — a sanção pode ter sido cumprida —, mas
+    // é o tipo de incoerência que a fiscalização lê primeiro.
+    if (conclusao === 1 && resposta(7) === 1)
+      atencao(
+        'parecerConclusivo',
+        'O parecer declara que houve aplicação de sanções e conclui "Favorável" sem ressalvas.',
+      );
+  }
 
   return p;
 }

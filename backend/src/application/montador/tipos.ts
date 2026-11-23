@@ -351,6 +351,15 @@ export interface ContextoConferencia {
    * municipal. Vem do contexto porque é fato do **ajuste**, não do documento.
    */
   fontesSemConta: number[];
+  /**
+   * As certidões de regularidade da beneficiária, como o cadastro as guarda.
+   *
+   * Vêm cruas, e a regra mora em `core/entidade/regularidadeNosRepasses`: as
+   * datas de repasse já estão em `DadosMontagem`, então o contexto só precisa
+   * trazer o que o documento transmitido não carrega — a certidão não é
+   * transmitida ao TCESP, mas é o que a fiscalização pede primeiro.
+   */
+  certidoesRegularidade: { tipo: string; dataVencimento: string | null }[];
 }
 
 /** Resposta de `GET /prestacoes/:id/conferencia`. */
