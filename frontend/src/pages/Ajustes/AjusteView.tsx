@@ -30,10 +30,21 @@ function Campo({ label, valor }: { label: string; valor?: string | null }) {
  * A grade interna fica em **3 colunas**, não nas 4 do bloco de cima: aqui o
  * painel ocupa meia largura, e a quarta coluna espremeria os rótulos.
  */
-function Painel({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+function Painel({
+  titulo,
+  anotacao,
+  children,
+}: {
+  titulo: string;
+  anotacao?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="mb-6 break-inside-avoid rounded-xl border border-ink-200 p-4 dark:border-ink-700">
-      <h4 className="mb-3 text-sm font-medium text-ink-700 dark:text-ink-200">{titulo}</h4>
+      <h4 className="mb-3 text-sm font-medium text-ink-700 dark:text-ink-200">
+        {titulo}
+        {anotacao && <span className="ml-1 text-xs font-normal text-ink-400">{anotacao}</span>}
+      </h4>
       <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">{children}</dl>
     </div>
   );
@@ -148,7 +159,7 @@ export function AjusteView({ ajuste }: { ajuste: Ajuste }) {
         <Campo label="Municipal" valor={moeda(ajuste.previsaoMunicipal)} />
       </Painel>
 
-      <Painel titulo="Responsável pelo Ajuste">
+      <Painel titulo="Responsável pelo Ajuste" anotacao="(gestor pelo órgão concessor)">
         <Campo label="Nome" valor={ajuste.responsavelNome} />
         <Campo label="CPF" valor={ajuste.responsavelCpf ? mascaraCpf(ajuste.responsavelCpf) : null} />
         <Campo label="Nascimento" valor={ajuste.responsavelDataNascimento ? dataBr(ajuste.responsavelDataNascimento) : null} />

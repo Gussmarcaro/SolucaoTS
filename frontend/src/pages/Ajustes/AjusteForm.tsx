@@ -453,7 +453,13 @@ export function AjusteForm({ ajuste, onSuccess, onCancel }: Props) {
 
           {/* Responsável pelo Ajuste */}
           <fieldset className="rounded-xl border border-ink-200 px-3 pb-3 pt-1 dark:border-ink-700 sm:col-span-2">
-            <legend className="px-1 text-[13px] font-normal text-ink-600 dark:text-ink-300">Responsável pelo Ajuste</legend>
+            <legend className="px-1 text-[13px] font-normal text-ink-600 dark:text-ink-300">
+              Responsável pelo Ajuste
+              {/* O lado não era dito em lugar nenhum, e a resposta muda quem
+                  assina o Termo de Ciência: é o gestor pelo órgão, não alguém
+                  da entidade. */}
+              <span className="ml-1 text-xs font-normal text-ink-400">(gestor pelo órgão concessor — secretário da pasta ou prefeito)</span>
+            </legend>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
               <div className="sm:col-span-5">
                 <Input label="Nome" name="responsavelNome" value={form.responsavelNome} onChange={(e) => set('responsavelNome', capitalizarNome(e.target.value))} />
