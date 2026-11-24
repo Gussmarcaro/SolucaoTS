@@ -199,6 +199,9 @@ routes.use('/auditoria', exigirPermissao('CONFIG_AUDITORIA'), auditoriaRoutes);
  */
 const dashboard = new DashboardController();
 routes.get('/dashboard/contagens', (req, res, next) => dashboard.contagens(req, res, next));
+// O trabalho acumulado dos atalhos — mesma razão de ficar fora do gate: cruza
+// quatro recursos, e cada contagem é recortada pela própria permissão.
+routes.get('/dashboard/pendencias', (req, res, next) => dashboard.pendencias(req, res, next));
 // Histórico de logons. Irmão da auditoria: a trilha responde "quem alterou o
 // quê"; este responde "quem entrou, quando e até quando ficou".
 routes.use('/acessos', exigirPermissao('CONFIG_ACESSOS'), acessoRoutes);

@@ -1,4 +1,5 @@
 import { usePermissoes } from '@/contexts/PermissoesContext';
+import { useAbrirNovoPelaUrl } from '@/hooks/useAbrirNovoPelaUrl';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, ChevronLeft, ChevronRight, FolderOpen, Loader2, Plus, Search } from 'lucide-react';
@@ -51,6 +52,8 @@ export function PrestacaoContas() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [novo, setNovo] = useState(false);
+  // Atalho do Dashboard / Ctrl+K: `?novo=1` chega com o formulário aberto.
+  useAbrirNovoPelaUrl(() => setNovo(true), podeEditar);
   const [refreshKey, setRefreshKey] = useState(0);
   const buscaDebounced = useDebounce(busca, 400);
 

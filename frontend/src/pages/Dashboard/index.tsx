@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
+import { FaixaAtalhos } from './FaixaAtalhos';
 import { Badge } from '@/components/ui/Badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissoes } from '@/contexts/PermissoesContext';
@@ -113,13 +113,12 @@ export function Dashboard() {
       <PageHeader
         title={`${saudacao()}${primeiroNome ? `, ${primeiroNome}` : ''} 👋`}
         subtitle="Aqui está o panorama das prestações de contas ao Terceiro Setor."
-        actions={
-          <Button variant="success" size="md" onClick={() => navigate('/cadastro/ajustes')}>
-            <Plus className="h-4 w-4" />
-            Novo Ajuste
-          </Button>
-        }
       />
+
+      {/* Primeiro o que se faz, depois o que se analisa. O antigo botão "Novo
+          Ajuste" do cabeçalho virou um dos atalhos — e passou a respeitar a
+          permissão, coisa que ele não fazia. */}
+      <FaixaAtalhos />
 
       {pode('RELATORIOS', 'CONSULTA') && <PainelExecucao />}
 

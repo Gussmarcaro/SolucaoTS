@@ -29,3 +29,23 @@ export async function contagensDosCadastros(): Promise<ContagemCadastro[]> {
   const { data } = await http.get<{ itens: ContagemCadastro[] }>('/dashboard/contagens');
   return data.itens;
 }
+
+export type ChavePendencia =
+  | 'extratoSemConciliar'
+  | 'notasSemArquivo'
+  | 'pagamentosSemComprovante'
+  | 'prestacoesEmElaboracao';
+
+export interface PendenciaDashboard {
+  chave: ChavePendencia;
+  total: number;
+}
+
+/**
+ * O trabalho acumulado do órgão que os atalhos anunciam. Vem recortado pelo
+ * que o grupo pode ler, e vazio quando não há órgão escolhido.
+ */
+export async function pendenciasDoOrgao(): Promise<PendenciaDashboard[]> {
+  const { data } = await http.get<{ itens: PendenciaDashboard[] }>('/dashboard/pendencias');
+  return data.itens;
+}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useAbrirNovoPelaUrl } from '@/hooks/useAbrirNovoPelaUrl';
 import { Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
@@ -55,6 +56,8 @@ export function Despesas() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [modal, setModal] = useState<ModalState>({ tipo: 'fechado' });
+  // Atalho do Dashboard / Ctrl+K: `?novo=1` chega com o formulário aberto.
+  useAbrirNovoPelaUrl(() => setModal({ tipo: 'form', item: null }), podeEditar);
   const [refreshKey, setRefreshKey] = useState(0);
   const [processando, setProcessando] = useState(false);
   // A Execução acontece dentro de um ajuste; o portão garante que ele existe.

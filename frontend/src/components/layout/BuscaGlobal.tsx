@@ -19,6 +19,8 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { usePermissoes } from '@/contexts/PermissoesContext';
+import { ATALHOS, atalhosQueCasam, type Atalho } from '@/lib/atalhos';
 import { useDebounce } from '@/hooks/useDebounce';
 import { buscarGlobal } from '@/services/busca.service';
 import { extrairMensagemErro } from '@/services/http';
@@ -53,8 +55,17 @@ interface Props {
   onFechar: () => void;
 }
 
+/** Um item navegável pelas setas: uma ação do catálogo ou um resultado da busca. */
+type Item = { tipo: 'acao'; atalho: Atalho } | { tipo: 'resultado'; r: ResultadoBusca };
+
 /**
- * Busca global da barra superior.
+ * Busca global da barra superior — e paleta de ações (Ctrl+K).
+ *
+ * As **ações** vêm primeiro e são filtradas aqui mesmo, sem ir ao servidor: o
+ * catálogo é curto e é o mesmo dos atalhos do Dashboard. Com o campo vazio
+ * aparecem todas, que é o que faz o Ctrl+K servir de menu rápido; digitando,
+ * ficam só as que casam ("desp" → Lançar despesa) e os cadastros encontrados
+ * aparecem logo abaixo.
  *
  * Uma consulta só: o backend percorre os cadastros (ajustes, prestações,
  * entidades, fornecedores, colaboradores, contratos, bens, servidores, órgãos)
@@ -63,6 +74,7 @@ interface Props {
  */
 export function BuscaGlobal({ aberta, onFechar }: Props) {
   const navigate = useNavigate();
+  const { pode } = usePermissoes();
   const campo = useRef<HTMLInputElement>(null);
   const [termo, setTermo] = useState('');
   const [resultados, setResultados] = useState<ResultadoBusca[] | null>(null);
@@ -123,11 +135,31 @@ export function BuscaGlobal({ aberta, onFechar }: Props) {
     return [...mapa.entries()];
   }, [resultados]);
 
-  /** Lista achatada — é sobre ela que as setas do teclado andam. */
-  const navegaveis = useMemo(() => grupos.flatMap(([, itens]) => itens), [grupos]);
+  /** As ações que a pessoa pode executar e que casam com o que digitou. */
+  const acoes = useMemo(
+    () =>
+      atalhosQueCasam(
+        ATALHOS.filter((a) => pode(a.recurso, a.nivel)),
+        termo,
+      ),
+    [termo, pode],
+  );
 
-  function abrir(r: ResultadoBusca) {
-    navigate(rotaDoResultado(r));
+  /** Lista achatada — ações primeiro, depois resultados; é sobre ela que as setas andam. */
+  const navegaveis = useMemo<Item[]>(
+    () => [
+      ...acoes.map((atalho) => ({ tipo: 'acao' as const, atalho })),
+      ...grupos.flatMap(([, itens]) => itens.map((r) => ({ tipo: 'resultado' as const, r }))),
+    ],
+    [acoes, grupos],
+  );
+
+  // A lista muda de tamanho enquanto se digita; a seleção volta ao primeiro
+  // item para nunca apontar para fora dela.
+  useEffect(() => setAtivo(0), [acoes.length]);
+
+  function abrir(item: Item) {
+    navigate(item.tipo === 'acao' ? item.atalho.destino : rotaDoResultado(item.r));
     onFechar();
   }
 
@@ -147,7 +179,11 @@ export function BuscaGlobal({ aberta, onFechar }: Props) {
   }
 
   const curto = termo.trim().length > 0 && termo.trim().length < MINIMO;
-  const mostrarPainel = aberta && (carregando || curto || !!erro || resultados !== null);
+  const mostrarPainel =
+    aberta && (acoes.length > 0 || carregando || curto || !!erro || resultados !== null);
+  /** Posição de um resultado na lista achatada (as ações vêm antes). */
+  const indiceDe = (r: ResultadoBusca) =>
+    navegaveis.findIndex((i) => i.tipo === 'resultado' && i.r === r);
 
   return (
     <div
@@ -172,7 +208,7 @@ export function BuscaGlobal({ aberta, onFechar }: Props) {
         // O clique num resultado passa pelo blur; o `mousedown` do painel o
         // impede, então aqui só chega o clique fora de verdade.
         onBlur={onFechar}
-        placeholder="Buscar ajustes, entidades, notas, contas..."
+        placeholder="Buscar ou fazer algo — ex.: lançar despesa"
         className="focus-ring h-10 w-full rounded-xl border border-ink-200 bg-ink-50 pl-10 pr-9 text-sm text-ink-800 placeholder:text-ink-400 transition-colors dark:border-ink-800 dark:bg-ink-900 dark:text-ink-100"
       />
       {carregando && (
@@ -186,14 +222,51 @@ export function BuscaGlobal({ aberta, onFechar }: Props) {
           onMouseDown={(e) => e.preventDefault()}
           className="absolute right-0 top-12 max-h-[70vh] w-[22rem] overflow-y-auto rounded-2xl border border-ink-200 bg-white py-2 shadow-pop dark:border-ink-800 dark:bg-ink-900 lg:w-[26rem]"
         >
-          {curto ? (
-            <p className="px-4 py-3 text-sm text-ink-400">Digite ao menos {MINIMO} caracteres.</p>
+          {acoes.length > 0 && (
+            <div>
+              <p className="px-4 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-ink-400">
+                Ações
+              </p>
+              {acoes.map((a, indice) => {
+                const Icone = a.icone;
+                return (
+                  <button
+                    key={`acao-${a.id}`}
+                    type="button"
+                    role="option"
+                    aria-selected={indice === ativo}
+                    onMouseEnter={() => setAtivo(indice)}
+                    onClick={() => abrir({ tipo: 'acao', atalho: a })}
+                    className={cn(
+                      'flex w-full items-center gap-2.5 px-4 py-2 text-left transition-colors',
+                      indice === ativo ? 'bg-ink-100 dark:bg-ink-800' : 'hover:bg-ink-50 dark:hover:bg-ink-800/60',
+                    )}
+                  >
+                    <Icone className="h-4 w-4 shrink-0 text-brand-600 dark:text-brand-400" />
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm text-ink-800 dark:text-ink-100">{a.rotulo}</span>
+                      <span className="block truncate text-xs text-ink-400">{a.descricao}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {!termo.trim() ? null : curto ? (
+            acoes.length ? null : (
+              <p className="px-4 py-3 text-sm text-ink-400">Digite ao menos {MINIMO} caracteres.</p>
+            )
           ) : erro ? (
             <p className="px-4 py-3 text-sm text-red-500">{erro}</p>
           ) : resultados && resultados.length === 0 && !carregando ? (
-            <p className="px-4 py-3 text-sm text-ink-400">
-              Nada encontrado para “{termo.trim()}”.
-            </p>
+            // Com uma ação casando, "nada encontrado" logo abaixo dela seria
+            // contraditório: algo foi encontrado.
+            acoes.length ? null : (
+              <p className="px-4 py-3 text-sm text-ink-400">
+                Nada encontrado para “{termo.trim()}”.
+              </p>
+            )
           ) : (
             grupos.map(([tipo, itens]) => {
               const Icone = ICONES[tipo];
@@ -203,7 +276,7 @@ export function BuscaGlobal({ aberta, onFechar }: Props) {
                     {TIPO_BUSCA_LABEL[tipo]}
                   </p>
                   {itens.map((r) => {
-                    const indice = navegaveis.indexOf(r);
+                    const indice = indiceDe(r);
                     return (
                       <button
                         key={`${tipo}-${r.id}`}
@@ -211,7 +284,7 @@ export function BuscaGlobal({ aberta, onFechar }: Props) {
                         role="option"
                         aria-selected={indice === ativo}
                         onMouseEnter={() => setAtivo(indice)}
-                        onClick={() => abrir(r)}
+                        onClick={() => abrir({ tipo: 'resultado', r })}
                         className={cn(
                           'flex w-full items-center gap-2.5 px-4 py-2 text-left transition-colors',
                           indice === ativo ? 'bg-ink-100 dark:bg-ink-800' : 'hover:bg-ink-50 dark:hover:bg-ink-800/60',

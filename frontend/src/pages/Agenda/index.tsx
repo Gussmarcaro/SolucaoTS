@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useAbrirNovoPelaUrl } from '@/hooks/useAbrirNovoPelaUrl';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   CalendarClock,
@@ -94,6 +95,8 @@ export function Agenda() {
   const [compromissos, setCompromissos] = useState<Compromisso[] | null>(null);
   const [resumo, setResumo] = useState<ResumoAgenda | null>(null);
   const [modal, setModal] = useState<Modal_>({ tipo: 'fechado' });
+  // Atalho do Dashboard / Ctrl+K: `?novo=1` chega com o formulário aberto.
+  useAbrirNovoPelaUrl(() => setModal({ tipo: 'novo' }), podeEditar);
   const [erro, setErro] = useState<string | null>(null);
   const [processando, setProcessando] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);

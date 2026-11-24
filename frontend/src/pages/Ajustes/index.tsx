@@ -1,4 +1,5 @@
 import { usePermissoes } from '@/contexts/PermissoesContext';
+import { useAbrirNovoPelaUrl } from '@/hooks/useAbrirNovoPelaUrl';
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -19,6 +20,8 @@ export function Ajustes() {
   // Esconder o botão é conveniência; quem barra a gravação é o servidor.
   const podeEditar = usePermissoes().pode('CADASTRO_AJUSTES', 'EDICAO');
   const [modal, setModal] = useState<ModalState>({ tipo: 'fechado' });
+  // Atalho do Dashboard / Ctrl+K: `?novo=1` chega com o formulário aberto.
+  useAbrirNovoPelaUrl(() => setModal({ tipo: 'novo' }), podeEditar);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const fechar = () => setModal({ tipo: 'fechado' });

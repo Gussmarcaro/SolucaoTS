@@ -32,6 +32,26 @@ export function Topbar({ onOpenSidebar, collapsed = false }: TopbarProps) {
   const [temVencido, setTemVencido] = useState(false);
   const sino = useRef<HTMLDivElement>(null);
 
+  /*
+   * Ctrl+K (Cmd+K no Mac) abre a busca de qualquer tela — com as ações no topo.
+   *
+   * `preventDefault` porque o navegador usa Ctrl+K para a barra de endereço:
+   * sem ele, a busca abriria e o foco fugiria para cima no mesmo instante.
+   * Fica ativo mesmo com o foco num campo de formulário: é um atalho que
+   * ninguém digita por acaso, e é exatamente no meio de um lançamento que se
+   * quer saltar para outro.
+   */
+  useEffect(() => {
+    const atalho = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setBuscaAberta(true);
+      }
+    };
+    document.addEventListener('keydown', atalho);
+    return () => document.removeEventListener('keydown', atalho);
+  }, []);
+
   // Fecha o painel ao clicar fora ou apertar Esc.
   //
   // O teste é "está dentro do bloco do sino?", que abrange o botão e o painel.
@@ -149,7 +169,7 @@ export function Topbar({ onOpenSidebar, collapsed = false }: TopbarProps) {
           onClick={() => setBuscaAberta((v) => !v)}
           aria-label="Buscar"
           aria-expanded={buscaAberta}
-          title="Buscar"
+          title="Buscar ou executar uma ação (Ctrl+K)"
           className={cn(
             'focus-ring hidden h-9 w-9 items-center justify-center rounded-xl transition-colors hover:bg-ink-100 hover:text-ink-800 dark:hover:bg-ink-800 dark:hover:text-ink-100 sm:inline-flex',
             buscaAberta
