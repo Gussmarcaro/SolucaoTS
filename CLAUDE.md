@@ -331,8 +331,8 @@ A base é gerada por `npm run assistente:base` e **versionada** em `backend/src/
 - Os dois arquivos entram por **cópia**, não por `pdftotext`: não há PDF de origem. Editar `Documentação/FORMACAO_TCESP_2026_TERCEIRO_SETOR.md` exige rodar o gerador (ou copiar à mão) — senão a base fica com a versão antiga, e nada acusa.
 
 - O corpus inteiro vai no prompt a cada pergunta, sem busca por trechos: a regra que responde costuma estar numa tabela que não repete as palavras da pergunta, e o que o modelo não recebe ele não cita — supõe. Com o manual todo à vista, "não encontrei na documentação" passa a ser verdade verificável.
-- O corpus entra com `cache_control` (TTL 1h) antes de qualquer conteúdo volátil — a partir da 2ª pergunta custa ~1/10. Não coloque data, usuário ou id de requisição antes dele: invalida o cache inteiro.
-- Modelo `claude-opus-5` com `effort: low` — a tarefa é localizar e reproduzir, não raciocinar longamente.
+- O corpus entra com `cache_control` (TTL 1h) antes de qualquer conteúdo volátil — a partir da 2ª pergunta custa ~1/20 no Opus 5.5. Não coloque data, usuário ou id de requisição antes dele: invalida o cache inteiro.
+- Modelo `claude-opus-5-5` com `effort: low` explícito — a tarefa é localizar e reproduzir, não raciocinar longamente. No 5.5 o pensamento não se desliga (o esforço é o controle, e o padrão é `medium`), o teto de tokens inclui o pensamento (16 mil) e recusa por engano dos classificadores cai no modelo reserva (`fallbacks: 'default'`, beta `server-side-fallback-2026-07-01`).
 - **`npm run verificar:assistente`** confere que a base está completa e que o mapa de navegação bate com o menu real (nos dois sentidos). Rode depois de mexer em `navigation.ts` — menu alterado sem regerar a base faz o assistente ensinar tela que não existe.
 - Sem `ANTHROPIC_API_KEY` o `status` responde `disponivel: false` e o ícone some da barra.
 
