@@ -100,7 +100,7 @@ export function DocumentoOficial({ tipo }: { tipo: 'termo-consentimento' | 'term
  */
 function FolhaImpressa({ folha }: { folha: Folha }) {
   return (
-    <article className="rounded-2xl border border-ink-200 bg-white p-8 font-serif text-[13px] leading-relaxed text-black shadow-card print:rounded-none print:border-0 print:p-0 print:shadow-none">
+    <article className="rounded-2xl border border-ink-200 bg-white p-8 font-serif text-[13px] lining-nums tabular-nums leading-relaxed text-black shadow-card print:rounded-none print:border-0 print:p-0 print:shadow-none">
       <header className="text-center">
         <h1 className="text-[15px] font-bold">{folha.titulo}</h1>
         <p className="font-bold">{folha.subtitulo}</p>

@@ -8,6 +8,8 @@ import {
   type TipoAjusteTcn,
 } from '@/core/documento/termoCiencia';
 import { valorGlobalEfetivo } from '@/core/planoAplicacao/totalDoPlano';
+import { tenantAtual } from '@/shared/contexto';
+import { BusinessError } from '@/shared/errors';
 
 /**
  * De onde sai cada linha dos documentos gerados.
@@ -35,7 +37,22 @@ export class PrismaDocumentoRepository implements IDocumentoRepository {
   }
 
   async dadosDoOrgao(): Promise<DadosTermoConsentimento | null> {
-    const orgao = await prisma.cliente.findFirst({
+    /*
+     * O órgão tem de estar **escolhido**, e não só filtrado.
+     *
+     * Sem órgão no contexto — o usuário de Suporte antes de escolher qual
+     * atender — a extension não filtra nada, e um `findFirst` sem `where`
+     * devolveria o primeiro órgão do banco: um termo assinável com o nome de
+     * um órgão que ninguém pediu. Por isso a busca é pelo id do contexto, e a
+     * falta dele é dita ao usuário em vez de adivinhada.
+     */
+    const orgaoId = tenantAtual();
+    if (!orgaoId)
+      throw new BusinessError(
+        'Selecione um órgão no topo da tela para gerar o Termo de Consentimento.',
+      );
+    const orgao = await prisma.cliente.findUnique({
+      where: { id: orgaoId },
       select: {
         nome: true,
         cnpj: true,
