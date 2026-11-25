@@ -8,7 +8,10 @@ import {
   type TipoAjusteTcn,
 } from '@/core/documento/termoCiencia';
 import { valorGlobalEfetivo } from '@/core/planoAplicacao/totalDoPlano';
+import { paraDataISO } from '@/shared/datas';
 import { tenantAtual } from '@/shared/contexto';
+import { esferaDaFonte } from '@/core/documento/demonstrativoIntegral';
+import type { DadosRelacao, TipoAjusteRelacao } from '@/core/documento/relacaoTransferidos';
 import { BusinessError } from '@/shared/errors';
 
 /**
@@ -71,6 +74,96 @@ export class PrismaDocumentoRepository implements IDocumentoRepository {
       responsavelNome: orgao.autoridadeNome,
       responsavelCargo: orgao.autoridadeCargo,
       responsavelCpf: orgao.autoridadeCpf,
+    };
+  }
+
+  /**
+   * Os dados do RP-04: todo ajuste do órgão, com o que foi repassado no ano.
+   *
+   * O órgão tem de estar **escolhido**, pela mesma razão do PC-02: sem ele a
+   * extension não filtra, e a relação sairia com os ajustes de todos os
+   * clientes, em nome de um órgão só.
+   *
+   * O repassado vem do bloco Repasses das prestações do ajuste, pela data do
+   * repasse — o mesmo número que cada prestação transmite. Prestação excluída
+   * ou substituída por retificação fica de fora: a retificação traz os mesmos
+   * repasses, e somar as duas dobraria o valor.
+   */
+  async dadosDaRelacao(exercicio: number): Promise<DadosRelacao | null> {
+    const orgaoId = tenantAtual();
+    if (!orgaoId)
+      throw new BusinessError('Selecione um órgão no topo da tela para gerar a Relação dos Valores Transferidos.');
+    const orgao = await prisma.cliente.findUnique({
+      where: { id: orgaoId },
+      select: { nome: true, codigoMunicipio: true, autoridadeNome: true, autoridadeCargo: true, autoridadeCpf: true },
+    });
+    if (!orgao) return null;
+
+    const de = new Date(Date.UTC(exercicio, 0, 1));
+    const ate = new Date(Date.UTC(exercicio, 11, 31));
+    const iso = (d: Date | null | undefined) => (d ? paraDataISO(d) : null);
+
+    const ajustes = await prisma.ajuste.findMany({
+      select: {
+        tipoAjuste: true,
+        numero: true,
+        codigoAjuste: true,
+        objeto: true,
+        valorGlobal: true,
+        dataAssinatura: true,
+        vigenciaInicial: true,
+        vigenciaFinal: true,
+        fontesRecurso: { select: { fonteRecursoTipo: true } },
+        termosAditivos: { select: { valorAcrescido: true, valorSuprimido: true, novaVigenciaFinal: true } },
+        entidadeBeneficiaria: {
+          select: { razaoSocial: true, cnpj: true, logradouro: true, numero: true, cidade: true, uf: true, cep: true },
+        },
+        prestacoesContas: {
+          where: { status: { notIn: ['EXCLUIDO', 'SUBSTITUIDO'] } },
+          select: { repasses: { where: { dataRepasse: { gte: de, lte: ate } }, select: { valorRepasse: true } } },
+        },
+      },
+    });
+
+    return {
+      exercicio,
+      orgaoNome: orgao.nome,
+      municipio: await this.municipioDe(orgao.codigoMunicipio),
+      responsavel: pessoa(orgao.autoridadeNome, orgao.autoridadeCargo, orgao.autoridadeCpf, 'Cadastro do Órgão Concessor'),
+      ajustes: ajustes.map((a) => {
+        const e = a.entidadeBeneficiaria;
+        const cep = e.cep ? `CEP ${e.cep.slice(0, 5)}-${e.cep.slice(5)}` : null;
+        // A vigência até: a maior entre o termo e as prorrogações dos aditivos.
+        const fins = [iso(a.vigenciaFinal), ...a.termosAditivos.map((t) => iso(t.novaVigenciaFinal))].filter(
+          (x): x is string => !!x,
+        );
+        return {
+          tipoAjuste: a.tipoAjuste as TipoAjusteRelacao,
+          numero: a.numero?.trim() || a.codigoAjuste,
+          beneficiario: e.razaoSocial,
+          cnpj: e.cnpj,
+          endereco: [[e.logradouro, e.numero].filter(Boolean).join(', '), [e.cidade, e.uf].filter(Boolean).join('/'), cep]
+            .filter(Boolean)
+            .join(' — ') || null,
+          data: iso(a.dataAssinatura),
+          vigenciaInicio: iso(a.vigenciaInicial),
+          vigenciaAte: fins.length ? fins.sort().at(-1)! : null,
+          // Atualizado pelos aditivos, como no Termo de Ciência: o aditivo que
+          // acresceu valor é justamente quando o global cru deixa de valer.
+          valorGlobal: valorGlobalEfetivo(
+            Number(a.valorGlobal),
+            a.termosAditivos.map((t) => ({
+              valorAcrescido: t.valorAcrescido === null ? null : Number(t.valorAcrescido),
+              valorSuprimido: t.valorSuprimido === null ? null : Number(t.valorSuprimido),
+            })),
+          ),
+          objeto: a.objeto,
+          esferas: [...new Set(a.fontesRecurso.map((f) => esferaDaFonte(f.fonteRecursoTipo)))],
+          repassadoNoExercicio: a.prestacoesContas
+            .flatMap((p) => p.repasses)
+            .reduce((s, r) => s + Number(r.valorRepasse), 0),
+        };
+      }),
     };
   }
 

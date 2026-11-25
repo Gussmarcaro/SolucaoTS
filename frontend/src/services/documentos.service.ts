@@ -31,3 +31,11 @@ export async function demonstrativoIntegral(
   });
   return data;
 }
+
+/** ANEXO RP-04 — Relação dos Valores Transferidos do órgão logado, no exercício. */
+export async function relacaoTransferidos(
+  exercicio: number,
+): Promise<import('@/types/relacaoTransferidos').RelacaoTransferidos> {
+  const { data } = await http.get('/prestacoes/documentos/relacao-transferidos', { params: { exercicio } });
+  return data;
+}

@@ -1,5 +1,6 @@
 /**
- * Confere os documentos gerados (PC-02 e Termo de Ciência). Sem banco.
+ * Confere os documentos gerados — PC-02, Termo de Ciência, Demonstrativo Integral
+ * e RP-04. Sem banco.
  *
  * O alvo é a **fidelidade ao modelo do TCESP**. Quem assina está assinando o
  * texto do Tribunal, não o nosso: uma cláusula "melhorada", um rótulo trocado
@@ -31,6 +32,11 @@ import {
 } from '../src/core/documento/demonstrativoIntegral';
 import { PLANO_PADRAO } from '../src/core/planoAplicacao/planoPadrao';
 import { lerSaldo } from '../src/application/documento/DemonstrativoUseCase';
+import {
+  montarRelacaoTransferidos,
+  vigenteNoExercicio,
+  type AjusteDaRelacao,
+} from '../src/core/documento/relacaoTransferidos';
 
 const falhas: string[] = [];
 const conferir = (descricao: string, ok: boolean, detalhe = '') => {
@@ -448,6 +454,78 @@ console.log('\nDemonstrativo Integral das Receitas e Despesas\n');
       r.textos.signatario.includes('2026 bem como'),
   );
   conferir('seis notas numeradas, de (4) a (9), mais a da saúde, no quadro de despesas', r.textos.notasDespesas.length === 7);
+}
+
+// --- RP-04 -----------------------------------------------------------------
+console.log('\nANEXO RP-04 — Relação dos Valores Transferidos\n');
+{
+  const ajuste = (over: Partial<AjusteDaRelacao>): AjusteDaRelacao => ({
+    tipoAjuste: 'CONVENIO',
+    numero: '1/2026',
+    beneficiario: 'ASSOCIAÇÃO A',
+    cnpj: '11222333000181',
+    endereco: 'Rua A, 1',
+    data: '2026-01-10',
+    vigenciaInicio: '2026-01-10',
+    vigenciaAte: '2026-12-31',
+    valorGlobal: 100000,
+    objeto: 'Objeto',
+    esferas: ['MUNICIPAL'],
+    repassadoNoExercicio: 40000,
+    ...over,
+  });
+  const r = montarRelacaoTransferidos({
+    exercicio: 2026,
+    orgaoNome: 'PREFEITURA MUNICIPAL DE ITAJOBI',
+    municipio: 'Itajobi',
+    responsavel: pessoa('Maria da Silva', 'Prefeita', '52998224725', 'Cadastro do Órgão Concessor'),
+    ajustes: [
+      ajuste({}),
+      ajuste({ numero: '10/2026', data: '2026-03-01', repassadoNoExercicio: 5000, esferas: ['FEDERAL', 'MUNICIPAL'] }),
+      ajuste({ numero: '2/2026', data: '2026-03-01', repassadoNoExercicio: 0 }),
+      ajuste({ tipoAjuste: 'TERMO_COLABORACAO', numero: 'TC-3', repassadoNoExercicio: 12000 }),
+      // Encerrado em 2025 e sem repasse em 2026: fora.
+      ajuste({ numero: 'velho', data: '2024-01-01', vigenciaInicio: '2024-01-01', vigenciaAte: '2025-06-30', repassadoNoExercicio: 0 }),
+      // Encerrado, mas com repasse atrasado pago em 2026: dentro.
+      ajuste({ numero: 'atrasado', data: '2024-01-01', vigenciaInicio: '2024-01-01', vigenciaAte: '2025-06-30', repassadoNoExercicio: 700 }),
+    ],
+  });
+  const conv = r.grupos.find((g) => g.tipo === 'CONVENIO')!;
+  conferir(
+    'os cinco quadros, na ordem do modelo',
+    r.grupos.map((g) => g.tipo).join(',') === 'CONTRATO_GESTAO,TERMO_PARCERIA,TERMO_COLABORACAO,TERMO_FOMENTO,CONVENIO',
+  );
+  conferir('quadro vazio continua no papel', r.grupos.find((g) => g.tipo === 'CONTRATO_GESTAO')!.linhas.length === 0);
+  conferir(
+    'ajuste vigente SEM repasse no ano aparece, com zero',
+    conv.linhas.some((l) => l.numero === '2/2026' && l.repassadoNoExercicio === 0),
+    'atraso ou suspensão é informação; omiti-lo deixaria a relação menos verdadeira',
+  );
+  conferir('ajuste encerrado e sem repasse no ano fica fora', !conv.linhas.some((l) => l.numero === 'velho'));
+  conferir('encerrado mas com repasse no ano entra', conv.linhas.some((l) => l.numero === 'atrasado'));
+  conferir(
+    'ordem por data e, no empate, número natural (2 antes de 10)',
+    conv.linhas.map((l) => l.numero).join(',') === 'atrasado,1/2026,2/2026,10/2026',
+  );
+  conferir('total do quadro', conv.totalRepassado === 45700 && conv.totalValorGlobal === 400000);
+  conferir('total geral soma os quadros', r.totalRepassado === 57700);
+  conferir('fonte com mais de uma esfera', conv.linhas.find((l) => l.numero === '10/2026')?.fonte === 'Federal / Municipal');
+  conferir('completo: nada faltando', r.faltando.length === 0, r.faltando.join(' | '));
+  conferir('nota de rodapé do modelo', r.nota === '(*) Fonte de recursos: federal ou estadual.');
+
+  const semDados = montarRelacaoTransferidos({
+    exercicio: 2026,
+    orgaoNome: 'X',
+    municipio: null,
+    responsavel: SEM_PESSOA,
+    ajustes: [ajuste({ esferas: [] })],
+  });
+  conferir('aponta a autoridade que falta', semDados.faltando.some((f) => f.startsWith('Autoridade máxima')));
+  conferir('aponta ajuste sem fonte', semDados.faltando.some((f) => f.includes('sem fonte de recurso')));
+  conferir(
+    'vigência: sem fim vale a partir do início; sem datas, não conta',
+    vigenteNoExercicio('2020-01-01', null, 2026) && !vigenteNoExercicio(null, null, 2026) && !vigenteNoExercicio('2027-01-01', null, 2026),
+  );
 }
 
 console.log(falhas.length ? `\n${falhas.length} falha(s).\n` : '\nTudo ok.\n');

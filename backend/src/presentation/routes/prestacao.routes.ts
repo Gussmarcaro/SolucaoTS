@@ -46,6 +46,16 @@ function bloco(
   prestacaoRoutes.delete(`/:prestacaoId/${path}/:id`, (req, res, next) => ctrl.excluir(req, res, next));
 }
 
+/*
+ * RP-04 — Relação dos Valores Transferidos: do órgão e do exercício, não de
+ * uma prestação. Fica na família da prestação porque é peça dela, e antes de
+ * `/:id` para "documentos" não ser lido como id.
+ */
+const documentosOrgao = new DocumentoController();
+prestacaoRoutes.get('/documentos/relacao-transferidos', (req, res, next) =>
+  documentosOrgao.relacaoTransferidos(req, res, next),
+);
+
 prestacaoRoutes.get('/', (req, res, next) => c.listar(req, res, next));
 prestacaoRoutes.post('/', (req, res, next) => c.criar(req, res, next));
 prestacaoRoutes.get('/:id', (req, res, next) => c.buscar(req, res, next));

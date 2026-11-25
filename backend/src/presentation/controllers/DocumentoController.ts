@@ -21,6 +21,15 @@ const demonstrativo = new DemonstrativoUseCase(new PrismaDemonstrativoRepository
  * Consentimento é do órgão (`CONFIG_ORGAOS`).
  */
 export class DocumentoController {
+  /** ANEXO RP-04 — Relação dos Valores Transferidos (`?exercicio=2026`). */
+  async relacaoTransferidos(req: Request, res: Response, next: NextFunction) {
+    try {
+      return res.json(await casos.relacaoTransferidos(Number(req.query.exercicio)));
+    } catch (e) {
+      return next(e);
+    }
+  }
+
   /** ANEXO PC-02 — Termo de Consentimento (contas bancárias). */
   async termoConsentimento(_req: Request, res: Response, next: NextFunction) {
     try {

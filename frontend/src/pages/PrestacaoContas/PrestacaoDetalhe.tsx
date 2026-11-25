@@ -283,12 +283,43 @@ export function PrestacaoDetalhe() {
               {prestacao.ehRetificacao && <Badge tone="neutral">Retificação</Badge>}
             </div>
           </div>
-          {emElaboracao && (
-            <Button variant="secondary" onClick={() => setConfirmar(true)}>
-              <Trash2 className="h-4 w-4" />
-              Excluir
-            </Button>
-          )}
+          {/*
+            Os documentos para imprimir e assinar ficam no topo, à vista: no
+            rodapé eles dividiam espaço com o envio e ficavam abaixo de trinta
+            blocos, onde só os achava quem já sabia que estavam lá. Gerar JSON e
+            Transmitir continuam embaixo — são o fim do preenchimento.
+          */}
+          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+            {/* A versão do Termo de Ciência que instrui a prestação: valor
+                repassado e exercício no lugar do valor do ajuste. */}
+            {podeGerarTermo && (
+              <Link to={`/cadastro/ajustes/${prestacao.ajusteId}/termo-ciencia?prestacaoId=${prestacao.id}`}>
+                <Button variant="secondary" size="sm">
+                  <FilePen className="h-4 w-4" />
+                  Termo de Ciência
+                </Button>
+              </Link>
+            )}
+            {/* O balanço do exercício que a entidade assina: anexo RP-06/08/10/12. */}
+            <Link to={`/prestacao-contas/${prestacao.id}/demonstrativo`}>
+              <Button variant="secondary" size="sm">
+                <FileSpreadsheet className="h-4 w-4" />
+                Receitas e Despesas
+              </Button>
+            </Link>
+            <Link to={`/prestacao-contas/${prestacao.id}/espelho`}>
+              <Button variant="secondary" size="sm">
+                <FileText className="h-4 w-4" />
+                Espelho
+              </Button>
+            </Link>
+            {emElaboracao && (
+              <Button variant="secondary" size="sm" onClick={() => setConfirmar(true)}>
+                <Trash2 className="h-4 w-4" />
+                Excluir
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -430,29 +461,6 @@ export function PrestacaoDetalhe() {
           <div className="mt-5 flex flex-col gap-2 border-t border-ink-100 pt-4 dark:border-ink-800 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-ink-400">Gere a prévia do JSON e transmita ao Audesp. Teste sempre no <span className="font-medium">piloto</span> antes da produção.</p>
             <div className="flex flex-wrap items-center gap-2">
-              {/* A versão do Termo de Ciência que instrui a prestação: valor
-                  repassado e exercício no lugar do valor do ajuste. */}
-              {podeGerarTermo && (
-                <Link to={`/cadastro/ajustes/${prestacao.ajusteId}/termo-ciencia?prestacaoId=${prestacao.id}`}>
-                  <Button variant="secondary" size="sm">
-                    <FilePen className="h-4 w-4" />
-                    Termo de Ciência
-                  </Button>
-                </Link>
-              )}
-              {/* O balanço do exercício que a entidade assina: anexo RP-06/08/10/12. */}
-              <Link to={`/prestacao-contas/${prestacao.id}/demonstrativo`}>
-                <Button variant="secondary" size="sm">
-                  <FileSpreadsheet className="h-4 w-4" />
-                  Receitas e Despesas
-                </Button>
-              </Link>
-              <Link to={`/prestacao-contas/${prestacao.id}/espelho`}>
-                <Button variant="secondary" size="sm">
-                  <FileText className="h-4 w-4" />
-                  Espelho
-                </Button>
-              </Link>
               <Button variant="secondary" size="sm" onClick={gerarJson} disabled={gerandoJson}>
                 {gerandoJson ? <Loader2 className="h-4 w-4 animate-spin" /> : <Braces className="h-4 w-4" />}
                 Gerar JSON (prévia)

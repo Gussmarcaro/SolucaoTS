@@ -1,4 +1,9 @@
-import { NotFoundError } from '@/shared/errors';
+import { BusinessError, NotFoundError } from '@/shared/errors';
+import {
+  montarRelacaoTransferidos,
+  type DadosRelacao,
+  type RelacaoTransferidos,
+} from '@/core/documento/relacaoTransferidos';
 import type { Folha } from '@/core/documento/folha';
 import {
   montarTermoConsentimento,
@@ -38,6 +43,8 @@ export interface IDocumentoRepository {
     ajusteId: string,
     prestacaoId?: string,
   ): Promise<DadosTermoCiencia | null>;
+  /** Dados do RP-04 do órgão logado, no exercício. */
+  dadosDaRelacao(exercicio: number): Promise<DadosRelacao | null>;
 }
 
 export class DocumentoUseCases {
@@ -48,6 +55,15 @@ export class DocumentoUseCases {
     const dados = await this.repo.dadosDoOrgao();
     if (!dados) throw new NotFoundError('Órgão não encontrado.');
     return montarTermoConsentimento(dados);
+  }
+
+  /** ANEXO RP-04 — Relação dos Valores Transferidos, do órgão, no exercício. */
+  async relacaoTransferidos(exercicio: number): Promise<RelacaoTransferidos> {
+    if (!Number.isInteger(exercicio) || exercicio < 2000 || exercicio > 2100)
+      throw new BusinessError('Informe o exercício (ano) da relação.');
+    const dados = await this.repo.dadosDaRelacao(exercicio);
+    if (!dados) throw new NotFoundError('Órgão não encontrado.');
+    return montarRelacaoTransferidos(dados);
   }
 
   /** ANEXO RP-05/07/09/11 — Termo de Ciência e de Notificação. */

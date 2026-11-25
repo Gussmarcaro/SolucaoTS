@@ -52,6 +52,10 @@ const Empresas = pagina(() => import('@/pages/Empresas'), 'Empresas');
 const PrestacaoContas = pagina(() => import('@/pages/PrestacaoContas'), 'PrestacaoContas');
 const PrestacaoDetalhe = pagina(() => import('@/pages/PrestacaoContas/PrestacaoDetalhe'), 'PrestacaoDetalhe');
 const Espelho = pagina(() => import('@/pages/PrestacaoContas/Espelho'), 'Espelho');
+const RelacaoTransferidosPagina = pagina(
+  () => import('@/pages/Documentos/RelacaoTransferidos'),
+  'RelacaoTransferidosPagina',
+);
 const DemonstrativoIntegralPagina = pagina(
   () => import('@/pages/Documentos/Demonstrativo'),
   'DemonstrativoIntegralPagina',
@@ -322,6 +326,15 @@ export default function App() {
             element={
               <RequerPermissao recurso="PRESTACAO_CONTAS">
                 <PrestacaoDetalhe />
+              </RequerPermissao>
+            }
+          />
+          {/* Caminho fixo: o roteador o prefere a `/:id`, então "relacao-transferidos" nunca é lido como id de prestação. */}
+          <Route
+            path="/prestacao-contas/relacao-transferidos"
+            element={
+              <RequerPermissao recurso="PRESTACAO_CONTAS">
+                <RelacaoTransferidosPagina />
               </RequerPermissao>
             }
           />

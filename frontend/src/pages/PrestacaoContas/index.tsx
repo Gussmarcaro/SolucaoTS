@@ -2,7 +2,7 @@ import { usePermissoes } from '@/contexts/PermissoesContext';
 import { useAbrirNovoPelaUrl } from '@/hooks/useAbrirNovoPelaUrl';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, ChevronLeft, ChevronRight, FolderOpen, Loader2, Plus, Search } from 'lucide-react';
+import { AlertCircle, ChevronLeft, ChevronRight, FileSpreadsheet, FolderOpen, Loader2, Plus, Search } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -86,12 +86,20 @@ export function PrestacaoContas() {
         title="Prestação de Contas"
         subtitle="Montagem, validação e transmissão dos documentos à API do Audesp (TCESP)."
         actions={
-          podeEditar && (
-          <Button variant="success" onClick={() => setNovo(true)}>
-            <Plus className="h-4 w-4" />
-            Nova Prestação
-          </Button>
-          )
+          <div className="flex flex-wrap gap-2">
+            {/* RP-04: do órgão e do exercício, por isso mora na lista e não
+                dentro de uma prestação. */}
+            <Button variant="secondary" onClick={() => navigate('/prestacao-contas/relacao-transferidos')}>
+              <FileSpreadsheet className="h-4 w-4" />
+              Valores Transferidos (RP-04)
+            </Button>
+            {podeEditar && (
+              <Button variant="success" onClick={() => setNovo(true)}>
+                <Plus className="h-4 w-4" />
+                Nova Prestação
+              </Button>
+            )}
+          </div>
         }
       />
 
