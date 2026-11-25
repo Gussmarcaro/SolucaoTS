@@ -1,8 +1,11 @@
 import type { Request, Response, NextFunction } from 'express';
 import { DocumentoUseCases } from '@/application/documento/DocumentoUseCases';
 import { PrismaDocumentoRepository } from '@/infrastructure/database/PrismaDocumentoRepository';
+import { DemonstrativoUseCase } from '@/application/documento/DemonstrativoUseCase';
+import { PrismaDemonstrativoRepository } from '@/infrastructure/database/PrismaDemonstrativoRepository';
 
 const casos = new DocumentoUseCases(new PrismaDocumentoRepository());
+const demonstrativo = new DemonstrativoUseCase(new PrismaDemonstrativoRepository());
 
 /**
  * Os anexos oficiais do TCESP, preenchidos com o cadastro.
@@ -37,6 +40,22 @@ export class DocumentoController {
     try {
       const prestacaoId = (req.query.prestacaoId as string | undefined) || undefined;
       return res.json(await casos.termoCiencia(req.params.id, prestacaoId));
+    } catch (e) {
+      return next(e);
+    }
+  }
+
+  /**
+   * ANEXO RP-06/08/10/12 — Demonstrativo Integral das Receitas e Despesas.
+   *
+   * Da **prestação**, não do ajuste: é ela que fixa o exercício e é o bloco
+   * Repasses dela que o anexo tem de repetir. `?saldoAnterior=` substitui o
+   * saldo (A) calculado — ver `DemonstrativoUseCase`.
+   */
+  async demonstrativoIntegral(req: Request, res: Response, next: NextFunction) {
+    try {
+      const saldo = (req.query.saldoAnterior as string | undefined) || undefined;
+      return res.json(await demonstrativo.execute(req.params.prestacaoId, saldo));
     } catch (e) {
       return next(e);
     }

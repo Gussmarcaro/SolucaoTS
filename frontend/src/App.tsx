@@ -52,6 +52,10 @@ const Empresas = pagina(() => import('@/pages/Empresas'), 'Empresas');
 const PrestacaoContas = pagina(() => import('@/pages/PrestacaoContas'), 'PrestacaoContas');
 const PrestacaoDetalhe = pagina(() => import('@/pages/PrestacaoContas/PrestacaoDetalhe'), 'PrestacaoDetalhe');
 const Espelho = pagina(() => import('@/pages/PrestacaoContas/Espelho'), 'Espelho');
+const DemonstrativoIntegralPagina = pagina(
+  () => import('@/pages/Documentos/Demonstrativo'),
+  'DemonstrativoIntegralPagina',
+);
 const DocumentoOficial = lazy(() =>
   import('@/pages/Documentos').then((m) => ({ default: m.DocumentoOficial })),
 );
@@ -318,6 +322,14 @@ export default function App() {
             element={
               <RequerPermissao recurso="PRESTACAO_CONTAS">
                 <PrestacaoDetalhe />
+              </RequerPermissao>
+            }
+          />
+          <Route
+            path="/prestacao-contas/:id/demonstrativo"
+            element={
+              <RequerPermissao recurso="PRESTACAO_CONTAS">
+                <DemonstrativoIntegralPagina />
               </RequerPermissao>
             }
           />

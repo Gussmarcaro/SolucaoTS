@@ -19,6 +19,7 @@ import { TransmissaoController } from '@/presentation/controllers/TransmissaoCon
 import { CertidoesPrestacaoController } from '@/presentation/controllers/CertidoesPrestacaoController';
 import { DeclaratoriosController } from '@/presentation/controllers/DeclaratoriosController';
 import { AjustesSaldoController } from '@/presentation/controllers/AjustesSaldoController';
+import { DocumentoController } from '@/presentation/controllers/DocumentoController';
 
 const prestacaoRoutes = Router();
 const c = new PrestacaoController();
@@ -54,6 +55,11 @@ const montador = new MontadorController();
 prestacaoRoutes.get('/:prestacaoId/json', (req, res, next) => montador.gerar(req, res, next));
 // "Esta prestação está pronta?" — erros do montador + pendências de completude.
 prestacaoRoutes.get('/:prestacaoId/conferencia', (req, res, next) => montador.conferir(req, res, next));
+// Demonstrativo Integral (RP-06/08/10/12), preenchido com a prestação, para imprimir e assinar.
+const documentos = new DocumentoController();
+prestacaoRoutes.get('/:prestacaoId/documentos/demonstrativo-integral', (req, res, next) =>
+  documentos.demonstrativoIntegral(req, res, next),
+);
 
 // Transmissão à API do TCESP (Fase D) — default de ambiente = PILOTO
 const transmissao = new TransmissaoController();

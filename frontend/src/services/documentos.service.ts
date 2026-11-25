@@ -17,3 +17,17 @@ export async function termoCiencia(ajusteId: string, prestacaoId?: string): Prom
   });
   return data;
 }
+
+/**
+ * Demonstrativo Integral (RP-06/08/10/12) de uma prestação. `saldoAnterior`
+ * substitui o saldo (A) calculado — formato `MUNICIPAL:1500,50;FEDERAL:0`.
+ */
+export async function demonstrativoIntegral(
+  prestacaoId: string,
+  saldoAnterior?: string,
+): Promise<import('@/types/demonstrativo').DemonstrativoIntegral> {
+  const { data } = await http.get(`/prestacoes/${prestacaoId}/documentos/demonstrativo-integral`, {
+    params: { saldoAnterior: saldoAnterior || undefined },
+  });
+  return data;
+}

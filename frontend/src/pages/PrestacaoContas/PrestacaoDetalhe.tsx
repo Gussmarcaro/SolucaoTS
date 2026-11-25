@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { AlertTriangle, ArrowLeft, Braces, CheckCircle2, Circle, Copy, Download, FilePen, FileText, Loader2, RefreshCw, Send, ServerCrash, ShieldAlert, Trash2 } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Braces, CheckCircle2, Circle, Copy, Download, FilePen, FileSpreadsheet, FileText, Loader2, RefreshCw, Send, ServerCrash, ShieldAlert, Trash2 } from 'lucide-react';
 import { usePermissoes } from '@/contexts/PermissoesContext';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -429,7 +429,7 @@ export function PrestacaoDetalhe() {
 
           <div className="mt-5 flex flex-col gap-2 border-t border-ink-100 pt-4 dark:border-ink-800 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-ink-400">Gere a prévia do JSON e transmita ao Audesp. Teste sempre no <span className="font-medium">piloto</span> antes da produção.</p>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {/* A versão do Termo de Ciência que instrui a prestação: valor
                   repassado e exercício no lugar do valor do ajuste. */}
               {podeGerarTermo && (
@@ -440,6 +440,13 @@ export function PrestacaoDetalhe() {
                   </Button>
                 </Link>
               )}
+              {/* O balanço do exercício que a entidade assina: anexo RP-06/08/10/12. */}
+              <Link to={`/prestacao-contas/${prestacao.id}/demonstrativo`}>
+                <Button variant="secondary" size="sm">
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Receitas e Despesas
+                </Button>
+              </Link>
               <Link to={`/prestacao-contas/${prestacao.id}/espelho`}>
                 <Button variant="secondary" size="sm">
                   <FileText className="h-4 w-4" />
