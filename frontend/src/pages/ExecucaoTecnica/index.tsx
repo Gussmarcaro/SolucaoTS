@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, CheckCircle2, Loader2, Minus, Save, Target } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, LayoutList, Loader2, Minus, Save, Table2, Target } from 'lucide-react';
+import { QuadroMetas } from './QuadroMetas';
+import { cn } from '@/lib/cn';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
@@ -17,6 +19,8 @@ import {
   rotuloPeriodo,
   rotuloQualificador,
   simboloQualificador,
+  situacaoMeta,
+  type QualificadorMeta,
   type PeriodoMeta,
 } from '@/types/meta';
 import { diasAbsorvidos } from '@/types/vigencia';
@@ -35,8 +39,34 @@ import type { Meta, Programa } from '@/types/programa';
  * paralelo daria dois números para o mesmo fato, e a divergência só apareceria
  * no Espelho, na véspera de transmitir.
  */
+/** As duas formas de lançar; a escolha fica guardada no navegador da pessoa. */
+type Visao = 'quadro' | 'meta';
+const CHAVE_VISAO = '@SolucaoTS:execucaoTecnica:visao';
+
+function visaoGuardada(): Visao {
+  try {
+    return localStorage.getItem(CHAVE_VISAO) === 'meta' ? 'meta' : 'quadro';
+  } catch {
+    return 'quadro';
+  }
+}
+
 export function ExecucaoTecnica() {
   const { ajusteId } = useAjusteExecucao();
+  /*
+   * O quadro (metas × períodos) é o padrão: é como o dado chega, mês a mês,
+   * com todas as metas juntas. A visão por meta continua porque é nela que
+   * ficam a observação de cada período e as metas qualitativas.
+   */
+  const [visao, setVisao] = useState<Visao>(visaoGuardada);
+  const trocarVisao = (v: Visao) => {
+    setVisao(v);
+    try {
+      localStorage.setItem(CHAVE_VISAO, v);
+    } catch {
+      /* sem armazenamento: vale só nesta sessão */
+    }
+  };
   const [exercicio, setExercicio] = useState(() => new Date().getFullYear());
   const [painel, setPainel] = useState<PainelTecnico | null>(null);
   const [carregando, setCarregando] = useState(true);
@@ -91,6 +121,32 @@ export function ExecucaoTecnica() {
             Ajuste; aqui se acrescenta o que foi executado.
           </p>
         </div>
+        <div className="flex flex-wrap items-end gap-3">
+        <div role="group" aria-label="Forma de lançar" className="flex rounded-xl border border-ink-200 p-0.5 dark:border-ink-700">
+          {(
+            [
+              { id: 'quadro', rotulo: 'Quadro', icone: Table2, dica: 'Metas nas linhas, períodos nas colunas' },
+              { id: 'meta', rotulo: 'Por meta', icone: LayoutList, dica: 'Uma meta por vez, com a observação de cada período' },
+            ] as const
+          ).map((o) => (
+            <button
+              key={o.id}
+              type="button"
+              onClick={() => trocarVisao(o.id)}
+              aria-pressed={visao === o.id}
+              title={o.dica}
+              className={cn(
+                'focus-ring flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors',
+                visao === o.id
+                  ? 'bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300'
+                  : 'text-ink-500 hover:bg-ink-50 dark:text-ink-400 dark:hover:bg-ink-800/60',
+              )}
+            >
+              <o.icone className="h-3.5 w-3.5" />
+              {o.rotulo}
+            </button>
+          ))}
+        </div>
         <label className="text-xs text-ink-500 dark:text-ink-400">
           Exercício
           <Select
@@ -100,6 +156,7 @@ export function ExecucaoTecnica() {
             options={anos.map((a) => ({ value: String(a), label: String(a) }))}
           />
         </label>
+        </div>
       </header>
 
       {erro && (
@@ -137,6 +194,13 @@ export function ExecucaoTecnica() {
           <strong>Ajuste → Programas e Metas</strong> — é o previsto contra o qual a execução é
           comparada.
         </div>
+      ) : visao === 'quadro' ? (
+        <QuadroMetas
+          painel={painel!}
+          exercicio={exercicio}
+          ajusteId={ajusteId}
+          aoSalvar={() => setRefreshKey((k) => k + 1)}
+        />
       ) : (
         metas.map(({ programa, meta }) => (
           <CartaoMeta
@@ -414,7 +478,11 @@ function CartaoMeta({
                 </div>
 
                 <div className="sm:col-span-1 sm:pt-6">
-                  <Situacao aval={aval} relativo={!!prev && ehRelativo(prev.qualificador)} />
+                  <Situacao
+                    aval={aval}
+                    qualificador={prev?.qualificador ?? null}
+                    relativo={!!prev && ehRelativo(prev.qualificador)}
+                  />
                 </div>
               </li>
             );
@@ -437,11 +505,13 @@ function CartaoMeta({
 }
 
 /** Verde, âmbar ou traço — e nunca só a cor: estado anda com ícone e rótulo. */
-function Situacao({
+export function Situacao({
   aval,
+  qualificador,
   relativo,
 }: {
-  aval: { atingiu: boolean | null; diferenca: number } | null;
+  aval: ReturnType<typeof avaliarMeta> | null;
+  qualificador: QualificadorMeta | null;
   relativo: boolean;
 }) {
   if (relativo)
@@ -450,21 +520,22 @@ function Situacao({
         conferir
       </Badge>
     );
-  if (!aval || aval.atingiu === null)
+  const s = aval && qualificador ? situacaoMeta(qualificador, aval) : null;
+  if (!s)
     return (
       <span className="text-ink-300 dark:text-ink-600">
         <Minus className="h-4 w-4" />
       </span>
     );
-  return aval.atingiu ? (
-    <Badge tone="success">
+  return s.tom === 'sucesso' ? (
+    <Badge tone="success" title={s.texto}>
       <CheckCircle2 className="mr-1 h-3 w-3" />
-      atingida
+      {s.texto}
     </Badge>
   ) : (
-    <Badge tone="warning" title={`Faltam ${aval.diferenca.toLocaleString('pt-BR')}`}>
+    <Badge tone="warning" title={s.texto}>
       <AlertTriangle className="mr-1 h-3 w-3" />
-      faltam {aval.diferenca.toLocaleString('pt-BR')}
+      {s.texto}
     </Badge>
   );
 }

@@ -153,6 +153,42 @@ export function avaliarMeta(
   return { atingiu, diferenca: prevista - realizado, percentual };
 }
 
+/** Como a situação de um período se anuncia na tela. */
+export interface SituacaoMeta {
+  tom: 'sucesso' | 'aviso' | 'neutro';
+  texto: string;
+}
+
+/**
+ * A frase da situação, **segundo o critério** — não só segundo a conta.
+ *
+ * `diferenca` é previsto − realizado: positiva é falta, negativa é excesso.
+ * Escrever "faltam" com o número cru dava "faltam -75" quando o realizado
+ * passava do previsto — e o excesso quer dizer coisas opostas conforme o
+ * critério: em "maior ou igual a 32", 107 cumpriu com folga; em "igual a 32"
+ * ou "menor que 32", 107 descumpriu por passar do limite.
+ *
+ * Nulo quando não há o que dizer (sem realizado, ou meta de variação).
+ */
+export function situacaoMeta(qualificador: QualificadorMeta, a: AvaliacaoMeta): SituacaoMeta | null {
+  if (a.atingiu === null) return null;
+  const n = (v: number) => Math.abs(v).toLocaleString('pt-BR');
+  const excesso = a.diferenca < -EPS;
+  const falta = a.diferenca > EPS;
+
+  if (a.atingiu)
+    return { tom: 'sucesso', texto: excesso ? `atingida · ${n(a.diferenca)} acima` : 'atingida' };
+
+  if (falta) return { tom: 'aviso', texto: `faltam ${n(a.diferenca)}` };
+  if (excesso) return { tom: 'aviso', texto: `${n(a.diferenca)} acima do previsto` };
+  // Igual ao previsto e ainda assim não cumpriu: o critério pedia superar
+  // ("maior que") ou ficar abaixo ("menor que").
+  return {
+    tom: 'aviso',
+    texto: qualificador === 'MAIOR_QUE' ? 'igual — precisava superar' : 'igual — precisava ficar abaixo',
+  };
+}
+
 /** Derivado do tipo, nunca gravado — ver a nota em `core/meta/Meta.ts`. */
 export const ehQuantificavel = (t: TipoMeta): boolean => t !== 'QUALITATIVA_NAO_QUANTIFICAVEL';
 export const temDetalhePeriodico = (t: TipoMeta): boolean => ehQuantificavel(t);

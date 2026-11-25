@@ -558,7 +558,30 @@ function MetaForm({
               Quantidade prevista por período
             </span>
             {periodos.length > 0 && (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {/*
+                  O critério em lote. Cada período nasce "igual a" (é o padrão
+                  do manual: "100 atendimentos" é igual a 100), mas a meta de
+                  "no mínimo 32" é "maior ou igual" em todos os meses — e
+                  trocá-la caixa por caixa, onze vezes, é onde uma fica para
+                  trás e o mês dela aparece como descumprido com folga.
+                */}
+                <select
+                  value=""
+                  onChange={(e) => {
+                    const q = e.target.value as QualificadorMeta;
+                    if (q) setQuadro((linhas) => linhas.map((l) => ({ ...l, qualificador: q })));
+                  }}
+                  aria-label="Aplicar o mesmo critério a todos os períodos"
+                  className="focus-ring h-8 rounded-lg border border-ink-200 bg-white px-2 text-[12px] text-ink-800 dark:border-ink-700 dark:bg-ink-900 dark:text-ink-100"
+                >
+                  <option value="">Critério em todos…</option>
+                  {QUALIFICADORES_META.map((q) => (
+                    <option key={q.id} value={q.id}>
+                      {q.simbolo} {q.rotulo}
+                    </option>
+                  ))}
+                </select>
                 <input
                   value={igual}
                   onChange={(e) => setIgual(e.target.value.replace(/[^\d,]/g, ''))}

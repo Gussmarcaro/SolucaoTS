@@ -5,6 +5,7 @@ import type { DadosMeta } from '@/application/programa/dtos';
 import type { Meta, Programa } from '@/core/programa/Programa';
 import { ehQuantificavel, type PeriodicidadeMeta, type TipoMeta } from '@/core/meta/Meta';
 import { paraDataISO } from '@/shared/datas';
+import { compararNatural } from '@/shared/ordemNatural';
 
 const metaSelect = {
   id: true,
@@ -72,7 +73,11 @@ function programaToDomain(row: ProgramaRow): Programa {
     id: row.id,
     ajusteId: row.ajusteId,
     nome: row.nome,
-    metas: row.metas.map(metaToDomain),
+    // Reordenadas aqui, e não só pelo banco: o código é texto, e o `orderBy`
+    // do banco poria "10" antes de "2". Ver `compararNatural`.
+    metas: row.metas
+      .map(metaToDomain)
+      .sort((a, b) => compararNatural(a.codigoMeta, b.codigoMeta)),
   };
 }
 
@@ -95,7 +100,8 @@ export class PrismaProgramaRepository implements IProgramaRepository {
       select: programaSelect,
       orderBy: { nome: 'asc' },
     });
-    return rows.map(programaToDomain);
+    // "Programa 2" antes de "Programa 10", pela mesma razão das metas.
+    return rows.map(programaToDomain).sort((a, b) => compararNatural(a.nome, b.nome));
   }
 
   async programaDoAjuste(ajusteId: string, programaId: string): Promise<boolean> {

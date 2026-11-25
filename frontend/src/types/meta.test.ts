@@ -4,6 +4,7 @@ import {
   QUALIFICADORES_META,
   apurarMetas,
   avaliarMeta,
+  situacaoMeta,
   TIPOS_META,
   distribuirProporcional,
   ehQuantificavel,
@@ -211,6 +212,42 @@ describe('avaliarMeta', () => {
   it('dá um centavo de folga ao ponto flutuante', () => {
     expect(avaliarMeta('IGUAL_A', 10.5, 10.5).atingiu).toBe(true);
     expect(avaliarMeta('IGUAL_A', 0.1 + 0.2, 0.3).atingiu).toBe(true);
+  });
+});
+
+describe('situacaoMeta', () => {
+  const frase = (q: Parameters<typeof avaliarMeta>[0], prevista: number, realizado: number) =>
+    situacaoMeta(q, avaliarMeta(q, prevista, realizado));
+
+  it('maior ou igual: o excesso é cumprimento com folga, nunca "faltam negativo"', () => {
+    expect(frase('MAIOR_OU_IGUAL_A', 32, 107)).toEqual({ tom: 'sucesso', texto: 'atingida · 75 acima' });
+    expect(frase('MAIOR_OU_IGUAL_A', 32, 32)).toEqual({ tom: 'sucesso', texto: 'atingida' });
+    expect(frase('MAIOR_OU_IGUAL_A', 32, 20)).toEqual({ tom: 'aviso', texto: 'faltam 12' });
+  });
+
+  it('igual a: passar do previsto também descumpre, e a frase diz que passou', () => {
+    expect(frase('IGUAL_A', 32, 107)).toEqual({ tom: 'aviso', texto: '75 acima do previsto' });
+    expect(frase('IGUAL_A', 32, 20)).toEqual({ tom: 'aviso', texto: 'faltam 12' });
+  });
+
+  it('menor que: excesso descumpre; igual descumpre dizendo por quê', () => {
+    expect(frase('MENOR_QUE', 10, 15)?.texto).toBe('5 acima do previsto');
+    expect(frase('MENOR_QUE', 10, 10)?.texto).toBe('igual — precisava ficar abaixo');
+    expect(frase('MENOR_QUE', 10, 4)?.tom).toBe('sucesso');
+  });
+
+  it('maior que: igual ao previsto não basta', () => {
+    expect(frase('MAIOR_QUE', 10, 10)?.texto).toBe('igual — precisava superar');
+  });
+
+  it('nenhuma frase traz número negativo', () => {
+    for (const q of ['IGUAL_A', 'MAIOR_QUE', 'MAIOR_OU_IGUAL_A', 'MENOR_QUE', 'MENOR_OU_IGUAL_A'] as const)
+      for (const r of [0, 5, 32, 107]) expect(frase(q, 32, r)?.texto ?? '').not.toMatch(/-d/);
+  });
+
+  it('sem realizado, ou meta de variação, não há frase', () => {
+    expect(situacaoMeta('IGUAL_A', avaliarMeta('IGUAL_A', 32, null))).toBeNull();
+    expect(situacaoMeta('AUMENTAR_EM', avaliarMeta('AUMENTAR_EM', 10, 12))).toBeNull();
   });
 });
 

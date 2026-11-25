@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
+import { compararNatural } from '@/shared/ordemNatural';
 import type { IRelatorioAtividadeRepository } from '@/application/relatorioAtividade/IRelatorioAtividadeRepository';
 import type { DadosAfericaoMeta } from '@/application/relatorioAtividade/dtos';
 import type { AfericaoMeta, ResultadoMeta } from '@/core/relatorioAtividade/AfericaoMeta';
@@ -41,7 +42,16 @@ export class PrismaRelatorioAtividadeRepository implements IRelatorioAtividadeRe
       select: selecao,
       orderBy: [{ nomePrograma: 'asc' }, { codigoMeta: 'asc' }, { periodo: 'asc' }],
     });
-    return rows.map(toDomain);
+    // O banco ordena o código da meta como texto ("10" antes de "2"); a ordem
+    // que vale para quem lê o relatório é a natural.
+    return rows
+      .map(toDomain)
+      .sort(
+        (a, b) =>
+          compararNatural(a.nomePrograma, b.nomePrograma) ||
+          compararNatural(a.codigoMeta, b.codigoMeta) ||
+          a.periodo - b.periodo,
+      );
   }
 
   async buscarPorId(id: string): Promise<AfericaoMeta | null> {
