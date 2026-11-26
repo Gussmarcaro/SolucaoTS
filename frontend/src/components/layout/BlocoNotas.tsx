@@ -4,6 +4,32 @@ import { cn } from '@/lib/cn';
 import { extrairMensagemErro } from '@/services/http';
 import { criarNota, excluirNota, listarNotas, salvarNota, type NotaRapida } from '@/services/notas.service';
 
+/**
+ * O que o rodapé da nota diz. A data e a hora são as da **última gravação no
+ * servidor** — as mesmas da lista —, e ficam à vista enquanto a nota estiver
+ * aberta. Enquanto há texto esperando a pausa, não se mostra "Salvo em": a hora
+ * seria a da gravação anterior, e afirmaria salvo o que ainda não está.
+ */
+function RodapeEstado({ estado, nota }: { estado: Estado; nota: NotaRapida }) {
+  if (estado === 'digitando') return <span>Editando…</span>;
+  if (estado === 'salvando')
+    return (
+      <>
+        <Loader2 className="h-3 w-3 animate-spin" /> Salvando…
+      </>
+    );
+  if (estado === 'erro') return <span className="text-red-500">Não salvo — tentando de novo</span>;
+  // Nota nova, ainda em branco, nunca foi a lugar nenhum: não há "salvo em".
+  if (estado === 'parado' && !nota.texto) return <span className="truncate">Só você vê esta nota</span>;
+  const q = quando(nota.atualizadoEm);
+  return (
+    <span className="flex min-w-0 items-center gap-1 truncate tabular-nums">
+      <Check className="h-3 w-3 shrink-0 text-emerald-500" />
+      Salvo em {q.data} às {q.hora}
+    </span>
+  );
+}
+
 /** Pausa na digitação antes de gravar — o bastante para não gravar a cada tecla. */
 const ESPERA_MS = 700;
 const LIMITE = 10_000;
@@ -11,16 +37,25 @@ const LIMITE = 10_000;
 /** A primeira linha não vazia vira o título; nota em branco é "Nova nota". */
 const tituloDe = (texto: string) => texto.split('\n').find((l) => l.trim())?.trim() || 'Nova nota';
 
-function quando(iso: string): string {
+/**
+ * Data **e** hora, sempre. Mostrar só a hora nas notas de hoje parecia mais
+ * limpo, mas obrigava a adivinhar o dia — e numa anotação o "quando" costuma
+ * ser parte do que se anotou.
+ */
+function quando(iso: string): { data: string; hora: string } {
   const d = new Date(iso);
-  const hoje = new Date();
-  const mesmoDia = d.toDateString() === hoje.toDateString();
-  return mesmoDia
-    ? d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-    : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+  return {
+    data: d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+    hora: d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+  };
 }
 
-type Estado = 'parado' | 'salvando' | 'salvo' | 'erro';
+/**
+ * - `parado`: nota recém-aberta, sem alteração desde a última gravação;
+ * - `digitando`: há texto esperando a pausa para ir ao servidor;
+ * - `salvando` / `salvo` / `erro`: o resultado da gravação.
+ */
+type Estado = 'parado' | 'digitando' | 'salvando' | 'salvo' | 'erro';
 
 /**
  * Bloco de notas rápidas — anotações da própria pessoa, abertas pela barra
@@ -99,6 +134,8 @@ export function BlocoNotas({
     try {
       const salva = await salvarNota(p.id, p.texto);
       setNotas((lista) => [salva, ...(lista ?? []).filter((n) => n.id !== salva.id)]);
+      // A data/hora do rodapé é a que o servidor gravou, não a do relógio da tela.
+      setAtual((a) => (a && a.id === salva.id ? { ...a, atualizadoEm: salva.atualizadoEm } : a));
       setEstado('salvo');
     } catch (e) {
       setEstado('erro');
@@ -113,7 +150,7 @@ export function BlocoNotas({
     setTexto(valor);
     setErro(null);
     pendente.current = { id: atual.id, texto: valor };
-    setEstado('parado');
+    setEstado('digitando');
     if (espera.current) clearTimeout(espera.current);
     espera.current = setTimeout(gravarPendente, ESPERA_MS);
   }
@@ -258,20 +295,7 @@ export function BlocoNotas({
             />
             <div className="flex items-center justify-between gap-2 border-t border-ink-100 px-3 py-2 text-[11px] text-ink-400 dark:border-ink-800">
               <span className="flex min-w-0 items-center gap-1">
-                {estado === 'salvando' && (
-                  <>
-                    <Loader2 className="h-3 w-3 animate-spin" /> Salvando…
-                  </>
-                )}
-                {estado === 'salvo' && (
-                  <>
-                    <Check className="h-3 w-3 text-emerald-500" /> Salvo
-                  </>
-                )}
-                {estado === 'erro' && <span className="text-red-500">Não salvo — tentando de novo</span>}
-                {estado !== 'erro' && (
-                  <span className="truncate">{estado === 'parado' ? 'Só você vê esta nota' : '· só você vê'}</span>
-                )}
+                <RodapeEstado estado={estado} nota={atual} />
               </span>
               {/*
                 O salvar já é automático; este botão existe para o gesto de
@@ -325,7 +349,9 @@ export function BlocoNotas({
                         <span className="truncate text-sm font-medium text-ink-800 dark:text-ink-100">
                           {tituloDe(n.texto)}
                         </span>
-                        <span className="shrink-0 text-[11px] text-ink-400">{quando(n.atualizadoEm)}</span>
+                        <span className="shrink-0 text-[11px] tabular-nums text-ink-400">
+                          {quando(n.atualizadoEm).data} · {quando(n.atualizadoEm).hora}
+                        </span>
                       </span>
                       <span className="line-clamp-2 text-xs text-ink-500 dark:text-ink-400">
                         {n.texto.split('\n').slice(1).join(' ').trim() || ' '}
