@@ -240,8 +240,8 @@ export function BlocoNotas({ aberto, onFechar }: { aberto: boolean; onFechar: ()
               aria-label="Texto da nota"
               className="flex-1 resize-none bg-transparent px-4 py-3 text-sm leading-relaxed text-ink-800 outline-none placeholder:text-ink-400 dark:text-ink-100"
             />
-            <div className="flex items-center justify-between border-t border-ink-100 px-4 py-1.5 text-[11px] text-ink-400 dark:border-ink-800">
-              <span className="flex items-center gap-1">
+            <div className="flex items-center justify-between gap-2 border-t border-ink-100 px-3 py-2 text-[11px] text-ink-400 dark:border-ink-800">
+              <span className="flex min-w-0 items-center gap-1">
                 {estado === 'salvando' && (
                   <>
                     <Loader2 className="h-3 w-3 animate-spin" /> Salvando…
@@ -253,8 +253,25 @@ export function BlocoNotas({ aberto, onFechar }: { aberto: boolean; onFechar: ()
                   </>
                 )}
                 {estado === 'erro' && <span className="text-red-500">Não salvo — tentando de novo</span>}
+                {estado !== 'erro' && (
+                  <span className="truncate">{estado === 'parado' ? 'Só você vê esta nota' : '· só você vê'}</span>
+                )}
               </span>
-              <span>Só você vê esta nota</span>
+              {/*
+                O salvar já é automático; este botão existe para o gesto de
+                "terminei". Ele grava na hora o que ainda esperava a pausa e
+                fecha — quem clica não precisa confiar num indicador para saber
+                que não perdeu nada.
+              */}
+              <button
+                type="button"
+                onClick={fechar}
+                disabled={estado === 'salvando'}
+                className="focus-ring inline-flex shrink-0 items-center gap-1 rounded-lg bg-brand-600 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-brand-700 disabled:opacity-60"
+              >
+                <Check className="h-3.5 w-3.5" />
+                Salvar e fechar
+              </button>
             </div>
           </>
         ) : (
