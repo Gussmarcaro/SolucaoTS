@@ -17,7 +17,13 @@ import {
 import { isDocumentoValido, isEmailValido } from '@/lib/validators';
 import { capitalizarNome } from '@/lib/nomeProprio';
 import { consultarCep } from '@/services/viacep.service';
-import { atualizarFornecedor, criarFornecedor } from '@/services/fornecedores.service';
+import {
+  atualizarFornecedor,
+  criarFornecedor,
+  levarNomeAsCopias,
+  nomeNasCopias,
+  type NomeNasCopias,
+} from '@/services/fornecedores.service';
 import { extrairCodigoErro, extrairMensagemErro } from '@/services/http';
 import type { Fornecedor, FornecedorPayload } from '@/types/fornecedor';
 
@@ -76,6 +82,12 @@ export function FornecedorForm({ fornecedor, onSuccess, onCancel }: Props) {
   const [alerta, setAlerta] = useState<string | null>(null);
   const [buscandoCep, setBuscandoCep] = useState(false);
   const [salvando, setSalvando] = useState(false);
+  /**
+   * O nome mudou e há notas ou contratos com o nome antigo que ainda não foram
+   * ao TCESP: o formulário dá lugar à pergunta, antes de fechar.
+   */
+  const [copias, setCopias] = useState<NomeNasCopias | null>(null);
+  const [levando, setLevando] = useState(false);
 
   const set = (campo: keyof Campos, valor: string) => {
     setForm((prev) => ({ ...prev, [campo]: valor }));
@@ -146,6 +158,18 @@ export function FornecedorForm({ fornecedor, onSuccess, onCancel }: Props) {
     try {
       if (editando) {
         await atualizarFornecedor(fornecedor!.id, payload);
+        /*
+         * O nome é copiado para a nota e o contrato no lançamento, e o cadastro
+         * não os alcança sozinho. Se ele mudou, pergunta-se — e só então: o
+         * levantamento não pode atrasar o salvar de quem trocou um telefone.
+         */
+        if (payload.nome !== fornecedor!.nome) {
+          const l = await nomeNasCopias(fornecedor!.id).catch(() => null);
+          if (l && l.notas.atualizaveis + l.contratosPrestacao.atualizaveis + l.contratosCadastro > 0) {
+            setCopias(l);
+            return;
+          }
+        }
         onSuccess();
       } else {
         onSuccess(await criarFornecedor(payload));
@@ -158,6 +182,66 @@ export function FornecedorForm({ fornecedor, onSuccess, onCancel }: Props) {
     } finally {
       setSalvando(false);
     }
+  }
+
+  async function levarNome() {
+    setLevando(true);
+    setAlerta(null);
+    try {
+      await levarNomeAsCopias(fornecedor!.id);
+      onSuccess();
+    } catch (error) {
+      setAlerta(extrairMensagemErro(error, 'O fornecedor foi salvo, mas não foi possível atualizar as notas.'));
+    } finally {
+      setLevando(false);
+    }
+  }
+
+  if (copias) {
+    const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
+    const itens = [
+      copias.notas.atualizaveis && plural(copias.notas.atualizaveis, 'nota fiscal', 'notas fiscais'),
+      copias.contratosPrestacao.atualizaveis &&
+        plural(copias.contratosPrestacao.atualizaveis, 'contrato de prestação', 'contratos de prestação'),
+      copias.contratosCadastro && plural(copias.contratosCadastro, 'contrato do cadastro', 'contratos do cadastro'),
+    ].filter(Boolean);
+    const travadas = copias.notas.travadas + copias.contratosPrestacao.travados;
+    return (
+      <div className="space-y-4">
+        <div className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
+          Fornecedor salvo.
+        </div>
+        <p className="text-sm text-ink-700 dark:text-ink-200">
+          Há {itens.join(', ')} com outro nome para este CPF/CNPJ, em prestações que ainda não foram
+          enviadas ao TCESP. Atualizar para <strong>{copias.nome}</strong>?
+        </p>
+        {travadas > 0 && (
+          <p className="text-xs text-ink-500 dark:text-ink-400">
+            {plural(travadas, 'lançamento fica', 'lançamentos ficam')} como está: pertence a prestação já
+            transmitida, e tem de continuar dizendo o que foi enviado.
+          </p>
+        )}
+        <p className="text-xs text-ink-500 dark:text-ink-400">
+          Se o nome antigo é o que está impresso na nota (a razão social de MEI traz o CNPJ na frente),
+          pode mantê-lo — o TCESP identifica o credor pelo CPF/CNPJ.
+        </p>
+        {alerta && (
+          <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{alerta}</span>
+          </div>
+        )}
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button type="button" variant="secondary" onClick={() => onSuccess()} disabled={levando}>
+            Manter o nome antigo
+          </Button>
+          <Button type="button" onClick={levarNome} disabled={levando}>
+            {levando && <Loader2 className="h-4 w-4 animate-spin" />}
+            Atualizar também
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (

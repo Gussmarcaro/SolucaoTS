@@ -50,3 +50,22 @@ export async function definirStatusFornecedor(id: string, ativo: boolean): Promi
   const { data } = await http.patch<Fornecedor>(`/fornecedores/${id}/status`, { ativo });
   return data;
 }
+
+/** Quantas notas e contratos têm um nome diferente do cadastro, e quantas podem ser atualizadas. */
+export interface NomeNasCopias {
+  nome: string;
+  notas: { atualizaveis: number; travadas: number };
+  contratosPrestacao: { atualizaveis: number; travados: number };
+  contratosCadastro: number;
+}
+
+export async function nomeNasCopias(id: string): Promise<NomeNasCopias> {
+  const { data } = await http.get<NomeNasCopias>(`/fornecedores/${id}/nome-nas-copias`);
+  return data;
+}
+
+/** Leva o nome do cadastro às notas e contratos que ainda não foram ao TCESP. */
+export async function levarNomeAsCopias(id: string): Promise<{ atualizadas: number; depois: NomeNasCopias }> {
+  const { data } = await http.post(`/fornecedores/${id}/nome-nas-copias`);
+  return data;
+}
