@@ -51,8 +51,8 @@ export function Relogio() {
       className="hidden items-center gap-1.5 rounded-xl px-2 py-1 text-ink-500 dark:text-ink-400 md:inline-flex"
     >
       <Clock className="h-4 w-4" />
-      {/* Hora primeiro e data depois, no mesmo arranjo do clima: o número em
-          destaque e o complemento menor ao lado. */}
+      {/* Hora primeiro e data depois, as duas no tamanho do nome da cidade do
+          clima. A hora se distingue só pelo peso e pela cor mais escura. */}
       <time
         dateTime={agora.toISOString()}
         className="text-[10.5px] font-medium tabular-nums"
