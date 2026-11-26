@@ -53,7 +53,7 @@ export function Relogio() {
       <Clock className="h-4 w-4" />
       {/* A data só a partir de `lg`, como o nome da cidade no clima: em telas
           médias a barra já está cheia, e a hora é o que mais importa. */}
-      <span className="hidden text-xs font-medium tabular-nums lg:inline">
+      <span className="hidden text-[10.5px] text-ink-400 lg:inline">
         {data}
       </span>
       <time
