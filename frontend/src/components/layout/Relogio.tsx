@@ -45,6 +45,11 @@ export function Relogio() {
       className="hidden items-center gap-1.5 rounded-xl px-2 py-1 text-ink-500 dark:text-ink-400 md:inline-flex"
     >
       <Clock className="h-[18px] w-[18px]" />
+      {/* A data só a partir de `lg`, como o nome da cidade no clima: em telas
+          médias a barra já está cheia, e a hora é o que mais importa. */}
+      <span className="hidden text-[13px] font-medium tabular-nums lg:inline">
+        {agora.toLocaleDateString('pt-BR')}
+      </span>
       <time
         dateTime={agora.toISOString()}
         className="font-mono text-[13px] font-medium tabular-nums"
