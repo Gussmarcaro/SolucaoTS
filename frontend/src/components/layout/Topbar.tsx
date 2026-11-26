@@ -9,6 +9,7 @@ import { http } from '@/services/http';
 import { contarNotas } from '@/services/notas.service';
 import { Alertas } from './Alertas';
 import { Clima } from './Clima';
+import { Relogio } from './Relogio';
 import { Assistente } from './Assistente';
 import { BlocoNotas } from './BlocoNotas';
 import { BuscaGlobal } from './BuscaGlobal';
@@ -175,6 +176,7 @@ export function Topbar({ onOpenSidebar, collapsed = false }: TopbarProps) {
             item menos acionável da barra — some sozinho se a consulta falhar,
             e some no celular, onde o espaço é do essencial. */}
         <Clima cidade={usuario?.cidade} uf={usuario?.uf} />
+        <Relogio />
 
         {/* Órgão em atendimento — só aparece para a equipe do fornecedor, e
             fica antes das ações porque é o contexto de tudo o que vem depois. */}
