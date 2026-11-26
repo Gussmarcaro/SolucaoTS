@@ -55,13 +55,13 @@ export function Relogio() {
           destaque e o complemento menor ao lado. */}
       <time
         dateTime={agora.toISOString()}
-        className="text-xs font-medium tabular-nums"
+        className="text-[10.5px] font-medium tabular-nums"
       >
         {hora}
       </time>
       {/* A data só a partir de `lg`, como o nome da cidade no clima: em telas
           médias a barra já está cheia, e a hora é o que mais importa. */}
-      <span className="hidden text-[10.5px] text-ink-400 lg:inline">
+      <span className="ml-1.5 hidden text-[10.5px] text-ink-400 lg:inline">
         {data}
       </span>
     </span>
