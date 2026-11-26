@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Clock } from 'lucide-react';
 
 /**
  * Relógio digital da barra superior, ao lado do clima.
@@ -48,10 +47,8 @@ export function Relogio() {
     // sino e do perfil, e o relógio do próprio aparelho já está à vista.
     <span
       title={data}
-      className="hidden items-start gap-1.5 rounded-xl px-2 py-1 text-ink-500 dark:text-ink-400 md:inline-flex"
+      className="hidden items-start rounded-xl px-2 py-1 text-ink-500 dark:text-ink-400 md:inline-flex"
     >
-      {/* Ícone menor, no alto, centrado na linha da hora (14px de altura). */}
-      <Clock className="mt-px h-3 w-3 shrink-0" />
       {/* Hora em cima, maior e em negrito; data embaixo, menor e mais clara.
           As duas alinhadas à esquerda. `leading-tight` mantém as duas linhas na altura da barra. */}
       <span className="flex flex-col items-start leading-tight">
