@@ -222,15 +222,16 @@ export function Dashboard() {
           </CardBody>
         </Card>
       </div>
-      {/* Comunicados e notícias do TCESP — o que o Tribunal publicou, depois do
-          que o órgão tem a fazer. Sem permissão: é conteúdo público. */}
-      <PainelNoticias />
-
       {pode('FISCALIZACAO', 'CONSULTA') && <PainelFiscalizacao />}
 
       {/* Os cadastros fecham a tela em vez de abri-la. Continuam a um clique —
           só deixaram de disputar o lugar mais nobre com o que decide o dia. */}
       <FaixaCadastros />
+
+      {/* Comunicados e notícias do TCESP fecham a tela: é o que o Tribunal
+          publicou, depois de tudo o que o órgão tem a fazer. Sem permissão,
+          porque é conteúdo público. */}
+      <PainelNoticias />
 
     </>
   );
