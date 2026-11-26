@@ -6,6 +6,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/cn';
 import { http } from '@/services/http';
+import { contarNotas } from '@/services/notas.service';
 import { Alertas } from './Alertas';
 import { Clima } from './Clima';
 import { Assistente } from './Assistente';
@@ -29,6 +30,15 @@ export function Topbar({ onOpenSidebar, collapsed = false }: TopbarProps) {
   const [buscaAberta, setBuscaAberta] = useState(false);
   const [assistenteAberto, setAssistenteAberto] = useState(false);
   const [notasAbertas, setNotasAbertas] = useState(false);
+  const [totalNotas, setTotalNotas] = useState(0);
+
+  // O contador do caderno. Só o número — o texto das notas só é buscado quando
+  // o bloco abre. Falha aqui não mostra nada: um número ausente não atrapalha.
+  useEffect(() => {
+    contarNotas()
+      .then(setTotalNotas)
+      .catch(() => setTotalNotas(0));
+  }, []);
   const [alertasAbertos, setAlertasAbertos] = useState(false);
   const [pendentes, setPendentes] = useState(0);
   const [temVencido, setTemVencido] = useState(false);
@@ -218,17 +228,24 @@ export function Topbar({ onOpenSidebar, collapsed = false }: TopbarProps) {
             setAssistenteAberto(false);
             setNotasAbertas((v) => !v);
           }}
-          aria-label="Bloco de notas"
+          aria-label={totalNotas > 0 ? `Bloco de notas (${totalNotas})` : 'Bloco de notas'}
           aria-expanded={notasAbertas}
           title="Bloco de notas (Ctrl+.) — só você vê"
           className={cn(
-            'focus-ring inline-flex h-9 w-9 items-center justify-center rounded-xl transition-colors hover:bg-ink-100 hover:text-ink-800 dark:hover:bg-ink-800 dark:hover:text-ink-100',
+            'focus-ring relative inline-flex h-9 w-9 items-center justify-center rounded-xl transition-colors hover:bg-ink-100 hover:text-ink-800 dark:hover:bg-ink-800 dark:hover:text-ink-100',
             notasAbertas
               ? 'bg-ink-100 text-brand-600 dark:bg-ink-800 dark:text-brand-400'
               : 'text-ink-500 dark:text-ink-400',
           )}
         >
           <NotebookPen className="h-[18px] w-[18px]" />
+          {/* Na cor do sistema, e não em vermelho ou âmbar: aqui o número diz
+              "há anotações", não "há algo vencendo" — essas cores são do sino. */}
+          {totalNotas > 0 && (
+            <span className="absolute -right-0.5 -top-0.5 inline-flex min-w-[1.15rem] items-center justify-center rounded-full bg-brand-600 px-1 text-[10px] font-bold leading-[1.15rem] text-white ring-2 ring-white dark:ring-ink-950">
+              {totalNotas > 9 ? '9+' : totalNotas}
+            </span>
+          )}
         </button>
 
         <div className="relative" ref={sino}>
@@ -316,7 +333,11 @@ export function Topbar({ onOpenSidebar, collapsed = false }: TopbarProps) {
       </div>
 
       <Assistente aberto={assistenteAberto} onFechar={() => setAssistenteAberto(false)} />
-      <BlocoNotas aberto={notasAbertas} onFechar={() => setNotasAbertas(false)} />
+      <BlocoNotas
+        aberto={notasAbertas}
+        onFechar={() => setNotasAbertas(false)}
+        onContagem={setTotalNotas}
+      />
       <SobreModal open={sobreAberto} onClose={() => setSobreAberto(false)} />
     </header>
   );

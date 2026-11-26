@@ -17,6 +17,14 @@ export class NotaRapidaController {
     }
   }
 
+  async contar(req: Request, res: Response, next: NextFunction) {
+    try {
+      return res.json({ total: await casos.contar(req.usuario!.id) });
+    } catch (e) {
+      return next(e);
+    }
+  }
+
   async criar(req: Request, res: Response, next: NextFunction) {
     try {
       return res.status(201).json(await casos.criar(req.usuario!.id, req.body?.texto ?? ''));

@@ -26,3 +26,9 @@ export async function salvarNota(id: string, texto: string): Promise<NotaRapida>
 export async function excluirNota(id: string): Promise<void> {
   await http.delete(`/notas/${id}`);
 }
+
+/** Quantas notas o usuário tem — só o número, para o contador do botão. */
+export async function contarNotas(): Promise<number> {
+  const { data } = await http.get<{ total: number }>('/notas/contagem');
+  return data.total;
+}

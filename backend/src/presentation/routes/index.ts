@@ -255,6 +255,8 @@ routes.delete('/perfil/foto', (req, res, next) => perfil.removerFoto(req, res, n
  */
 const notas = new NotaRapidaController();
 routes.get('/notas', (req, res, next) => notas.listar(req, res, next));
+// O contador do botão: carrega com toda tela, então devolve só o número.
+routes.get('/notas/contagem', (req, res, next) => notas.contar(req, res, next));
 routes.post('/notas', (req, res, next) => notas.criar(req, res, next));
 routes.put('/notas/:id', (req, res, next) => notas.atualizar(req, res, next));
 routes.delete('/notas/:id', (req, res, next) => notas.excluir(req, res, next));

@@ -39,6 +39,11 @@ export class NotaRapidaUseCases {
     return this.repo.listar(usuarioId);
   }
 
+  /** Só o número — é o que o contador do botão precisa, sem trazer texto nenhum. */
+  contar(usuarioId: string) {
+    return this.repo.contar(usuarioId);
+  }
+
   async criar(usuarioId: string, texto: unknown) {
     if ((await this.repo.contar(usuarioId)) >= LIMITE_NOTAS)
       throw new BusinessError(`O bloco já tem ${LIMITE_NOTAS} notas. Apague as que não servem mais.`);

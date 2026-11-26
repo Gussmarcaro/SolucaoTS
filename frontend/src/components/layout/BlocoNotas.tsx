@@ -34,7 +34,16 @@ type Estado = 'parado' | 'salvando' | 'salvo' | 'erro';
  * acompanha a pessoa em qualquer computador e em qualquer órgão que ela
  * atenda, e não aparece para administrador, suporte nem na auditoria.
  */
-export function BlocoNotas({ aberto, onFechar }: { aberto: boolean; onFechar: () => void }) {
+export function BlocoNotas({
+  aberto,
+  onFechar,
+  onContagem,
+}: {
+  aberto: boolean;
+  onFechar: () => void;
+  /** Avisa a barra quantas notas há, para o contador do botão acompanhar. */
+  onContagem?: (total: number) => void;
+}) {
   const [notas, setNotas] = useState<NotaRapida[] | null>(null);
   const [atual, setAtual] = useState<NotaRapida | null>(null);
   const [texto, setTexto] = useState('');
@@ -71,6 +80,13 @@ export function BlocoNotas({ aberto, onFechar }: { aberto: boolean; onFechar: ()
   useEffect(() => {
     if (atual) campo.current?.focus();
   }, [atual?.id]);
+
+  // A lista é a fonte do número: criou, apagou, a nota em branco sumiu — o
+  // contador do botão muda junto, sem outra consulta.
+  useEffect(() => {
+    if (notas !== null) onContagem?.(notas.length);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notas]);
 
   /** Grava agora o que estiver esperando a pausa. */
   async function gravarPendente() {
