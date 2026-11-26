@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, Search, Bell, Info, LogOut, Sparkles } from 'lucide-react';
+import { Menu, Search, Bell, Info, LogOut, NotebookPen, Sparkles } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,6 +9,7 @@ import { http } from '@/services/http';
 import { Alertas } from './Alertas';
 import { Clima } from './Clima';
 import { Assistente } from './Assistente';
+import { BlocoNotas } from './BlocoNotas';
 import { BuscaGlobal } from './BuscaGlobal';
 import { SeletorOrgao } from './SeletorOrgao';
 import { SobreModal } from './SobreModal';
@@ -27,6 +28,7 @@ export function Topbar({ onOpenSidebar, collapsed = false }: TopbarProps) {
   const [sobreAberto, setSobreAberto] = useState(false);
   const [buscaAberta, setBuscaAberta] = useState(false);
   const [assistenteAberto, setAssistenteAberto] = useState(false);
+  const [notasAbertas, setNotasAbertas] = useState(false);
   const [alertasAbertos, setAlertasAbertos] = useState(false);
   const [pendentes, setPendentes] = useState(0);
   const [temVencido, setTemVencido] = useState(false);
@@ -46,6 +48,13 @@ export function Topbar({ onOpenSidebar, collapsed = false }: TopbarProps) {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setBuscaAberta(true);
+      }
+      // Ctrl+. abre e fecha o bloco de notas — anotar no meio de um lançamento
+      // sem tirar a mão do teclado.
+      if ((e.ctrlKey || e.metaKey) && e.key === '.') {
+        e.preventDefault();
+        setAssistenteAberto(false);
+        setNotasAbertas((v) => !v);
       }
     };
     document.addEventListener('keydown', atalho);
@@ -182,7 +191,10 @@ export function Topbar({ onOpenSidebar, collapsed = false }: TopbarProps) {
 
         {temAssistente && (
           <button
-            onClick={() => setAssistenteAberto((v) => !v)}
+            onClick={() => {
+              setNotasAbertas(false);
+              setAssistenteAberto((v) => !v);
+            }}
             aria-label="Assistente da Fase V"
             aria-expanded={assistenteAberto}
             title="Assistente da Fase V"
@@ -198,6 +210,26 @@ export function Topbar({ onOpenSidebar, collapsed = false }: TopbarProps) {
         )}
 
         <ThemeToggle />
+
+        {/* Bloco de notas — anotações da própria pessoa, ao lado do sino. */}
+        <button
+          onClick={() => {
+            // Bloco e Assistente abrem no mesmo canto: um fecha o outro.
+            setAssistenteAberto(false);
+            setNotasAbertas((v) => !v);
+          }}
+          aria-label="Bloco de notas"
+          aria-expanded={notasAbertas}
+          title="Bloco de notas (Ctrl+.) — só você vê"
+          className={cn(
+            'focus-ring inline-flex h-9 w-9 items-center justify-center rounded-xl transition-colors hover:bg-ink-100 hover:text-ink-800 dark:hover:bg-ink-800 dark:hover:text-ink-100',
+            notasAbertas
+              ? 'bg-ink-100 text-brand-600 dark:bg-ink-800 dark:text-brand-400'
+              : 'text-ink-500 dark:text-ink-400',
+          )}
+        >
+          <NotebookPen className="h-[18px] w-[18px]" />
+        </button>
 
         <div className="relative" ref={sino}>
           <button
@@ -284,6 +316,7 @@ export function Topbar({ onOpenSidebar, collapsed = false }: TopbarProps) {
       </div>
 
       <Assistente aberto={assistenteAberto} onFechar={() => setAssistenteAberto(false)} />
+      <BlocoNotas aberto={notasAbertas} onFechar={() => setNotasAbertas(false)} />
       <SobreModal open={sobreAberto} onClose={() => setSobreAberto(false)} />
     </header>
   );

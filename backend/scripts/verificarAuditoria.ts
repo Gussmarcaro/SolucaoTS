@@ -82,6 +82,7 @@ const FORA_DA_REGRA = new Set([
   'ClassificacaoEconomica',
   'ComponenteDespesa',
   'EntidadeAudesp', // tabelas de domínio, carregadas por seed
+  'NotaRapida', // rascunho pessoal: fora da trilha, de propósito
   'GrupoUsuarioPermissao', // ligação do RBAC, não é registro de cadastro
   // Vínculos e lembretes da agenda: são parte do compromisso, não registros de
   // cadastro com vida própria. A edição os substitui em lote, e a trilha

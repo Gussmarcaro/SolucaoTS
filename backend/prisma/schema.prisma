@@ -365,6 +365,7 @@ model Usuario {
   tarefas      Tarefa[]
   compromissos Compromisso[]
   convites     CompromissoParticipante[]
+  notasRapidas NotaRapida[]
   prestacoes   PrestacaoContas[]         @relation("PrestacaoResponsavel")
 
   @@unique([clienteId, documento])
@@ -2615,4 +2616,30 @@ model SessaoAcesso {
   @@index([clienteId, logonEm])
   // O filtro por usuário, e o histórico de uma pessoa no relatório da LGPD.
   @@index([usuarioId, logonEm])
+}
+
+// ============================================================================
+// NOTAS RÁPIDAS — o bloquinho de anotações de cada usuário
+// ============================================================================
+
+/// Uma anotação do bloco de notas da barra superior.
+///
+/// **Da pessoa, não do órgão** — e é a única tabela do sistema assim. Não tem
+/// `clienteId` de propósito: quem atende várias prefeituras encontra as mesmas
+/// anotações em qualquer uma, e nenhuma delas passa a "ver" o que ele anotou.
+///
+/// Por não ser raiz de tenant, a extension não a filtra. O isolamento é do
+/// repositório: toda consulta leva `usuarioId` tirado do **token**, nunca da
+/// requisição. Fica fora da trilha de auditoria pelo mesmo motivo — é rascunho
+/// pessoal, e nem o administrador lê.
+model NotaRapida {
+  id           String   @id @default(uuid()) @db.Uuid
+  usuarioId    String   @db.Uuid
+  texto        String   @default("")
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId, atualizadoEm])
 }

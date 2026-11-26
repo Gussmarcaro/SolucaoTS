@@ -38,6 +38,7 @@ import { GuiaRecolhimentoController } from '@/presentation/controllers/GuiaRecol
 import { ConciliacaoController } from '@/presentation/controllers/ConciliacaoController';
 import { ExecucaoTecnicaController } from '@/presentation/controllers/ExecucaoTecnicaController';
 import { ContaBancariaController } from '@/presentation/controllers/ContaBancariaController';
+import { NotaRapidaController } from '@/presentation/controllers/NotaRapidaController';
 import { uploadAnexo, uploadFoto, uploadOfx } from '@/infrastructure/upload/upload';
 import { autenticar } from '@/presentation/middlewares/autenticar';
 import { exigirGrupo } from '@/presentation/middlewares/exigirGrupo';
@@ -244,6 +245,19 @@ routes.put('/perfil', (req, res, next) => perfil.atualizar(req, res, next));
 // ninguém alcança a foto de outra pessoa por aqui.
 routes.post('/perfil/foto', uploadFoto, (req, res, next) => perfil.enviarFoto(req, res, next));
 routes.delete('/perfil/foto', (req, res, next) => perfil.removerFoto(req, res, next));
+
+/*
+ * Bloco de notas da barra superior — anotações **da própria pessoa**.
+ *
+ * Sem `exigirPermissao`, pela mesma razão do Meu Perfil: a matriz autoriza
+ * operar cadastros do órgão, e isto não é cadastro de ninguém. O dono sai do
+ * token, e a nota de outro usuário não existe para quem pergunta.
+ */
+const notas = new NotaRapidaController();
+routes.get('/notas', (req, res, next) => notas.listar(req, res, next));
+routes.post('/notas', (req, res, next) => notas.criar(req, res, next));
+routes.put('/notas/:id', (req, res, next) => notas.atualizar(req, res, next));
+routes.delete('/notas/:id', (req, res, next) => notas.excluir(req, res, next));
 
 // O que o usuário logado pode fazer — alimenta o menu e os botões da interface.
 routes.get('/permissoes/eu/resumo', (req, res, next) => permissoes.minhas(req, res, next));

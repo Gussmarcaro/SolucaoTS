@@ -50,6 +50,9 @@ export const NAO_AUDITAR = new Set([
   'ClassificacaoEconomica',
   'ComponenteDespesa',
   'EntidadeAudesp',
+  // Rascunho pessoal do bloco de notas: nem o administrador lê, e a trilha
+  // não pode ser o lugar onde ele passaria a ler.
+  'NotaRapida',
   'RegistroAuditoria',
   'SessaoAcesso',
 ]);

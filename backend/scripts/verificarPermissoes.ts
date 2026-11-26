@@ -47,6 +47,8 @@ const LIBERADAS: Record<string, string> = {
     'trabalho acumulado do próprio órgão, só contagens — atravessa quatro recursos, e cada um é recortado pela própria permissão dentro do caso de uso',
   '/perfil': 'o usuário lendo e editando o próprio cadastro — o id sai do token, não da entrada',
   '/perfil/foto': 'a própria foto — o id sai do token, não da entrada',
+  '/notas': 'o bloco de notas da própria pessoa — o dono sai do token, não da entrada',
+  '/notas/:id': 'a própria nota — o dono sai do token, e a de outro usuário responde 404',
   '/usuarios/:id/foto': 'o avatar do colega: aparece na barra e na agenda de todo usuário, e o recorte por órgão já vem da raiz Usuario. Gravar e apagar continuam sob CONFIG_USUARIOS',
   '/suporte/orgaos': 'equipe do fornecedor — autorizada pela marca Usuario.suporte, não pela matriz',
   '/suporte/atender': 'equipe do fornecedor — troca o órgão do próprio token',
