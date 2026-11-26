@@ -51,17 +51,19 @@ export function Relogio() {
       className="hidden items-center gap-1.5 rounded-xl px-2 py-1 text-ink-500 dark:text-ink-400 md:inline-flex"
     >
       <Clock className="h-4 w-4" />
-      {/* A data só a partir de `lg`, como o nome da cidade no clima: em telas
-          médias a barra já está cheia, e a hora é o que mais importa. */}
-      <span className="hidden text-[10.5px] text-ink-400 lg:inline">
-        {data}
-      </span>
+      {/* Hora primeiro e data depois, no mesmo arranjo do clima: o número em
+          destaque e o complemento menor ao lado. */}
       <time
         dateTime={agora.toISOString()}
         className="text-xs font-medium tabular-nums"
       >
         {hora}
       </time>
+      {/* A data só a partir de `lg`, como o nome da cidade no clima: em telas
+          médias a barra já está cheia, e a hora é o que mais importa. */}
+      <span className="hidden text-[10.5px] text-ink-400 lg:inline">
+        {data}
+      </span>
     </span>
   );
 }
