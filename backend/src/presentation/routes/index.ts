@@ -203,6 +203,8 @@ routes.get('/dashboard/contagens', (req, res, next) => dashboard.contagens(req, 
 // O trabalho acumulado dos atalhos — mesma razão de ficar fora do gate: cruza
 // quatro recursos, e cada contagem é recortada pela própria permissão.
 routes.get('/dashboard/pendencias', (req, res, next) => dashboard.pendencias(req, res, next));
+// Manchetes do site do TCESP: conteúdo público, igual para todo órgão.
+routes.get('/dashboard/noticias', (req, res, next) => dashboard.noticias(req, res, next));
 // Histórico de logons. Irmão da auditoria: a trilha responde "quem alterou o
 // quê"; este responde "quem entrou, quando e até quando ficou".
 routes.use('/acessos', exigirPermissao('CONFIG_ACESSOS'), acessoRoutes);

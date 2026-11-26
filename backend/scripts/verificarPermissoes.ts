@@ -45,6 +45,7 @@ const LIBERADAS: Record<string, string> = {
     'contagem dos cadastros do próprio órgão, sem conteúdo — atravessa seis recursos, e cada um é recortado pela própria permissão dentro do caso de uso',
   '/dashboard/pendencias':
     'trabalho acumulado do próprio órgão, só contagens — atravessa quatro recursos, e cada um é recortado pela própria permissão dentro do caso de uso',
+  '/dashboard/noticias': 'manchetes públicas do site do TCESP, iguais para todo órgão — nenhum dado do sistema',
   '/perfil': 'o usuário lendo e editando o próprio cadastro — o id sai do token, não da entrada',
   '/perfil/foto': 'a própria foto — o id sai do token, não da entrada',
   '/notas': 'o bloco de notas da própria pessoa — o dono sai do token, não da entrada',

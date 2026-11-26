@@ -4,6 +4,7 @@ import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui/Card';
 import { FaixaAtalhos } from './FaixaAtalhos';
+import { PainelNoticias } from './PainelNoticias';
 import { Badge } from '@/components/ui/Badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissoes } from '@/contexts/PermissoesContext';
@@ -221,6 +222,10 @@ export function Dashboard() {
           </CardBody>
         </Card>
       </div>
+      {/* Comunicados e notícias do TCESP — o que o Tribunal publicou, depois do
+          que o órgão tem a fazer. Sem permissão: é conteúdo público. */}
+      <PainelNoticias />
+
       {pode('FISCALIZACAO', 'CONSULTA') && <PainelFiscalizacao />}
 
       {/* Os cadastros fecham a tela em vez de abri-la. Continuam a um clique —

@@ -3,6 +3,13 @@ import { ContarCadastrosUseCase } from '@/application/dashboard/ContarCadastrosU
 import { ContarPendenciasUseCase } from '@/application/dashboard/ContarPendenciasUseCase';
 import { PrismaPendenciasRepository } from '@/infrastructure/database/PrismaPendenciasRepository';
 import { tenantAtual } from '@/shared/contexto';
+import { NoticiasUseCase } from '@/application/noticia/NoticiasUseCase';
+import {
+  SiteTcespFonte,
+  URL_COMUNICADOS_TCESP,
+  URL_NOTICIAS_TCESP,
+} from '@/infrastructure/noticia/SiteTcespFonte';
+import { lerComunicadosTcesp, lerNoticiasTcesp } from '@/core/noticia/paginaTcesp';
 import {
   PermissoesLeitor,
   PrismaContagemRepository,
@@ -10,6 +17,9 @@ import {
 
 const casos = new ContarCadastrosUseCase(new PrismaContagemRepository(), new PermissoesLeitor());
 const pendencias = new ContarPendenciasUseCase(new PrismaPendenciasRepository(), new PermissoesLeitor());
+/** Uma instância de cada para o processo: são elas que guardam o cache. */
+const noticias = new NoticiasUseCase(new SiteTcespFonte(URL_NOTICIAS_TCESP), lerNoticiasTcesp);
+const comunicados = new NoticiasUseCase(new SiteTcespFonte(URL_COMUNICADOS_TCESP), lerComunicadosTcesp);
 
 export class DashboardController {
   /**
@@ -35,6 +45,19 @@ export class DashboardController {
   async pendencias(req: Request, res: Response, next: NextFunction) {
     try {
       return res.json({ itens: await pendencias.execute(req.usuario?.grupo ?? null, tenantAtual()) });
+    } catch (e) {
+      return next(e);
+    }
+  }
+
+  /**
+   * Comunicados e notícias do site do TCESP — públicos, iguais para todos os
+   * órgãos. As duas leituras correm juntas; cada uma falha sozinha.
+   */
+  async noticias(_req: Request, res: Response, next: NextFunction) {
+    try {
+      const [c, n] = await Promise.all([comunicados.execute(), noticias.execute()]);
+      return res.json({ comunicados: c, noticias: n });
     } catch (e) {
       return next(e);
     }
