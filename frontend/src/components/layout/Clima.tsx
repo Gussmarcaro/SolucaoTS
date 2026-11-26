@@ -200,9 +200,9 @@ export function Clima({ cidade, uf }: { cidade?: string | null; uf?: string | nu
       title={`${texto} em ${lugarNome} · ${tempo.emC}°C`}
       className="hidden items-center gap-1.5 rounded-xl px-2 py-1 text-ink-500 dark:text-ink-400 md:inline-flex"
     >
-      <Icone className="h-[18px] w-[18px]" />
-      <span className="text-[13px] font-medium tabular-nums">{tempo.emC}°</span>
-      <span className="hidden max-w-[110px] truncate text-[11px] text-ink-400 lg:inline">
+      <Icone className="h-4 w-4" />
+      <span className="text-xs font-medium tabular-nums">{tempo.emC}°</span>
+      <span className="hidden max-w-[110px] truncate text-[10.5px] text-ink-400 lg:inline">
         {lugarNome}
       </span>
     </span>
