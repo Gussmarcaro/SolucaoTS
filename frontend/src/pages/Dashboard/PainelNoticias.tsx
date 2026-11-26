@@ -70,7 +70,7 @@ export function PainelNoticias() {
       <CardHeader className="flex-wrap">
         <CardTitle className="flex items-center gap-2">
           <Newspaper className="h-4 w-4 text-brand-500" />
-          TCESP
+          Notícias e Comunicados do TCESP
         </CardTitle>
 
         <div className="flex items-center gap-3">
