@@ -21,6 +21,8 @@ export interface Prestacao {
   status: StatusPrestacao;
   protocolo: string | null;
   ehRetificacao: boolean;
+  /** Declaração Negativa da prestação: ajuste sem repasse no exercício. */
+  declaracaoNegativa: boolean;
   dataEnvio: string | null; // ISO
   criadoEm: Date;
   atualizadoEm: Date;

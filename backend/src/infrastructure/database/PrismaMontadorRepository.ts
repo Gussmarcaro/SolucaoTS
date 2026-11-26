@@ -3,6 +3,7 @@ import { valorGlobalEfetivo } from '@/core/planoAplicacao/totalDoPlano';
 import { fontesSemConta } from '@/core/ajuste/fontesSemConta';
 import type { IMontadorRepository } from '@/application/montador/IMontadorRepository';
 import type { CodigosInexistentes, ContextoConferencia, DadosMontagem } from '@/application/montador/tipos';
+import type { DadosNegativa } from '@/application/montador/montarNegativa';
 import { apurarMetas, type ApuracaoMetas } from '@/core/meta/apuracao';
 import { paraDataISO } from '@/shared/datas';
 
@@ -416,6 +417,38 @@ export class PrismaMontadorRepository implements IMontadorRepository {
    * o plano tem uma linha por rubrica **e mês**, então trazê-lo inteiro custa
    * centenas de linhas para responder meia dúzia de números.
    */
+  async negativa(prestacaoId: string): Promise<DadosNegativa | null> {
+    const p = await prisma.prestacaoContas.findUnique({
+      where: { id: prestacaoId },
+      select: {
+        ano: true,
+        declaracaoNegativa: true,
+        ajusteId: true,
+        _count: { select: { repasses: true } },
+        ajuste: {
+          select: {
+            codigoAjuste: true,
+            tipoAjuste: true,
+            dataAssinatura: true,
+            cliente: { select: { codigoMunicipio: true, codigoEntidade: true } },
+          },
+        },
+      },
+    });
+    if (!p?.declaracaoNegativa) return null;
+    const empenhosNoAno = await prisma.empenhoCadastro.count({ where: { ajusteId: p.ajusteId, anoEmpenho: p.ano } });
+    return {
+      ano: p.ano,
+      tipoAjuste: p.ajuste.tipoAjuste,
+      codigoAjuste: p.ajuste.codigoAjuste,
+      municipio: p.ajuste.cliente?.codigoMunicipio ?? null,
+      entidade: p.ajuste.cliente?.codigoEntidade ?? null,
+      dataAssinatura: paraDataISO(p.ajuste.dataAssinatura),
+      empenhosNoAno,
+      repassesLancados: p._count.repasses,
+    };
+  }
+
   async contextoConferencia(prestacaoId: string): Promise<ContextoConferencia | null> {
     const prestacao = await prisma.prestacaoContas.findUnique({
       where: { id: prestacaoId },

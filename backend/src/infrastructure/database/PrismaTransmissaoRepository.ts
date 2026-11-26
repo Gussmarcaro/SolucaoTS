@@ -6,10 +6,15 @@ export class PrismaTransmissaoRepository implements ITransmissaoRepository {
   async carregar(prestacaoId: string): Promise<PrestacaoParaEnvio | null> {
     const p = await prisma.prestacaoContas.findUnique({
       where: { id: prestacaoId },
-      select: { id: true, status: true, ajuste: { select: { tipoAjuste: true } } },
+      select: { id: true, status: true, declaracaoNegativa: true, ajuste: { select: { tipoAjuste: true } } },
     });
     if (!p) return null;
-    return { id: p.id, status: p.status, tipoAjuste: p.ajuste?.tipoAjuste ?? '' };
+    return {
+      id: p.id,
+      status: p.status,
+      tipoAjuste: p.ajuste?.tipoAjuste ?? '',
+      declaracaoNegativa: p.declaracaoNegativa,
+    };
   }
 
   async registrarEnvio(prestacaoId: string, protocolo: string): Promise<void> {

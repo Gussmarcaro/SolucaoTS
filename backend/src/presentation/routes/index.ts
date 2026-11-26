@@ -10,6 +10,7 @@ import { bemCedidoRoutes } from './bemCedido.routes';
 import { servidorCedidoRoutes } from './servidorCedido.routes';
 import { ajusteRoutes } from './ajuste.routes';
 import { prestacaoRoutes } from './prestacao.routes';
+import { declaracaoNegativaRoutes } from './declaracaoNegativa.routes';
 import { tarefaRoutes } from './tarefa.routes';
 import { compromissoRoutes } from './compromisso.routes';
 import { rateioRoutes } from './rateio.routes';
@@ -91,6 +92,8 @@ routes.use('/bens-cedidos', exigirPermissao('CADASTRO_BENS_CEDIDOS'), bemCedidoR
 routes.use('/servidores-cedidos', exigirPermissao('CADASTRO_SERVIDORES_CEDIDOS'), servidorCedidoRoutes);
 routes.use('/ajustes', exigirPermissao('CADASTRO_AJUSTES'), ajusteRoutes);
 routes.use('/prestacoes', exigirPermissao('PRESTACAO_CONTAS'), prestacaoRoutes);
+// Declaração Negativa: obrigação do órgão perante o Audesp, como a prestação.
+routes.use('/declaracao-negativa', exigirPermissao('PRESTACAO_CONTAS'), declaracaoNegativaRoutes);
 routes.use('/tarefas', exigirPermissao('FISCALIZACAO'), tarefaRoutes);
 // Excluir compromisso entra pela faixa de **Edição**, não Total: quem decide é
 // a propriedade do registro, e isso a matriz não enxerga da rota. O caso de uso

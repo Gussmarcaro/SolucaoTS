@@ -14,6 +14,8 @@ const ROTA_ENVIO: Record<string, string> = {
   TERMO_COLABORACAO: '/f5/enviar-prestacao-contas-termo-colaboracao',
   TERMO_FOMENTO: '/f5/enviar-prestacao-contas-termo_fomento',
   TERMO_PARCERIA: '/f5/enviar-prestacao-contas-termo-parceria',
+  // Declaração Negativa da prestação (ajuste sem repasse no exercício).
+  DECLARACAO_NEGATIVA: '/f5/declaracao-negativa',
 };
 
 async function corpo(resp: Response): Promise<{ json: unknown; texto: string }> {

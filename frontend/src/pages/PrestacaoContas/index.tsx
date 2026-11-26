@@ -167,6 +167,7 @@ export function PrestacaoContas() {
                   <span className="flex min-w-0 items-center gap-1 text-ink-500 dark:text-ink-400">
                     <span className="truncate">{p.ano} / mês {p.mes}</span>
                     {p.ehRetificacao && <Badge tone="neutral">retificação</Badge>}
+                    {p.declaracaoNegativa && <Badge tone="warning">negativa</Badge>}
                   </span>
                 );
               case 'protocolo':

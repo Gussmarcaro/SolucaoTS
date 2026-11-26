@@ -88,7 +88,7 @@ export function rotaDoAlerta(a: Alerta): string {
     case 'CADASTRO_ADITIVO':
       return a.referenciaId ? `/cadastro/ajustes/${a.referenciaId}` : '/cadastro/ajustes';
     case 'DECLARACAO_NEGATIVA':
-      return '/orgaos';
+      return '/declaracao-negativa';
     case 'PRESTACAO_CONTAS':
       return '/prestacao-contas';
     case 'COMPROMISSO':

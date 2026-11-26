@@ -2,7 +2,7 @@ import type { CodigosInexistentes, DadosMontagem, ResultadoMontagem } from './ti
 import { validarPrestacao } from './validarPrestacao';
 import { validarDominios } from './validarDominios';
 
-const TIPO_DOCUMENTO: Record<string, string> = {
+export const TIPO_DOCUMENTO: Record<string, string> = {
   CONTRATO_GESTAO: 'Prestação de Contas de Contrato de Gestão',
   CONVENIO: 'Prestação de Contas de Convênio',
   TERMO_COLABORACAO: 'Prestação de Contas de Termo de Colaboração',

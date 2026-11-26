@@ -130,9 +130,46 @@ export class PrismaAlertaRepository implements IAlertaRepository {
         dataAssinatura: iso(t.dataAssinatura),
       })),
       orgaos: orgaos.map((o) => ({ id: o.id, nome: o.nome, periodicidade: o.periodicidade })),
+      ...(await this.negativas()),
       ajustesSemPrestacao: Math.max(0, totalAjustes - comArmazenada.length),
       tarefasDeAlerta: tarefas.map((t) => ({ id: t.id, origemAlerta: t.origemAlerta as string, status: t.status })),
       lembretes: await this.lembretes(espectador),
+    };
+  }
+
+  /**
+   * O que a Declaração Negativa precisa para dizer quais tipos faltam: os
+   * ajustes assinados desde o exercício anterior (o último período encerrado
+   * pode ser o 3º quadrimestre ou o exercício passado) e as negativas já
+   * marcadas. Só três colunas por linha — a conta é feita no caso de uso.
+   */
+  private async negativas(): Promise<Pick<DadosAlertas, 'assinaturas' | 'negativasAjuste'>> {
+    const desde = new Date(Date.UTC(new Date().getUTCFullYear() - 1, 0, 1));
+    const [assinados, marcadas] = await Promise.all([
+      prisma.ajuste.findMany({
+        where: { dataAssinatura: { gte: desde } },
+        select: { clienteId: true, tipoAjuste: true, codigoAjuste: true, dataAssinatura: true, status: true },
+      }),
+      prisma.negativaAjuste.findMany({
+        where: { ano: { gte: desde.getUTCFullYear() } },
+        select: { clienteId: true, ano: true, periodo: true, tipoAjuste: true, declaradaEm: true },
+      }),
+    ]);
+    return {
+      assinaturas: assinados.map((a) => ({
+        clienteId: a.clienteId,
+        tipoAjuste: a.tipoAjuste,
+        codigoAjuste: a.codigoAjuste,
+        dataAssinatura: iso(a.dataAssinatura),
+        enviado: a.status === 'ENVIADO',
+      })),
+      negativasAjuste: marcadas.map((n) => ({
+        clienteId: n.clienteId,
+        ano: n.ano,
+        periodo: n.periodo,
+        tipoAjuste: n.tipoAjuste,
+        declaradaEm: iso(n.declaradaEm),
+      })),
     };
   }
   /**

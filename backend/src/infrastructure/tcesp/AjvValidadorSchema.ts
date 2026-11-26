@@ -2,7 +2,9 @@ import { readFileSync } from 'node:fs';
 import { Ajv, type ErrorObject, type ValidateFunction } from 'ajv';
 import addFormats from 'ajv-formats';
 import type { IValidadorSchema, ResultadoValidacaoSchema } from '@/application/montador/IValidadorSchema';
-import { arquivoSchema, tipoAjusteSchema, VERSAO_SCHEMA } from './schemas';
+import { arquivoSchema, arquivoSchemaDeclaracaoNegativa, tipoAjusteSchema, VERSAO_SCHEMA } from './schemas';
+
+const NEGATIVA = 'DECLARACAO_NEGATIVA';
 
 /**
  * Os schemas do TCESP declaram `"$schema": "https://json-schema.org/draft-07/schema"`
@@ -40,7 +42,7 @@ export class AjvValidadorSchema implements IValidadorSchema {
   }
 
   validar(tipoAjuste: string, documento: unknown): ResultadoValidacaoSchema {
-    const tipo = tipoAjusteSchema(tipoAjuste);
+    const tipo = tipoAjuste === NEGATIVA ? NEGATIVA : tipoAjusteSchema(tipoAjuste);
     if (!tipo) {
       return { validado: false, erros: [], motivo: `não há schema para o tipo de ajuste "${tipoAjuste}"` };
     }
@@ -64,9 +66,8 @@ export class AjvValidadorSchema implements IValidadorSchema {
     const emCache = this.compilados.get(tipo);
     if (emCache) return emCache;
 
-    const schema = JSON.parse(
-      readFileSync(arquivoSchema(tipo as Parameters<typeof arquivoSchema>[0]), 'utf8'),
-    ) as Record<string, unknown>;
+    const arquivo = tipo === NEGATIVA ? arquivoSchemaDeclaracaoNegativa() : arquivoSchema(tipo as Parameters<typeof arquivoSchema>[0]);
+    const schema = JSON.parse(readFileSync(arquivo, 'utf8')) as Record<string, unknown>;
     const compilado = this.ajv.compile(schema);
     this.compilados.set(tipo, compilado);
     return compilado;

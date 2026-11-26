@@ -127,6 +127,7 @@ export const ENTIDADE_LABEL: Record<string, string> = {
   RelatorioAtividadeMeta: 'Relatório de atividades',
   Projeto: 'Projeto',
   Tarefa: 'Tarefa',
+  NegativaAjuste: 'Declaração Negativa (ajustes)',
   Compromisso: 'Compromisso da agenda',
   CompromissoParticipante: 'Participante de compromisso',
   CompromissoGrupo: 'Grupo em compromisso',

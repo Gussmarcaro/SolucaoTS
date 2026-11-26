@@ -201,7 +201,7 @@ export function PrestacaoDetalhe() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `prestacao-${prestacao?.ajusteCodigo ?? 'documento'}-${prestacao?.ano ?? ''}.json`;
+    a.download = `${prestacao?.declaracaoNegativa ? 'declaracao-negativa' : 'prestacao'}-${prestacao?.ajusteCodigo ?? 'documento'}-${prestacao?.ano ?? ''}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -281,6 +281,7 @@ export function PrestacaoDetalhe() {
               <Badge tone={STATUS_PRESTACAO_TONE[prestacao.status]}>{STATUS_PRESTACAO_LABEL[prestacao.status]}</Badge>
               <span className="text-sm font-medium text-ink-600 dark:text-ink-300">Exercício {prestacao.ano} · mês {prestacao.mes}</span>
               {prestacao.ehRetificacao && <Badge tone="neutral">Retificação</Badge>}
+              {prestacao.declaracaoNegativa && <Badge tone="warning">Declaração Negativa</Badge>}
             </div>
           </div>
           {/*
@@ -292,7 +293,7 @@ export function PrestacaoDetalhe() {
           <div className="flex flex-wrap items-center gap-2 sm:justify-end">
             {/* A versão do Termo de Ciência que instrui a prestação: valor
                 repassado e exercício no lugar do valor do ajuste. */}
-            {podeGerarTermo && (
+            {podeGerarTermo && !prestacao.declaracaoNegativa && (
               <Link to={`/cadastro/ajustes/${prestacao.ajusteId}/termo-ciencia?prestacaoId=${prestacao.id}`}>
                 <Button variant="secondary" size="sm">
                   <FilePen className="h-4 w-4" />
@@ -301,18 +302,22 @@ export function PrestacaoDetalhe() {
               </Link>
             )}
             {/* O balanço do exercício que a entidade assina: anexo RP-06/08/10/12. */}
-            <Link to={`/prestacao-contas/${prestacao.id}/demonstrativo`}>
-              <Button variant="secondary" size="sm">
-                <FileSpreadsheet className="h-4 w-4" />
-                Receitas e Despesas
-              </Button>
-            </Link>
-            <Link to={`/prestacao-contas/${prestacao.id}/espelho`}>
-              <Button variant="secondary" size="sm">
-                <FileText className="h-4 w-4" />
-                Espelho
-              </Button>
-            </Link>
+            {!prestacao.declaracaoNegativa && (
+              <>
+                <Link to={`/prestacao-contas/${prestacao.id}/demonstrativo`}>
+                  <Button variant="secondary" size="sm">
+                    <FileSpreadsheet className="h-4 w-4" />
+                    Receitas e Despesas
+                  </Button>
+                </Link>
+                <Link to={`/prestacao-contas/${prestacao.id}/espelho`}>
+                  <Button variant="secondary" size="sm">
+                    <FileText className="h-4 w-4" />
+                    Espelho
+                  </Button>
+                </Link>
+              </>
+            )}
             {emElaboracao && (
               <Button variant="secondary" size="sm" onClick={() => setConfirmar(true)}>
                 <Trash2 className="h-4 w-4" />
@@ -355,7 +360,38 @@ export function PrestacaoDetalhe() {
           Espelho — que é quem já decidiu transmitir. */}
       <PainelConferencia prestacaoId={prestacao.id} onIrParaBloco={setBlocoAtivo} />
 
-      {/* Blocos: navegação (esquerda) + painel (direita) */}
+      {/*
+        Declaração Negativa: não tem blocos. O documento é o descritor e o
+        código do ajuste, e o que resta fazer é gerar e transmitir.
+      */}
+      {prestacao.declaracaoNegativa ? (
+        <div className="rounded-2xl border border-ink-200/70 bg-white p-5 shadow-card dark:border-ink-800/70 dark:bg-ink-900">
+          <h2 className="text-sm font-semibold text-ink-800 dark:text-ink-100">Declaração Negativa da prestação de contas</h2>
+          <p className="mt-2 max-w-3xl text-sm text-ink-600 dark:text-ink-300">
+            Diz ao TCESP que este ajuste <strong>não teve repasse em {prestacao.ano}</strong>. A obrigação de prestar contas
+            começa no ano da assinatura, e os exercícios iniciais sem repasse recebem a negativa no lugar da prestação
+            (manual da prestação de contas, item 2.8).
+          </p>
+          <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-ink-500 dark:text-ink-400">
+            <li>O documento leva só o descritor e o código do ajuste — nenhum bloco é preenchido.</li>
+            <li>Se depois houver repasse neste exercício, a prestação de contas enviada sobrescreve a negativa.</li>
+            <li>Não há retificação de negativa.</li>
+          </ul>
+          <div className="mt-5 flex flex-col gap-2 border-t border-ink-100 pt-4 dark:border-ink-800 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-ink-400">Teste sempre no <span className="font-medium">piloto</span> antes da produção.</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="secondary" size="sm" onClick={gerarJson} disabled={gerandoJson}>
+                {gerandoJson ? <Loader2 className="h-4 w-4 animate-spin" /> : <Braces className="h-4 w-4" />}
+                Gerar JSON (prévia)
+              </Button>
+              <Button size="sm" onClick={abrirTransmissao}>
+                <Send className="h-4 w-4" />
+                Transmitir
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : (
       <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
         <nav className="h-max rounded-2xl border border-ink-200/70 bg-white p-2 shadow-card dark:border-ink-800/70 dark:bg-ink-900">
           <p className="px-2 py-1.5 text-xs font-semibold uppercase tracking-wider text-ink-400">Blocos ({blocos.length})</p>
@@ -473,6 +509,7 @@ export function PrestacaoDetalhe() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Confirmação de exclusão */}
       <Modal

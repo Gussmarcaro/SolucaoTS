@@ -42,6 +42,8 @@ export interface Prestacao {
   status: StatusPrestacao;
   protocolo: string | null;
   ehRetificacao: boolean;
+  /** Declaração Negativa da prestação: ajuste sem repasse no exercício. */
+  declaracaoNegativa: boolean;
   dataEnvio: string | null;
   criadoEm: string;
   atualizadoEm: string;
@@ -51,6 +53,7 @@ export interface CriarPrestacaoPayload {
   ajusteId: string;
   ano: number;
   ehRetificacao?: boolean;
+  declaracaoNegativa?: boolean;
 }
 
 export interface FiltrosPrestacao {

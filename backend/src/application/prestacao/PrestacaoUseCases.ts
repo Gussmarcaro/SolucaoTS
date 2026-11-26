@@ -33,12 +33,30 @@ export class PrestacaoUseCases {
         'PRESTACAO_DUPLICADA',
       );
 
+    /*
+     * Declaração Negativa (manual v1.19, §2.8): a obrigação de prestar contas
+     * começa no ano da assinatura, e o exercício sem repasse recebe a negativa.
+     * Antes da assinatura não há obrigação nenhuma — nem negativa. E a negativa
+     * não se retifica: uma prestação enviada depois a sobrescreve.
+     */
+    const negativa = !!input.declaracaoNegativa;
+    if (negativa) {
+      const anoAssinatura = Number(ajuste.dataAssinatura.slice(0, 4));
+      if (ano < anoAssinatura)
+        throw new BusinessError(
+          `O ajuste foi assinado em ${anoAssinatura}: não há prestação nem negativa de ${ano}.`,
+        );
+      if (input.ehRetificacao)
+        throw new BusinessError('A Declaração Negativa não tem retificação — para corrigir, envie a prestação de contas do exercício.');
+    }
+
     return this.repo.criar({
       ajusteId,
       tipoDocumento: ajuste.tipoAjuste,
       ano,
       mes: MES_ANUAL,
       ehRetificacao: !!input.ehRetificacao,
+      declaracaoNegativa: negativa,
     });
   }
 

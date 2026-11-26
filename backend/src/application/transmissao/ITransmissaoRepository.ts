@@ -5,6 +5,8 @@ export interface PrestacaoParaEnvio {
   id: string;
   tipoAjuste: string;
   status: string;
+  /** Declaração Negativa da prestação: vai por rota própria. */
+  declaracaoNegativa: boolean;
 }
 
 /** Port de persistência do resultado de transmissão na PrestacaoContas. */

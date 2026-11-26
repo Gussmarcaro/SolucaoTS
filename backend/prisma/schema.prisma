@@ -307,6 +307,7 @@ model Cliente {
   GuiaRecolhimento      GuiaRecolhimento[]
   lancamentosExtrato    LancamentoExtrato[]
   contasBancarias       ContaBancaria[]
+  negativasAjuste       NegativaAjuste[]
 
   @@unique([codigoMunicipio, codigoEntidade])
   @@index([tipoOrgao])
@@ -1158,6 +1159,10 @@ model PrestacaoContas {
   saldoFundoFixo  Decimal         @default(0) @db.Decimal(15, 2)
   protocolo       String? // retornado pela API do TCESP
   ehRetificacao   Boolean         @default(false)
+  // Declaração Negativa da prestação (manual v1.19, §2.8): ajuste sem repasse
+  // no exercício. Só descritor + código do ajuste, enviada por
+  // /f5/declaracao-negativa; os blocos ficam vazios.
+  declaracaoNegativa Boolean      @default(false)
   dataEnvio       DateTime?
   inconformidades Json? // lista de erros quando REJEITADO
   criadoPor       String?         @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
@@ -2642,4 +2647,27 @@ model NotaRapida {
   usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@index([usuarioId, atualizadoEm])
+}
+
+// Declaração Negativa do módulo Ajustes: o órgão diz ao TCESP que não assinou
+// nenhum ajuste de um tipo num período (quadrimestre ou exercício, conforme a
+// periodicidade do órgão). Feita na tela do Audesp, sem API — a linha aqui é o
+// registro de que foi feita, e é o que faz o sino parar de cobrar.
+// Ver core/declaracaoNegativa/negativaAjustes.ts.
+model NegativaAjuste {
+  id           String     @id @default(uuid()) @db.Uuid
+  clienteId    String     @db.Uuid
+  ano          Int
+  // 1, 2 ou 3 no quadrimestral; 0 no anual.
+  periodo      Int
+  tipoAjuste   TipoAjuste
+  // Data em que foi enviada no Audesp, informada por quem marcou.
+  declaradaEm  DateTime   @db.Date
+  criadoPor    String?    @db.Uuid
+  criadoEm     DateTime   @default(now())
+  atualizadoEm DateTime   @updatedAt
+
+  cliente Cliente @relation(fields: [clienteId], references: [id])
+
+  @@unique([clienteId, ano, periodo, tipoAjuste])
 }

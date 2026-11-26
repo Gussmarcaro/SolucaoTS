@@ -2,6 +2,14 @@ import type { Alerta, UrgenciaAlerta } from '@/core/alerta/Alerta';
 import { ALERTAS_SILENCIAVEIS } from '@/core/tarefa/Tarefa';
 import { diasAte, somarDiasUteis } from '@/shared/diasUteis';
 import { parseDataISO } from '@/shared/datas';
+import {
+  ROTULO_TIPO,
+  periodosDoAno,
+  situacaoDoPeriodo,
+  tiposPendentes,
+  type AjusteAssinado,
+  type NegativaDeclarada,
+} from '@/core/declaracaoNegativa/negativaAjustes';
 
 /** Alerta antes de saber se há tarefa — a ligação é feita no fim. */
 type AlertaBase = Omit<Alerta, 'tarefa'>;
@@ -14,6 +22,10 @@ export interface DadosAlertas {
   ajustesRecentes: { id: string; codigoAjuste: string; entidadeNome: string; dataAssinatura: string }[];
   aditivosRecentes: { id: string; numero: string; ajusteId: string; ajusteCodigo: string; dataAssinatura: string }[];
   orgaos: { id: string; nome: string; periodicidade: 'QUADRIMESTRAL' | 'ANUAL' }[];
+  /** Ajustes assinados desde o exercício anterior, para a negativa por tipo. */
+  assinaturas?: (AjusteAssinado & { clienteId: string })[];
+  /** Negativas do módulo Ajustes já marcadas como enviadas. */
+  negativasAjuste?: (NegativaDeclarada & { clienteId: string; ano: number; periodo: number })[];
   /** Ajustes do exercício ainda sem prestação Armazenada. */
   ajustesSemPrestacao: number;
   /** Tarefas de acompanhamento nascidas de um alerta (as não canceladas). */
@@ -230,13 +242,41 @@ export class ListarAlertasUseCase {
       if (dias > JANELA_FUTURA || dias < -JANELA_PASSADA) return [];
 
       const periodo = ultimo.toISOString().slice(0, 10);
+
+      /*
+       * Quais tipos ainda faltam. A negativa é **por tipo de ajuste**: tipo com
+       * ajuste assinado no período não se declara, e tipo já marcado como
+       * declarado está em dia. Sem nenhum pendente, não há alerta. Quando o
+       * repositório não traz esses dados (teste antigo), cobra como antes.
+       */
+      let faltam: string | null = null;
+      if (d.assinaturas && d.negativasAjuste) {
+        const p = periodosDoAno(o.periodicidade, ultimo.getUTCFullYear()).find((x) => x.fim === periodo);
+        if (p) {
+          const pendentes = tiposPendentes(
+            situacaoDoPeriodo(
+              p,
+              d.assinaturas.filter((a) => a.clienteId === o.id),
+              d.negativasAjuste.filter((n) => n.clienteId === o.id && n.ano === p.ano && n.periodo === p.periodo),
+              // O período já está encerrado aqui (inclusive no próprio último
+              // dia, como o prazo acima conta); o "hoje" só decide isso.
+              '9999-12-31',
+            ),
+          );
+          if (!pendentes.length) return [];
+          faltam = pendentes.map((t) => ROTULO_TIPO[t]).join(', ');
+        }
+      }
+
       return [
         {
           id: `declaracao-negativa:${o.id}:${periodo}`,
           tipo: 'DECLARACAO_NEGATIVA',
           urgencia: urgencia(dias),
           titulo: `Declaração Negativa — ${o.nome}`,
-          detalhe: `Período encerrado em ${periodo} · periodicidade ${o.periodicidade === 'QUADRIMESTRAL' ? 'quadrimestral' : 'anual'}. Devida quando não houve repasse no período.`,
+          detalhe: faltam
+            ? `Período encerrado em ${periodo}. Falta declarar no Audesp: ${faltam}.`
+            : `Período encerrado em ${periodo} · periodicidade ${o.periodicidade === 'QUADRIMESTRAL' ? 'quadrimestral' : 'anual'}. Devida para cada tipo de ajuste sem assinatura no período.`,
           dias,
           referenciaId: o.id,
         },

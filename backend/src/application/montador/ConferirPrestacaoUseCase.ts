@@ -4,7 +4,8 @@ import type { ResultadoConferencia } from './tipos';
 import { NotFoundError } from '@/shared/errors';
 import { montarPrestacao } from './montarPrestacao';
 import { conferirPrestacao } from './conferirPrestacao';
-import { codigosUsados } from './MontarPrestacaoUseCase';
+import { codigosUsados, DECLARACAO_NEGATIVA } from './MontarPrestacaoUseCase';
+import { conferirNegativa, montarDeclaracaoNegativa } from './montarNegativa';
 
 /**
  * "Esta prestação está pronta?"
@@ -32,6 +33,20 @@ export class ConferirPrestacaoUseCase {
   ) {}
 
   async execute(prestacaoId: string): Promise<ResultadoConferencia> {
+    const negativa = await this.repo.negativa(prestacaoId);
+    if (negativa) {
+      const m = montarDeclaracaoNegativa(negativa);
+      const s = this.validadorSchema?.validar(DECLARACAO_NEGATIVA, m.documento);
+      const erros = [...m.erros, ...(s?.erros ?? [])];
+      const pendencias = conferirNegativa(negativa);
+      return {
+        pronta: erros.length === 0 && !pendencias.some((p) => p.severidade === 'IMPEDE'),
+        erros,
+        avisos: m.avisos,
+        pendencias,
+      };
+    }
+
     const dados = await this.repo.carregar(prestacaoId);
     if (!dados) throw new NotFoundError('Prestação não encontrada.');
     const contexto = await this.repo.contextoConferencia(prestacaoId);

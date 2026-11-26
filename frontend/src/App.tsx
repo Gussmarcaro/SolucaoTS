@@ -50,6 +50,7 @@ const ContasBancarias = pagina(() => import('@/pages/ContasBancarias'), 'ContasB
 const Empresas = pagina(() => import('@/pages/Empresas'), 'Empresas');
 
 const PrestacaoContas = pagina(() => import('@/pages/PrestacaoContas'), 'PrestacaoContas');
+const DeclaracaoNegativa = pagina(() => import('@/pages/DeclaracaoNegativa'), 'DeclaracaoNegativa');
 const PrestacaoDetalhe = pagina(() => import('@/pages/PrestacaoContas/PrestacaoDetalhe'), 'PrestacaoDetalhe');
 const Espelho = pagina(() => import('@/pages/PrestacaoContas/Espelho'), 'Espelho');
 const RelacaoTransferidosPagina = pagina(
@@ -351,6 +352,14 @@ export default function App() {
             element={
               <RequerPermissao recurso="PRESTACAO_CONTAS">
                 <Espelho />
+              </RequerPermissao>
+            }
+          />
+          <Route
+            path="/declaracao-negativa"
+            element={
+              <RequerPermissao recurso="PRESTACAO_CONTAS">
+                <DeclaracaoNegativa />
               </RequerPermissao>
             }
           />

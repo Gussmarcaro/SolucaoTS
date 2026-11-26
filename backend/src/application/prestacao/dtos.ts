@@ -2,6 +2,8 @@ export interface CriarPrestacaoDTO {
   ajusteId: string;
   ano: number | string;
   ehRetificacao?: boolean;
+  /** Ajuste sem repasse no exercício: envia só a negativa, sem blocos. */
+  declaracaoNegativa?: boolean;
 }
 
 export interface FiltrosPrestacao {
@@ -24,6 +26,7 @@ export interface DadosCriarPrestacao {
   ano: number;
   mes: number;
   ehRetificacao: boolean;
+  declaracaoNegativa: boolean;
 }
 
 export interface Paginado<T> {

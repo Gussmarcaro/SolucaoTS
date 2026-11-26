@@ -255,6 +255,10 @@ A Fase V tem **4 prazos distintos** que o Workflow deve controlar:
 
 Ou seja, a periodicidade Quadrimestral/Anual do `Fase_V_entidades` dirige o prazo da **Declaração Negativa**; a **Prestação de Contas** é sempre anual (30/06). Detalhes em `Documentação/REGRAS_NEGOCIO_FASE_V.md` (§5).
 
+**Há duas Declarações Negativas, e não se confundem** (tela `/declaracao-negativa`, uma aba para cada):
+- **De Ajustes** (Manual "Declaração Negativa"): por **tipo de ajuste e período** — "não assinei Convênio neste quadrimestre". É a do prazo do item 3. **Sem API**: feita na tela do Audesp (Ajustes → Declaração). O sistema calcula, por período, que tipos faltam (tipo com ajuste assinado no período não se declara) e guarda em `NegativaAjuste` o que o usuário marcou como enviado; o sino só cobra os tipos pendentes e some quando o período está em dia. Regra em `core/declaracaoNegativa/negativaAjustes.ts`.
+- **Da Prestação de Contas** (manual v1.19, §2.8 e §36): por **ajuste e exercício**, para o ajuste **sem repasse nos exercícios iniciais** (a obrigação começa no ano da assinatura). Tem **JSON** (só descritor + `codigo_ajuste`, schema `declaracao_negativa_schema_v1_14.json`) e **API** (`/f5/declaracao-negativa`). No sistema é uma `PrestacaoContas` com `declaracaoNegativa = true`: reaproveita criação, protocolo, status e transmissão, mas o montador e a conferência desviam cedo para `application/montador/montarNegativa.ts`, e a tela não mostra blocos. Uma prestação enviada depois para o mesmo exercício a sobrescreve no Audesp.
+
 ## Comandos (após a inicialização do backend)
 
 No `backend/`:

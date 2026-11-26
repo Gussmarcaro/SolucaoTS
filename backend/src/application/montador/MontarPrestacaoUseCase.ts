@@ -3,6 +3,10 @@ import type { IValidadorSchema } from './IValidadorSchema';
 import type { DadosMontagem, ResultadoMontagem } from './tipos';
 import { NotFoundError } from '@/shared/errors';
 import { montarPrestacao } from './montarPrestacao';
+import { montarDeclaracaoNegativa } from './montarNegativa';
+
+/** Chave do schema e da rota da Declaração Negativa da prestação. */
+export const DECLARACAO_NEGATIVA = 'DECLARACAO_NEGATIVA';
 
 export class MontarPrestacaoUseCase {
   constructor(
@@ -11,6 +15,21 @@ export class MontarPrestacaoUseCase {
   ) {}
 
   async execute(prestacaoId: string): Promise<ResultadoMontagem> {
+    // Declaração Negativa: documento próprio (descritor + código), schema próprio.
+    const negativa = await this.repo.negativa(prestacaoId);
+    if (negativa) {
+      const r = montarDeclaracaoNegativa(negativa);
+      if (!this.validadorSchema) return r;
+      const s = this.validadorSchema.validar(DECLARACAO_NEGATIVA, r.documento);
+      return {
+        ...r,
+        erros: [...r.erros, ...s.erros],
+        avisos: s.validado
+          ? r.avisos
+          : [...r.avisos, `A validação contra o JSON Schema do TCESP não pôde ser executada (${s.motivo ?? 'motivo desconhecido'}).`],
+      };
+    }
+
     const dados = await this.repo.carregar(prestacaoId);
     if (!dados) throw new NotFoundError('Prestação não encontrada.');
     const inexistentes = await this.repo.codigosInexistentes(codigosUsados(dados));

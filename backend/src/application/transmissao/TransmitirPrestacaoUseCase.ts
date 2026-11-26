@@ -3,6 +3,7 @@ import type { ITcespGateway } from './ITcespGateway';
 import type { ITransmissaoRepository } from './ITransmissaoRepository';
 import type { Ambiente, Credenciais, ResultadoEnvio } from './dtos';
 import { BusinessError, NotFoundError } from '@/shared/errors';
+import { DECLARACAO_NEGATIVA } from '@/application/montador/MontarPrestacaoUseCase';
 
 /**
  * Transmite a prestação ao Audesp: monta o JSON, autentica, envia (multipart)
@@ -36,7 +37,8 @@ export class TransmitirPrestacaoUseCase {
     const envio = await this.gateway.enviar({
       ambiente,
       token,
-      tipoAjuste: prestacao.tipoAjuste,
+      // A negativa tem rota própria no Audesp (`/f5/declaracao-negativa`).
+      tipoAjuste: prestacao.declaracaoNegativa ? DECLARACAO_NEGATIVA : prestacao.tipoAjuste,
       documento,
     });
 

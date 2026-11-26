@@ -1,4 +1,5 @@
 import type { CodigosInexistentes, ContextoConferencia, DadosMontagem } from './tipos';
+import type { DadosNegativa } from './montarNegativa';
 
 /** Port que carrega todos os dados de uma prestação para montagem do JSON. */
 export interface IMontadorRepository {
@@ -13,6 +14,12 @@ export interface IMontadorRepository {
    * confundiria o montador, que é a parte do sistema que menos pode confundir.
    */
   contextoConferencia(prestacaoId: string): Promise<ContextoConferencia | null>;
+
+  /**
+   * Os dados da Declaração Negativa, quando a prestação é uma. Nulo quando é
+   * prestação comum (ou não existe) — aí vale o caminho de `carregar`.
+   */
+  negativa(prestacaoId: string): Promise<DadosNegativa | null>;
 
   /**
    * Confronta os códigos usados na prestação com as tabelas de domínio
