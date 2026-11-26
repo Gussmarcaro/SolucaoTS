@@ -48,9 +48,10 @@ export function Relogio() {
     // sino e do perfil, e o relógio do próprio aparelho já está à vista.
     <span
       title={data}
-      className="hidden items-center gap-1.5 rounded-xl px-2 py-1 text-ink-500 dark:text-ink-400 md:inline-flex"
+      className="hidden items-start gap-1.5 rounded-xl px-2 py-1 text-ink-500 dark:text-ink-400 md:inline-flex"
     >
-      <Clock className="h-4 w-4 shrink-0" />
+      {/* Ícone menor, no alto, centrado na linha da hora (13px de altura). */}
+      <Clock className="mt-px h-3 w-3 shrink-0" />
       {/* Hora em cima e data embaixo, alinhadas à esquerda, as duas no tamanho
           do nome da cidade do clima. A hora se distingue pelo peso e pela cor
           mais escura. `leading-tight` mantém as duas linhas na altura da barra. */}
