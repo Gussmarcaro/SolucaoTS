@@ -50,19 +50,19 @@ export function Relogio() {
       title={data}
       className="hidden items-center gap-1.5 rounded-xl px-2 py-1 text-ink-500 dark:text-ink-400 md:inline-flex"
     >
-      <Clock className="h-4 w-4" />
-      {/* Hora primeiro e data depois, as duas no tamanho do nome da cidade do
-          clima. A hora se distingue só pelo peso e pela cor mais escura. */}
-      <time
-        dateTime={agora.toISOString()}
-        className="text-[10.5px] font-medium tabular-nums"
-      >
-        {hora}
-      </time>
-      {/* A data só a partir de `lg`, como o nome da cidade no clima: em telas
-          médias a barra já está cheia, e a hora é o que mais importa. */}
-      <span className="ml-1.5 hidden text-[10.5px] text-ink-400 lg:inline">
-        {data}
+      <Clock className="h-4 w-4 shrink-0" />
+      {/* Hora em cima e data embaixo, alinhadas à esquerda, as duas no tamanho
+          do nome da cidade do clima. A hora se distingue pelo peso e pela cor
+          mais escura. `leading-tight` mantém as duas linhas na altura da barra. */}
+      <span className="flex flex-col items-start leading-tight">
+        <time dateTime={agora.toISOString()} className="text-[10.5px] font-medium tabular-nums">
+          {hora}
+        </time>
+        {/* A data só a partir de `lg`, como o nome da cidade no clima: em telas
+            médias a barra já está cheia, e a hora é o que mais importa. */}
+        <span className="hidden whitespace-nowrap text-[10.5px] text-ink-400 lg:inline">
+          {data}
+        </span>
       </span>
     </span>
   );
