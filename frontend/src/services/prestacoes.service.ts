@@ -107,3 +107,45 @@ export async function conferirPrestacao(id: string): Promise<ResultadoConferenci
   const { data } = await http.get<ResultadoConferencia>(`/prestacoes/${id}/conferencia`);
   return data;
 }
+
+/** Um envio aceito pelo Audesp: protocolo, ambiente e a impressão digital do JSON. */
+export interface EnvioPrestacao {
+  id: string;
+  ambiente: 'PILOTO' | 'PRODUCAO';
+  protocolo: string;
+  retificacao: boolean;
+  hash: string;
+  criadoEm: string;
+  criadoPorNome: string | null;
+}
+
+export async function listarEnvios(id: string): Promise<EnvioPrestacao[]> {
+  const { data } = await http.get<EnvioPrestacao[]>(`/prestacoes/${id}/envios`);
+  return data;
+}
+
+/** O JSON exato que foi naquele envio. */
+export async function documentoEnviado(
+  id: string,
+  envioId: string,
+): Promise<{ documento: unknown; hash: string; protocolo: string }> {
+  const { data } = await http.get<{ documento: unknown; hash: string; protocolo: string }>(
+    `/prestacoes/${id}/envios/${envioId}/json`,
+  );
+  return data;
+}
+
+export interface PrevisaoRetificacao {
+  acao: 'RETIFICAR' | 'CONVERTER_NEGATIVA';
+  posteriores: number[];
+}
+
+export async function preverRetificacao(id: string): Promise<PrevisaoRetificacao> {
+  const { data } = await http.get<PrevisaoRetificacao>(`/prestacoes/${id}/retificacao`);
+  return data;
+}
+
+export async function iniciarRetificacao(id: string, cienteDosPosteriores: boolean): Promise<PrevisaoRetificacao> {
+  const { data } = await http.post<PrevisaoRetificacao>(`/prestacoes/${id}/retificacao`, { cienteDosPosteriores });
+  return data;
+}

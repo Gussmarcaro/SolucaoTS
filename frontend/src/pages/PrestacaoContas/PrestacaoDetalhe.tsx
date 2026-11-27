@@ -28,6 +28,7 @@ import {
 } from '@/types/prestacao';
 import { cn } from '@/lib/cn';
 import { PainelConferencia } from './PainelConferencia';
+import { PainelEnvios } from './PainelEnvios';
 import { DocumentosFiscaisSelecao } from './blocos/DocumentosFiscaisSelecao';
 import { PagamentosSelecao } from './blocos/PagamentosSelecao';
 import { ReceitasSelecao } from './blocos/ReceitasSelecao';
@@ -354,6 +355,8 @@ export function PrestacaoDetalhe() {
           <Campo label="Data de envio" valor={prestacao.dataEnvio ? new Date(prestacao.dataEnvio).toLocaleString('pt-BR') : '—'} />
         </dl>
       </div>
+
+      <PainelEnvios prestacao={prestacao} aoMudar={recarregarPrestacao} />
 
       {/* Antes dos blocos, de propósito: a pergunta "está pronta?" tem de
           aparecer para quem ainda está preenchendo, não só para quem abre o

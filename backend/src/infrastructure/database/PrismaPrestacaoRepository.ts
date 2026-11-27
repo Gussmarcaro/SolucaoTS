@@ -3,6 +3,7 @@ import { prisma } from './prisma';
 import type { IPrestacaoRepository } from '@/application/prestacao/IPrestacaoRepository';
 import type { DadosCriarPrestacao, ListarPrestacoesParams, Paginado } from '@/application/prestacao/dtos';
 import type { Prestacao, StatusPrestacao } from '@/core/prestacao/Prestacao';
+import { estaTravada } from '@/core/prestacao/trava';
 
 const selecao = {
   id: true,
@@ -15,6 +16,7 @@ const selecao = {
   ehRetificacao: true,
   declaracaoNegativa: true,
   dataEnvio: true,
+  _count: { select: { envios: { where: { ambiente: 'PRODUCAO' } } } },
   criadoEm: true,
   atualizadoEm: true,
   ajuste: {
@@ -46,6 +48,7 @@ function toDomain(row: Row): Prestacao {
     protocolo: row.protocolo,
     ehRetificacao: row.ehRetificacao,
     declaracaoNegativa: row.declaracaoNegativa,
+    travada: estaTravada({ status: row.status, enviadaProducao: row._count.envios > 0 }),
     dataEnvio: row.dataEnvio ? row.dataEnvio.toISOString() : null,
     criadoEm: row.criadoEm,
     atualizadoEm: row.atualizadoEm,

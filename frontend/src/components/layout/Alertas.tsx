@@ -9,6 +9,7 @@ import {
   FileWarning,
   ListPlus,
   Loader2,
+  ServerCrash,
   ShieldAlert,
   type LucideIcon,
 } from 'lucide-react';
@@ -35,6 +36,7 @@ const ICONES: Record<TipoAlerta, LucideIcon> = {
   DECLARACAO_NEGATIVA: Building2,
   PRESTACAO_CONTAS: ClipboardCheck,
   COMPROMISSO: CalendarDays,
+  OPERACAO: ServerCrash,
 };
 
 const ORDEM: UrgenciaAlerta[] = ['VENCIDO', 'CRITICO', 'PROXIMO'];

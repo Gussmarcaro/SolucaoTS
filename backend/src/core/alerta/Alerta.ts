@@ -6,7 +6,9 @@ export type TipoAlerta =
   | 'CADASTRO_ADITIVO'
   | 'DECLARACAO_NEGATIVA'
   | 'PRESTACAO_CONTAS'
-  | 'COMPROMISSO';
+  | 'COMPROMISSO'
+  /** Backup e e-mail — só para a equipe do Suporte. */
+  | 'OPERACAO';
 
 /** Quão perto está o prazo. Ordena a lista e colore o item. */
 export type UrgenciaAlerta = 'VENCIDO' | 'CRITICO' | 'PROXIMO';

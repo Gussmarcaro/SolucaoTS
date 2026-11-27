@@ -23,6 +23,8 @@ export interface Prestacao {
   ehRetificacao: boolean;
   /** Declaração Negativa da prestação: ajuste sem repasse no exercício. */
   declaracaoNegativa: boolean;
+  /** Transmitida à produção e ainda valendo: os blocos não aceitam edição. */
+  travada: boolean;
   dataEnvio: string | null; // ISO
   criadoEm: Date;
   atualizadoEm: Date;

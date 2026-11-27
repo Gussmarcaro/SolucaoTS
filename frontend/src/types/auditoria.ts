@@ -128,6 +128,7 @@ export const ENTIDADE_LABEL: Record<string, string> = {
   Projeto: 'Projeto',
   Tarefa: 'Tarefa',
   NegativaAjuste: 'Declaração Negativa (ajustes)',
+  PrestacaoEnvio: 'Envio da prestação ao TCESP',
   Compromisso: 'Compromisso da agenda',
   CompromissoParticipante: 'Participante de compromisso',
   CompromissoGrupo: 'Grupo em compromisso',

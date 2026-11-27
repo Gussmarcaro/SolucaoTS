@@ -4,10 +4,12 @@ import type { ITransmissaoRepository } from './ITransmissaoRepository';
 import type { Ambiente, Credenciais, ResultadoEnvio } from './dtos';
 import { BusinessError, NotFoundError } from '@/shared/errors';
 import { DECLARACAO_NEGATIVA } from '@/application/montador/MontarPrestacaoUseCase';
+import { bloqueioDeEnvio } from '@/core/prestacao/trava';
 
 /**
  * Transmite a prestação ao Audesp: monta o JSON, autentica, envia (multipart)
- * e persiste o protocolo. NÃO consulta o status final — use ConsultarStatus.
+ * e registra o envio — protocolo, ambiente e **o JSON exato que foi**. NÃO
+ * consulta o status final — use ConsultarStatus.
  */
 export class TransmitirPrestacaoUseCase {
   constructor(
@@ -27,6 +29,11 @@ export class TransmitirPrestacaoUseCase {
     const prestacao = await this.repo.carregar(prestacaoId);
     if (!prestacao) throw new NotFoundError('Prestação não encontrada.');
 
+    // Reenviar à produção o que já está lá vira rejeição no Tribunal (ou envio
+    // duplicado): melhor dizer aqui, antes de gastar a chamada.
+    const bloqueio = bloqueioDeEnvio(prestacao, ambiente);
+    if (bloqueio) throw new BusinessError(bloqueio);
+
     const { documento, avisos, erros } = await this.montador.execute(prestacaoId);
     if (erros.length)
       throw new BusinessError(
@@ -42,7 +49,13 @@ export class TransmitirPrestacaoUseCase {
       documento,
     });
 
-    if (envio.aceito && envio.protocolo) await this.repo.registrarEnvio(prestacaoId, envio.protocolo);
+    if (envio.aceito && envio.protocolo)
+      await this.repo.registrarEnvio(prestacaoId, {
+        protocolo: envio.protocolo,
+        ambiente,
+        retificacao: prestacao.ehRetificacao,
+        documento,
+      });
 
     return { envio, avisos };
   }

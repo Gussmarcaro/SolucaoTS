@@ -5,7 +5,9 @@ export type TipoAlerta =
   | 'CADASTRO_ADITIVO'
   | 'DECLARACAO_NEGATIVA'
   | 'PRESTACAO_CONTAS'
-  | 'COMPROMISSO';
+  | 'COMPROMISSO'
+  /** Backup e e-mail — só chega para a equipe do Suporte. */
+  | 'OPERACAO';
 
 export type UrgenciaAlerta = 'VENCIDO' | 'CRITICO' | 'PROXIMO';
 
@@ -93,5 +95,8 @@ export function rotaDoAlerta(a: Alerta): string {
       return '/prestacao-contas';
     case 'COMPROMISSO':
       return '/agenda';
+    // Não há tela para consertar backup nem e-mail: o conserto é no servidor.
+    case 'OPERACAO':
+      return '/';
   }
 }

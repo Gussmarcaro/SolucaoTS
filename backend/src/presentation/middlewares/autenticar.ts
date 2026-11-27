@@ -4,8 +4,16 @@ import { verificarToken } from '@/shared/auth/jwt';
 import { comContexto, type ContextoRequisicao } from '@/shared/contexto';
 import { RegistrarAcessoUseCase } from '@/application/sessao/RegistrarAcessoUseCase';
 import { PrismaSessaoRepository } from '@/infrastructure/database/PrismaSessaoRepository';
+import { MENSAGEM, VerificarSessaoUseCase } from '@/application/sessao/VerificarSessaoUseCase';
+import { PrismaEstadoSessaoRepository } from '@/infrastructure/database/PrismaEstadoSessaoRepository';
 
 const acessos = new RegistrarAcessoUseCase(new PrismaSessaoRepository());
+const sessoes = new VerificarSessaoUseCase(new PrismaEstadoSessaoRepository());
+
+/** O logout chama isto para o token deixar de valer já na próxima requisição. */
+export function esquecerSessao(sessaoId: string | null | undefined): void {
+  sessoes.esquecer(sessaoId);
+}
 
 /** Usuário autenticado, anexado à requisição para uso nos controllers. */
 export interface UsuarioAutenticado {
@@ -63,6 +71,17 @@ export function autenticar(req: Request, _res: Response, next: NextFunction) {
     return next(new AppError('Sessão expirada ou inválida. Entre novamente.', 401, 'NAO_AUTENTICADO'));
   }
 
+  // A assinatura diz que o token é nosso; o estado atual diz se ainda vale.
+  const p = payload;
+  sessoes
+    .verificar({ usuarioId: p.sub, sessaoId: p.jti ?? null, grupo: p.grupo ?? null, suporte: p.sup === true })
+    .then((motivo) => {
+      if (motivo) return next(new AppError(MENSAGEM[motivo], 401, 'NAO_AUTENTICADO'));
+      seguir(req, next, p);
+    }, next);
+}
+
+function seguir(req: Request, next: NextFunction, payload: ReturnType<typeof verificarToken>) {
   req.usuario = {
     id: payload.sub,
     nome: payload.nome,

@@ -1,3 +1,4 @@
+import { esquecerSessao } from '@/presentation/middlewares/autenticar';
 import type { Request, Response, NextFunction } from 'express';
 import { LoginUseCase } from '@/application/auth/LoginUseCase';
 import { SolicitarRecuperacaoUseCase } from '@/application/auth/SolicitarRecuperacaoUseCase';
@@ -69,6 +70,7 @@ export class AuthController {
   async logout(req: Request, res: Response, next: NextFunction) {
     try {
       await acessos.encerrar(req.usuario?.sessaoId);
+      esquecerSessao(req.usuario?.sessaoId);
       return res.status(204).end();
     } catch (e) {
       return next(e);

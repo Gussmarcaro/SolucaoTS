@@ -1,4 +1,5 @@
 import type { IUsuarioRepository } from '@/application/usuario/IUsuarioRepository';
+import { registrarEnvioEmail, registrarFalhaEmail } from '@/shared/saudeEmail';
 import type { IEmailService } from './IEmailService';
 import type { SolicitarRecuperacaoDTO } from './dtos';
 import { gerarResetToken } from '@/shared/auth/resetToken';
@@ -47,10 +48,12 @@ export class SolicitarRecuperacaoUseCase {
         link,
         validadeMinutos: TTL_MIN,
       });
+      registrarEnvioEmail();
     } catch (erro) {
-      registrar('erro', 'email-recuperacao-falhou', {
-        motivo: erro instanceof Error ? erro.message : String(erro),
-      });
+      const motivo = erro instanceof Error ? erro.message : String(erro);
+      registrar('erro', 'email-recuperacao-falhou', { motivo });
+      // O usuário não fica sabendo (de propósito); o Suporte vê no sino.
+      registrarFalhaEmail(motivo);
     }
   }
 }

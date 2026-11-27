@@ -1,5 +1,13 @@
 import jwt, { type SignOptions } from 'jsonwebtoken';
 
+/*
+ * Em produção, sem segredo próprio o sistema **não sobe**. O valor de
+ * desenvolvimento está escrito aqui, no repositório: com ele, qualquer pessoa
+ * assinaria um token válido de qualquer usuário, inclusive do Suporte.
+ */
+if (process.env.NODE_ENV === 'production' && (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32)) {
+  throw new Error('JWT_SECRET ausente ou curto demais (mínimo 32 caracteres) — o servidor não sobe sem ele em produção.');
+}
 const JWT_SECRET = process.env.JWT_SECRET ?? 'dev-secret-troque-em-producao';
 const JWT_EXPIRES = process.env.JWT_EXPIRES ?? '8h';
 const JWT_EXPIRES_REMEMBER = process.env.JWT_EXPIRES_REMEMBER ?? '30d';

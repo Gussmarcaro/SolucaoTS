@@ -1147,27 +1147,27 @@ model EmpenhoCadastro {
 // ============================================================================
 
 model PrestacaoContas {
-  id              String          @id @default(uuid()) @db.Uuid
-  ajusteId        String          @db.Uuid
-  responsavelId   String?         @db.Uuid
-  tipoDocumento   String // corresponde ao tipo do ajuste
-  ano             Int // >= 2025
-  mes             Int
-  status          StatusPrestacao @default(EM_ELABORACAO)
+  id                 String          @id @default(uuid()) @db.Uuid
+  ajusteId           String          @db.Uuid
+  responsavelId      String?         @db.Uuid
+  tipoDocumento      String // corresponde ao tipo do ajuste
+  ano                Int // >= 2025
+  mes                Int
+  status             StatusPrestacao @default(EM_ELABORACAO)
   // Bloco Disponibilidades: irmão de `saldos` no JSON e OBRIGATÓRIO no schema.
   // Fica aqui por ser um valor único da prestação, não de cada conta.
-  saldoFundoFixo  Decimal         @default(0) @db.Decimal(15, 2)
-  protocolo       String? // retornado pela API do TCESP
-  ehRetificacao   Boolean         @default(false)
+  saldoFundoFixo     Decimal         @default(0) @db.Decimal(15, 2)
+  protocolo          String? // retornado pela API do TCESP
+  ehRetificacao      Boolean         @default(false)
   // Declaração Negativa da prestação (manual v1.19, §2.8): ajuste sem repasse
   // no exercício. Só descritor + código do ajuste, enviada por
   // /f5/declaracao-negativa; os blocos ficam vazios.
-  declaracaoNegativa Boolean      @default(false)
-  dataEnvio       DateTime?
-  inconformidades Json? // lista de erros quando REJEITADO
-  criadoPor       String?         @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
-  criadoEm        DateTime        @default(now())
-  atualizadoEm    DateTime        @updatedAt
+  declaracaoNegativa Boolean         @default(false)
+  dataEnvio          DateTime?
+  inconformidades    Json? // lista de erros quando REJEITADO
+  criadoPor          String?         @db.Uuid // usuário que incluiu (null nos registros anteriores à auditoria)
+  criadoEm           DateTime        @default(now())
+  atualizadoEm       DateTime        @updatedAt
 
   ajuste      Ajuste   @relation(fields: [ajusteId], references: [id])
   responsavel Usuario? @relation("PrestacaoResponsavel", fields: [responsavelId], references: [id])
@@ -1185,6 +1185,7 @@ model PrestacaoContas {
   glosas                  Glosa[]
   empenhos                EmpenhoPrestacao[]
   repasses                RepassePrestacao[]
+  envios                  PrestacaoEnvio[]
   metasReportadas         RelatorioAtividadeMeta[]
   dadosGerais             DadosGeraisBeneficiaria?
   responsaveis            ResponsaveisConcessor?
@@ -2670,4 +2671,25 @@ model NegativaAjuste {
   cliente Cliente @relation(fields: [clienteId], references: [id])
 
   @@unique([clienteId, ano, periodo, tipoAjuste])
+}
+
+// Cada transmissão aceita pelo Audesp (com protocolo): o JSON exato que foi,
+// a impressão digital dele e o ambiente. É a prova do que o TCESP recebeu —
+// a prestação continua viva na tela, e sem isto não haveria como saber qual
+// versão foi enviada. O envio à PRODUCAO trava a edição (core/prestacao/trava.ts).
+model PrestacaoEnvio {
+  id          String   @id @default(uuid()) @db.Uuid
+  prestacaoId String   @db.Uuid
+  ambiente    String // PILOTO | PRODUCAO
+  protocolo   String
+  retificacao Boolean  @default(false)
+  // sha-256 do JSON enviado, em hexadecimal.
+  hash        String
+  documento   Json
+  criadoPor   String?  @db.Uuid
+  criadoEm    DateTime @default(now())
+
+  prestacao PrestacaoContas @relation(fields: [prestacaoId], references: [id], onDelete: Cascade)
+
+  @@index([prestacaoId, criadoEm])
 }

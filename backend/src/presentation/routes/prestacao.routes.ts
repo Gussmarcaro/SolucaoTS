@@ -16,12 +16,35 @@ import { RelatorioAtividadeController } from '@/presentation/controllers/Relator
 import { ContratoPrestacaoController } from '@/presentation/controllers/ContratoPrestacaoController';
 import { MontadorController } from '@/presentation/controllers/MontadorController';
 import { TransmissaoController } from '@/presentation/controllers/TransmissaoController';
+import { prestacaoTravada } from '@/infrastructure/database/PrismaTransmissaoRepository';
+import { MOTIVO_TRAVA } from '@/core/prestacao/trava';
+import { AppError } from '@/shared/errors';
 import { CertidoesPrestacaoController } from '@/presentation/controllers/CertidoesPrestacaoController';
 import { DeclaratoriosController } from '@/presentation/controllers/DeclaratoriosController';
 import { AjustesSaldoController } from '@/presentation/controllers/AjustesSaldoController';
 import { DocumentoController } from '@/presentation/controllers/DocumentoController';
 
 const prestacaoRoutes = Router();
+
+/*
+ * Trava da prestação transmitida à produção (core/prestacao/trava.ts).
+ *
+ * Aqui, e não em cada um dos ~30 casos de uso dos blocos: toda escrita de bloco
+ * passa por `/prestacoes/:prestacaoId/...`, e um só ponto não esquece bloco.
+ * Leitura passa sempre. Transmitir, consultar e retificar passam porque são
+ * justamente o caminho de quem está travado.
+ */
+// `req.path`, dentro deste `use`, é o que vem depois do id: "/transmitir"…
+const LIVRES_NA_TRAVA = new Set(['/transmitir', '/consultar-status', '/retificacao']);
+prestacaoRoutes.use('/:prestacaoId', async (req, _res, next) => {
+  if (req.method === 'GET' || req.method === 'HEAD' || LIVRES_NA_TRAVA.has(req.path)) return next();
+  try {
+    if (await prestacaoTravada(req.params.prestacaoId)) return next(new AppError(MOTIVO_TRAVA, 409, 'PRESTACAO_TRAVADA'));
+    return next();
+  } catch (e) {
+    return next(e);
+  }
+});
 const c = new PrestacaoController();
 const docs = new DocumentoFiscalController();
 const pagamentos = new PagamentoController();
@@ -75,6 +98,12 @@ prestacaoRoutes.get('/:prestacaoId/documentos/demonstrativo-integral', (req, res
 const transmissao = new TransmissaoController();
 prestacaoRoutes.post('/:prestacaoId/transmitir', (req, res, next) => transmissao.transmitir(req, res, next));
 prestacaoRoutes.post('/:prestacaoId/consultar-status', (req, res, next) => transmissao.consultar(req, res, next));
+// Histórico do que foi transmitido, e o JSON exato de cada envio.
+prestacaoRoutes.get('/:prestacaoId/envios', (req, res, next) => transmissao.envios(req, res, next));
+prestacaoRoutes.get('/:prestacaoId/envios/:envioId/json', (req, res, next) => transmissao.documentoEnviado(req, res, next));
+// Retificação: GET mostra o que vai acontecer; POST reabre com o aceite.
+prestacaoRoutes.get('/:prestacaoId/retificacao', (req, res, next) => transmissao.preverRetificacao(req, res, next));
+prestacaoRoutes.post('/:prestacaoId/retificacao', (req, res, next) => transmissao.retificar(req, res, next));
 
 prestacaoRoutes.delete('/:id', (req, res, next) => c.excluir(req, res, next));
 

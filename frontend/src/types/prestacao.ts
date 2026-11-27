@@ -44,6 +44,8 @@ export interface Prestacao {
   ehRetificacao: boolean;
   /** Declaração Negativa da prestação: ajuste sem repasse no exercício. */
   declaracaoNegativa: boolean;
+  /** Transmitida à produção e valendo: os blocos não aceitam edição. */
+  travada: boolean;
   dataEnvio: string | null;
   criadoEm: string;
   atualizadoEm: string;
